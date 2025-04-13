@@ -6,6 +6,7 @@
   "private": true,
   "dependencies": {
     "@elizaos/core": "^0.25.9",
+    "@elizaos/plugin-bootstrap": "^0.25.9",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-router-dom": "6.29.0"

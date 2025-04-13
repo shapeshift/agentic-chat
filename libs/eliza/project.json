@@ -1,0 +1,23 @@
+{
+  "name": "eliza",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/eliza/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/eliza",
+        "main": "libs/eliza/src/index.ts",
+        "tsConfig": "libs/eliza/tsconfig.lib.json",
+        "assets": ["libs/eliza/*.md"]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    }
+  },
+  "tags": []
+} 
