@@ -26,6 +26,7 @@
     "@swc/cli": "~0.6.0",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
+    "@tailwindcss/postcss": "^4.1.4",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.1.0",
     "@types/node": "^20.0.0",
