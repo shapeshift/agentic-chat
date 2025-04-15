@@ -5,8 +5,7 @@
   "scripts": {},
   "private": true,
   "dependencies": {
-    "@elizaos/core": "^0.25.9",
-    "@elizaos/plugin-bootstrap": "^0.25.9",
+    "@tailwindcss/vite": "^4.1.4",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-router-dom": "6.29.0"
@@ -27,6 +26,7 @@
     "@swc/cli": "~0.6.0",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
+    "@tailwindcss/postcss": "^4.1.4",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.1.0",
     "@types/node": "^20.0.0",
@@ -48,7 +48,7 @@
     "nx": "20.7.2",
     "postcss": "8.4.38",
     "prettier": "^2.6.2",
-    "tailwindcss": "3.4.3",
+    "tailwindcss": "^4.1.4",
     "tslib": "^2.3.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.19.0",
