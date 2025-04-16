@@ -14,7 +14,7 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "vite.config.ts",
+    "vite.config.mjs",
     "vite.config.mts",
     "vitest.config.ts",
     "vitest.config.mts",
