@@ -32,7 +32,7 @@
     "src/**/*.test.js",
     "src/**/*.spec.jsx",
     "src/**/*.test.jsx",
-    "vite.config.ts",
+    "vite.config.mjs",
     "vite.config.mts",
     "vitest.config.ts",
     "vitest.config.mts",
