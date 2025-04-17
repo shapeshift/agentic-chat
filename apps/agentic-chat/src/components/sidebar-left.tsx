@@ -3,26 +3,17 @@
 import * as React from "react"
 import {
   AudioWaveform,
-  Blocks,
-  Calendar,
   Command,
   Home,
   Inbox,
-  MessageCircleQuestion,
   PlusCircleIcon,
   Search,
-  Settings2,
   Sparkles,
-  Trash2,
 } from "lucide-react"
 
-import { ChatHistory } from './chat-history';
-import { NavMain } from './nav-main';
-import { TeamSwitcher } from './team-switcher';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInput, SidebarRail } from './ui/sidebar';
 import { NavUser } from "./nav-user";
 import { NavWallets } from "./nav-wallets";
-import { Label } from "@radix-ui/react-dropdown-menu";
 import { Button } from "./ui/button";
 
 // This is sample data.
@@ -76,58 +67,12 @@ const data = {
       badge: "10",
     },
   ],
-  navSecondary: [
-    {
-      title: "Calendar",
-      url: "#",
-      icon: Calendar,
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-    },
-    {
-      title: "Templates",
-      url: "#",
-      icon: Blocks,
-    },
-    {
-      title: "Trash",
-      url: "#",
-      icon: Trash2,
-    },
-    {
-      title: "Help",
-      url: "#",
-      icon: MessageCircleQuestion,
-    },
-  ],
-  history: [
-    {
-      name: "Swap ETH to BTC blah blah blah blah blah",
-      date: "2024-01-01",
-      url: "#",
-      emoji: "📊",
-    },
-    {
-      name: "Swap BTC to ETH",
-      date: "2024-01-01",
-      url: "#",
-      emoji: "🍳",
-    },
-    {
-      name: "Swap ETH to BTC",
-      date: "2024-01-01",
-      url: "#",
-    },
-  ],
 }
 
 
-export function SidebarLeft({
+export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({
   ...props
-}: React.ComponentProps<typeof Sidebar>) {
+}) => {
   return (
     <Sidebar className="border-r-0" {...props}>
         <SidebarHeader className="gap-3.5 border-b p-4">

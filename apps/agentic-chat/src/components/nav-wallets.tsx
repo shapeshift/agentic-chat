@@ -2,11 +2,12 @@ import { SidebarGroup, SidebarMenu, SidebarMenuItem } from './ui/sidebar';
 import { Wallet } from '../types/wallet';
 import { WalletButton } from "./wallet-button";
 
-export function NavWallets({
-  wallets,
-}: {
+
+type NavWalletsProps = {
   wallets: Wallet[]
-}) {
+}
+
+export const NavWallets: React.FC<NavWalletsProps> = ({ wallets }) => {
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarMenu>

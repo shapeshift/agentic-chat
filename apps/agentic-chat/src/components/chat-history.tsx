@@ -1,42 +1,25 @@
 import {
-  ArrowUpRight,
   ChevronRight,
-  Link,
-  MoreHorizontal,
-  StarOff,
-  Trash2,
 } from "lucide-react"
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
+import { SidebarGroup, SidebarGroupLabel, SidebarMenu } from './ui/sidebar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/react-collapsible";
+import { ConversationItem } from "./conversation";
 
 
 const data = {
   history: [
     {
       name: "Swap ETH to BTC blah blah blah blah blah",
-      date: "2024-01-01",
-      url: "#",
-      emoji: "📊",
-    },
-    {
-      name: "Swap BTC to ETH",
-      date: "2024-01-01",
-      url: "#",
-      emoji: "🍳",
-    },
-    {
-      name: "Swap ETH to BTC",
-      date: "2024-01-01",
-      url: "#",
+      id: "2024-01-01",
+      createdAt: "2024-01-01",
+      updatedAt: "2024-01-01",
+      messages: [],
     },
   ],
 }
 
-export function ChatHistory() {
-  const { isMobile } = useSidebar()
-
+export const ChatHistory = () => {
   return (
     <SidebarGroup className="py-0">
       <Collapsible className="group/collapsible">
@@ -52,45 +35,7 @@ export function ChatHistory() {
         <CollapsibleContent>
           <SidebarMenu>
         {data.history.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a href={item.url} title={item.name}>
-                <span>{item.name}</span>
-              </a>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover>
-                  <MoreHorizontal />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-56 rounded-lg"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
-              >
-                <DropdownMenuItem>
-                  <StarOff className="text-muted-foreground" />
-                  <span>Remove from Favorites</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Link className="text-muted-foreground" />
-                  <span>Copy Link</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <ArrowUpRight className="text-muted-foreground" />
-                  <span>Open in New Tab</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Trash2 className="text-muted-foreground" />
-                  <span>Delete</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
+          <ConversationItem key={item.id} {...item} />
         ))}
       </SidebarMenu>
       </CollapsibleContent>

@@ -5,3 +5,6 @@ export type Wallet = {
   logo: React.ElementType
 }
 
+export type WalletList = {
+  wallets: Wallet[]
+}
