@@ -1,5 +1,3 @@
-import { Button } from '../components/ui/button';
-
 /*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  This is a starter component and can be deleted.

@@ -2,7 +2,7 @@ import { Wallet } from '../types/wallet';
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { DropdownMenu } from './ui/dropdown-menu';
 import { SidebarMenuAction, SidebarMenuButton, useSidebar } from "./ui/sidebar";
-import { ArrowUpRight, ChevronDown, Link, MoreHorizontal, StarOff, Trash2 } from "lucide-react";
+import { ArrowUpRight, Link, MoreHorizontal, StarOff, Trash2 } from "lucide-react";
 
 export const WalletButton: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
   const { isMobile } = useSidebar()
