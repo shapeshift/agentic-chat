@@ -3,15 +3,12 @@
 import React from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
+import { MessageList } from '../types/message';
 
-interface Message {
-  id: string;
-  sender: 'user' | 'ai';
-  content: string;
-}
+
 
 interface ChatMessageListProps {
-  messages: Message[];
+  messages: MessageList;
 }
 
 export const ChatMessageList: React.FC<ChatMessageListProps> = ({ messages }) => {

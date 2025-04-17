@@ -11,15 +11,15 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
 
-export function NavUser({
-  user,
-}: {
+type NavUserProps = {
   user: {
     name: string
     email: string
     avatar: string
   }
-}) {
+}
+
+export const NavUser: React.FC<NavUserProps> = ({ user }) => {
   const { isMobile } = useSidebar()
 
   return (

@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "./ui/collapsible";
-import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "./ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem } from "./ui/sidebar";
+import { TransactionButton } from "./transaction-button";
 
 const data = {
   history: [
@@ -38,25 +38,7 @@ export const TransactionHistory = () => {
           <SidebarMenu>
             {data.history.map((transaction) => (
               <SidebarMenuItem key={transaction.name}>
-                <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage alt={transaction.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{transaction.name}</span>
-                  <div className="flex gap-1">
-                    <span className="truncate text-xs text-green-500">{transaction.status}</span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="truncate text-xs">{transaction.amount}</span>
-                  <span className="truncate text-xs text-muted-foreground">{transaction.date}</span>
-                </div>
-              </SidebarMenuButton>
+                <TransactionButton {...transaction} />
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
