@@ -3,6 +3,27 @@ import { BrowserRouter } from 'react-router-dom';
 
 import App from './app';
 
+declare global {
+  interface Window {
+    matchMedia: (query: string) => MediaQueryList;
+  }
+}
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 describe('App', () => {
   it('should render successfully', () => {
     const { baseElement } = render(
@@ -13,14 +34,12 @@ describe('App', () => {
     expect(baseElement).toBeTruthy();
   });
 
-  it('should have a greeting as the title', () => {
-    const { getAllByText } = render(
+  it('should render the Dashboard component', () => {
+    const { getByText } = render(
       <BrowserRouter>
         <App />
       </BrowserRouter>
     );
-    expect(
-      getAllByText(new RegExp('Welcome agentic-chat', 'gi')).length > 0
-    ).toBeTruthy();
+    expect(getByText('Wallets')).toBeTruthy();
   });
 });

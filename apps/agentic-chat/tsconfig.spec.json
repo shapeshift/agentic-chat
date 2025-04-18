@@ -9,12 +9,13 @@
       "node",
       "vitest",
       "@nx/react/typings/cssmodule.d.ts",
-      "@nx/react/typings/image.d.ts"
+      "@nx/react/typings/image.d.ts",
+      "jsdom"
     ],
     "jsx": "react-jsx"
   },
   "include": [
-    "vite.config.ts",
+    "vite.config.mjs",
     "vite.config.mts",
     "vitest.config.ts",
     "vitest.config.mts",
