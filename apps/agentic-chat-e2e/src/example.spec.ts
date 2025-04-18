@@ -3,6 +3,6 @@ import { test, expect } from '@playwright/test';
 test('has title', async ({ page }) => {
   await page.goto('/');
 
-  // Expect h1 not to contain a substring.
-  expect(await page.locator('h1').innerText()).toContain('Welcome');
+  // Expect the breadcrumb to contain "Chat Name"
+  expect(await page.locator('.line-clamp-1').innerText()).toContain('Chat Name');
 });
