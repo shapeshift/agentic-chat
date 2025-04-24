@@ -1,8 +1,9 @@
-
 import { promises as fs, existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
+import { vector } from '@electric-sql/pglite/vector';
+import { fuzzystrmatch } from '@electric-sql/pglite/contrib/fuzzystrmatch';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { logger } from '@elizaos/core';
@@ -82,12 +83,23 @@ async function initializePgLite(dataDir: string): Promise<void> {
     let client: PGlite | null = null;
 
     try {
-        // Initialize PGLite
-        client = new PGlite({ dataDir });
+        // Initialize PGLite with explicit extensions
+        client = new PGlite({
+            dataDir,
+            extensions: {
+                vector,
+                fuzzystrmatch
+            }
+        });
 
         // Wait for PGLite to be ready
         await client.waitReady;
         logger.info('PGLite client initialized successfully');
+
+        // Enable the extensions
+        await client.query('CREATE EXTENSION IF NOT EXISTS vector;');
+        await client.query('CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;');
+        logger.info('Extensions created successfully');
 
         // Get migration SQL
         const migrationSQL = await fs.readFile(
@@ -98,11 +110,7 @@ async function initializePgLite(dataDir: string): Promise<void> {
         // Execute the migration SQL directly
         logger.info('Running database migrations...');
         try {
-            // First try to create the extensions
-            await client.query('CREATE EXTENSION IF NOT EXISTS vector;');
-            await client.query('CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;');
-
-            // Then run the rest of the migrations
+            // Run the migrations, filtering out the CREATE EXTENSION statements
             const statements = migrationSQL
                 .split('--> statement-breakpoint')
                 .map(stmt => stmt.trim())
