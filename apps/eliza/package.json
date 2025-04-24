@@ -3,7 +3,7 @@
   "description": "Project starter for elizaOS",
   "version": "1.0.0-beta.33",
   "engines": {
-    "node": "23.3.0"
+    "node": "23.x"
   },
   "type": "module",
   "private": true,
@@ -26,6 +26,7 @@
     "@elizaos/cli": "1.0.0-beta.34",
     "@elizaos/core": "1.0.0-beta.34",
     "@elizaos/plugin-anthropic": "1.0.0-beta.34",
+    "@elizaos/plugin-bootstrap": "1.0.0-beta.37",
     "@elizaos/plugin-evm": "1.0.0-beta.34",
     "@elizaos/plugin-openai": "1.0.0-beta.34",
     "@elizaos/plugin-sql": "1.0.0-beta.34",

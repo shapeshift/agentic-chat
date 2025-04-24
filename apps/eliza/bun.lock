@@ -7,6 +7,7 @@
         "@elizaos/cli": "1.0.0-beta.34",
         "@elizaos/core": "1.0.0-beta.34",
         "@elizaos/plugin-anthropic": "1.0.0-beta.34",
+        "@elizaos/plugin-bootstrap": "1.0.0-beta.37",
         "@elizaos/plugin-evm": "1.0.0-beta.34",
         "@elizaos/plugin-openai": "1.0.0-beta.34",
         "@elizaos/plugin-sql": "1.0.0-beta.34",
@@ -76,6 +77,8 @@
     "@elizaos/core": ["@elizaos/core@1.0.0-beta.34", "", { "dependencies": { "buffer": "^6.0.3", "crypto-browserify": "^3.12.1", "dotenv": "16.4.5", "events": "^3.3.0", "glob": "11.0.0", "handlebars": "^4.7.8", "js-sha1": "0.7.0", "langchain": "^0.3.15", "pino": "^9.6.0", "pino-pretty": "^13.0.0", "stream-browserify": "^3.0.0", "unique-names-generator": "4.7.1", "uuid": "11.0.3" } }, "sha512-jaDv72O52u0iWJLEQbberdI5yowwvUsuKkoCwXWyb8x2U7RrZzfNQX52pWSF9L5zCJc99pmr8ZLPPu77J7awJA=="],
 
     "@elizaos/plugin-anthropic": ["@elizaos/plugin-anthropic@1.0.0-beta.34", "", { "dependencies": { "@ai-sdk/anthropic": "^1.1.6", "@elizaos/core": "^1.0.0-beta.34", "fastembed": "^1.0.0", "jsonrepair": "^3.12.0", "tsup": "8.4.0" } }, "sha512-6KSdRvzDHMBVFaqXtQZKcuIWZJFJdVe9GZWBUFBw4ExkMRafdXeBAy60gh1PMY/3S4Dp91VNs2UliOR5qicRew=="],
+
+    "@elizaos/plugin-bootstrap": ["@elizaos/plugin-bootstrap@1.0.0-beta.37", "", { "dependencies": { "@elizaos/core": "^1.0.0-beta.37" }, "peerDependencies": { "whatwg-url": "7.1.0" } }, "sha512-uEEY/Qmm7mhl0KwGOwQvdRuaEoPtOWSXjEj0rjz1f3XxzzQ02T7KJZSRncnTb1F6gD+AcW5u7YgQws4LDmjiYA=="],
 
     "@elizaos/plugin-evm": ["@elizaos/plugin-evm@1.0.0-beta.34", "", { "dependencies": { "@elizaos/plugin-tee": "^1.0.0-beta.34", "@hapi/shot": "^6.0.1", "@lifi/data-types": "5.15.5", "@lifi/sdk": "3.4.1", "@lifi/types": "16.3.0", "@types/hapi": "^18.0.14", "tsup": "8.3.5" }, "peerDependencies": { "whatwg-url": "7.1.0" } }, "sha512-UT3kW1on5OwIvSvK5SXBh5LE6MjZvvGQm5GBygYXkSEX/mtjFU9lZRfJ9oiPeCY8Y5xUmTWRTtQ4ipZyh1TpVQ=="],
 
@@ -1148,6 +1151,8 @@
     "@ai-sdk/ui-utils/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@2.1.6", "", { "dependencies": { "@ai-sdk/provider": "1.0.7", "eventsource-parser": "^3.0.0", "nanoid": "^3.3.8", "secure-json-parse": "^2.7.0" }, "peerDependencies": { "zod": "^3.0.0" }, "optionalPeers": ["zod"] }, "sha512-Pfyaj0QZS22qyVn5Iz7IXcJ8nKIKlu2MeSAdKJzTwkAks7zdLaKVB+396Rqcp1bfQnxl7vaduQVMQiXUrgK8Gw=="],
 
     "@bigmi/core/viem": ["viem@2.28.0", "", { "dependencies": { "@noble/curves": "1.8.2", "@noble/hashes": "1.7.2", "@scure/bip32": "1.6.2", "@scure/bip39": "1.5.4", "abitype": "1.0.8", "isows": "1.0.6", "ox": "0.6.9", "ws": "8.18.1" }, "peerDependencies": { "typescript": ">=5.0.4" }, "optionalPeers": ["typescript"] }, "sha512-Z4W5O1pe+6pirYTFm451FcZmfGAUxUWt2L/eWC+YfTF28j/8rd7q6MBAi05lMN4KhLJjhN0s5YGIPB+kf1L20g=="],
+
+    "@elizaos/plugin-bootstrap/@elizaos/core": ["@elizaos/core@1.0.0-beta.37", "", { "dependencies": { "@opentelemetry/api": "^1.9.0", "@opentelemetry/exporter-trace-otlp-http": "^0.53.0", "@opentelemetry/instrumentation-pg": "^0.52.0", "@opentelemetry/sdk-metrics": "^1.26.0", "@opentelemetry/sdk-node": "^0.53.0", "buffer": "^6.0.3", "crypto-browserify": "^3.12.1", "dotenv": "16.4.5", "events": "^3.3.0", "glob": "11.0.0", "handlebars": "^4.7.8", "js-sha1": "0.7.0", "langchain": "^0.3.15", "pino": "^9.6.0", "pino-pretty": "^13.0.0", "stream-browserify": "^3.0.0", "unique-names-generator": "4.7.1", "uuid": "11.0.3" } }, "sha512-ORQhOM2dADawkyzug4A2qrGSZAXmTPv9Rr55SoAYtMY7wtPcq3Uxq3D0IAdPBLFvGUrWOBaqIS8Na4mpSsdjIg=="],
 
     "@elizaos/plugin-evm/tsup": ["tsup@8.3.5", "", { "dependencies": { "bundle-require": "^5.0.0", "cac": "^6.7.14", "chokidar": "^4.0.1", "consola": "^3.2.3", "debug": "^4.3.7", "esbuild": "^0.24.0", "joycon": "^3.1.1", "picocolors": "^1.1.1", "postcss-load-config": "^6.0.1", "resolve-from": "^5.0.0", "rollup": "^4.24.0", "source-map": "0.8.0-beta.0", "sucrase": "^3.35.0", "tinyexec": "^0.3.1", "tinyglobby": "^0.2.9", "tree-kill": "^1.2.2" }, "peerDependencies": { "@microsoft/api-extractor": "^7.36.0", "@swc/core": "^1", "postcss": "^8.4.12", "typescript": ">=4.5.0" }, "optionalPeers": ["@microsoft/api-extractor", "@swc/core", "postcss", "typescript"], "bin": { "tsup": "dist/cli-default.js", "tsup-node": "dist/cli-node.js" } }, "sha512-Tunf6r6m6tnZsG9GYWndg0z8dEV7fD733VBFzFJ5Vcm1FtlXB8xBD/rtrBi2a3YKEV7hHtxiZtW5EAVADoe1pA=="],
 
