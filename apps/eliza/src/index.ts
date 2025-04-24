@@ -19,7 +19,6 @@ export const character: Character = {
   plugins: [
     '@elizaos/plugin-sql',
     "@elizaos/plugin-evm",
-    "@elizaos/plugin-0x",
     "@elizaos/plugin-venice"
     // ...(process.env.OPENAI_API_KEY ? ['@elizaos/plugin-openai'] : []),
     // ...(process.env.ANTHROPIC_API_KEY ? ['@elizaos/plugin-anthropic'] : []),

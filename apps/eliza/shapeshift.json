@@ -2,7 +2,6 @@
   "name": "ShapeShift agent",
   "plugins": [
     "@elizaos/plugin-evm",
-    "@elizaos/plugin-0x",
     "@elizaos/plugin-venice"
   ],
   "modelProvider": "venice",
