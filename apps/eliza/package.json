@@ -23,27 +23,27 @@
     "dist"
   ],
   "dependencies": {
+    "@electric-sql/pglite": "^0.2.17",
     "@elizaos/cli": "1.0.0-beta.34",
     "@elizaos/core": "1.0.0-beta.34",
     "@elizaos/plugin-0x": "0.25.6-alpha.1",
     "@elizaos/plugin-anthropic": "1.0.0-beta.34",
-    "@elizaos/plugin-evm": "1.0.0-beta.34",
+    "@elizaos/plugin-evm": "^1.0.0-beta.37",
     "@elizaos/plugin-openai": "1.0.0-beta.34",
     "@elizaos/plugin-sql": "1.0.0-beta.34",
     "@elizaos/plugin-venice": "1.0.0-beta.28",
-    "zod": "3.24.2",
     "@langchain/core": "0.3.47",
-    "@electric-sql/pglite": "^0.2.17",
     "@types/pg": "8.11.10",
     "drizzle-kit": "^0.30.4",
     "drizzle-orm": "^0.39.1",
-    "pg": "^8.13.3"
+    "pg": "^8.13.3",
+    "zod": "3.24.2"
   },
   "devDependencies": {
-    "tsup": "8.4.0",
+    "@vitest/coverage-v8": "2.1.5",
     "prettier": "3.5.3",
-    "vitest": "2.1.5",
-    "@vitest/coverage-v8": "2.1.5"
+    "tsup": "8.4.0",
+    "vitest": "2.1.5"
   },
   "scripts": {
     "start": "elizaos start",

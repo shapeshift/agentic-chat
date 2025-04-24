@@ -9,7 +9,7 @@
         "@elizaos/core": "1.0.0-beta.34",
         "@elizaos/plugin-0x": "0.25.6-alpha.1",
         "@elizaos/plugin-anthropic": "1.0.0-beta.34",
-        "@elizaos/plugin-evm": "1.0.0-beta.34",
+        "@elizaos/plugin-evm": "^1.0.0-beta.37",
         "@elizaos/plugin-openai": "1.0.0-beta.34",
         "@elizaos/plugin-sql": "1.0.0-beta.34",
         "@elizaos/plugin-venice": "1.0.0-beta.28",
@@ -159,7 +159,7 @@
 
     "@elizaos/plugin-anthropic": ["@elizaos/plugin-anthropic@1.0.0-beta.34", "", { "dependencies": { "@ai-sdk/anthropic": "^1.1.6", "@elizaos/core": "^1.0.0-beta.34", "fastembed": "^1.0.0", "jsonrepair": "^3.12.0", "tsup": "8.4.0" } }, "sha512-6KSdRvzDHMBVFaqXtQZKcuIWZJFJdVe9GZWBUFBw4ExkMRafdXeBAy60gh1PMY/3S4Dp91VNs2UliOR5qicRew=="],
 
-    "@elizaos/plugin-evm": ["@elizaos/plugin-evm@1.0.0-beta.34", "", { "dependencies": { "@elizaos/plugin-tee": "^1.0.0-beta.34", "@hapi/shot": "^6.0.1", "@lifi/data-types": "5.15.5", "@lifi/sdk": "3.4.1", "@lifi/types": "16.3.0", "@types/hapi": "^18.0.14", "tsup": "8.3.5" }, "peerDependencies": { "whatwg-url": "7.1.0" } }, "sha512-UT3kW1on5OwIvSvK5SXBh5LE6MjZvvGQm5GBygYXkSEX/mtjFU9lZRfJ9oiPeCY8Y5xUmTWRTtQ4ipZyh1TpVQ=="],
+    "@elizaos/plugin-evm": ["@elizaos/plugin-evm@1.0.0-beta.37", "", { "dependencies": { "@elizaos/plugin-tee": "^1.0.0-beta.37", "@hapi/shot": "^6.0.1", "@lifi/data-types": "5.15.5", "@lifi/sdk": "3.4.1", "@lifi/types": "16.3.0", "@types/hapi": "^18.0.14", "tsup": "8.3.5" }, "peerDependencies": { "whatwg-url": "7.1.0" } }, "sha512-zk+v8yvKikGtHHcLH3C9fUdcMurOd3ZfFxeTsLO6/hhGiBN1HlU33NhnfXgkEzHEcfJU8/kqh7zclvUhDe15qA=="],
 
     "@elizaos/plugin-openai": ["@elizaos/plugin-openai@1.0.0-beta.34", "", { "dependencies": { "@ai-sdk/openai": "^1.1.9", "@ai-sdk/ui-utils": "1.1.9", "@elizaos/core": "^1.0.0-beta.34", "ai": "^4.1.25", "js-tiktoken": "^1.0.18", "tsup": "8.4.0" } }, "sha512-iJs5RQW+NbeY8IPiA3GLrLCIwqKXo8IMd3fuw+iZTRgC3Zp43Pca2CpL2QMhyIBfzSsXNWQ5HllI2qQz3Sk8NA=="],
 
