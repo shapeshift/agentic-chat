@@ -22,9 +22,12 @@
   "dependencies": {
     "@elizaos/cli": "1.0.0-beta.34",
     "@elizaos/core": "1.0.0-beta.34",
+    "@elizaos/plugin-0x": "0.25.6-alpha.1",
     "@elizaos/plugin-anthropic": "1.0.0-beta.34",
+    "@elizaos/plugin-evm": "1.0.0-beta.34",
     "@elizaos/plugin-openai": "1.0.0-beta.34",
     "@elizaos/plugin-sql": "1.0.0-beta.34",
+    "@elizaos/plugin-venice": "1.0.0-beta.28",
     "zod": "3.24.2"
   },
   "devDependencies": {
