@@ -3,9 +3,7 @@
   "plugins": [
     "@elizaos/plugin-evm",
     "@elizaos/plugin-0x",
-    "@elizaos/plugin-venice",
-    "@elizaos-plugins/adapter-pglite"
-
+    "@elizaos/plugin-venice"
   ],
   "modelProvider": "venice",
   "clients": [
