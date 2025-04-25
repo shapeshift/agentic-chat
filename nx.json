@@ -74,12 +74,6 @@
       "dependsOn": ["^build"]
     }
   },
-  "exclude": [
-    {
-      "projects": ["eliza"],
-      "targets": ["e2e"]
-    }
-  ],
   "generators": {
     "@nx/react": {
       "application": {
