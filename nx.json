@@ -90,5 +90,8 @@
         "linter": "eslint"
       }
     }
+  },
+  "cli": {
+    "packageManager": "bun"
   }
 }
