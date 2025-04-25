@@ -55,7 +55,11 @@ const helloWorldAction: Action = {
   similes: ['GREET', 'SAY_HELLO'],
   description: 'Responds with a simple hello world message',
 
-  validate: async (_runtime: IAgentRuntime, _message: Memory, _state: State): Promise<boolean> => {
+  validate: async (
+    _runtime: IAgentRuntime,
+    _message: Memory,
+    _state: State,
+  ): Promise<boolean> => {
     // Always valid
     return true;
   },
@@ -66,7 +70,7 @@ const helloWorldAction: Action = {
     _state: State,
     _options: any,
     callback: HandlerCallback,
-    _responses: Memory[]
+    _responses: Memory[],
   ) => {
     try {
       logger.info('Handling HELLO_WORLD action');
@@ -118,7 +122,7 @@ const helloWorldProvider: Provider = {
   get: async (
     _runtime: IAgentRuntime,
     _message: Memory,
-    _state: State
+    _state: State,
   ): Promise<ProviderResult> => {
     return {
       text: 'I am a provider',
@@ -175,7 +179,7 @@ const plugin: Plugin = {
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new Error(
-          `Invalid plugin configuration: ${error.errors.map((e) => e.message).join(', ')}`
+          `Invalid plugin configuration: ${error.errors.map((e) => e.message).join(', ')}`,
         );
       }
       throw error;
@@ -184,7 +188,7 @@ const plugin: Plugin = {
   models: {
     [ModelType.TEXT_SMALL]: async (
       _runtime,
-      { prompt, stopSequences = [] }: GenerateTextParams
+      { prompt, stopSequences = [] }: GenerateTextParams,
     ) => {
       return 'Never gonna give you up, never gonna let you down, never gonna run around and desert you...';
     },
@@ -197,7 +201,7 @@ const plugin: Plugin = {
         temperature = 0.7,
         frequencyPenalty = 0.7,
         presencePenalty = 0.7,
-      }: GenerateTextParams
+      }: GenerateTextParams,
     ) => {
       return 'Never gonna make you cry, never gonna say goodbye, never gonna tell a lie and hurt you...';
     },

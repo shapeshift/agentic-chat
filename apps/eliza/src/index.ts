@@ -18,14 +18,14 @@ export const character: Character = {
   name: 'ShapeShift Agent',
   plugins: [
     '@elizaos/plugin-sql',
-    "@elizaos/plugin-evm",
-    "@elizaos/plugin-venice",
+    '@elizaos/plugin-evm',
+    '@elizaos/plugin-venice',
     ...(!process.env.IGNORE_BOOTSTRAP ? ['@elizaos/plugin-bootstrap'] : []),
     // ...(process.env.OPENAI_API_KEY ? ['@elizaos/plugin-openai'] : []),
     // ...(process.env.ANTHROPIC_API_KEY ? ['@elizaos/plugin-anthropic'] : []),
     // ...(!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY
-      // ? ['@elizaos/plugin-local-ai']
-      // : []),
+    // ? ['@elizaos/plugin-local-ai']
+    // : []),
     // ...(process.env.DISCORD_API_TOKEN ? ['@elizaos/plugin-discord'] : []),
     // ...(process.env.TWITTER_USERNAME ? ['@elizaos/plugin-twitter'] : []),
     // ...(process.env.TELEGRAM_BOT_TOKEN ? ['@elizaos/plugin-telegram'] : []),
@@ -33,8 +33,7 @@ export const character: Character = {
   settings: {
     secrets: {},
   },
-  system:
-    'You are an helpful ShapeShift robot.',
+  system: 'You are an helpful ShapeShift robot.',
   bio: ['A helpful ShapeShift trading and wallet management assistant.'],
   messageExamples: [
     [
