@@ -1,0 +1,62 @@
+{
+  "name": "shapeshift-eliza",
+  "description": "Project starter for elizaOS",
+  "version": "1.0.0-beta.33",
+  "engines": {
+    "node": "23.x"
+  },
+  "type": "module",
+  "private": true,
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@elizaos/cli": "1.0.0-beta.37",
+    "@elizaos/core": "1.0.0-beta.37",
+    "@elizaos/plugin-anthropic": "1.0.0-beta.37",
+    "@elizaos/plugin-bootstrap": "1.0.0-beta.37",
+    "@elizaos/plugin-evm": "1.0.0-beta.37",
+    "@elizaos/plugin-openai": "1.0.0-beta.37",
+    "@elizaos/plugin-sql": "1.0.0-beta.37",
+    "@elizaos/plugin-venice": "1.0.0-beta.37",
+    "@langchain/core": "0.3.47",
+    "@types/pg": "8.11.10",
+    "drizzle-kit": "^0.30.4",
+    "drizzle-orm": "^0.39.1",
+    "pg": "^8.13.3",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "2.1.5",
+    "prettier": "3.5.3",
+    "tsup": "8.4.0",
+    "vitest": "2.1.5"
+  },
+  "scripts": {
+    "start": "elizaos start",
+    "dev": "elizaos dev",
+    "build": "tsup",
+    "lint": "prettier --write ./src",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "format": "prettier --write ./src",
+    "format:check": "prettier --check ./src"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "gitHead": "b165ad83e5f7a21bc1edbd83374ca087e3cd6b33"
+}

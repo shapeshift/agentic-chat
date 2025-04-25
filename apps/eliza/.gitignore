@@ -1,0 +1,8 @@
+node_modules
+dist/
+
+.env
+.env.production
+.env.local
+.env.bak
+.env_main
