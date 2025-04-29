@@ -21,9 +21,9 @@
     "test:all": "yarn test && yarn test:int && yarn lint:langgraph"
   },
   "dependencies": {
-    "@langchain/core": "^0.1.48",
-    "@langchain/langgraph": "^0.0.11",
-    "@langchain/openai": "^0.0.14",
+    "@langchain/core": "^0.3.37",
+    "@langchain/langgraph": "^0.2.43",
+    "@langchain/openai": "^0.5.7",
     "axios": "^1.6.7",
     "qs": "^6.11.2",
     "viem": "^2.7.15",
