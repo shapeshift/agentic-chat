@@ -2,103 +2,42 @@
  * Starter LangGraph.js Template
  * Make this code your own!
  */
-import { StateGraph } from "@langchain/langgraph";
-import { RunnableConfig } from "@langchain/core/runnables";
-import { StateAnnotation } from "./state.js";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { ChatOpenAI } from "@langchain/openai";
+import { tokensSearch } from "../tools/tokensSearch.js";
+import { bebopRate } from "../tools/bebopRate.js";
+import { MemorySaver } from "@langchain/langgraph-checkpoint";
 
-/**
- * Define a node, these do the work of the graph and should have most of the logic.
- * Must return a subset of the properties set in StateAnnotation.
- * @param state The current state of the graph.
- * @param config Extra parameters passed into the state graph.
- * @returns Some subset of parameters of the graph state, used to update the state
- * for the edges and nodes executed next.
- */
-const callModel = async (
-  state: typeof StateAnnotation.State,
-  _config: RunnableConfig,
-): Promise<typeof StateAnnotation.Update> => {
-  /**
-   * Do some work... (e.g. call an LLM)
-   * For example, with LangChain you could do something like:
-   *
-   * ```bash
-   * $ npm i @langchain/anthropic
-   * ```
-   *
-   * ```ts
-   * import { ChatAnthropic } from "@langchain/anthropic";
-   * const model = new ChatAnthropic({
-   *   model: "claude-3-5-sonnet-20240620",
-   *   apiKey: process.env.ANTHROPIC_API_KEY,
-   * });
-   * const res = await model.invoke(state.messages);
-   * ```
-   *
-   * Or, with an SDK directly:
-   *
-   * ```bash
-   * $ npm i openai
-   * ```
-   *
-   * ```ts
-   * import OpenAI from "openai";
-   * const openai = new OpenAI({
-   *   apiKey: process.env.OPENAI_API_KEY,
-   * });
-   *
-   * const chatCompletion = await openai.chat.completions.create({
-   *   messages: [{
-   *     role: state.messages[0]._getType(),
-   *     content: state.messages[0].content,
-   *   }],
-   *   model: "gpt-4o-mini",
-   * });
-   * ```
-   */
-  console.log("Current state:", state);
-  return {
-    messages: [
-      {
-        role: "assistant",
-        content: `Hi there! How are you?`,
-      },
-    ],
-  };
-};
+const model = new ChatOpenAI({
+  modelName: "gpt-4o-mini",
+  temperature: 0
+});
 
-/**
- * Routing function: Determines whether to continue research or end the builder.
- * This function decides if the gathered information is satisfactory or if more research is needed.
- *
- * @param state - The current state of the research builder
- * @returns Either "callModel" to continue research or END to finish the builder
- */
-export const route = (
-  state: typeof StateAnnotation.State,
-): "__end__" | "callModel" => {
-  if (state.messages.length > 0) {
-    return "__end__";
-  }
-  // Loop back
-  return "callModel";
-};
+// Create a memory saver for persistence
+const checkpointer = new MemorySaver();
 
-// Finally, create the graph itself.
-const builder = new StateGraph(StateAnnotation)
-  // Add the nodes to do the work.
-  // Chaining the nodes together in this way
-  // updates the types of the StateGraph instance
-  // so you have static type checking when it comes time
-  // to add the edges.
-  .addNode("callModel", callModel)
-  // Regular edges mean "always transition to node B after node A is done"
-  // The "__start__" and "__end__" nodes are "virtual" nodes that are always present
-  // and represent the beginning and end of the builder.
-  .addEdge("__start__", "callModel")
-  // Conditional edges optionally route to different nodes (or end)
-  .addConditionalEdges("callModel", route);
+// Create and export the agent
+export const graph = createReactAgent({
+  llm: model,
+  tools: [tokensSearch, bebopRate],
+  checkpointer,
+  prompt: `You are a trading agent helping users swap tokens.
 
-export const graph = builder.compile();
+Before fetching a quote with the bebop rate agent, always fetch tokens first with the search agent.
+The first call to the search agent should be done without a network parameter. 
+If results are ambiguous (more than 2 results), ask users to confirm the network for the ambiguous assets.
+Run the search again with the specified network.
 
-graph.name = "New Agent";
+If results remain ambiguous after narrowing networks, ask for token clarification.
+
+Always confirm buy and sell tokens with the user before proceeding to quote.
+Restate token names, symbols, and networks from search results and ask for explicit confirmation.
+Make addresses clickable links with an emoji prefix.
+
+Only call bebopRate after user confirmation.
+Use Bebop agent output directly for rate information - do not modify its output.
+
+Format your responses in markdown, using backticks for code and addresses.
+Use emojis appropriately to make the interaction more engaging.
+Be concise but informative in your responses.`
+});

@@ -24,6 +24,7 @@
     "@langchain/core": "^0.3.37",
     "@langchain/langgraph": "^0.2.43",
     "@langchain/openai": "^0.5.7",
+    "@langchain/langgraph-checkpoint": "^0.0.17",
     "axios": "^1.6.7",
     "qs": "^6.11.2",
     "viem": "^2.7.15",
