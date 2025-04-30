@@ -1,7 +1,7 @@
 import { tool } from "@langchain/core/tools";
-import { z } from "zod";
 import { getAddress } from "viem";
-import { fromBaseUnit, toBaseUnit } from "../utils/units.js";
+import { z } from "zod";
+import { fromBaseUnit, toBaseUnit } from "../utils/bignumber.js";
 
 const BEBOP_ETH_MARKER = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
