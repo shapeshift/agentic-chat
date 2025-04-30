@@ -8,7 +8,6 @@
     "emitDeclarationOnly": false,
     "module": "esnext",
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },

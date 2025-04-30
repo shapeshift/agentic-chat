@@ -2,6 +2,7 @@ import { fromBaseUnit, toBaseUnit } from "@agentic-chat/utils";
 import { tool } from "@langchain/core/tools";
 import { getAddress } from "viem";
 import { z } from "zod";
+import { BebopResponse  } from "./types";
 
 const BEBOP_ETH_MARKER = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
@@ -59,7 +60,7 @@ export const bebopRate = tool(
       throw new Error(`Failed to fetch Bebop quote: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as BebopResponse;
 
     if (!data.routes?.[0]?.quote) {
       throw new Error("No routes found in Bebop response");

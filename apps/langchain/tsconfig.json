@@ -24,9 +24,6 @@
   "exclude": ["node_modules", "dist"],
   "references": [
     {
-      "path": "../../utils"
-    },
-    {
       "path": "../../tools"
     }
   ]
