@@ -5,6 +5,7 @@ dist
 tmp
 out-tsc
 .env
+*.tsconfig.tsbuildinfo
 
 # dependencies
 node_modules
