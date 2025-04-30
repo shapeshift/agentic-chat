@@ -38,4 +38,4 @@ jobs:
       # - run: yarn nx-cloud record -- echo Hello World
       # Nx Affected runs only tasks affected by the changes in this PR/commit. Learn more: https://nx.dev/ci/features/affected
       # When you enable task distribution, run the e2e-ci task instead of e2e
-      - run: yarn nx affected -t lint test build e2e --exclude langchain
+      - run: yarn nx affected -t lint test build
