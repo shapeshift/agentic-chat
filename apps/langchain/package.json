@@ -1,5 +1,5 @@
 {
-  "name": "shapeshift-langchainjs2",
+  "name": "langchain",
   "version": "0.1.0",
   "description": "A starter template for creating a LangGraph workflow.",
   "packageManager": "yarn@1.22.22",
