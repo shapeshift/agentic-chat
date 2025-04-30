@@ -4,6 +4,7 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { StateGraph, MessagesAnnotation, START, END } from "@langchain/langgraph/web";
 import { tokensSearch } from "../tools/tokensSearch";
 import { bebopRate } from "../tools/bebopRate";
+import { tools } from "@agentic-chat/tools"
 
 // Define the tools for the agent to use
 const tools = [tokensSearch, bebopRate];
