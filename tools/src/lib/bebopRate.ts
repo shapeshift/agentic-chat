@@ -1,4 +1,4 @@
-import { fromBaseUnit, toBaseUnit } from "@/utils/bignumber";
+import { fromBaseUnit, toBaseUnit } from "@agentic-chat/utils";
 import { tool } from "@langchain/core/tools";
 import { getAddress } from "viem";
 import { z } from "zod";

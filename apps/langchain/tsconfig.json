@@ -1,5 +1,5 @@
 {
-  "extends": "@tsconfig/recommended",
+  "extends": ["@tsconfig/recommended", "../../tsconfig.base.json"],
   "compilerOptions": {
     "target": "ES2021",
     "lib": ["ES2021", "ES2022.Object", "DOM"],

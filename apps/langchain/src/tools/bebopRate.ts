@@ -1,7 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import { getAddress } from "viem";
 import { z } from "zod";
-import { fromBaseUnit, toBaseUnit } from "../utils/bignumber.js";
+import { fromBaseUnit, toBaseUnit } from "@agentic-chat/utils";
 
 const BEBOP_ETH_MARKER = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
