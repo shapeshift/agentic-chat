@@ -1,5 +1,5 @@
-import { BaseMessage, BaseMessageLike } from "@langchain/core/messages";
-import { Annotation, messagesStateReducer } from "@langchain/langgraph";
+import { BaseMessage, BaseMessageLike } from '@langchain/core/messages';
+import { Annotation, messagesStateReducer } from '@langchain/langgraph';
 
 /**
  * A graph's StateAnnotation defines three main things:

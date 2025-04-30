@@ -9,7 +9,9 @@ interface ChatMessageListProps {
   messages: MessageList;
 }
 
-export const ChatMessageList: React.FC<ChatMessageListProps> = ({ messages }) => {
+export const ChatMessageList: React.FC<ChatMessageListProps> = ({
+  messages,
+}) => {
   return (
     <ScrollArea className="flex-1 p-4">
       <div className="space-y-4">

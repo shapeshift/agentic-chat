@@ -2,13 +2,13 @@
  * Starter LangGraph.js Template
  * Make this code your own!
  */
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { ChatOpenAI } from "@langchain/openai";
-import { tokensSearch, bebopRate } from "@agentic-chat/tools"
-import { MemorySaver } from "@langchain/langgraph-checkpoint";
+import { createReactAgent } from '@langchain/langgraph/prebuilt';
+import { ChatOpenAI } from '@langchain/openai';
+import { tokensSearch, bebopRate } from '@agentic-chat/tools';
+import { MemorySaver } from '@langchain/langgraph-checkpoint';
 
 const model = new ChatOpenAI({
-  modelName: "gpt-4o-mini",
+  modelName: 'gpt-4o-mini',
   temperature: 0,
   openAIApiKey: process.env.VITE_OPENAI_API_KEY,
 });
@@ -39,5 +39,5 @@ Use Bebop agent output directly for rate information - do not modify its output.
 
 Format your responses in markdown, using backticks for code and addresses.
 Use emojis appropriately to make the interaction more engaging.
-Be concise but informative in your responses.`
+Be concise but informative in your responses.`,
 });

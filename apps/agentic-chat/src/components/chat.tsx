@@ -28,7 +28,7 @@ export const Chat: React.FC = () => {
         sender: 'user',
         content,
       };
-      setMessages(prev => [...prev, userMessage]);
+      setMessages((prev) => [...prev, userMessage]);
 
       // Process message through LangGraph
       const aiResponse = await runMessageGraph(content);
@@ -39,7 +39,7 @@ export const Chat: React.FC = () => {
         sender: 'ai',
         content: aiResponse,
       };
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error('Error processing message:', error);
       // Add error message
@@ -48,7 +48,7 @@ export const Chat: React.FC = () => {
         sender: 'ai',
         content: 'Sorry, I encountered an error processing your message.',
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsProcessing(false);
     }

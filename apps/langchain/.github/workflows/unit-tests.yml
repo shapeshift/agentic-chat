@@ -4,7 +4,7 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
   pull_request:
   workflow_dispatch: # Allows triggering the workflow manually in GitHub UI
 
@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "yarn"
+          cache: 'yarn'
       - name: Install dependencies
         run: yarn install --immutable
       - name: Build project
