@@ -9,7 +9,8 @@ import { MemorySaver } from "@langchain/langgraph-checkpoint";
 
 const model = new ChatOpenAI({
   modelName: "gpt-4o-mini",
-  temperature: 0
+  temperature: 0,
+  openAIApiKey: process.env.VITE_OPENAI_API_KEY,
 });
 
 // Create a memory saver for persistence
