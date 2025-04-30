@@ -7,14 +7,15 @@ import { Send } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
+  disabled?: boolean;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }) => {
   const [inputValue, setInputValue] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputValue.trim()) {
+    if (inputValue.trim() && !disabled) {
       onSendMessage(inputValue.trim());
       setInputValue('');
     }
@@ -27,8 +28,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
         onChange={(e) => setInputValue(e.target.value)}
         placeholder="Type your message..."
         className="flex-1"
+        disabled={disabled}
       />
-      <Button type="submit" size="icon" disabled={!inputValue.trim()}>
+      <Button type="submit" size="icon" disabled={!inputValue.trim() || disabled}>
         <Send className="h-4 w-4" />
       </Button>
     </form>
