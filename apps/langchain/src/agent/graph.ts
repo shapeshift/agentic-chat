@@ -4,8 +4,7 @@
  */
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
-import { tokensSearch } from "../tools/tokensSearch.js";
-import { bebopRate } from "../tools/bebopRate.js";
+import { tokensSearch, bebopRate } from "@agentic-chat/tools"
 import { MemorySaver } from "@langchain/langgraph-checkpoint";
 
 const model = new ChatOpenAI({

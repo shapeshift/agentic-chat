@@ -25,6 +25,9 @@
   "references": [
     {
       "path": "../../utils"
+    },
+    {
+      "path": "../../tools"
     }
   ]
 }
