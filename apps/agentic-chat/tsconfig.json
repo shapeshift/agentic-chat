@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../utils"
+    },
+    {
       "path": "../../tools"
     },
     {

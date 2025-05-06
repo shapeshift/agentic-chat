@@ -108,7 +108,8 @@ export const bebopRate = tool(
       - the slippage (if available)
       - and the price impact (if available)
 
-    Use emojis for each bullet point and format things nicely.`,
+    If the quote is succesful, call the BebopResponseFormatter tool to format it to JSON.
+    `,
     schema: z.object({
       chain: z.string().describe('Chain name, e.g. ethereum, polygon, etc.'),
       fromAsset: z
