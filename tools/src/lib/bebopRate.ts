@@ -22,6 +22,7 @@ export const bebopRate = tool(
       symbol: string;
     };
     amount: string;
+    fromAddress?: string;
   }) => {
     const bebopChainsMap: Record<string, string> = {
       ethereum: 'ethereum',
@@ -53,11 +54,12 @@ export const bebopRate = tool(
     const url = `https://api.bebop.xyz/router/${
       bebopChainsMap[input.chain] ?? input.chain
     }/v1/quote`;
+    const takerAddress = input.fromAddress || '0x0000000000000000000000000000000000000001';
     const reqParams = new URLSearchParams({
       sell_tokens: sellToken,
       buy_tokens: buyToken,
       sell_amounts: amountCryptoBaseUnit,
-      taker_address: '0x0000000000000000000000000000000000000001',
+      taker_address: takerAddress,
       approval_type: 'Standard',
       skip_validation: 'true',
       gasless: 'false',
@@ -70,7 +72,7 @@ export const bebopRate = tool(
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch Bebop quote: ${response.statusText}`);
+      throw new Error(`Failed to fetch Bebop rate: ${response.statusText}`);
     }
 
     const data = (await response.json()) as BebopResponse;
@@ -96,7 +98,7 @@ export const bebopRate = tool(
   },
   {
     name: 'bebopRate',
-    description: `Fetches a swap quote from Bebop and displays it to the user.
+    description: `Fetches a swap rate from Bebop and displays it to the user.
      Returns
     - the buy amount in both base units and human-readable precision - only the buyAmountCryptoPrecision one should be displayed to the user.
     - Also returns buyTokens and sellTokens for display purposes i.e displaying name, symbol, chain etc
@@ -126,6 +128,7 @@ export const bebopRate = tool(
         })
         .describe('Asset to buy'),
       amount: z.string().describe('Amount in human format, e.g. 1 for 1 ETH'),
+      fromAddress: z.string().optional().describe('The address the user is swapping from (optional). Also referred to as "sell address". If the user did not provide it, they will be prompted to do so after getting a rate, before continuing.'),
     }),
   }
 );
