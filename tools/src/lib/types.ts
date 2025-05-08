@@ -25,7 +25,7 @@ export interface BebopToken {
   amount: string;
   symbol: string;
   name?: string;
-  address?: string;
+  address?: Address;
   decimals: number;
   priceUsd?: number;
   minimumAmount?: string;

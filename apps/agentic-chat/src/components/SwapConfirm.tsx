@@ -1,63 +1,131 @@
-import React from 'react';
-import { useAccount, useSendTransaction } from 'wagmi';
+import React, { useEffect, useMemo } from 'react';
+import { useAccount, useSendTransaction, useReadContract } from 'wagmi';
+import { useQueryClient } from '@tanstack/react-query';
+import { erc20Abi, encodeFunctionData, getAddress } from 'viem';
+import { AIMessage } from '@langchain/core/messages';
 import { BebopQuote } from '../../../../tools/src/lib/types';
-import { hexToBigInt,  } from 'viem';
 
-interface SwapConfirmProps {
-  quote: BebopQuote;
-  llmMessage?: string;
+type SwapConfirmProps = {
+  quote: BebopQuote,
+  llmMessage?: string,
+  onSwapComplete?: (message: AIMessage) => void
 }
 
-export const SwapConfirm: React.FC<SwapConfirmProps> = ({ quote, llmMessage }) => {
+export const SwapConfirm: React.FC<SwapConfirmProps> = ({ quote, llmMessage, onSwapComplete }) => {
   const { address } = useAccount();
-  const { sendTransaction, isPending, isSuccess, isError, error, data } = useSendTransaction();
+  const queryClient = useQueryClient();
 
-  const handleApprove = () => {
+  const { sendTransaction: sendApproval, isPending: isApprovalPending, isSuccess: isApprovalSuccess } = useSendTransaction();
+  const { sendTransaction: sendSwap, isPending: isSwapPending, isSuccess: isSwapSuccess, isError: isSwapError, error: swapError, data: swapData } = useSendTransaction();
+
+  const { data: allowance, isLoading: isAllowanceLoading } = useReadContract({
+    address: getAddress(Object.keys(quote?.sellTokens)[0]),
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: [address as `0x${string}`, quote?.approvalTarget as `0x${string}`],
+  });
+
+  const needsApproval = useMemo(() => {
+  if (isAllowanceLoading) return false
+
+  return BigInt(allowance ?? 0n) < BigInt((Object.values(quote?.sellTokens)[0].amount));
+  }, [allowance, quote, isAllowanceLoading]);
+
+
+  const handleApprove = async () => {
+    if (!quote || !address) return;
+
+    try {
+      const approvalData = {
+        to: getAddress(Object.keys(quote?.sellTokens)[0]),
+        data: encodeFunctionData({
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [quote.approvalTarget as `0x${string}`, BigInt((Object.values(quote?.sellTokens)[0].amount))],
+          }),
+      };
+
+      sendApproval(approvalData);
+    } catch (error) {
+      console.error('Approval error:', error);
+    }
+  };
+
+  const handleSwap = async () => {
     if (!quote || !address) return;
     const tx = quote?.tx;
     if (!tx) return;
-    sendTransaction({
-      to: tx.to,
-      data: tx.data,
-      value: hexToBigInt(tx.value),
-      chainId: tx.chainId,
+
+    sendSwap({
+      to: tx.to as `0x${string}`,
+      data: tx.data as `0x${string}`,
+      value: BigInt(tx.value),
     });
   };
 
+  useEffect(() => {
+    if (isApprovalSuccess) {
+      // Invalidate the allowance query to trigger a refetch
+      queryClient.invalidateQueries({
+        queryKey: ['readContract', {
+          address: quote?.sellTokens?.[0]?.address,
+          functionName: 'allowance',
+          args: [address, quote?.approvalTarget],
+        }],
+      });
+    }
+  }, [isApprovalSuccess, queryClient, quote, address]);
+
+  useEffect(() => {
+    if (isSwapSuccess && swapData && onSwapComplete) {
+      const message = new AIMessage({
+        content: `Swap completed successfully! Transaction hash: ${swapData}`,
+        additional_kwargs: {
+          swapData: {
+            hash: swapData,
+            from: quote.sellTokens[0].symbol,
+            to: quote.buyTokens[0].symbol,
+            amount: quote.sellTokens[0].amount,
+            received: quote.buyTokens[0].amount,
+          }
+        }
+      });
+      onSwapComplete(message);
+    }
+  }, [isSwapSuccess, swapData, onSwapComplete, quote]);
+
   return (
-    <div className="p-4 border rounded bg-muted">
-      {llmMessage && <div className="mb-4 whitespace-pre-line">{llmMessage}</div>}
-      <div className="flex gap-2 mt-4">
+    <div className="flex flex-col gap-4 p-4 bg-gray-100 rounded-lg">
+      <div className="text-sm text-gray-600">{llmMessage}</div>
+
+      {needsApproval ? (
         <button
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition-colors"
           onClick={handleApprove}
-          disabled={isPending || !address}
+          disabled={isApprovalPending}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
         >
-          {isPending ? 'Sending...' : isSuccess ? 'Swap Sent!' : 'Approve Swap'}
+          {isApprovalPending ? 'Approving...' : 'Approve Token'}
         </button>
+      ) : (
         <button
-          className="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded border border-red-300 transition-colors"
-          onClick={() => console.log('Cancel Swap')}
-          disabled={isPending}
+          onClick={handleSwap}
+          disabled={isSwapPending}
+          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400"
         >
-          Cancel
+          {isSwapPending ? 'Swapping...' : 'Confirm Swap'}
         </button>
-      </div>
-      {isError && (
-        <div className="mt-2 text-red-600 text-sm">{error?.message || 'Transaction failed.'}</div>
       )}
-      {isSuccess && data && (
-        <div className="mt-2 text-green-600 text-sm">
-          Transaction sent!{' '}
-          <a
-            href={`https://etherscan.io/tx/${data.hash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            View on Etherscan
-          </a>
-        </div>
+
+      {isApprovalSuccess && (
+        <div className="text-green-600">Token approved successfully!</div>
+      )}
+
+      {isSwapSuccess && (
+        <div className="text-green-600">Swap completed successfully!</div>
+      )}
+
+      {isSwapError && (
+        <div className="text-red-600">Error: {swapError?.message}</div>
       )}
     </div>
   );
