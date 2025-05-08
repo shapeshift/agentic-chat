@@ -5,8 +5,12 @@ import { SidebarRight } from '../../components/sidebar-right';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '../../components/ui/breadcrumb';
 import { Separator } from '../../components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '../../components/ui/sidebar';
+import { useAccount } from 'wagmi';
 
 export const Dashboard = () => {
+  const { address } = useAccount()
+  console.log({address})
+
   return (
     <SidebarProvider>
       <SidebarLeft />
