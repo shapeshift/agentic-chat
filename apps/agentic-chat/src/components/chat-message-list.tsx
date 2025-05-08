@@ -4,6 +4,7 @@ import React from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
 import { MessageList } from '../types/message';
+import { SwapConfirm } from './SwapConfirm';
 
 interface ChatMessageListProps {
   messages: MessageList;
@@ -25,7 +26,9 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
                   : 'bg-muted'
               )}
             >
-              {message.content}
+              {message.quote
+                ? <SwapConfirm quote={message.quote} llmMessage={message.content} />
+                : message.content}
             </div>
           </div>
         ))}

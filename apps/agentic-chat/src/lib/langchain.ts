@@ -64,5 +64,6 @@ export const runMessageGraph = async (message: string, threadId: string = 'defau
       }
     }
   );
-  return finalState.messages[finalState.messages.length - 1].content;
+
+  return finalState.messages
 };

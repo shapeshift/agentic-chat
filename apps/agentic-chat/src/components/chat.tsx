@@ -34,10 +34,15 @@ export const Chat: React.FC = () => {
       const aiResponse = await runMessageGraph(content);
 
       // Add AI response
+      const maybeQuote = aiResponse.find(message => message.name === 'bebopRate' && message.artifact)
+      const maybeQuoteData = maybeQuote?.artifact?.originalData
+      const maybeContentMessage = aiResponse[aiResponse.length - 1].content;
+      console.log({maybeQuoteData})
       const aiMessage: Message = {
         id: (messages.length + 2).toString(),
         sender: 'ai',
-        content: aiResponse,
+        content:  maybeContentMessage,
+        quote: maybeQuote,
       };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {

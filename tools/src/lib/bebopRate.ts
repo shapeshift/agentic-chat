@@ -88,13 +88,15 @@ export const bebopRate = tool(
       input.toAsset.precision
     );
 
-    return {
+    const content = {
       buyAmountCryptoBaseUnit,
       buyAmountCryptoPrecision,
       buyTokens: data.routes[0].quote.buyTokens,
       sellTokens: data.routes[0].quote.sellTokens,
       originalData: data,
-    };
+    }
+
+    return [content, content];
   },
   {
     name: 'bebopRate',
@@ -131,5 +133,6 @@ export const bebopRate = tool(
       amount: z.string().describe('Amount in human format, e.g. 1 for 1 ETH'),
       fromAddress: z.string().optional().describe('The address the user is swapping from (optional). Also referred to as "sell address". If the user did not provide it, they will be prompted to do so after getting a rate, before continuing.'),
     }),
+    responseFormat: "content_and_artifact",
   }
 );
