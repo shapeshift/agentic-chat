@@ -1,5 +1,5 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { HumanMessage, AIMessage } from '@langchain/core/messages';
+import { HumanMessage, AIMessage, BaseMessage, ToolMessage } from '@langchain/core/messages';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import {
   StateGraph,
@@ -65,5 +65,5 @@ export const runMessageGraph = async (message: string, threadId: string = 'defau
     }
   );
 
-  return finalState.messages
+  return finalState.messages as (BaseMessage | ToolMessage)[]
 };

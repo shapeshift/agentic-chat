@@ -93,7 +93,7 @@ export const bebopRate = tool(
       buyAmountCryptoPrecision,
       buyTokens: data.routes[0].quote.buyTokens,
       sellTokens: data.routes[0].quote.sellTokens,
-      originalData: data,
+      quote: data.routes?.[0]?.quote,
     }
 
     return [content, content];
@@ -101,17 +101,23 @@ export const bebopRate = tool(
   {
     name: 'bebopRate',
     description: `Fetches a swap rate from Bebop and displays it to the user.
-     Returns
-    - the buy amount in both base units and human-readable precision - only the buyAmountCryptoPrecision one should be displayed to the user.
-    - Also returns buyTokens and sellTokens for display purposes i.e displaying name, symbol, chain etc
-    - The address should also be returned for each token with a link to the respective block explorer (assuming it's not a native token e.g ETH), so users can verify the token.
-    - Also returns original data, so we can show user
-      - the market data of the buy asset (if available)
-      - the slippage (if available)
-      - and the price impact (if available)
 
-    If the quote is succesful, call the BebopResponseFormatter tool to format it to JSON.
-    `,
+Returns:
+- The buy amount in both base units (raw integer, e.g., 32413 for USDC) and human-readable precision (e.g., 0.032413 USDC for 6 decimals).
+- **Always display the precision value to the user (e.g., 0.32413 USDC, 1.12345678 ETH).**
+- The base unit value is for contract/transaction use only (e.g., 32413000 for USDC with 6 decimals, 1000000000000000000 for 1 ETH with 18 decimals).
+- Example: 1 USDC = 1000000 base units (6 decimals), 1 ETH = 1000000000000000000 base units (18 decimals).
+- Returns buyTokens and sellTokens for display purposes (name, symbol, chain, etc).
+- The address should also be returned for each token with a link to the respective block explorer (if not a native token).
+- Also returns original data, so we can show user:
+  - the market data of the buy asset (if available)
+  - the slippage (if available)
+  - and the price impact (if available)
+
+**Instructions**
+- When presenting amounts to the user, always use the precision value (e.g., 0.123456 USDC or 0.1234567812345678 ETH).
+- Only show the base unit value if the user requests technical details or for contract/transaction purposes.
+`,
     schema: z.object({
       chain: z.string().describe('Chain name, e.g. ethereum, polygon, etc.'),
       fromAsset: z

@@ -1,3 +1,5 @@
+import { Address, Hex } from "viem";
+
 export interface PortalsToken {
   address: string;
   symbol: string;
@@ -22,14 +24,52 @@ export interface TokenSearchResult {
 export interface BebopToken {
   amount: string;
   symbol: string;
-  name: string;
-  address: string;
+  name?: string;
+  address?: string;
   decimals: number;
+  priceUsd?: number;
+  minimumAmount?: string;
+  price?: number;
+  priceBeforeFee?: number;
+  amountBeforeFee?: string;
+  deltaFromExpected?: number;
+}
+
+export interface BebopTxData {
+  chainId: number;
+  from: Address;
+  to: Address;
+  value: Hex;
+  data: Hex;
+  gas?: number | null;
+  gasPrice?: number | null;
 }
 
 export interface BebopQuote {
+  type: string;
+  status: string;
+  quoteId: string;
+  chainId: number;
+  approvalType: string;
+  nativeToken: string;
+  taker: string;
+  receiver: string;
+  expiry: number;
+  slippage: number;
+  gasFee: {
+    native: string;
+    usd: number;
+  };
   buyTokens: Record<string, BebopToken>;
   sellTokens: Record<string, BebopToken>;
+  settlementAddress: string;
+  approvalTarget: string;
+  requiredSignatures: string[];
+  priceImpact?: number | null;
+  warnings: Array<{ code: number; message: string }>;
+  tx: BebopTxData;
+  hooksHash: string;
+  solver: string;
 }
 
 export interface BebopRoute {

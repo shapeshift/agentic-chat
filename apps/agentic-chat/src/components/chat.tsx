@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { runMessageGraph } from '../lib/langchain';
+import { MessageContent, ToolMessage } from '@langchain/core/messages';
+import { BebopQuote, BebopResponse } from '../../../../tools/src/lib/types';
 
 interface Message {
   id: string;
@@ -34,15 +36,15 @@ export const Chat: React.FC = () => {
       const aiResponse = await runMessageGraph(content);
 
       // Add AI response
-      const maybeQuote = aiResponse.find(message => message.name === 'bebopRate' && message.artifact)
-      const maybeQuoteData = maybeQuote?.artifact?.originalData
-      const maybeContentMessage = aiResponse[aiResponse.length - 1].content;
-      console.log({maybeQuoteData})
+      const maybeQuote = aiResponse.find(message => message.name === 'bebopRate' && message.artifact) as ToolMessage | undefined
+      const maybeQuoteData = (maybeQuote?.artifact?.quote) as BebopQuote | undefined
+      console.log({maybeQuoteData, maybeQuote, aiResponse})
+      const maybeContentMessage = aiResponse[aiResponse.length - 1].content as string
       const aiMessage: Message = {
         id: (messages.length + 2).toString(),
         sender: 'ai',
         content:  maybeContentMessage,
-        quote: maybeQuote,
+        quote: maybeQuoteData,
       };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
