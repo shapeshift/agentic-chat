@@ -6,6 +6,7 @@ import {
   MessagesAnnotation,
   START,
   END,
+  MemorySaver,
 } from '@langchain/langgraph/web';
 import { tokensSearch, bebopRate } from '@agentic-chat/tools';
 
@@ -46,13 +47,22 @@ const workflow = new StateGraph(MessagesAnnotation)
   .addEdge('tools', 'agent')
   .addConditionalEdges('agent', shouldContinue);
 
+// Adds persistence
+const checkpointer = new MemorySaver();
 // Compile the workflow
-const app = workflow.compile();
+const app = workflow.compile({ checkpointer });
 
 // Export the function to run the agent
-export const runMessageGraph = async (message: string) => {
-  const finalState = await app.invoke({
-    messages: [new HumanMessage(message)],
-  });
+export const runMessageGraph = async (message: string, threadId: string = 'default-thread') => {
+  const finalState = await app.invoke(
+    {
+      messages: [new HumanMessage(message)],
+    },
+    {
+      configurable: {
+        thread_id: threadId
+      }
+    }
+  );
   return finalState.messages[finalState.messages.length - 1].content;
 };
