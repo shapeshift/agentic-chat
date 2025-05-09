@@ -3746,6 +3746,11 @@
   resolved "https://registry.npmjs.org/@sec-ant/readable-stream/-/readable-stream-0.4.1.tgz"
   integrity sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==
 
+"@shapeshiftoss/caip@8.15.0":
+  version "8.15.0"
+  resolved "https://registry.yarnpkg.com/@shapeshiftoss/caip/-/caip-8.15.0.tgz#ab3d530973a80d29e3d2409bdd9956a7c4376dbc"
+  integrity sha512-G5SNuqabE+zj2XYwg5Z/8WlfDPRsaqcnh4KUIKhJl22mygnFNWb2XNKkgtrNzB969QHZ7xMxCtSR7m067GywrQ==
+
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz"
