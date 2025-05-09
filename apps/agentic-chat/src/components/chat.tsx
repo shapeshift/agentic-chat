@@ -35,17 +35,24 @@ export const Chat: React.FC = () => {
       setMessages((prev) => [...prev, userMessage]);
 
       // Process message through LangGraph
-      const aiResponse = await runMessageGraph(address ? `My from address is ${address}.\n ${content}` : content);
+      const aiResponse = await runMessageGraph(
+        address ? `My from address is ${address}.\n ${content}` : content
+      );
 
       // Add AI response
-      const maybeQuote = aiResponse.find(message => message.name === 'bebopRate' && message.artifact) as ToolMessage | undefined
-      const maybeQuoteData = (maybeQuote?.artifact?.quote) as BebopQuote | undefined
-      console.log({maybeQuoteData, maybeQuote, aiResponse})
-      const maybeContentMessage = aiResponse[aiResponse.length - 1].content as string
+      const maybeQuote = aiResponse.find(
+        (message) => message.name === 'bebopRate' && message.artifact
+      ) as ToolMessage | undefined;
+      const maybeQuoteData = maybeQuote?.artifact?.quote as
+        | BebopQuote
+        | undefined;
+      console.log({ maybeQuoteData, maybeQuote, aiResponse });
+      const maybeContentMessage = aiResponse[aiResponse.length - 1]
+        .content as string;
       const aiMessage: Message = {
         id: (messages.length + 2).toString(),
         sender: 'ai',
-        content:  maybeContentMessage,
+        content: maybeContentMessage,
         quote: maybeQuoteData,
       };
       setMessages((prev) => [...prev, aiMessage]);

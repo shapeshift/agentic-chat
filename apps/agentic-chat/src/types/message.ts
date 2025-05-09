@@ -3,6 +3,6 @@ export type Message = {
   sender: 'user' | 'ai';
   content?: string;
   quote?: any;
-}
+};
 
 export type MessageList = Message[];

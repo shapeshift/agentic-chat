@@ -4,7 +4,11 @@
  */
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { ChatOpenAI } from '@langchain/openai';
-import { bebopResponseFormatterTool, tokensSearch, bebopRate } from '@agentic-chat/tools';
+import {
+  bebopResponseFormatterTool,
+  tokensSearch,
+  bebopRate,
+} from '@agentic-chat/tools';
 import { MemorySaver } from '@langchain/langgraph-checkpoint';
 import { SYSTEM_PROMPT } from '@agentic-chat/utils';
 

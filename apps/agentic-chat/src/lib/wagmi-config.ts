@@ -1,5 +1,5 @@
-import { http, createConfig } from 'wagmi'
-import { arbitrum, mainnet } from 'wagmi/chains'
+import { http, createConfig } from 'wagmi';
+import { arbitrum, mainnet } from 'wagmi/chains';
 
 export const wagmiConfig = createConfig({
   chains: [mainnet, arbitrum],
@@ -7,4 +7,4 @@ export const wagmiConfig = createConfig({
     [mainnet.id]: http(),
     [arbitrum.id]: http(),
   },
-})
+});

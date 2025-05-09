@@ -54,7 +54,8 @@ export const bebopRate = tool(
     const url = `https://api.bebop.xyz/router/${
       bebopChainsMap[input.chain] ?? input.chain
     }/v1/quote`;
-    const takerAddress = input.fromAddress || '0x0000000000000000000000000000000000000001';
+    const takerAddress =
+      input.fromAddress || '0x0000000000000000000000000000000000000001';
     const reqParams = new URLSearchParams({
       sell_tokens: sellToken,
       buy_tokens: buyToken,
@@ -94,7 +95,7 @@ export const bebopRate = tool(
       buyTokens: data.routes[0].quote.buyTokens,
       sellTokens: data.routes[0].quote.sellTokens,
       quote: data.routes?.[0]?.quote,
-    }
+    };
 
     return [content, content];
   },
@@ -119,7 +120,9 @@ Returns:
 - Only show the base unit value if the user requests technical details or for contract/transaction purposes.
 `,
     schema: z.object({
-      chain: z.string().describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
+      chain: z
+        .string()
+        .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
       fromAsset: z
         .object({
           address: z.string(),
@@ -137,8 +140,13 @@ Returns:
         })
         .describe('Asset to buy'),
       amount: z.string().describe('Amount in human format, e.g. 1 for 1 ETH'),
-      fromAddress: z.string().optional().describe('The address the user is swapping from (optional). Also referred to as "sell address". If the user did not provide it, they will be prompted to do so after getting a rate, before continuing.'),
+      fromAddress: z
+        .string()
+        .optional()
+        .describe(
+          'The address the user is swapping from (optional). Also referred to as "sell address". If the user did not provide it, they will be prompted to do so after getting a rate, before continuing.'
+        ),
     }),
-    responseFormat: "content_and_artifact",
+    responseFormat: 'content_and_artifact',
   }
 );

@@ -1,5 +1,10 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { HumanMessage, AIMessage, BaseMessage, ToolMessage } from '@langchain/core/messages';
+import {
+  HumanMessage,
+  AIMessage,
+  BaseMessage,
+  ToolMessage,
+} from '@langchain/core/messages';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import {
   StateGraph,
@@ -53,17 +58,20 @@ const checkpointer = new MemorySaver();
 const app = workflow.compile({ checkpointer });
 
 // Export the function to run the agent
-export const runMessageGraph = async (message: string, threadId: string = 'default-thread') => {
+export const runMessageGraph = async (
+  message: string,
+  threadId: string = 'default-thread'
+) => {
   const finalState = await app.invoke(
     {
       messages: [new HumanMessage(message)],
     },
     {
       configurable: {
-        thread_id: threadId
-      }
+        thread_id: threadId,
+      },
     }
   );
 
-  return finalState.messages as (BaseMessage | ToolMessage)[]
+  return finalState.messages as (BaseMessage | ToolMessage)[];
 };

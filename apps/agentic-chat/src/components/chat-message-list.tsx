@@ -26,9 +26,14 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
                   : 'bg-muted'
               )}
             >
-              {message.quote
-                ? <SwapConfirm quote={message.quote} llmMessage={message.content} />
-                : message.content}
+              {message.quote ? (
+                <SwapConfirm
+                  quote={message.quote}
+                  llmMessage={message.content}
+                />
+              ) : (
+                message.content
+              )}
             </div>
           </div>
         ))}

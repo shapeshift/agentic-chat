@@ -1,4 +1,4 @@
-import { Address, Hex } from "viem";
+import { Address, Hex } from 'viem';
 
 export interface PortalsToken {
   address: string;

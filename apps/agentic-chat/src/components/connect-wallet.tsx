@@ -10,8 +10,15 @@ export const ConnectWallet: React.FC = () => {
   if (isConnected) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground truncate max-w-[120px]">{address}</span>
-        <Button variant="ghost" size="icon" onClick={() => disconnect()} title="Disconnect">
+        <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+          {address}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => disconnect()}
+          title="Disconnect"
+        >
           ×
         </Button>
       </div>
@@ -19,7 +26,7 @@ export const ConnectWallet: React.FC = () => {
   }
 
   // Just Rabby for testing
-  const _connectors = connectors.filter((c => c.id === 'io.rabby'))
+  const _connectors = connectors.filter((c) => c.id === 'io.rabby');
 
   return (
     <div className="flex gap-2">

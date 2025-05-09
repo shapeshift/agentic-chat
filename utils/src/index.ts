@@ -16,7 +16,6 @@ export const toBaseUnit = (
   return bn.multipliedBy(new BigNumber(10).pow(precision)).toString();
 };
 
-
 export const SYSTEM_PROMPT = `You are a trading agent helping users swap tokens.
 
 Before fetching a quote with the bebop rate agent, always fetch tokens first with the search agent.
@@ -39,4 +38,4 @@ Be concise but informative in your responses.
 
 Only use the BebopResponseFormatter tool after you have received a quote from the bebopRate tool and the user has confirmed the swap. Do NOT use the formatter tool for token search results or any other step.
 
-`
+`;
