@@ -1,6 +1,6 @@
 import { Address, Hex } from 'viem';
 
-export interface PortalsToken {
+export type PortalsToken = {
   address: string;
   symbol: string;
   name: string;
@@ -9,19 +9,19 @@ export interface PortalsToken {
   logoURI: string;
   volumeUsd7d: number;
   priceUsd: number;
-}
+};
 
-export interface PortalsResponse {
+export type PortalsResponse = {
   tokens: PortalsToken[];
   total: number;
-}
+};
 
-export interface TokenSearchResult {
+export type TokenSearchResult = {
   tokens: PortalsToken[];
   total: number;
-}
+};
 
-export interface BebopToken {
+export type BebopToken = {
   amount: string;
   symbol: string;
   name?: string;
@@ -33,9 +33,9 @@ export interface BebopToken {
   priceBeforeFee?: number;
   amountBeforeFee?: string;
   deltaFromExpected?: number;
-}
+};
 
-export interface BebopTxData {
+export type BebopTxData = {
   chainId: number;
   from: Address;
   to: Address;
@@ -43,9 +43,9 @@ export interface BebopTxData {
   data: Hex;
   gas?: number | null;
   gasPrice?: number | null;
-}
+};
 
-export interface BebopQuote {
+export type BebopQuote = {
   type: string;
   status: string;
   quoteId: string;
@@ -70,12 +70,20 @@ export interface BebopQuote {
   tx: BebopTxData;
   hooksHash: string;
   solver: string;
-}
+};
 
-export interface BebopRoute {
+export type BebopRoute = {
   quote: BebopQuote;
-}
+};
 
-export interface BebopResponse {
+export type BebopResponse = {
   routes: BebopRoute[];
-}
+};
+
+export type Asset = {
+  assetId: string;
+  chainId: string;
+  symbol: string;
+  name: string;
+  precision: number;
+};
