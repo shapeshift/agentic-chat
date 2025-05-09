@@ -60,15 +60,18 @@ const app = workflow.compile({ checkpointer });
 // Export the function to run the agent
 export const runMessageGraph = async (
   message: string,
-  threadId: string = 'default-thread'
+  isSystemMessage: boolean = false
 ) => {
+
+  const messages = isSystemMessage ? [new AIMessage(message)] : [new HumanMessage(message)];
+
   const finalState = await app.invoke(
     {
-      messages: [new HumanMessage(message)],
+      messages: messages,
     },
     {
       configurable: {
-        thread_id: threadId,
+        thread_id: 'default_thread',
       },
     }
   );
