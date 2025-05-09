@@ -51,6 +51,10 @@ export const bebopRate = tool(
         : input.toAsset.address
     );
 
+    const env = import.meta?.env ? import.meta.env : process.env;
+
+    const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY || env.BEBOP_API_KEY;
+
     const url = `https://api.bebop.xyz/router/${
       bebopChainsMap[input.chain] ?? input.chain
     }/v1/quote`;
@@ -70,7 +74,10 @@ export const bebopRate = tool(
     const fullUrl = `${url}?${reqParams.toString()}`;
     const response = await fetch(fullUrl, {
       method: 'GET',
-      headers: { accept: 'application/json' },
+      headers: {
+        accept: 'application/json',
+        ['source-auth']: BEBOP_API_KEY,
+      },
     });
 
     if (!response.ok) {
