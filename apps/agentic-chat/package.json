@@ -29,7 +29,9 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-router-dom": "6.29.0",
-    "viem": "^2.7.9"
+    "@tanstack/react-query": "^5.75.5",
+    "viem": "^2.7.9",
+    "wagmi": "^2.15.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",

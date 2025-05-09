@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { runMessageGraph } from '../lib/langchain';
+import { MessageContent, ToolMessage } from '@langchain/core/messages';
+import { BebopQuote, BebopResponse } from '../../../../tools/src/lib/types';
+import { useAccount } from 'wagmi';
 
 interface Message {
   id: string;
@@ -12,6 +15,7 @@ interface Message {
 }
 
 export const Chat: React.FC = () => {
+  const { address } = useAccount();
   const [messages, setMessages] = useState<Message[]>([
     // Example messages
     { id: '1', sender: 'ai', content: 'Hello! How can I help you today?' },
@@ -31,13 +35,25 @@ export const Chat: React.FC = () => {
       setMessages((prev) => [...prev, userMessage]);
 
       // Process message through LangGraph
-      const aiResponse = await runMessageGraph(content);
+      const aiResponse = await runMessageGraph(
+        address ? `My from address is ${address}.\n ${content}` : content
+      );
 
       // Add AI response
+      const maybeQuote = aiResponse.find(
+        (message) => message.name === 'bebopRate' && message.artifact
+      ) as ToolMessage | undefined;
+      const maybeQuoteData = maybeQuote?.artifact?.quote as
+        | BebopQuote
+        | undefined;
+      console.log({ maybeQuoteData, maybeQuote, aiResponse });
+      const maybeContentMessage = aiResponse[aiResponse.length - 1]
+        .content as string;
       const aiMessage: Message = {
         id: (messages.length + 2).toString(),
         sender: 'ai',
-        content: aiResponse,
+        content: maybeContentMessage,
+        quote: maybeQuoteData,
       };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {

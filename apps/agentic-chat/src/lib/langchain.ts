@@ -1,11 +1,17 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { HumanMessage, AIMessage } from '@langchain/core/messages';
+import {
+  HumanMessage,
+  AIMessage,
+  BaseMessage,
+  ToolMessage,
+} from '@langchain/core/messages';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import {
   StateGraph,
   MessagesAnnotation,
   START,
   END,
+  MemorySaver,
 } from '@langchain/langgraph/web';
 import { tokensSearch, bebopRate } from '@agentic-chat/tools';
 
@@ -46,13 +52,26 @@ const workflow = new StateGraph(MessagesAnnotation)
   .addEdge('tools', 'agent')
   .addConditionalEdges('agent', shouldContinue);
 
+// Adds persistence
+const checkpointer = new MemorySaver();
 // Compile the workflow
-const app = workflow.compile();
+const app = workflow.compile({ checkpointer });
 
 // Export the function to run the agent
-export const runMessageGraph = async (message: string) => {
-  const finalState = await app.invoke({
-    messages: [new HumanMessage(message)],
-  });
-  return finalState.messages[finalState.messages.length - 1].content;
+export const runMessageGraph = async (
+  message: string,
+  threadId: string = 'default-thread'
+) => {
+  const finalState = await app.invoke(
+    {
+      messages: [new HumanMessage(message)],
+    },
+    {
+      configurable: {
+        thread_id: threadId,
+      },
+    }
+  );
+
+  return finalState.messages as (BaseMessage | ToolMessage)[];
 };
