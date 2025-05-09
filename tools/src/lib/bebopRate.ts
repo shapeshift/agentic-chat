@@ -64,6 +64,7 @@ export const bebopRate = tool(
       approval_type: 'Standard',
       skip_validation: 'true',
       gasless: 'false',
+      source: 'shapeshift'
     });
 
     const fullUrl = `${url}?${reqParams.toString()}`;
