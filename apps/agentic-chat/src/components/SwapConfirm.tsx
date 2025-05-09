@@ -1,9 +1,12 @@
+import { estimateGas } from '@wagmi/core'
 import React, { useEffect, useMemo } from 'react';
 import { useAccount, useSendTransaction, useReadContract } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { erc20Abi, encodeFunctionData, getAddress } from 'viem';
 import { AIMessage } from '@langchain/core/messages';
 import { BebopQuote } from '../../../../tools/src/lib/types';
+import { useSwitchChain } from 'wagmi'
+import { wagmiConfig } from '@/lib/wagmi-config';
 
 type SwapConfirmProps = {
   quote: BebopQuote,
@@ -15,11 +18,14 @@ export const SwapConfirm: React.FC<SwapConfirmProps> = ({ quote, llmMessage, onS
   const { address } = useAccount();
   const queryClient = useQueryClient();
 
-  const { sendTransaction: sendApproval, isPending: isApprovalPending, isSuccess: isApprovalSuccess } = useSendTransaction();
+  const { sendTransactionAsync: sendApprovalAsync, isPending: isApprovalPending, isSuccess: isApprovalSuccess } = useSendTransaction();
   const { sendTransaction: sendSwap, isPending: isSwapPending, isSuccess: isSwapSuccess, isError: isSwapError, error: swapError, data: swapData } = useSendTransaction();
+  const { chains, switchChainAsync } = useSwitchChain()
 
-  const { data: allowance, isLoading: isAllowanceLoading } = useReadContract({
+
+  const { queryKey: allowanceQueryKey, data: allowance, isLoading: isAllowanceLoading } = useReadContract({
     address: getAddress(Object.keys(quote?.sellTokens)[0]),
+    chainId: quote.chainId,
     abi: erc20Abi,
     functionName: 'allowance',
     args: [address as `0x${string}`, quote?.approvalTarget as `0x${string}`],
@@ -37,6 +43,7 @@ export const SwapConfirm: React.FC<SwapConfirmProps> = ({ quote, llmMessage, onS
 
     try {
       const approvalData = {
+        chainId: quote.chainId,
         to: getAddress(Object.keys(quote?.sellTokens)[0]),
         data: encodeFunctionData({
           abi: erc20Abi,
@@ -45,7 +52,14 @@ export const SwapConfirm: React.FC<SwapConfirmProps> = ({ quote, llmMessage, onS
           }),
       };
 
-      sendApproval(approvalData);
+      await switchChainAsync({chainId: quote.chainId});
+      await sendApprovalAsync (approvalData);
+      await queryClient.invalidateQueries(
+        {
+        queryKey: allowanceQueryKey,
+        }
+      );
+
     } catch (error) {
       console.error('Approval error:', error);
     }
@@ -55,11 +69,22 @@ export const SwapConfirm: React.FC<SwapConfirmProps> = ({ quote, llmMessage, onS
     if (!quote || !address) return;
     const tx = quote?.tx;
     if (!tx) return;
+    if (!tx.gas) return;
 
+    await switchChainAsync({chainId: quote.chainId});
+
+    // const gas = await estimateGas(wagmiConfig, {
+      // to: tx.to as `0x${string}`,
+      // data: tx.data as `0x${string}`,
+      // value: BigInt(tx.value),
+      // chainId: quote.chainId,
+    // });
     sendSwap({
       to: tx.to as `0x${string}`,
       data: tx.data as `0x${string}`,
+      // gas,
       value: BigInt(tx.value),
+      chainId: quote.chainId,
     });
   };
 

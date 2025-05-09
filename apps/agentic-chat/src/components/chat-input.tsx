@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Send } from 'lucide-react';
@@ -14,7 +14,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   disabled = false,
 }) => {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState('Swap 1 USDC to eth on arbitrum');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
