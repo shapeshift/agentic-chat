@@ -4,14 +4,22 @@ import React, { useState } from 'react';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { runMessageGraph } from '../lib/langchain';
-import { MessageContent, ToolMessage } from '@langchain/core/messages';
-import { BebopQuote, BebopResponse } from '../../../../tools/src/lib/types';
+import { BaseMessage,  ToolMessage } from '@langchain/core/messages';
+import { BebopQuote  } from '../../../../tools/src/lib/types';
 import { useAccount } from 'wagmi';
 
-interface Message {
+type Message  = {
   id: string;
   sender: 'user' | 'ai';
   content: string;
+  quote?: BebopQuote;
+}
+
+const getArtifact = (message: ToolMessage | BaseMessage) => {
+  if ('artifact' in message) {
+    return (message as ToolMessage).artifact;
+  }
+  return undefined;
 }
 
 export const Chat: React.FC = () => {
@@ -41,12 +49,11 @@ export const Chat: React.FC = () => {
 
       // Add AI response
       const maybeQuote = aiResponse.find(
-        (message) => message.name === 'bebopRate' && message.artifact
+        (message) => message.name === 'bebopRate' && getArtifact(message)
       ) as ToolMessage | undefined;
       const maybeQuoteData = maybeQuote?.artifact?.quote as
         | BebopQuote
         | undefined;
-      console.log({ maybeQuoteData, maybeQuote, aiResponse });
       const maybeContentMessage = aiResponse[aiResponse.length - 1]
         .content as string;
       const aiMessage: Message = {
@@ -77,3 +84,5 @@ export const Chat: React.FC = () => {
     </div>
   );
 };
+
+
