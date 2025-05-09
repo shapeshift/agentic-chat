@@ -6,6 +6,7 @@ import { Asset, BebopResponse } from './types';
 import {
   ASSET_NAMESPACE,
   CHAIN_NAMESPACE,
+  ChainId,
   ChainReference,
   toAssetId,
   toChainId,
@@ -108,10 +109,9 @@ export const bebopRate = tool(
 
     const sellToken = Object.values(quote.sellTokens)[0];
     const buyToken = Object.values(quote.buyTokens)[0];
-    const chainId = toChainId({
-      chainNamespace: CHAIN_NAMESPACE.Evm,
-      chainReference: quote.chainId.toString() as ChainReference,
-    });
+    // TODO(gomes): re-declare caip from web as a monorepo package here, but this will work for now
+    // published caip is way too old and misses many chains
+    const chainId = `${CHAIN_NAMESPACE.Evm}:${quote.chainId}` as ChainId
     const sellAsset: Asset = {
       name: sellToken.name ?? '',
       symbol: sellToken.symbol,
@@ -136,44 +136,45 @@ export const bebopRate = tool(
     };
 
     const content = {
-      sellAmountCryptoBaseUnit: sellAmountCryptoBaseUnit,
       sellAmountCryptoPrecision: input.amount,
+      buyAmountCryptoPrecision,
+      sellAsset,
+      buyAsset,
+    };
+
+    const artifacts = {
+      swapperName: 'bebop',
+      sellAmountCryptoBaseUnit,
+      sellAmountCryptoPrecision: input.amount,
+      buyAmountCryptoBaseUnit,
+      buyAmountCryptoPrecision,
       approvalTarget: quote.approvalTarget,
       sellAsset,
       buyAsset,
       txData: quote.tx,
-      buyAmountCryptoBaseUnit,
-      buyAmountCryptoPrecision,
       buyTokens: quote.buyTokens,
       sellTokens: quote.sellTokens,
       quote: quote,
-    };
+    }
 
-    return [content, content];
+    return [content, artifacts];
   },
   {
     name: 'bebopRate',
+    recursionLimit: 2,
     description: `Fetches a swap rate from Bebop and displays it to the user.
 
-Returns an object with the following fields (for internal use, unless otherwise specified):
-- sellAmountCryptoBaseUnit: The sell amount in base units (raw integer, e.g., 1000000 for 1 USDC with 6 decimals). **Internal use only.**
+Returns an object with the following fields, for display to the user
 - sellAmountCryptoPrecision: The sell amount in human-readable precision (e.g., 1 for 1 USDC). **Display this to the user.**
-- buyAmountCryptoBaseUnit: The buy amount in base units (raw integer, e.g., 32413 for USDC). **Internal use only.**
 - buyAmountCryptoPrecision: The buy amount in human-readable precision (e.g., 0.032413 for 0.032413 USDC). **Display this to the user.**
-- buyAmount: Alias for buyAmountCryptoPrecision. **Display this to the user.**
-- feeData: Fee data for the quote. **Internal use only.**
-- rate: The calculated rate for the swap. **Internal use only.**
 - swapperName: The name of the swapper (e.g., 'Bebop'). **Internal use only.**
-- buyAsset: Object describing the buy asset (assetId, chainId, symbol, name, precision). **Internal use only.**
-- sellAsset: Object describing the sell asset (assetId, chainId, symbol, name, precision). **Internal use only.**
-- allowanceTarget: The address to approve for token transfers. **Internal use only.**
-- bebopOriginalQuote: The original Bebop quote object. **Internal use only.**
+- buyAsset: Object describing the buy asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
+- sellAsset: Object describing the sell asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
 
 **Instructions for LLM:**
 - Only display the precision values (buyAmountCryptoPrecision, sellAmountCryptoPrecision, or buyAmount) to the user.
-- Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or bebopOriginalQuote to the user unless specifically asked for technical details.
+- Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details.
 - If the user requests technical details, you may show base unit values and other internal fields.
-- Always clarify the number of decimals for each token if needed.
 `,
     schema: z.object({
       chain: z

@@ -1766,6 +1766,24 @@
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
 
+"@langchain/core@^0.3.55":
+  version "0.3.55"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.55.tgz#e8a0d60833cb709ce6ab2ac2d348683b439c9856"
+  integrity sha512-SojY2ugpT6t9eYfFB9Ysvyhhyh+KJTGXs50hdHUE9tAEQWp3WAwoxe4djwJnOZ6fSpWYdpFt2UT2ksHVDy2vXA==
+  dependencies:
+    "@cfworker/json-schema" "^4.0.2"
+    ansi-styles "^5.0.0"
+    camelcase "6"
+    decamelize "1.2.0"
+    js-tiktoken "^1.0.12"
+    langsmith "^0.3.16"
+    mustache "^4.2.0"
+    p-queue "^6.6.2"
+    p-retry "4"
+    uuid "^10.0.0"
+    zod "^3.22.4"
+    zod-to-json-schema "^3.22.3"
+
 "@langchain/langgraph-checkpoint@^0.0.17", "@langchain/langgraph-checkpoint@~0.0.17":
   version "0.0.17"
   resolved "https://registry.yarnpkg.com/@langchain/langgraph-checkpoint/-/langgraph-checkpoint-0.0.17.tgz#d0a8824eb0769567da54262adebe65db4ee6d58f"
@@ -1792,6 +1810,26 @@
     "@langchain/langgraph-sdk" "~0.0.32"
     uuid "^10.0.0"
     zod "^3.23.8"
+
+"@langchain/langgraph@^0.2.69":
+  version "0.2.69"
+  resolved "https://registry.yarnpkg.com/@langchain/langgraph/-/langgraph-0.2.69.tgz#5abd6fbf35d73372543548d6fb090426740730bd"
+  integrity sha512-0/wAi4URNPopAPwApvtNgHhbeop89iZompTP5WvNtsGCqa80dMnA/3zhLNOKpDTm4fcpQvEKYyGn3ulaTegqPA==
+  dependencies:
+    "@langchain/langgraph-checkpoint" "~0.0.17"
+    "@langchain/langgraph-sdk" "~0.0.32"
+    uuid "^10.0.0"
+    zod "^3.23.8"
+
+"@langchain/openai@^0.5.10":
+  version "0.5.10"
+  resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-0.5.10.tgz#f86797a030287fe597257c2586f503808787b7e8"
+  integrity sha512-hBQIWjcVxGS7tgVvgBBmrZ5jSaJ8nu9g6V64/Tx6KGjkW7VdGmUvqCO+koiQCOZVL7PBJkHWAvDsbghPYXiZEA==
+  dependencies:
+    js-tiktoken "^1.0.12"
+    openai "^4.96.0"
+    zod "^3.22.4"
+    zod-to-json-schema "^3.22.3"
 
 "@langchain/openai@^0.5.7":
   version "0.5.8"
