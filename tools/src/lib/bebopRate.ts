@@ -8,9 +8,6 @@ import {
   AssetId,
   CHAIN_NAMESPACE,
   ChainId,
-  ChainReference,
-  toAssetId,
-  toChainId,
 } from '@shapeshiftoss/caip';
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
@@ -157,7 +154,6 @@ export const bebopRate = tool(
   },
   {
     name: 'bebopRate',
-    recursionLimit: 2,
     description: `Fetches a swap rate from Bebop and displays it to the user.
 
 Returns an object with the following fields, for display to the user
