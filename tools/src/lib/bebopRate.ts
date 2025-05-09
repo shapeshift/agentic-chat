@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Asset, BebopResponse } from './types';
 import {
   ASSET_NAMESPACE,
+  AssetId,
   CHAIN_NAMESPACE,
   ChainId,
   ChainReference,
@@ -112,27 +113,21 @@ export const bebopRate = tool(
     // TODO(gomes): re-declare caip from web as a monorepo package here, but this will work for now
     // published caip is way too old and misses many chains
     const chainId = `${CHAIN_NAMESPACE.Evm}:${quote.chainId}` as ChainId
+    const sellAssetId = `${chainId}/${ASSET_NAMESPACE.erc20}:${sellToken.address}` as AssetId
+    const buyAssetId = `${chainId}/${ASSET_NAMESPACE.erc20}:${buyToken.address}` as AssetId
     const sellAsset: Asset = {
       name: sellToken.name ?? '',
       symbol: sellToken.symbol,
       precision: sellToken.decimals,
       chainId,
-      assetId: toAssetId({
-        chainId,
-        assetNamespace: ASSET_NAMESPACE.erc20,
-        assetReference: sellToken.address ?? '',
-      }),
+      assetId: sellAssetId,
     };
     const buyAsset: Asset = {
       name: buyToken.name ?? '',
       symbol: buyToken.symbol,
       precision: buyToken.decimals,
       chainId,
-      assetId: toAssetId({
-        chainId,
-        assetNamespace: ASSET_NAMESPACE.erc20,
-        assetReference: buyToken.address ?? '',
-      }),
+      assetId: buyAssetId,
     };
 
     const content = {
@@ -157,7 +152,8 @@ export const bebopRate = tool(
       quote: quote,
     }
 
-    return [content, artifacts];
+    const contentString = `You can swap ${content.sellAmountCryptoPrecision} ${content.sellAsset.symbol} for approximately ${content.buyAmountCryptoPrecision} ${content.buyAsset.symbol}.`;
+    return [contentString, artifacts];
   },
   {
     name: 'bebopRate',
@@ -205,5 +201,6 @@ Returns an object with the following fields, for display to the user
         ),
     }),
     responseFormat: 'content_and_artifact',
+    returnDirect: true,
   }
 );
