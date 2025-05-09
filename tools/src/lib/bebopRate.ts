@@ -119,7 +119,7 @@ Returns:
 - Only show the base unit value if the user requests technical details or for contract/transaction purposes.
 `,
     schema: z.object({
-      chain: z.string().describe('Chain name, e.g. ethereum, polygon, etc.'),
+      chain: z.string().describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
       fromAsset: z
         .object({
           address: z.string(),
