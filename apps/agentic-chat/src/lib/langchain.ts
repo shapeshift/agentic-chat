@@ -27,7 +27,7 @@ const model = new ChatOpenAI({
 }).bindTools(tools);
 
 // Define the function that determines whether to continue or not
-function shouldContinue({ messages }: typeof MessagesAnnotation.State) {
+const shouldContinue = ({ messages }: typeof MessagesAnnotation.State) => {
   const lastMessage = messages[messages.length - 1] as AIMessage;
 
   // If the LLM makes a tool call, then we route to the "tools" node
@@ -39,7 +39,7 @@ function shouldContinue({ messages }: typeof MessagesAnnotation.State) {
 }
 
 // Define the function that calls the model
-async function callModel(state: typeof MessagesAnnotation.State) {
+const callModel = async (state: typeof MessagesAnnotation.State) => {
   const response = await model.invoke(state.messages);
   return { messages: [response] };
 }
