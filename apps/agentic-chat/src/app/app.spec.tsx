@@ -25,6 +25,9 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 describe('App', () => {
+    beforeAll(() => {
+        vi.stubEnv('VITE_EVM_MNEMONIC', 'HASHNODE_URL')
+        });
   it('should render successfully', () => {
     const { baseElement } = render(
       <BrowserRouter>
