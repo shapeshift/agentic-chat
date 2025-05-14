@@ -8,9 +8,12 @@ import {
   bebopResponseFormatterTool,
   tokensSearch,
   bebopRate,
+  EvmKit,
 } from '@agentic-chat/tools';
 import { MemorySaver } from '@langchain/langgraph-checkpoint';
 import { SYSTEM_PROMPT } from '@agentic-chat/utils';
+
+const evmKitTools = new EvmKit().getTools();
 
 const model = new ChatOpenAI({
   modelName: 'gpt-4o-mini',
@@ -24,7 +27,8 @@ const checkpointer = new MemorySaver();
 // Create and export the agent
 export const graph = createReactAgent({
   llm: model,
-  tools: [bebopResponseFormatterTool, tokensSearch, bebopRate],
+  // @ts-expect-error TODO: FIXME
+  tools: [bebopResponseFormatterTool, tokensSearch, bebopRate, ...evmKitTools],
   checkpointer,
   prompt: SYSTEM_PROMPT,
 });

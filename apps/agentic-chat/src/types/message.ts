@@ -1,8 +1,3 @@
-export type Message = {
-  id: string;
-  sender: 'user' | 'ai';
-  content?: string;
-  quote?: any;
-};
+import { ChatMessage } from '../components/chat';
 
-export type MessageList = Message[];
+export type MessageList = ChatMessage[];

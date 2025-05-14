@@ -78,6 +78,7 @@ export const bebopRate = tool(
     });
 
     const fullUrl = `${url}?${reqParams.toString()}`;
+    console.log('getting bebop rate')
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
@@ -97,6 +98,8 @@ export const bebopRate = tool(
     }
 
     const quote = data.routes[0].quote
+
+    console.log({quote})
 
     const buyAmountCryptoBaseUnit =
       quote.buyTokens[buyTokenAddress].amount.toString();
@@ -149,7 +152,13 @@ export const bebopRate = tool(
       quote: quote,
     }
 
-    const contentString = `You can swap ${content.sellAmountCryptoPrecision} ${content.sellAsset.symbol} for approximately ${content.buyAmountCryptoPrecision} ${content.buyAsset.symbol}.`;
+    const contentString = `
+    You can swap ${content.sellAmountCryptoPrecision} ${content.sellAsset.symbol} for approximately ${content.buyAmountCryptoPrecision} ${content.buyAsset.symbol}.
+
+    Here its the tx data:
+
+    ${JSON.stringify(quote.tx)}
+    `;
     return [contentString, artifacts];
   },
   {
@@ -191,12 +200,10 @@ Returns an object with the following fields, for display to the user
       amount: z.string().describe('Amount in human format, e.g. 1 for 1 ETH'),
       fromAddress: z
         .string()
-        .optional()
         .describe(
-          'The address the user is swapping from (optional). Also referred to as "sell address". If the user did not provide it, they will be prompted to do so after getting a rate, before continuing.'
+          `The address the user is swapping from (optional). Also referred to as "sell address", and can be gotten using the getAddress() tool if not explicitly provided.`
         ),
     }),
-    responseFormat: 'content_and_artifact',
-    returnDirect: true,
+    responseFormat: 'content_and_artifact'
   }
 );

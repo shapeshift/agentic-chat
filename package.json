@@ -2,7 +2,9 @@
   "name": "@agentic-chat/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "dev": "npx concurrently \"nx run langchain:dev\" \"nx serve agentic-chat\""
+  },
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.25.1",

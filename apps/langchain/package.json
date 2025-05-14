@@ -11,7 +11,8 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "dev": "npx @langchain/langgraph-cli dev",
+    "dev": "npx @langchain/langgraph-cli dev --no-browser",
+    "api": "npx @langchain/langgraph-cli up",
     "test": "npx jest --testPathPattern=\\.test\\.ts$ --testPathIgnorePatterns=\\.int\\.test\\.ts$",
     "test:int": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=\\.int\\.test\\.ts$",
     "format": "prettier --write .",
