@@ -135,6 +135,7 @@ export const bebopRate = tool(
       buyAmountCryptoPrecision,
       sellAsset,
       buyAsset,
+      txData: quote.tx,
     };
 
     const artifacts = {
@@ -152,14 +153,7 @@ export const bebopRate = tool(
       quote: quote,
     }
 
-    const contentString = `
-    You can swap ${content.sellAmountCryptoPrecision} ${content.sellAsset.symbol} for approximately ${content.buyAmountCryptoPrecision} ${content.buyAsset.symbol}.
-
-    Here its the tx data:
-
-    ${JSON.stringify(quote.tx)}
-    `;
-    return [contentString, artifacts];
+    return [content, artifacts];
   },
   {
     name: 'bebopRate',

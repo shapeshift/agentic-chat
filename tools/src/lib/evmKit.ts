@@ -6,6 +6,7 @@ import {
   http,
   PublicClient,
   WalletClient,
+  encodeFunctionData,
 } from "viem";
 import { mnemonicToAccount,  } from "viem/accounts";
 import { arbitrum } from "viem/chains";
@@ -17,6 +18,30 @@ const getNativeBalance = async (publicClient: PublicClient, address: Address): P
   const balance = await publicClient.getBalance({ address });
   return balance;
 };
+
+// ERC20 ABI for allowance check and approval
+const erc20Abi = [
+  {
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" }
+    ],
+    name: "allowance",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" }
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+    type: "function"
+  }
+] as const;
 
 export class EvmKit {
   public walletClient: WalletClient;
@@ -76,14 +101,14 @@ export class EvmKit {
       console.log({to: input.to, value: input.value, data: input.data})
       try {
 
-      const hash = await this.walletClient.sendTransaction({
-        account,
-        to: getAddress(input.to),
-        value: BigInt(input.value),
-        data: input.data,
-        chain: arbitrum,
-      });
-      return hash;
+        const hash = await this.walletClient.sendTransaction({
+          account,
+          to: getAddress(input.to),
+          value: BigInt(input.value),
+          data: input.data,
+          chain: arbitrum,
+        });
+        return hash;
       } catch(err) {
         console.error("Error sending transaction", err);
         throw err
@@ -134,7 +159,86 @@ export class EvmKit {
     }
   );
 
+  getAllowance = tool(
+    async (input: { token: Address; spender: Address }): Promise<string> => {
+      const account = this.walletClient.account;
+      if (!account) throw new Error("No account found");
+
+      try {
+        const allowance = await this.publicClient.readContract({
+          address: getAddress(input.token),
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [account.address, getAddress(input.spender)]
+        });
+
+        return allowance.toString();
+      } catch (err) {
+        console.error("Error checking allowance", err);
+        throw err;
+      }
+    },
+    {
+      name: "getAllowance",
+      description: "Check the ERC20 token allowance for a spender address. Returns the allowance amount in base units (e.g. wei).",
+      schema: z.object({
+        token: z.string().describe("The ERC20 token contract address"),
+        spender: z.string().describe("The spender address to check allowance for")
+      })
+    }
+  );
+
+  approve = tool(
+    async (input: { token: Address; spender: Address; amount: string }): Promise<`0x${string}`> => {
+      const account = this.walletClient.account;
+      if (!account) throw new Error("No account found");
+
+      try {
+        const data = encodeFunctionData({
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [getAddress(input.spender), BigInt(input.amount)]
+        });
+
+        const hash = await this.walletClient.sendTransaction({
+          account,
+          to: getAddress(input.token),
+          data,
+          chain: arbitrum,
+        });
+
+        return hash;
+      } catch (err) {
+        console.error("Error approving token", err);
+        throw err;
+      }
+    },
+    {
+      name: "approve",
+      description: `
+        Approve a spender to spend ERC20 tokens on behalf of the current account.
+        The amount should be in base units (e.g. wei).
+        If user doesn't specify units i.e "I want to approve 1 USDC", convert to base units using the token's precision.
+
+        For the time being, assume all Txs are sent on Arbitrum chain (i.e if you display a Tx explorer, it should be Arbiscan)
+      `,
+      schema: z.object({
+        token: z.string().describe("The ERC20 token contract address"),
+        spender: z.string().describe("The spender address to approve"),
+        amount: z.string().describe("The amount to approve in base units (e.g. wei)")
+      })
+    }
+  );
+
   getTools() {
-    return [this.getNativeBalance, this.getAddress, this.sendTransaction, this.fromBaseUnit, this.toBaseUnit];
+    return [
+      this.getNativeBalance,
+      this.getAddress,
+      this.sendTransaction,
+      this.fromBaseUnit,
+      this.toBaseUnit,
+      this.getAllowance,
+      this.approve
+    ];
   }
 }
