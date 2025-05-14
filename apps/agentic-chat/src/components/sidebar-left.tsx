@@ -10,7 +10,6 @@ import {
   Search,
   Sparkles,
 } from 'lucide-react';
-import { useConnect, useAccount, useDisconnect } from 'wagmi';
 
 import {
   Sidebar,
@@ -81,14 +80,6 @@ const data = {
 export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({
   ...props
 }) => {
-  const { isConnected, address } = useAccount();
-  const { connect, connectors, isPending } = useConnect();
-  const { disconnect } = useDisconnect();
-
-  console.log({ connectors });
-  // Find the injected connector
-  const injectedConnector = connectors.find((c) => c.id === 'injected');
-
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader className="gap-3.5 border-b p-4">
