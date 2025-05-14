@@ -60,7 +60,7 @@ export class EvmKit {
         return walletClient;
       }
 
-      const account = mnemonicToAccount(env.VITE_EVM_MNM as Address);
+      const account = mnemonicToAccount(env.VITE_EVM_MNEMONIC as Address);
 
       // TODO(gomes): support more chains
       const client = createWalletClient({
