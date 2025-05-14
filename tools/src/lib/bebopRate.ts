@@ -57,6 +57,8 @@ export const bebopRate = tool(
         : input.toAsset.address
     );
 
+    console.log({sellTokenAddress, buyTokenAddress})
+
     const env = import.meta?.env ? import.meta.env : process.env;
 
     const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY || env.BEBOP_API_KEY;
