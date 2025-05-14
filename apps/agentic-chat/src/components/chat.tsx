@@ -1,82 +1,66 @@
 'use client';
 
-import { useStream } from "@langchain/langgraph-sdk/react";
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
-import { BaseMessage,  ToolMessage } from '@langchain/core/messages';
-import { BebopQuote  } from '../../../../tools/src/lib/types';
-import { useAccount } from 'wagmi';
-import type { Message } from "@langchain/langgraph-sdk";
+import { runMessageGraph } from '../lib/langchain';
 
-export type ChatMessage = Message & {
-  quote?: BebopQuote;
-}
-
-const getArtifact = (message: ToolMessage | BaseMessage) => {
-  if ('artifact' in message) {
-    return (message as ToolMessage).artifact;
-  }
-  return undefined;
+interface Message {
+  id: string;
+  sender: 'user' | 'ai';
+  content: string;
 }
 
 export const Chat: React.FC = () => {
-  const { address } = useAccount();
-  // TODO(gomes): This should live as an initial AI message in the graph
-  // const [messages, setMessages] = useState<ChatMessage[]>([
-    // { id: '1', type: 'ai', content: 'Hello! How can I help you today?' },
-  // ]);
-
-  const thread = useStream<{ messages: Message[] }>({
-    apiUrl: "http://localhost:2024",
-    assistantId: "agent",
-    messagesKey: "messages",
-  });
-
-  console.log({thread})
-
-  const messages = thread.messages.filter(message => message.type !== 'tool' && message.content !== '') as ChatMessage[];
-
-  // useEffect(() => {
-      // Don't upsert while loading
-      // if (thread.isLoading) return
-      // const lastMessage = thread.messages[thread.messages.length - 1];
-      // if (!lastMessage) return
-
-      // TODO(gomes): we probably want to simply map over the thread messages
-      // if (messages.find((message) => message.id === lastMessage.id)) return
-      // Don't render tool calls
-      // if (lastMessage.type === 'tool') return
-//
-        // Add AI response
-      // const maybeQuote = thread.messages.find(
-        // (message) => (message as unknown as ToolMessage).name === 'bebopRate' && getArtifact(message as unknown as ToolMessage)
-      // ) as ToolMessage | undefined;
-      // const maybeQuoteData = maybeQuote?.artifact?.quote as
-        // | BebopQuote
-        // | undefined;
-      // const aiMessage: ChatMessage = {
-        // ...lastMessage,
-        // quote: maybeQuoteData,
-      // };
-      // setMessages((prev) => [...prev, aiMessage]);
-    // }, [thread.messages, messages, thread.isLoading])
+  const [messages, setMessages] = useState<Message[]>([
+    // Example messages
+    { id: '1', sender: 'ai', content: 'Hello! How can I help you today?' },
+  ]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSendMessage = async (content: string) => {
     try {
+      setIsProcessing(true);
+
+      // Add user message
+      const userMessage: Message = {
+        id: (messages.length + 1).toString(),
+        sender: 'user',
+        content,
+      };
+      setMessages((prev) => [...prev, userMessage]);
+
       // Process message through LangGraph
-      thread.submit({ messages: [{ type: "human", content }] });
+      const aiResponse = await runMessageGraph(content);
+
+      const latestAiMessage = aiResponse[aiResponse.length - 1];
+
+
+      // Add AI response
+      const aiMessage: Message = {
+        id: (messages.length + 2).toString(),
+        sender: 'ai',
+        content: latestAiMessage.content,
+      };
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-    console.error("Error sending message:", error);
+      console.error('Error processing message:', error);
+      // Add error message
+      const errorMessage: Message = {
+        id: (messages.length + 2).toString(),
+        sender: 'ai',
+        content: 'Sorry, I encountered an error processing your message.',
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
     <div className="flex h-full flex-col">
-      <ChatMessageList messages={messages} isLoading={thread.isLoading} />
-      <ChatInput onSendMessage={handleSendMessage} disabled={thread.isLoading} />
+      <ChatMessageList messages={messages} />
+      <ChatInput onSendMessage={handleSendMessage} disabled={isProcessing} />
     </div>
   );
 };
-
-

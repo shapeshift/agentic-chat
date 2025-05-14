@@ -49,7 +49,9 @@ export class EvmKit {
 
   constructor() {
     // TODO(gomes): obviously this is for dev only
-    const account = mnemonicToAccount(process.env.VITE_EVM_MNM as Address);
+
+    const env = import.meta?.env ? import.meta.env : process.env;
+    const account = mnemonicToAccount(env.VITE_EVM_MNM  as Address);
 
     // TODO(gomes): support more chains
     const client = createWalletClient({

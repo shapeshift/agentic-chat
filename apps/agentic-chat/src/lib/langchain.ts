@@ -14,6 +14,7 @@ import {
   MemorySaver,
 } from '@langchain/langgraph/web';
 import { tokensSearch, bebopRate } from '@agentic-chat/tools';
+import { graph } from '@agentic-chat/graph';
 
 // Define the tools for the agent to use
 const tools = [tokensSearch, bebopRate];
@@ -55,15 +56,14 @@ const workflow = new StateGraph(MessagesAnnotation)
 // Adds persistence
 const checkpointer = new MemorySaver();
 // Compile the workflow
-const app = workflow.compile({ checkpointer });
+const app = graph
 
 // Export the function to run the agent
 export const runMessageGraph = async (
   message: string,
-  isSystemMessage: boolean = false
 ) => {
 
-  const messages = isSystemMessage ? [new AIMessage(message)] : [new HumanMessage(message)];
+  const messages = new HumanMessage(message)
 
   const finalState = await app.invoke(
     {
