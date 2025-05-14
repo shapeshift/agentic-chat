@@ -6,9 +6,6 @@
       "path": "../../graph"
     },
     {
-      "path": "../../tools"
-    },
-    {
       "path": "./tsconfig.app.json"
     },
     {

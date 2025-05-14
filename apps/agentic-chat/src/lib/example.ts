@@ -3,7 +3,7 @@ import { runMessageGraph } from './langchain';
 // Example usage
 async function runExample() {
   try {
-    const result = await runMessageGraph('Hello, LangGraph!');
+    const result = await runMessageGraph({ message: 'Hello, LangGraph!' });
     console.log('Graph output:', result);
   } catch (error) {
     console.error('Error running graph:', error);

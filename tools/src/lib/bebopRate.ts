@@ -57,7 +57,7 @@ export const bebopRate = tool(
         : input.toAsset.address
     );
 
-    console.log({sellTokenAddress, buyTokenAddress})
+    console.log({ sellTokenAddress, buyTokenAddress });
 
     const env = import.meta?.env ? import.meta.env : process.env;
 
@@ -80,7 +80,7 @@ export const bebopRate = tool(
     });
 
     const fullUrl = `${url}?${reqParams.toString()}`;
-    console.log('getting bebop rate')
+    console.log('getting bebop rate');
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
@@ -99,9 +99,9 @@ export const bebopRate = tool(
       throw new Error('No routes found in Bebop response');
     }
 
-    const quote = data.routes[0].quote
+    const quote = data.routes[0].quote;
 
-    console.log({quote})
+    console.log({ quote });
 
     const buyAmountCryptoBaseUnit =
       quote.buyTokens[buyTokenAddress].amount.toString();
@@ -114,9 +114,11 @@ export const bebopRate = tool(
     const buyToken = Object.values(quote.buyTokens)[0];
     // TODO(gomes): re-declare caip from web as a monorepo package here, but this will work for now
     // published caip is way too old and misses many chains
-    const chainId = `${CHAIN_NAMESPACE.Evm}:${quote.chainId}` as ChainId
-    const sellAssetId = `${chainId}/${ASSET_NAMESPACE.erc20}:${sellToken.address}` as AssetId
-    const buyAssetId = `${chainId}/${ASSET_NAMESPACE.erc20}:${buyToken.address}` as AssetId
+    const chainId = `${CHAIN_NAMESPACE.Evm}:${quote.chainId}` as ChainId;
+    const sellAssetId =
+      `${chainId}/${ASSET_NAMESPACE.erc20}:${sellToken.address}` as AssetId;
+    const buyAssetId =
+      `${chainId}/${ASSET_NAMESPACE.erc20}:${buyToken.address}` as AssetId;
     const sellAsset: Asset = {
       name: sellToken.name ?? '',
       symbol: sellToken.symbol,
@@ -153,7 +155,7 @@ export const bebopRate = tool(
       buyTokens: quote.buyTokens,
       sellTokens: quote.sellTokens,
       quote: quote,
-    }
+    };
 
     return [content, artifacts];
   },
@@ -200,6 +202,6 @@ Returns an object with the following fields, for display to the user
           `The address the user is swapping from (optional). Also referred to as "sell address", and can be gotten using the getAddress() tool if not explicitly provided.`
         ),
     }),
-    responseFormat: 'content_and_artifact'
+    responseFormat: 'content_and_artifact',
   }
 );

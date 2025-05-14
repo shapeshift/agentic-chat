@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { runMessageGraph } from '../lib/langchain';
+import { useWalletClient } from 'wagmi';
 
 interface Message {
   id: string;
@@ -12,6 +13,7 @@ interface Message {
 }
 
 export const Chat: React.FC = () => {
+  const { data: walletClient } = useWalletClient();
   const [messages, setMessages] = useState<Message[]>([
     // Example messages
     { id: '1', sender: 'ai', content: 'Hello! How can I help you today?' },
@@ -31,10 +33,12 @@ export const Chat: React.FC = () => {
       setMessages((prev) => [...prev, userMessage]);
 
       // Process message through LangGraph
-      const aiResponse = await runMessageGraph(content);
+      const aiResponse = await runMessageGraph({
+        message: content,
+        walletClient,
+      });
 
       const latestAiMessage = aiResponse[aiResponse.length - 1];
-
 
       // Add AI response
       const aiMessage: Message = {

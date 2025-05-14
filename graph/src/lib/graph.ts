@@ -11,13 +11,8 @@ import {
   EvmKit,
 } from '@agentic-chat/tools';
 import { SYSTEM_PROMPT } from '@agentic-chat/utils';
-import {
-  MemorySaver,
-} from '@langchain/langgraph/web';
-
-
-const evmKitTools = new EvmKit().getTools();
-
+import { MemorySaver } from '@langchain/langgraph/web';
+import { WalletClient } from 'viem';
 
 // @ts-expect-error TODO: FIXME maybe
 const env = import.meta?.env ? import.meta.env : process.env;
@@ -34,7 +29,25 @@ const checkpointer = new MemorySaver();
 // Create and export the agent
 export const graph = createReactAgent({
   llm: model,
-  tools: [bebopResponseFormatterTool, tokensSearch, bebopRate, ...evmKitTools],
+  tools: [
+    bebopResponseFormatterTool,
+    tokensSearch,
+    bebopRate,
+    ...new EvmKit().getTools(),
+  ],
   checkpointer,
   prompt: SYSTEM_PROMPT,
 });
+
+export const makeDynamicGraph = (walletClient: WalletClient | undefined) =>
+  createReactAgent({
+    llm: model,
+    tools: [
+      bebopResponseFormatterTool,
+      tokensSearch,
+      bebopRate,
+      ...new EvmKit(walletClient).getTools(),
+    ],
+    checkpointer,
+    prompt: SYSTEM_PROMPT,
+  });

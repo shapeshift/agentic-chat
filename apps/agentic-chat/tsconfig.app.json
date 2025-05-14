@@ -40,9 +40,6 @@
   "references": [
     {
       "path": "../../graph/tsconfig.lib.json"
-    },
-    {
-      "path": "../../tools/tsconfig.lib.json"
     }
   ]
 }
