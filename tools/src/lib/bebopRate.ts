@@ -57,8 +57,6 @@ export const bebopRate = tool(
         : input.toAsset.address
     );
 
-    console.log({ sellTokenAddress, buyTokenAddress });
-
     const env = import.meta?.env ? import.meta.env : process.env;
 
     const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY || env.BEBOP_API_KEY;
@@ -80,7 +78,6 @@ export const bebopRate = tool(
     });
 
     const fullUrl = `${url}?${reqParams.toString()}`;
-    console.log('getting bebop rate');
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
@@ -100,8 +97,6 @@ export const bebopRate = tool(
     }
 
     const quote = data.routes[0].quote;
-
-    console.log({ quote });
 
     const buyAmountCryptoBaseUnit =
       quote.buyTokens[buyTokenAddress].amount.toString();

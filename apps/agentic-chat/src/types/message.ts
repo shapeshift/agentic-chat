@@ -1,3 +1,4 @@
-import { ChatMessage } from '../components/chat';
+import { ChatMessage } from "@langchain/core/messages";
 
-export type MessageList = ChatMessage[];
+export type Message = Pick<ChatMessage, 'id' | 'role' | 'content'>
+export type MessageList = Message[];

@@ -5,18 +5,14 @@ import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { runMessageGraph } from '../lib/langchain';
 import { useWalletClient } from 'wagmi';
+import { Message } from '../types/message';
 
-interface Message {
-  id: string;
-  sender: 'user' | 'ai';
-  content: string;
-}
 
 export const Chat: React.FC = () => {
   const { data: walletClient } = useWalletClient();
   const [messages, setMessages] = useState<Message[]>([
     // Example messages
-    { id: '1', sender: 'ai', content: 'Hello! How can I help you today?' },
+    { id: '1', role: 'ai', content: 'Hello! How can I help you today?' },
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -27,7 +23,7 @@ export const Chat: React.FC = () => {
       // Add user message
       const userMessage: Message = {
         id: (messages.length + 1).toString(),
-        sender: 'user',
+        role: 'human',
         content,
       };
       setMessages((prev) => [...prev, userMessage]);
@@ -43,7 +39,7 @@ export const Chat: React.FC = () => {
       // Add AI response
       const aiMessage: Message = {
         id: (messages.length + 2).toString(),
-        sender: 'ai',
+        role: 'ai',
         content: latestAiMessage.content,
       };
       setMessages((prev) => [...prev, aiMessage]);
@@ -52,7 +48,7 @@ export const Chat: React.FC = () => {
       // Add error message
       const errorMessage: Message = {
         id: (messages.length + 2).toString(),
-        sender: 'ai',
+        role: 'ai',
         content: 'Sorry, I encountered an error processing your message.',
       };
       setMessages((prev) => [...prev, errorMessage]);

@@ -14,7 +14,7 @@ export const runMessageGraph = async ({
   walletClient,
 }: {
   message: string;
-  walletClient: WalletClient;
+  walletClient: WalletClient | undefined;
 }) => {
   const app = makeDynamicGraph(walletClient);
 
