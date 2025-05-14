@@ -7,7 +7,6 @@ import { runMessageGraph } from '../lib/langchain';
 import { useWalletClient } from 'wagmi';
 import { Message } from '../types/message';
 
-
 export const Chat: React.FC = () => {
   const { data: walletClient } = useWalletClient();
   const [messages, setMessages] = useState<Message[]>([

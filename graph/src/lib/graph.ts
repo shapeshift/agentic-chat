@@ -4,12 +4,7 @@
  */
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { ChatOpenAI } from '@langchain/openai';
-import {
-  bebopResponseFormatterTool,
-  tokensSearch,
-  bebopRate,
-  EvmKit,
-} from '@agentic-chat/tools';
+import { tokensSearch, bebopRate, EvmKit } from '@agentic-chat/tools';
 import { SYSTEM_PROMPT } from '@agentic-chat/utils';
 import { MemorySaver } from '@langchain/langgraph/web';
 import { WalletClient } from 'viem';
@@ -29,12 +24,7 @@ const checkpointer = new MemorySaver();
 // Create and export the agent
 export const graph = createReactAgent({
   llm: model,
-  tools: [
-    bebopResponseFormatterTool,
-    tokensSearch,
-    bebopRate,
-    ...new EvmKit().getTools(),
-  ],
+  tools: [tokensSearch, bebopRate, ...new EvmKit().getTools()],
   checkpointer,
   prompt: SYSTEM_PROMPT,
 });
@@ -42,12 +32,7 @@ export const graph = createReactAgent({
 export const makeDynamicGraph = (walletClient: WalletClient | undefined) =>
   createReactAgent({
     llm: model,
-    tools: [
-      bebopResponseFormatterTool,
-      tokensSearch,
-      bebopRate,
-      ...new EvmKit(walletClient).getTools(),
-    ],
+    tools: [tokensSearch, bebopRate, ...new EvmKit(walletClient).getTools()],
     checkpointer,
     prompt: SYSTEM_PROMPT,
   });

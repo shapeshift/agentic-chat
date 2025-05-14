@@ -4,7 +4,7 @@ import React from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
 import { MessageList } from '../types/message';
-import  Markdown  from 'react-markdown';
+import Markdown from 'react-markdown';
 
 interface ChatMessageListProps {
   messages: MessageList;
