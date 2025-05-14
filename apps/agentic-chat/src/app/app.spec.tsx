@@ -26,7 +26,10 @@ Object.defineProperty(window, 'matchMedia', {
 
 describe('App', () => {
   beforeAll(() => {
-    vi.stubEnv('VITE_EVM_MNEMONIC', 'alcohol woman abuse must during monitor noble actual mixed trade anger aisle');
+    vi.stubEnv(
+      'VITE_EVM_MNEMONIC',
+      'alcohol woman abuse must during monitor noble actual mixed trade anger aisle'
+    );
   });
   it('should render successfully', () => {
     const { baseElement } = render(

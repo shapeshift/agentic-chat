@@ -47,7 +47,7 @@ const erc20Abi = [
 ] as const;
 
 export class EvmKit {
-  public walletClient: WalletClient;
+  public walletClient: WalletClient | undefined;
   public publicClient: PublicClient;
 
   constructor(walletClient?: WalletClient | undefined) {
@@ -59,6 +59,8 @@ export class EvmKit {
       if (walletClient) {
         return walletClient;
       }
+
+      if (!env.VITE_EVM_MNEMONIC) return;
 
       const account = mnemonicToAccount(env.VITE_EVM_MNEMONIC as Address);
 
@@ -82,7 +84,7 @@ export class EvmKit {
 
   getNativeBalance = tool(
     async (): Promise<bigint> => {
-      const account = this.walletClient.account;
+      const account = this.walletClient?.account;
       if (!account) throw new Error('No account found');
       return getNativeBalance(this.publicClient, account.address);
     },
@@ -96,7 +98,7 @@ export class EvmKit {
 
   getAddress = tool(
     async (): Promise<Address> => {
-      const account = this.walletClient.account;
+      const account = this.walletClient?.account;
       if (!account) throw new Error('No account found');
       return account.address;
     },
@@ -113,11 +115,12 @@ export class EvmKit {
       value: string;
       data?: `0x${string}`;
     }): Promise<`0x${string}`> => {
-      const account = this.walletClient.account;
+      const account = this.walletClient?.account;
       if (!account) throw new Error('No account found');
 
-      console.log({ to: input.to, value: input.value, data: input.data });
       try {
+        if (!this.walletClient) throw new Error('No wallet client found');
+
         const hash = await this.walletClient.sendTransaction({
           account,
           to: getAddress(input.to),
@@ -191,7 +194,7 @@ export class EvmKit {
 
   getAllowance = tool(
     async (input: { token: Address; spender: Address }): Promise<string> => {
-      const account = this.walletClient.account;
+      const account = this.walletClient?.account;
       if (!account) throw new Error('No account found');
 
       try {
@@ -227,10 +230,12 @@ export class EvmKit {
       spender: Address;
       amount: string;
     }): Promise<`0x${string}`> => {
-      const account = this.walletClient.account;
+      const account = this.walletClient?.account;
       if (!account) throw new Error('No account found');
 
       try {
+        if (!this.walletClient) throw new Error('No wallet client found');
+
         const data = encodeFunctionData({
           abi: erc20Abi,
           functionName: 'approve',
