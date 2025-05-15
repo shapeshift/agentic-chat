@@ -30,11 +30,7 @@ describe('App', () => {
       'VITE_EVM_MNEMONIC',
       'alcohol woman abuse must during monitor noble actual mixed trade anger aisle'
     );
-    vi.stubEnv(
-      'VITE_PROJECT_ID',
-      'gmsers'
-    );
-
+    vi.stubEnv('VITE_PROJECT_ID', 'gmsers');
   });
   it('should render successfully', () => {
     const { baseElement } = render(
