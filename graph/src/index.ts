@@ -1,1 +1,1 @@
-export * from './lib/graph.js';
+export * from './lib/graph';
