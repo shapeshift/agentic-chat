@@ -7,6 +7,7 @@ import {
   PublicClient,
   WalletClient,
   encodeFunctionData,
+  erc20Abi,
 } from 'viem';
 import { mnemonicToAccount } from 'viem/accounts';
 import { arbitrum } from 'viem/chains';
@@ -22,37 +23,11 @@ const getNativeBalance = async (
   return balance;
 };
 
-// ERC20 ABI for allowance check and approval
-const erc20Abi = [
-  {
-    inputs: [
-      { name: 'owner', type: 'address' },
-      { name: 'spender', type: 'address' },
-    ],
-    name: 'allowance',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    name: 'approve',
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-] as const;
-
 export class EvmKit {
   public walletClient: WalletClient | undefined;
   public publicClient: PublicClient;
 
   constructor(walletClient?: WalletClient | undefined) {
-    // TODO(gomes): obviously this is for dev only
-
     const env = import.meta?.env ? import.meta.env : process.env;
 
     const client = (() => {
