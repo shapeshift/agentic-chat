@@ -11,7 +11,10 @@ const queryClient = new QueryClient();
 const metadata = {
   name: 'Agentic Chat',
   description: 'ShapeShift Agentic Chat',
-  url: typeof window !== 'undefined' ? window.location.origin : 'https://chat.shapeshift.com',
+  url:
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : 'https://chat.shapeshift.com',
   icons: ['https://chat.shapeshift.com/favicon.ico'],
 };
 

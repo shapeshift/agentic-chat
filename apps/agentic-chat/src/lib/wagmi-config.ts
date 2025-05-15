@@ -7,10 +7,10 @@ export const projectId = import.meta.env.VITE_PROJECT_ID;
 
 // Ensure Project ID is defined at build time
 if (!projectId) {
-  throw new Error('VITE_PROJECT_ID is not defined. Please set it in .env')
+  throw new Error('VITE_PROJECT_ID is not defined. Please set it in .env');
 }
 
-const storage = createStorage({ storage: cookieStorage })
+const storage = createStorage({ storage: cookieStorage });
 
 // Create the Wagmi adapter instance
 export const wagmiAdapter = new WagmiAdapter({
