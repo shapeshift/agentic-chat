@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "build": "nx run-many --target=build --all",
-    "dev": "npx concurrently \"nx run langchain:dev\" \"nx serve agentic-chat\""
+    "serve": "npx concurrently \"nx run langchain:dev\" \"nx serve agentic-chat\"",
+    "dev": "nx run-many --target=build --all && npx concurrently \"nx run langchain:dev\" \"nx serve agentic-chat\""
   },
   "private": true,
   "devDependencies": {
