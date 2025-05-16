@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "build": "nx run-many --target=build --all",
     "dev": "npx concurrently \"nx run langchain:dev\" \"nx serve agentic-chat\""
   },
   "private": true,
