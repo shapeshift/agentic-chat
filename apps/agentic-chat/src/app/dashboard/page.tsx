@@ -2,11 +2,24 @@ import { Button } from '../../components/ui/button';
 import { Chat } from '../../components/chat';
 import { SidebarLeft } from '../../components/sidebar-left';
 import { SidebarRight } from '../../components/sidebar-right';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '../../components/ui/breadcrumb';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from '../../components/ui/breadcrumb';
 import { Separator } from '../../components/ui/separator';
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '../../components/ui/sidebar';
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '../../components/ui/sidebar';
+import { useAccount } from 'wagmi';
 
 export const Dashboard = () => {
+  const { address } = useAccount();
+  console.log({ address });
+
   return (
     <SidebarProvider>
       <SidebarLeft />
@@ -24,12 +37,14 @@ export const Dashboard = () => {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            <Button variant="ghost" size="icon" className='ml-auto w-auto px-2'>New Chat</Button>
+            <Button variant="ghost" size="icon" className="ml-auto w-auto px-2">
+              New Chat
+            </Button>
           </div>
         </header>
         <Chat />
       </SidebarInset>
       <SidebarRight />
     </SidebarProvider>
-  )
-}
+  );
+};

@@ -14,7 +14,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   disabled = false,
 }) => {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState(
+    'Swap 1 USDC to eth on arbitrum'
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

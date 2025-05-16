@@ -4,6 +4,7 @@ import React from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
 import { MessageList } from '../types/message';
+import Markdown from 'react-markdown';
 
 interface ChatMessageListProps {
   messages: MessageList;
@@ -20,12 +21,12 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
             <div
               className={cn(
                 'inline-block max-w-[75%] rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap',
-                message.sender === 'user'
+                message.role === 'human'
                   ? 'ml-auto bg-primary text-primary-foreground'
                   : 'bg-muted'
               )}
             >
-              {message.content}
+              {<Markdown>{message.content as string}</Markdown>}
             </div>
           </div>
         ))}

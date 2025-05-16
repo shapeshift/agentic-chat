@@ -49,7 +49,10 @@ export const tokensSearch = tool(
     name: 'tokensSearch',
     description: `Search for tokens using the Portals API /v2/tokens endpoint. Returns tokens matching the search term, sorted by 7-day USD volume.
     Uses the Portals API key and base URL from environment variables.
-    User *may* mention a network which should be parsed as network parameter, or it may be omitted, in which case it will search across all networks (no network param)`,
+    User *may* mention a network which should be parsed as network parameter, or it may be omitted, in which case it will search across all networks (no network param)
+    Always use this tool to search for tokens, before proceeding to get a rate with bebopRate tool.
+    Do not search for ETH on any EVM chain (Ethereum, Arbitrum, Optimism, Polygon, Base, etc.), as it is always the native token. Simply use 'ETH' as the symbol for the native token on these chains when calling bebopRate.
+    `,
     schema: z.object({
       search: z
         .string()

@@ -2,7 +2,13 @@ import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 import { tool } from '@langchain/core/tools';
 import { getAddress } from 'viem';
 import { z } from 'zod';
-import { BebopResponse } from './types';
+import { Asset, BebopResponse } from './types';
+import {
+  ASSET_NAMESPACE,
+  AssetId,
+  CHAIN_NAMESPACE,
+  ChainId,
+} from '@shapeshiftoss/caip';
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
@@ -34,41 +40,50 @@ export const bebopRate = tool(
       bsc: 'bsc',
     };
 
-    const amountCryptoBaseUnit = toBaseUnit(
+    const sellAmountCryptoBaseUnit = toBaseUnit(
       input.amount,
       input.fromAsset.precision
     );
 
     // Convert ETH symbol to Bebop's ETH marker address
-    const sellToken = getAddress(
+    const sellTokenAddress = getAddress(
       input.fromAsset.symbol.trim().toUpperCase() === 'ETH'
         ? BEBOP_ETH_MARKER
         : input.fromAsset.address
     );
-    const buyToken = getAddress(
+    const buyTokenAddress = getAddress(
       input.toAsset.symbol.trim().toUpperCase() === 'ETH'
         ? BEBOP_ETH_MARKER
         : input.toAsset.address
     );
 
+    const env = import.meta?.env ? import.meta.env : process.env;
+
+    const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY || env.BEBOP_API_KEY;
+
     const url = `https://api.bebop.xyz/router/${
       bebopChainsMap[input.chain] ?? input.chain
     }/v1/quote`;
-    const takerAddress = input.fromAddress || '0x0000000000000000000000000000000000000001';
+    const takerAddress =
+      input.fromAddress || '0x0000000000000000000000000000000000000001';
     const reqParams = new URLSearchParams({
-      sell_tokens: sellToken,
-      buy_tokens: buyToken,
-      sell_amounts: amountCryptoBaseUnit,
+      sell_tokens: sellTokenAddress,
+      buy_tokens: buyTokenAddress,
+      sell_amounts: sellAmountCryptoBaseUnit,
       taker_address: takerAddress,
       approval_type: 'Standard',
       skip_validation: 'true',
       gasless: 'false',
+      source: 'shapeshift',
     });
 
     const fullUrl = `${url}?${reqParams.toString()}`;
     const response = await fetch(fullUrl, {
       method: 'GET',
-      headers: { accept: 'application/json' },
+      headers: {
+        accept: 'application/json',
+        ['source-auth']: BEBOP_API_KEY,
+      },
     });
 
     if (!response.ok) {
@@ -81,36 +96,84 @@ export const bebopRate = tool(
       throw new Error('No routes found in Bebop response');
     }
 
+    const quote = data.routes[0].quote;
+
     const buyAmountCryptoBaseUnit =
-      data.routes[0].quote.buyTokens[buyToken].amount.toString();
+      quote.buyTokens[buyTokenAddress].amount.toString();
     const buyAmountCryptoPrecision = fromBaseUnit(
       buyAmountCryptoBaseUnit,
       input.toAsset.precision
     );
 
-    return {
+    const sellToken = Object.values(quote.sellTokens)[0];
+    const buyToken = Object.values(quote.buyTokens)[0];
+    // TODO(gomes): re-declare caip from web as a monorepo package here, but this will work for now
+    // published caip is way too old and misses many chains
+    const chainId = `${CHAIN_NAMESPACE.Evm}:${quote.chainId}` as ChainId;
+    const sellAssetId =
+      `${chainId}/${ASSET_NAMESPACE.erc20}:${sellToken.address}` as AssetId;
+    const buyAssetId =
+      `${chainId}/${ASSET_NAMESPACE.erc20}:${buyToken.address}` as AssetId;
+    const sellAsset: Asset = {
+      name: sellToken.name ?? '',
+      symbol: sellToken.symbol,
+      precision: sellToken.decimals,
+      chainId,
+      assetId: sellAssetId,
+    };
+    const buyAsset: Asset = {
+      name: buyToken.name ?? '',
+      symbol: buyToken.symbol,
+      precision: buyToken.decimals,
+      chainId,
+      assetId: buyAssetId,
+    };
+
+    const content = {
+      sellAmountCryptoPrecision: input.amount,
+      buyAmountCryptoPrecision,
+      sellAsset,
+      buyAsset,
+      txData: quote.tx,
+    };
+
+    const artifacts = {
+      swapperName: 'bebop',
+      sellAmountCryptoBaseUnit,
+      sellAmountCryptoPrecision: input.amount,
       buyAmountCryptoBaseUnit,
       buyAmountCryptoPrecision,
-      buyTokens: data.routes[0].quote.buyTokens,
-      sellTokens: data.routes[0].quote.sellTokens,
-      originalData: data,
+      approvalTarget: quote.approvalTarget,
+      sellAsset,
+      buyAsset,
+      txData: quote.tx,
+      buyTokens: quote.buyTokens,
+      sellTokens: quote.sellTokens,
+      quote: quote,
     };
+
+    return [content, artifacts];
   },
   {
     name: 'bebopRate',
     description: `Fetches a swap rate from Bebop and displays it to the user.
-     Returns
-    - the buy amount in both base units and human-readable precision - only the buyAmountCryptoPrecision one should be displayed to the user.
-    - Also returns buyTokens and sellTokens for display purposes i.e displaying name, symbol, chain etc
-    - The address should also be returned for each token with a link to the respective block explorer (assuming it's not a native token e.g ETH), so users can verify the token.
-    - Also returns original data, so we can show user
-      - the market data of the buy asset (if available)
-      - the slippage (if available)
-      - and the price impact (if available)
 
-    Use emojis for each bullet point and format things nicely.`,
+Returns an object with the following fields, for display to the user
+- sellAmountCryptoPrecision: The sell amount in human-readable precision (e.g., 1 for 1 USDC). **Display this to the user.**
+- buyAmountCryptoPrecision: The buy amount in human-readable precision (e.g., 0.032413 for 0.032413 USDC). **Display this to the user.**
+- swapperName: The name of the swapper (e.g., 'Bebop'). **Internal use only.**
+- buyAsset: Object describing the buy asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
+- sellAsset: Object describing the sell asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
+
+**Instructions for LLM:**
+- Only display the precision values (buyAmountCryptoPrecision, sellAmountCryptoPrecision, or buyAmount) to the user.
+- Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details.
+- If the user requests technical details, you may show base unit values and other internal fields.
+`,
     schema: z.object({
-      chain: z.string().describe('Chain name, e.g. ethereum, polygon, etc.'),
+      chain: z
+        .string()
+        .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
       fromAsset: z
         .object({
           address: z.string(),
@@ -128,7 +191,12 @@ export const bebopRate = tool(
         })
         .describe('Asset to buy'),
       amount: z.string().describe('Amount in human format, e.g. 1 for 1 ETH'),
-      fromAddress: z.string().optional().describe('The address the user is swapping from (optional). Also referred to as "sell address". If the user did not provide it, they will be prompted to do so after getting a rate, before continuing.'),
+      fromAddress: z
+        .string()
+        .describe(
+          `The address the user is swapping from (optional). Also referred to as "sell address", and can be gotten using the getAddress() tool if not explicitly provided.`
+        ),
     }),
+    responseFormat: 'content_and_artifact',
   }
 );
