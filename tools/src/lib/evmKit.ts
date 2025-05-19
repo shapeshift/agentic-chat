@@ -71,6 +71,35 @@ export class EvmKit {
     }
   );
 
+  getErc20Balance = tool(
+    async (input: { token: Address }): Promise<string> => {
+      const account = this.walletClient?.account;
+      if (!account) throw new Error('No account found');
+
+      try {
+        const balance = await this.publicClient.readContract({
+          address: getAddress(input.token),
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [account.address],
+        });
+
+        return balance.toString();
+      } catch (err) {
+        console.error('Error getting ERC20 balance', err);
+        throw err;
+      }
+    },
+    {
+      name: 'getErc20Balance',
+      description: `Get the ERC20 token balance of the current account, represented in base units (e.g. 6 for USDC).
+         Use precision/decimals as found from token search to then display this to the user in human-readable format.`,
+      schema: z.object({
+        token: z.string().describe('The ERC20 token contract address'),
+      }),
+    }
+  );
+
   getAddress = tool(
     async (): Promise<Address> => {
       const account = this.walletClient?.account;
@@ -249,15 +278,67 @@ export class EvmKit {
     }
   );
 
+  sendToken = tool(
+    async (input: {
+      token: Address;
+      to: Address;
+      amount: string;
+    }): Promise<`0x${string}`> => {
+      const account = this.walletClient?.account;
+      if (!account) throw new Error('No account found');
+
+      try {
+        if (!this.walletClient) throw new Error('No wallet client found');
+
+        const data = encodeFunctionData({
+          abi: erc20Abi,
+          functionName: 'transfer',
+          args: [getAddress(input.to), BigInt(input.amount)],
+        });
+
+        const hash = await this.walletClient.sendTransaction({
+          account,
+          to: getAddress(input.token),
+          data,
+          chain: arbitrum,
+        });
+
+        return hash;
+      } catch (err) {
+        console.error('Error sending token', err);
+        throw err;
+      }
+    },
+    {
+      name: 'sendToken',
+      description: `
+        Send ERC20 tokens to the specified address.
+        The amount should be in base units (e.g. wei).
+        If user doesn't specify units i.e "I want to send 1 USDC", convert to base units using the token's precision.
+
+        Use token search tool to find the right address for the token if not known.
+      `,
+      schema: z.object({
+        token: z.string().describe('The ERC20 token contract address'),
+        to: z.string().describe('The recipient address'),
+        amount: z
+          .string()
+          .describe('The amount to send in base units (e.g. wei)'),
+      }),
+    }
+  );
+
   getTools() {
     return [
       this.getNativeBalance,
+      this.getErc20Balance,
       this.getAddress,
       this.sendTransaction,
       this.fromBaseUnit,
       this.toBaseUnit,
       this.getAllowance,
       this.approve,
+      this.sendToken,
     ];
   }
 }
