@@ -8,6 +8,7 @@ import {
   WalletClient,
   encodeFunctionData,
   erc20Abi,
+  Hex,
 } from 'viem';
 import { mnemonicToAccount } from 'viem/accounts';
 import { arbitrum } from 'viem/chains';
@@ -114,11 +115,7 @@ export class EvmKit {
   );
 
   sendTransaction = tool(
-    async (input: {
-      to: Address;
-      value: string;
-      data?: `0x${string}`;
-    }): Promise<`0x${string}`> => {
+    async (input: { to: Address; value: string; data?: Hex }): Promise<Hex> => {
       const account = this.walletClient?.account;
       if (!account) throw new Error('No account found');
 
@@ -233,7 +230,7 @@ export class EvmKit {
       token: Address;
       spender: Address;
       amount: string;
-    }): Promise<`0x${string}`> => {
+    }): Promise<Hex> => {
       const account = this.walletClient?.account;
       if (!account) throw new Error('No account found');
 
@@ -283,7 +280,7 @@ export class EvmKit {
       token: Address;
       to: Address;
       amount: string;
-    }): Promise<`0x${string}`> => {
+    }): Promise<Hex> => {
       const account = this.walletClient?.account;
       if (!account) throw new Error('No account found');
 
