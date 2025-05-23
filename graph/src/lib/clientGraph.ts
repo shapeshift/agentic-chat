@@ -59,7 +59,7 @@ export const makeDynamicGraph = (walletClient: WalletClient | undefined) => {
     ...new EvmKit(walletClient).getTools(),
   ];
   const modelWithTools = model.bindTools(tools);
-  const toolNode = new ConfigurableToolNode(tools);
+  const toolNode = new ConfigurableToolNode(tools) as ToolNode
 
   // Create a prompt runnable that will prepend the system message
   const promptRunnable = RunnableLambda.from(
@@ -81,7 +81,6 @@ export const makeDynamicGraph = (walletClient: WalletClient | undefined) => {
 
   const graph = new StateGraph(MessagesAnnotation)
     .addNode('agent', callModel)
-    // @ts-expect-error TODO(gomes) fixme
     .addNode('action', toolNode)
     .addConditionalEdges('agent', shouldContinue)
     .addEdge('action', 'agent')
