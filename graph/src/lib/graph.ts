@@ -2,37 +2,64 @@
  * Starter LangGraph.js Template
  * Make this code your own!
  */
-import { createReactAgent } from '@langchain/langgraph/prebuilt';
+import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatOpenAI } from '@langchain/openai';
 import { tokensSearch, bebopRate, EvmKit } from '@agentic-chat/tools';
 import { SYSTEM_PROMPT } from '@agentic-chat/utils';
-import { MemorySaver } from '@langchain/langgraph/web';
-import { WalletClient } from 'viem';
+import {
+  END,
+  MemorySaver,
+  MessagesAnnotation,
+  START,
+  StateGraph,
+} from '@langchain/langgraph/web';
+import { AIMessage, SystemMessage } from '@langchain/core/messages';
+import { RunnableLambda } from '@langchain/core/runnables';
 
-// @ts-expect-error TODO: FIXME maybe
-const env = import.meta?.env ? import.meta.env : process.env;
+const env = process.env;
 
+const tools = [tokensSearch, bebopRate, ...new EvmKit().getTools()];
 const model = new ChatOpenAI({
   modelName: 'gpt-4o-mini',
   temperature: 0,
   openAIApiKey: env.VITE_OPENAI_API_KEY,
 });
 
+// Create a prompt runnable that will prepend the system message
+const promptRunnable = RunnableLambda.from(
+  (state: typeof MessagesAnnotation.State) => {
+    return [new SystemMessage(SYSTEM_PROMPT), ...state.messages];
+  }
+);
+
+// Pipe the prompt runnable into the model
+const modelWithTools = promptRunnable.pipe(model.bindTools(tools));
+
 // Adds persistence
 const checkpointer = new MemorySaver();
 
-// Create and export the agent
-export const graph = createReactAgent({
-  llm: model,
-  tools: [tokensSearch, bebopRate, ...new EvmKit().getTools()],
-  checkpointer,
-  prompt: SYSTEM_PROMPT,
-});
+function shouldContinue(
+  state: typeof MessagesAnnotation.State
+): 'action' | typeof END {
+  const lastMessage = state.messages[state.messages.length - 1];
+  // If there is no function call, then we finish
+  if (lastMessage && !(lastMessage as AIMessage).tool_calls?.length) {
+    return END;
+  }
+  // Otherwise if there is, we continue
+  return 'action';
+}
 
-export const makeDynamicGraph = (walletClient: WalletClient | undefined) =>
-  createReactAgent({
-    llm: model,
-    tools: [tokensSearch, bebopRate, ...new EvmKit(walletClient).getTools()],
-    checkpointer,
-    prompt: SYSTEM_PROMPT,
-  });
+const tolNode = new ToolNode(tools);
+async function callModel(state: typeof MessagesAnnotation.State) {
+  const response = await modelWithTools.invoke(state);
+  return { messages: [response] };
+}
+
+export const graph = new StateGraph(MessagesAnnotation)
+  .addNode('agent', callModel)
+  .addNode('action', tolNode)
+  .addConditionalEdges('agent', shouldContinue)
+  .addEdge('action', 'agent')
+  .addEdge(START, 'agent')
+  .compile({ checkpointer });
