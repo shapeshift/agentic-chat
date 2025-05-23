@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import {
-  BaseMessage,
   HumanMessage,
-  SystemMessage,
-  ToolMessage,
   OpenAIToolCall,
-  AIMessageChunk,
   StoredMessageData,
   ChatMessage,
 } from '@langchain/core/messages';
@@ -19,30 +15,6 @@ type UseStreamResult = {
     message: string;
     walletClient: WalletClient | undefined;
   }) => Promise<void>;
-};
-
-const addRoleToMessage = (baseMessage: BaseMessage): ChatMessage | null => {
-  // Don't parse system messages - we obviously don't want to expose them
-  if (baseMessage instanceof SystemMessage) return null;
-
-  const ChatMessage = baseMessage as ChatMessage;
-
-  const role = (() => {
-    switch (true) {
-      case baseMessage instanceof HumanMessage:
-        return 'user';
-      case baseMessage instanceof ToolMessage:
-        return 'tool';
-      case baseMessage instanceof AIMessageChunk:
-        return 'ai';
-      default:
-        throw new Error('Invalid message type');
-    }
-  })();
-
-  ChatMessage.role = role;
-
-  return ChatMessage;
 };
 
 export const useStream = (): UseStreamResult => {
@@ -79,9 +51,10 @@ export const useStream = (): UseStreamResult => {
           }
 
           case 'on_chat_model_start': {
-            const inputMessages = data.input.messages[0]
-              .map(addRoleToMessage)
-              .filter((msg: ChatMessage | null) => msg?.content?.length);
+            const inputMessages = data.input.messages[0].filter(
+              (msg: ChatMessage | null) =>
+                msg?.content?.length && msg._getType() !== 'system'
+            );
 
             setMessages((previousMessages) => {
               const newMessages = inputMessages.filter(
@@ -96,7 +69,7 @@ export const useStream = (): UseStreamResult => {
           case 'on_chat_model_end': {
             if (!data?.output) return;
 
-            const message = addRoleToMessage(data.output);
+            const message = data.output;
             const toolCalls = (data.output as StoredMessageData)
               ?.additional_kwargs?.tool_calls;
             if (toolCalls?.length) {

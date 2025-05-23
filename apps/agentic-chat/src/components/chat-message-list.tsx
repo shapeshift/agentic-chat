@@ -71,7 +71,7 @@ const ChatMessageItem: React.FC<{
   message: ChatMessage;
   toolCall: OpenAIToolCall | undefined;
 }> = ({ message, toolCall }) => {
-  if (message.role === 'tool') {
+  if (message._getType() === 'tool') {
     return <ToolMessageItem message={message} toolCall={toolCall} />;
   }
   return (
@@ -79,7 +79,7 @@ const ChatMessageItem: React.FC<{
       <div
         className={cn(
           'inline-block max-w-[75%] rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap',
-          message.role === 'user'
+          message._getType() === 'human'
             ? 'ml-auto bg-primary text-primary-foreground'
             : 'bg-muted'
         )}
