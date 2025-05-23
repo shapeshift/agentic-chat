@@ -163,16 +163,31 @@ export class EvmKit {
       chainId: number;
     }): Promise<Hex> => {
       const walletClient = this.getWalletClient(input.chainId);
+      const publicClient = this.getPublicClient(input.chainId);
       const account = walletClient.account;
       if (!account) throw new Error('No account found');
 
       try {
+        // First estimate gas to catch potential errors
+        const [gasLimit, gasPrice] = await Promise.all([
+          publicClient.estimateGas({
+            account,
+            to: getAddress(input.to),
+            value: BigInt(input.value),
+            data: input.data,
+          }),
+          publicClient.getGasPrice(),
+        ]);
+
+        // Now send the transaction with the estimated gas
         const hash = await walletClient.sendTransaction({
           account,
           to: getAddress(input.to),
           value: BigInt(input.value),
           data: input.data,
           chain: getChainById(input.chainId),
+          gas: gasLimit,
+          gasPrice,
         });
         return hash;
       } catch (err) {
@@ -186,6 +201,7 @@ export class EvmKit {
         Send a transaction to the specified address with the given value and optional data.
         The input value should be in wei (1e18).
         If user doesn't specify units i.e "I want to send 1 ETH", convert to wei (1e18).
+        This will automatically estimate gas and catch potential errors before sending.
       `,
       schema: z.object({
         to: z.string().describe('The recipient address of the transaction'),
@@ -376,6 +392,46 @@ export class EvmKit {
     }
   );
 
+  switchChain = tool(
+    async (input: { chainId: number }): Promise<boolean> => {
+      const walletClient = this.getWalletClient(input.chainId);
+      const account = walletClient.account;
+      if (!account) throw new Error('No account found');
+
+      try {
+        const chain = getChainById(input.chainId);
+
+        // If we have a browser wallet client, use switchChain
+        if (this.walletClient) {
+          await this.walletClient.switchChain({ id: chain.id });
+          return true;
+        }
+
+        // For non-browser clients (e.g. server), we can't switch chains
+        // Just verify the chain is supported
+        if (!chain) {
+          throw new Error(`Unsupported chain ID: ${input.chainId}`);
+        }
+
+        return true;
+      } catch (err) {
+        console.error('Error switching chain', err);
+        throw err;
+      }
+    },
+    {
+      name: 'switchChain',
+      description: `
+        Switch the connected wallet to the specified chain.
+        This is useful for ensuring the user is on the correct network before transactions.
+        Supported chains: Ethereum (1), Arbitrum (42161), Polygon (137), Optimism (10), Base (8453), Avalanche (43114), BSC (56), Gnosis (100).
+      `,
+      schema: z.object({
+        chainId: z.number().describe('The chain ID to switch to'),
+      }),
+    }
+  );
+
   getTools() {
     return [
       this.getNativeBalance,
@@ -387,6 +443,7 @@ export class EvmKit {
       this.getAllowance,
       this.approve,
       this.sendToken,
+      this.switchChain,
     ];
   }
 }
