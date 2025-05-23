@@ -7,14 +7,14 @@ import {
   OpenAIToolCall,
   AIMessageChunk,
   StoredMessageData,
+  ChatMessage,
 } from '@langchain/core/messages';
 import { WalletClient } from 'viem';
 import { makeDynamicGraph } from '@agentic-chat/graph';
 
-type MessageWithRole = BaseMessage & { role: 'user' | 'tool' | 'ai' };
 
 type UseStreamResult = {
-  messages: MessageWithRole[];
+  messages: ChatMessage[];
   toolCalls: OpenAIToolCall[];
   run: (params: {
     message: string;
@@ -22,11 +22,11 @@ type UseStreamResult = {
   }) => Promise<void>;
 };
 
-const addRoleToMessage = (baseMessage: BaseMessage): MessageWithRole | null => {
+const addRoleToMessage = (baseMessage: BaseMessage): ChatMessage | null => {
   // Don't parse system messages - we obviously don't want to expose them
   if (baseMessage instanceof SystemMessage) return null;
 
-  const messageWithRole = baseMessage as MessageWithRole;
+  const ChatMessage = baseMessage as ChatMessage;
 
   const role = (() => {
     switch (true) {
@@ -40,13 +40,13 @@ const addRoleToMessage = (baseMessage: BaseMessage): MessageWithRole | null => {
         throw new Error('Invalid message type');
     }})()
 
-  messageWithRole.role = role;
+  ChatMessage.role = role;
 
-  return messageWithRole
+  return ChatMessage
 };
 
 export const useStream = (): UseStreamResult => {
-  const [messages, setMessages] = useState<MessageWithRole[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [toolCalls, setToolCalls] = useState<OpenAIToolCall[]>([]);
 
   const run = async (params: {
@@ -82,13 +82,13 @@ export const useStream = (): UseStreamResult => {
             const inputMessages = data.input.messages[0]
               .map(addRoleToMessage)
               .filter(
-                (msg: MessageWithRole | null) =>
+                (msg: ChatMessage | null) =>
                   msg?.content?.length
               );
 
             setMessages((previousMessages) => {
               const newMessages = inputMessages.filter(
-                (msg: MessageWithRole) => !(previousMessages.some((m) => m.id === msg.id))
+                (msg: ChatMessage) => !(previousMessages.some((m) => m.id === msg.id))
               );
               return [...previousMessages, ...newMessages];
             });
