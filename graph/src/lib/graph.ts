@@ -2,12 +2,14 @@
  * Starter LangGraph.js Template
  * Make this code your own!
  */
-import { createReactAgent } from '@langchain/langgraph/prebuilt';
+import { createReactAgent, ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatOpenAI } from '@langchain/openai';
 import { tokensSearch, bebopRate, EvmKit } from '@agentic-chat/tools';
 import { SYSTEM_PROMPT } from '@agentic-chat/utils';
-import { MemorySaver } from '@langchain/langgraph/web';
+import { END, MemorySaver, MessagesAnnotation, START, StateGraph } from '@langchain/langgraph/web';
 import { WalletClient } from 'viem';
+import { AIMessage, SystemMessage } from "@langchain/core/messages";
+import { RunnableLambda } from "@langchain/core/runnables";
 
 // @ts-expect-error TODO: FIXME maybe
 const env = import.meta?.env ? import.meta.env : process.env;
@@ -21,7 +23,16 @@ const model = new ChatOpenAI({
 // Adds persistence
 const checkpointer = new MemorySaver();
 
-// Create and export the agent
+function shouldContinue(state: typeof MessagesAnnotation.State): "action" | typeof END {
+  const lastMessage = state.messages[state.messages.length - 1];
+  // If there is no function call, then we finish
+  if (lastMessage && !(lastMessage as AIMessage).tool_calls?.length) {
+      return END;
+  }
+  // Otherwise if there is, we continue
+  return "action";
+}
+
 export const graph = createReactAgent({
   llm: model,
   tools: [tokensSearch, bebopRate, ...new EvmKit().getTools()],
@@ -29,10 +40,37 @@ export const graph = createReactAgent({
   prompt: SYSTEM_PROMPT,
 });
 
-export const makeDynamicGraph = (walletClient: WalletClient | undefined) =>
-  createReactAgent({
-    llm: model,
-    tools: [tokensSearch, bebopRate, ...new EvmKit(walletClient).getTools()],
+export const makeDynamicGraph = (walletClient: WalletClient | undefined) => {
+  const tools = [tokensSearch, bebopRate, ...new EvmKit(walletClient).getTools()];
+  const modelWithTools = model.bindTools(tools);
+  const toolNode = new ToolNode(tools);
+
+  // Create a prompt runnable that will prepend the system message
+  const promptRunnable = RunnableLambda.from(
+    (state: typeof MessagesAnnotation.State) => {
+      return [new SystemMessage(SYSTEM_PROMPT), ...state.messages];
+    }
+  );
+
+  // Pipe the prompt runnable into the model
+  const modelRunnable = promptRunnable.pipe(modelWithTools);
+
+  async function callModel(state: typeof MessagesAnnotation.State): Promise<Partial<typeof MessagesAnnotation.State>> {
+    const response = await modelRunnable.invoke(state);
+    return { messages: [response] };
+  }
+
+  const graph = new StateGraph(MessagesAnnotation)
+    .addNode("agent", callModel)
+    .addNode("action", toolNode)
+    .addConditionalEdges(
+      "agent",
+      shouldContinue
+    )
+    .addEdge("action", "agent")
+    .addEdge(START, "agent");
+
+  return graph.compile({
     checkpointer,
-    prompt: SYSTEM_PROMPT,
   });
+}
