@@ -5,22 +5,28 @@ import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
 import { MessageList } from '../types/message';
 import Markdown from 'react-markdown';
-import { OpenAIToolCall } from '@langchain/core/messages';
+import {
+  ChatMessage,
+  OpenAIToolCall,
+  ToolMessage,
+} from '@langchain/core/messages';
 
 interface ChatMessageListProps {
   messages: MessageList;
   toolCalls: OpenAIToolCall[];
 }
 
-const ToolMessage: React.FC<{
-  message: any;
+const ToolMessageItem: React.FC<{
+  message: ChatMessage;
   toolCall: OpenAIToolCall | undefined;
 }> = ({ message, toolCall }) => {
   if (!toolCall) return null;
+
   const name = toolCall.function.name;
   const id = toolCall.id;
   const args = JSON.parse(toolCall.function.arguments);
   const content = message.content;
+
   return (
     <div className="flex flex-col items-start max-w-[75%]">
       {/* Tool Call Table */}
@@ -61,12 +67,12 @@ const ToolMessage: React.FC<{
   );
 };
 
-const ChatMessage: React.FC<{
-  message: any;
+const ChatMessageItem: React.FC<{
+  message: ChatMessage;
   toolCall: OpenAIToolCall | undefined;
 }> = ({ message, toolCall }) => {
   if (message.role === 'tool') {
-    return <ToolMessage message={message} toolCall={toolCall} />;
+    return <ToolMessageItem message={message} toolCall={toolCall} />;
   }
   return (
     <div key={message.id} className="flex">
@@ -93,10 +99,11 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
       <div className="space-y-4">
         {messages.map((message) => {
           const maybeToolCall = toolCalls.find(
-            (call) => call.id === message.tool_call_id
+            (call) =>
+              call.id === (message as unknown as ToolMessage).tool_call_id
           );
           return (
-            <ChatMessage
+            <ChatMessageItem
               key={message.id}
               message={message}
               toolCall={maybeToolCall}

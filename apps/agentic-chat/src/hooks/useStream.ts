@@ -12,7 +12,6 @@ import {
 import { WalletClient } from 'viem';
 import { makeDynamicGraph } from '@agentic-chat/graph';
 
-
 type UseStreamResult = {
   messages: ChatMessage[];
   toolCalls: OpenAIToolCall[];
@@ -35,14 +34,15 @@ const addRoleToMessage = (baseMessage: BaseMessage): ChatMessage | null => {
       case baseMessage instanceof ToolMessage:
         return 'tool';
       case baseMessage instanceof AIMessageChunk:
-        return 'ai'
+        return 'ai';
       default:
         throw new Error('Invalid message type');
-    }})()
+    }
+  })();
 
   ChatMessage.role = role;
 
-  return ChatMessage
+  return ChatMessage;
 };
 
 export const useStream = (): UseStreamResult => {
@@ -81,14 +81,12 @@ export const useStream = (): UseStreamResult => {
           case 'on_chat_model_start': {
             const inputMessages = data.input.messages[0]
               .map(addRoleToMessage)
-              .filter(
-                (msg: ChatMessage | null) =>
-                  msg?.content?.length
-              );
+              .filter((msg: ChatMessage | null) => msg?.content?.length);
 
             setMessages((previousMessages) => {
               const newMessages = inputMessages.filter(
-                (msg: ChatMessage) => !(previousMessages.some((m) => m.id === msg.id))
+                (msg: ChatMessage) =>
+                  !previousMessages.some((m) => m.id === msg.id)
               );
               return [...previousMessages, ...newMessages];
             });
@@ -98,24 +96,24 @@ export const useStream = (): UseStreamResult => {
           case 'on_chat_model_end': {
             if (!data?.output) return;
 
-              const message = addRoleToMessage(data.output);
-              const toolCalls = (data.output as StoredMessageData)?.additional_kwargs?.tool_calls;
-              if (toolCalls?.length) {
-                setToolCalls((prev) => {
-                  const newToolCalls = toolCalls.filter((toolCall: OpenAIToolCall) =>
-                    !(prev.some((t) => t.id === toolCall.id))
-                  );
-                  return [...prev, ...newToolCalls];
-                });
-              }
-              if (
-                message?.content?.length
-              ) {
-                setMessages((prev) => {
-                  if (prev.some((m) => m.id === message.id)) return prev;
-                  return [...prev, message];
-                });
-              }
+            const message = addRoleToMessage(data.output);
+            const toolCalls = (data.output as StoredMessageData)
+              ?.additional_kwargs?.tool_calls;
+            if (toolCalls?.length) {
+              setToolCalls((prev) => {
+                const newToolCalls = toolCalls.filter(
+                  (toolCall: OpenAIToolCall) =>
+                    !prev.some((t) => t.id === toolCall.id)
+                );
+                return [...prev, ...newToolCalls];
+              });
+            }
+            if (message?.content?.length) {
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === message.id)) return prev;
+                return [...prev, message];
+              });
+            }
             break;
           }
         }

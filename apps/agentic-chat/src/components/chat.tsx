@@ -9,8 +9,6 @@ import { useStream } from '../hooks/useStream';
 export const Chat: React.FC = () => {
   const { data: walletClient } = useWalletClient();
   const { messages, toolCalls, run } = useStream();
-  console.log('Current messages:', messages);
-  console.log('Current tool calls:', toolCalls);
 
   const handleSubmit = async (message: string) => {
     await run({
