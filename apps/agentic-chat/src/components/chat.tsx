@@ -15,7 +15,7 @@ export const Chat: React.FC = () => {
   const handleSubmit = async (message: string) => {
     await run({
       message,
-      walletClient
+      walletClient,
     });
   };
 
