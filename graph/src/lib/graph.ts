@@ -9,7 +9,7 @@ import { SYSTEM_PROMPT } from '@agentic-chat/utils';
 import { END, MemorySaver, MessagesAnnotation, START, StateGraph } from '@langchain/langgraph/web';
 import { WalletClient } from 'viem';
 import { AIMessage, SystemMessage } from "@langchain/core/messages";
-import { RunnableLambda } from "@langchain/core/runnables";
+import { RunnableLambda, RunnableConfig } from "@langchain/core/runnables";
 
 // @ts-expect-error TODO: FIXME maybe
 const env = import.meta?.env ? import.meta.env : process.env;
@@ -40,10 +40,18 @@ export const graph = createReactAgent({
   prompt: SYSTEM_PROMPT,
 });
 
+class ConfigurableToolNode extends ToolNode {
+  override async invoke(input: unknown, config?: RunnableConfig): Promise<unknown> {
+    // The parent class's constructor already sets up the func to use run(input, config)
+    // So we can just call the parent's invoke
+    return super.invoke(input, config);
+  }
+}
+
 export const makeDynamicGraph = (walletClient: WalletClient | undefined) => {
   const tools = [tokensSearch, bebopRate, ...new EvmKit(walletClient).getTools()];
   const modelWithTools = model.bindTools(tools);
-  const toolNode = new ToolNode(tools);
+  const toolNode = new ConfigurableToolNode(tools);
 
   // Create a prompt runnable that will prepend the system message
   const promptRunnable = RunnableLambda.from(
@@ -55,13 +63,17 @@ export const makeDynamicGraph = (walletClient: WalletClient | undefined) => {
   // Pipe the prompt runnable into the model
   const modelRunnable = promptRunnable.pipe(modelWithTools);
 
-  async function callModel(state: typeof MessagesAnnotation.State): Promise<Partial<typeof MessagesAnnotation.State>> {
-    const response = await modelRunnable.invoke(state);
+  async function callModel(
+    state: typeof MessagesAnnotation.State,
+    config?: RunnableConfig
+  ): Promise<Partial<typeof MessagesAnnotation.State>> {
+    const response = await modelRunnable.invoke(state, config);
     return { messages: [response] };
   }
 
   const graph = new StateGraph(MessagesAnnotation)
     .addNode("agent", callModel)
+    // @ts-ignore
     .addNode("action", toolNode)
     .addConditionalEdges(
       "agent",
