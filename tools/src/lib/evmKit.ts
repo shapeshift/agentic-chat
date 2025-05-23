@@ -9,9 +9,19 @@ import {
   encodeFunctionData,
   erc20Abi,
   Hex,
+  Chain,
 } from 'viem';
 import { mnemonicToAccount } from 'viem/accounts';
-import { arbitrum } from 'viem/chains';
+import {
+  arbitrum,
+  mainnet,
+  polygon,
+  optimism,
+  base,
+  avalanche,
+  bsc,
+  gnosis,
+} from 'viem/chains';
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
@@ -24,61 +34,88 @@ const getNativeBalance = async (
   return balance;
 };
 
+const getChainById = (chainId: number): Chain => {
+  const chains: Record<number, Chain> = {
+    [mainnet.id]: mainnet,
+    [arbitrum.id]: arbitrum,
+    [polygon.id]: polygon,
+    [optimism.id]: optimism,
+    [base.id]: base,
+    [avalanche.id]: avalanche,
+    [gnosis.id]: gnosis,
+    [bsc.id]: bsc,
+  };
+  const chain = chains[chainId];
+  if (!chain) throw new Error(`Unsupported chain ID: ${chainId}`);
+  return chain;
+};
+
 export class EvmKit {
-  public walletClient: WalletClient | undefined;
-  public publicClient: PublicClient;
+  private walletClient: WalletClient | undefined;
 
   constructor(walletClient?: WalletClient | undefined) {
+    this.walletClient = walletClient;
+  }
+
+  private getWalletClient(chainId: number): WalletClient {
+    // Return instantiated wallet client (i.e wagmi client) if provided
+    if (this.walletClient) {
+      return this.walletClient;
+    }
+
+    // Else, instantiate a wallet client using mnemonic (for use in server)
     const env = import.meta?.env ? import.meta.env : process.env;
+    if (!env.VITE_EVM_MNEMONIC) {
+      throw new Error(
+        'No wallet client provided and no mnemonic found in environment'
+      );
+    }
 
-    const client = (() => {
-      if (walletClient) {
-        return walletClient;
-      }
+    const account = mnemonicToAccount(env.VITE_EVM_MNEMONIC as Address);
+    const chain = getChainById(chainId);
 
-      if (!env.VITE_EVM_MNEMONIC) return;
-
-      const account = mnemonicToAccount(env.VITE_EVM_MNEMONIC as Address);
-
-      // TODO(gomes): support more chains
-      const client = createWalletClient({
-        account,
-        chain: arbitrum,
-        transport: http(),
-      });
-      return client;
-    })();
-
-    const publicClient = createPublicClient({
-      chain: arbitrum,
+    return createWalletClient({
+      account,
+      chain,
       transport: http(),
     });
+  }
 
-    this.walletClient = client;
-    this.publicClient = publicClient;
+  private getPublicClient(chainId: number): PublicClient {
+    const chain = getChainById(chainId);
+    return createPublicClient({
+      chain,
+      transport: http(),
+    });
   }
 
   getNativeBalance = tool(
-    async (): Promise<bigint> => {
-      const account = this.walletClient?.account;
+    async (input: { chainId: number }): Promise<bigint> => {
+      const walletClient = this.getWalletClient(input.chainId);
+      const publicClient = this.getPublicClient(input.chainId);
+      const account = walletClient.account;
       if (!account) throw new Error('No account found');
-      return getNativeBalance(this.publicClient, account.address);
+      return getNativeBalance(publicClient, account.address);
     },
     {
       name: 'getNativeBalance',
       description:
         'Get the native token balance of the current account, represented in wei (1e18).',
-      schema: z.object({}),
+      schema: z.object({
+        chainId: z.number().describe('The chain ID to get the balance on'),
+      }),
     }
   );
 
   getErc20Balance = tool(
-    async (input: { token: Address }): Promise<string> => {
-      const account = this.walletClient?.account;
+    async (input: { token: Address; chainId: number }): Promise<string> => {
+      const walletClient = this.getWalletClient(input.chainId);
+      const publicClient = this.getPublicClient(input.chainId);
+      const account = walletClient.account;
       if (!account) throw new Error('No account found');
 
       try {
-        const balance = await this.publicClient.readContract({
+        const balance = await publicClient.readContract({
           address: getAddress(input.token),
           abi: erc20Abi,
           functionName: 'balanceOf',
@@ -97,37 +134,45 @@ export class EvmKit {
          Use precision/decimals as found from token search to then display this to the user in human-readable format.`,
       schema: z.object({
         token: z.string().describe('The ERC20 token contract address'),
+        chainId: z.number().describe('The chain ID to get the balance on'),
       }),
     }
   );
 
   getAddress = tool(
-    async (): Promise<Address> => {
-      const account = this.walletClient?.account;
+    async (input: { chainId: number }): Promise<Address> => {
+      const walletClient = this.getWalletClient(input.chainId);
+      const account = walletClient.account;
       if (!account) throw new Error('No account found');
       return account.address;
     },
     {
       name: 'getAddress',
       description: 'Get the address of the current account.',
-      schema: z.object({}),
+      schema: z.object({
+        chainId: z.number().describe('The chain ID to get the address on'),
+      }),
     }
   );
 
   sendTransaction = tool(
-    async (input: { to: Address; value: string; data?: Hex }): Promise<Hex> => {
-      const account = this.walletClient?.account;
+    async (input: {
+      to: Address;
+      value: string;
+      data?: Hex;
+      chainId: number;
+    }): Promise<Hex> => {
+      const walletClient = this.getWalletClient(input.chainId);
+      const account = walletClient.account;
       if (!account) throw new Error('No account found');
 
       try {
-        if (!this.walletClient) throw new Error('No wallet client found');
-
-        const hash = await this.walletClient.sendTransaction({
+        const hash = await walletClient.sendTransaction({
           account,
           to: getAddress(input.to),
           value: BigInt(input.value),
           data: input.data,
-          chain: arbitrum,
+          chain: getChainById(input.chainId),
         });
         return hash;
       } catch (err) {
@@ -141,9 +186,7 @@ export class EvmKit {
         Send a transaction to the specified address with the given value and optional data.
         The input value should be in wei (1e18).
         If user doesn't specify units i.e "I want to send 1 ETH", convert to wei (1e18).
-
-        For the time being, assume all Txs are sent on Arbitrum chain (i.e if you display a Tx explorer, it should be Arbiscan)
-        `,
+      `,
       schema: z.object({
         to: z.string().describe('The recipient address of the transaction'),
         value: z.string().describe('The amount to send in wei (1e18)'),
@@ -153,6 +196,7 @@ export class EvmKit {
           .describe(
             'Optional data to include in the transaction (hex string starting with 0x)'
           ),
+        chainId: z.number().describe('The chain ID to send the transaction on'),
       }),
     }
   );
@@ -194,12 +238,18 @@ export class EvmKit {
   );
 
   getAllowance = tool(
-    async (input: { token: Address; spender: Address }): Promise<string> => {
-      const account = this.walletClient?.account;
+    async (input: {
+      token: Address;
+      spender: Address;
+      chainId: number;
+    }): Promise<string> => {
+      const walletClient = this.getWalletClient(input.chainId);
+      const publicClient = this.getPublicClient(input.chainId);
+      const account = walletClient.account;
       if (!account) throw new Error('No account found');
 
       try {
-        const allowance = await this.publicClient.readContract({
+        const allowance = await publicClient.readContract({
           address: getAddress(input.token),
           abi: erc20Abi,
           functionName: 'allowance',
@@ -221,6 +271,7 @@ export class EvmKit {
         spender: z
           .string()
           .describe('The spender address to check allowance for'),
+        chainId: z.number().describe('The chain ID to check the allowance on'),
       }),
     }
   );
@@ -230,24 +281,24 @@ export class EvmKit {
       token: Address;
       spender: Address;
       amount: string;
+      chainId: number;
     }): Promise<Hex> => {
-      const account = this.walletClient?.account;
+      const walletClient = this.getWalletClient(input.chainId);
+      const account = walletClient.account;
       if (!account) throw new Error('No account found');
 
       try {
-        if (!this.walletClient) throw new Error('No wallet client found');
-
         const data = encodeFunctionData({
           abi: erc20Abi,
           functionName: 'approve',
           args: [getAddress(input.spender), BigInt(input.amount)],
         });
 
-        const hash = await this.walletClient.sendTransaction({
+        const hash = await walletClient.sendTransaction({
           account,
           to: getAddress(input.token),
           data,
-          chain: arbitrum,
+          chain: getChainById(input.chainId),
         });
 
         return hash;
@@ -262,8 +313,6 @@ export class EvmKit {
         Approve a spender to spend ERC20 tokens on behalf of the current account.
         The amount should be in base units (e.g. wei).
         If user doesn't specify units i.e "I want to approve 1 USDC", convert to base units using the token's precision.
-
-        For the time being, assume all Txs are sent on Arbitrum chain (i.e if you display a Tx explorer, it should be Arbiscan)
       `,
       schema: z.object({
         token: z.string().describe('The ERC20 token contract address'),
@@ -271,6 +320,7 @@ export class EvmKit {
         amount: z
           .string()
           .describe('The amount to approve in base units (e.g. wei)'),
+        chainId: z.number().describe('The chain ID to approve on'),
       }),
     }
   );
@@ -280,24 +330,24 @@ export class EvmKit {
       token: Address;
       to: Address;
       amount: string;
+      chainId: number;
     }): Promise<Hex> => {
-      const account = this.walletClient?.account;
+      const walletClient = this.getWalletClient(input.chainId);
+      const account = walletClient.account;
       if (!account) throw new Error('No account found');
 
       try {
-        if (!this.walletClient) throw new Error('No wallet client found');
-
         const data = encodeFunctionData({
           abi: erc20Abi,
           functionName: 'transfer',
           args: [getAddress(input.to), BigInt(input.amount)],
         });
 
-        const hash = await this.walletClient.sendTransaction({
+        const hash = await walletClient.sendTransaction({
           account,
           to: getAddress(input.token),
           data,
-          chain: arbitrum,
+          chain: getChainById(input.chainId),
         });
 
         return hash;
@@ -321,6 +371,7 @@ export class EvmKit {
         amount: z
           .string()
           .describe('The amount to send in base units (e.g. wei)'),
+        chainId: z.number().describe('The chain ID to send the token on'),
       }),
     }
   );

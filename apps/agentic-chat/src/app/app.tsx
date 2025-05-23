@@ -4,7 +4,6 @@ import { WagmiProvider } from 'wagmi';
 import { Dashboard } from './dashboard/page';
 import { createAppKit } from '@reown/appkit/react';
 import { networks } from '../lib/appkit';
-import { arbitrum } from '@reown/appkit/networks';
 
 const queryClient = new QueryClient();
 
@@ -24,7 +23,6 @@ if (import.meta.env.VITE_PROJECT_ID) {
     adapters: [wagmiAdapter],
     projectId: import.meta.env.VITE_PROJECT_ID,
     networks,
-    defaultNetwork: arbitrum,
     metadata,
   });
 }
