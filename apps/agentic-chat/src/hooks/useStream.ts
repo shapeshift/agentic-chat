@@ -52,7 +52,11 @@ export const useStream = (): UseStreamResult => {
         streamMode: 'values',
         version: 'v2',
       })) {
-        if (event === "on_chat_model_start") {
+        if (event === "on_chat_model_stream") {
+          // console.log is expected here, to-be-used in follow-up for actual streaming of final AI response
+          console.log(data?.chunk?.content)
+        }
+        else if (event === "on_chat_model_start") {
           // Store input messages if they exist
           if (data?.input?.messages?.[0]) {
             const inputMessages = data.input.messages[0]
