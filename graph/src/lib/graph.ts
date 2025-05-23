@@ -2,23 +2,20 @@
  * Starter LangGraph.js Template
  * Make this code your own!
  */
-import { createReactAgent, ToolNode } from '@langchain/langgraph/prebuilt';
+import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatOpenAI } from '@langchain/openai';
 import { tokensSearch, bebopRate, EvmKit } from '@agentic-chat/tools';
-import { SYSTEM_PROMPT } from '@agentic-chat/utils';
 import { END, MemorySaver, MessagesAnnotation, START, StateGraph } from '@langchain/langgraph/web';
-import { WalletClient } from 'viem';
-import { AIMessage, SystemMessage } from "@langchain/core/messages";
-import { RunnableLambda } from "@langchain/core/runnables";
+import { AIMessage } from "@langchain/core/messages";
 
-// @ts-expect-error TODO: FIXME maybe
-const env = import.meta?.env ? import.meta.env : process.env;
+const env = process.env;
 
+const tools = [tokensSearch, bebopRate, ...new EvmKit().getTools()]
 const model = new ChatOpenAI({
   modelName: 'gpt-4o-mini',
   temperature: 0,
   openAIApiKey: env.VITE_OPENAI_API_KEY,
-});
+}).bindTools(tools);
 
 // Adds persistence
 const checkpointer = new MemorySaver();
@@ -33,44 +30,22 @@ function shouldContinue(state: typeof MessagesAnnotation.State): "action" | type
   return "action";
 }
 
-export const graph = createReactAgent({
-  llm: model,
-  tools: [tokensSearch, bebopRate, ...new EvmKit().getTools()],
-  checkpointer,
-  prompt: SYSTEM_PROMPT,
-});
+const tolNode = new ToolNode(tools);
+async function callModel(state: typeof MessagesAnnotation.State) {
+  const response = await model.invoke(state.messages);
 
-export const makeDynamicGraph = (walletClient: WalletClient | undefined) => {
-  const tools = [tokensSearch, bebopRate, ...new EvmKit(walletClient).getTools()];
-  const modelWithTools = model.bindTools(tools);
-  const toolNode = new ToolNode(tools);
+  // We return a list, because this will get added to the existing list
+  return { messages: [response] };
+}
 
-  // Create a prompt runnable that will prepend the system message
-  const promptRunnable = RunnableLambda.from(
-    (state: typeof MessagesAnnotation.State) => {
-      return [new SystemMessage(SYSTEM_PROMPT), ...state.messages];
-    }
-  );
-
-  // Pipe the prompt runnable into the model
-  const modelRunnable = promptRunnable.pipe(modelWithTools);
-
-  async function callModel(state: typeof MessagesAnnotation.State): Promise<Partial<typeof MessagesAnnotation.State>> {
-    const response = await modelRunnable.invoke(state);
-    return { messages: [response] };
-  }
-
-  const graph = new StateGraph(MessagesAnnotation)
+export const graph =  new StateGraph(MessagesAnnotation)
     .addNode("agent", callModel)
-    .addNode("action", toolNode)
+    .addNode("action", tolNode)
     .addConditionalEdges(
       "agent",
       shouldContinue
     )
     .addEdge("action", "agent")
-    .addEdge(START, "agent");
+    .addEdge(START, "agent")
+    .compile({checkpointer})
 
-  return graph.compile({
-    checkpointer,
-  });
-}
