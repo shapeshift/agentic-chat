@@ -5,6 +5,7 @@ import {
   SystemMessage,
   ToolMessage,
   OpenAIToolCall,
+  AIMessageChunk,
   StoredMessageData,
 } from '@langchain/core/messages';
 import { WalletClient } from 'viem';
@@ -26,14 +27,22 @@ const addRoleToMessage = (baseMessage: BaseMessage): MessageWithRole | null => {
   if (baseMessage instanceof SystemMessage) return null;
 
   const messageWithRole = baseMessage as MessageWithRole;
-  if (baseMessage instanceof HumanMessage) {
-    messageWithRole.role = 'user';
-  } else if (baseMessage instanceof ToolMessage) {
-    messageWithRole.role = 'tool';
-  } else {
-    messageWithRole.role = 'ai';
-  }
-  return messageWithRole;
+
+  const role = (() => {
+    switch (true) {
+      case baseMessage instanceof HumanMessage:
+        return 'user';
+      case baseMessage instanceof ToolMessage:
+        return 'tool';
+      case baseMessage instanceof AIMessageChunk:
+        return 'ai'
+      default:
+        throw new Error('Invalid message type');
+    }})()
+
+  messageWithRole.role = role;
+
+  return messageWithRole
 };
 
 export const useStream = (): UseStreamResult => {
@@ -54,7 +63,7 @@ export const useStream = (): UseStreamResult => {
         },
       };
 
-      for await (const { event, data } of await app.streamEvents(
+      for await (const { event, data } of app.streamEvents(
         { messages },
         {
           ...config,
