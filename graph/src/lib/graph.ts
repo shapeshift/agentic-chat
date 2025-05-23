@@ -5,8 +5,10 @@
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatOpenAI } from '@langchain/openai';
 import { tokensSearch, bebopRate, EvmKit } from '@agentic-chat/tools';
+import { SYSTEM_PROMPT } from '@agentic-chat/utils';
 import { END, MemorySaver, MessagesAnnotation, START, StateGraph } from '@langchain/langgraph/web';
-import { AIMessage } from "@langchain/core/messages";
+import { AIMessage, SystemMessage } from "@langchain/core/messages";
+import { RunnableLambda } from "@langchain/core/runnables";
 
 const env = process.env;
 
@@ -15,7 +17,17 @@ const model = new ChatOpenAI({
   modelName: 'gpt-4o-mini',
   temperature: 0,
   openAIApiKey: env.VITE_OPENAI_API_KEY,
-}).bindTools(tools);
+});
+
+// Create a prompt runnable that will prepend the system message
+const promptRunnable = RunnableLambda.from(
+  (state: typeof MessagesAnnotation.State) => {
+    return [new SystemMessage(SYSTEM_PROMPT), ...state.messages];
+  }
+);
+
+// Pipe the prompt runnable into the model
+const modelWithTools = promptRunnable.pipe(model.bindTools(tools));
 
 // Adds persistence
 const checkpointer = new MemorySaver();
@@ -32,9 +44,7 @@ function shouldContinue(state: typeof MessagesAnnotation.State): "action" | type
 
 const tolNode = new ToolNode(tools);
 async function callModel(state: typeof MessagesAnnotation.State) {
-  const response = await model.invoke(state.messages);
-
-  // We return a list, because this will get added to the existing list
+  const response = await modelWithTools.invoke(state);
   return { messages: [response] };
 }
 
