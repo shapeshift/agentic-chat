@@ -27,7 +27,7 @@ export const useStream = (): UseStreamResult => {
   }) => {
     try {
       const app = makeDynamicGraph(params.walletClient);
-      const messages = new HumanMessage(params.message);
+      const paramMessage = new HumanMessage(params.message);
 
       const config = {
         configurable: {
@@ -36,7 +36,7 @@ export const useStream = (): UseStreamResult => {
       };
 
       for await (const { event, data } of app.streamEvents(
-        { messages },
+        { messages: [paramMessage] },
         {
           ...config,
           streamMode: 'values',
@@ -45,8 +45,36 @@ export const useStream = (): UseStreamResult => {
       )) {
         switch (event) {
           case 'on_chat_model_stream': {
-            // console.log is expected here, to-be-used in follow-up for actual streaming of final AI response
-            console.log(data?.chunk?.content);
+            const chunk = data?.chunk;
+            if (!chunk?.content?.length) break;
+
+            setMessages((prev) => {
+              const existingIndex = prev.findIndex((m) => m.id === chunk.id);
+
+              // Chunk insertion on stream, this is the very first chunk for this message
+              if (existingIndex === -1) {
+                // First chunk for this message, insert it
+                return [
+                  ...prev,
+                  new ChatMessage({
+                    content: chunk.content || '',
+                    role: 'assistant',
+                    id: chunk.id,
+                    additional_kwargs: chunk.additional_kwargs || {},
+                  }),
+                ];
+              }
+
+              // Upsertion on stream - appends new chunks to existing ones
+              const updated = [...prev];
+              updated[existingIndex] = new ChatMessage({
+                ...updated[existingIndex],
+                content:
+                  (updated[existingIndex].content || '') +
+                  (chunk.content || ''),
+              });
+              return updated;
+            });
             break;
           }
 
@@ -56,6 +84,8 @@ export const useStream = (): UseStreamResult => {
                 msg?.content?.length && msg._getType() !== 'system'
             );
 
+            // Sets current messages on chat model start, i.e current ai, tools, and human messages
+            // including the just sent human one
             setMessages((previousMessages) => {
               const newMessages = inputMessages.filter(
                 (msg: ChatMessage) =>
@@ -69,9 +99,12 @@ export const useStream = (): UseStreamResult => {
           case 'on_chat_model_end': {
             if (!data?.output) return;
 
-            const message = data.output;
+            const finalMessage = data.output;
+
             const toolCalls = (data.output as StoredMessageData)
               ?.additional_kwargs?.tool_calls;
+
+            // If we've seen any tool calls for this chat model run, store them
             if (toolCalls?.length) {
               setToolCalls((prev) => {
                 const newToolCalls = toolCalls.filter(
@@ -81,12 +114,17 @@ export const useStream = (): UseStreamResult => {
                 return [...prev, ...newToolCalls];
               });
             }
-            if (message?.content?.length) {
-              setMessages((prev) => {
-                if (prev.some((m) => m.id === message.id)) return prev;
-                return [...prev, message];
-              });
-            }
+
+            // If applicable (i.e always, unless the final content for this message is empty), replace the accumulated chunks with the final message
+            setMessages((prev) => {
+              if (!finalMessage.content?.length) return prev;
+
+              const withoutChunks = prev.filter(
+                (m) => m.id !== finalMessage.id
+              );
+              return [...withoutChunks, finalMessage];
+            });
+
             break;
           }
         }
