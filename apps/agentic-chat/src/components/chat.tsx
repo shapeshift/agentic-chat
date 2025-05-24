@@ -8,7 +8,7 @@ import { useStream } from '../hooks/useStream';
 
 export const Chat: React.FC = () => {
   const { data: walletClient } = useWalletClient();
-  const { messages, toolCalls, run } = useStream();
+  const { messages, toolCalls, run, isLoading, stop } = useStream();
 
   const handleSubmit = async (message: string) => {
     await run({
@@ -20,7 +20,11 @@ export const Chat: React.FC = () => {
   return (
     <div className="flex h-full flex-col">
       <ChatMessageList messages={messages} toolCalls={toolCalls} />
-      <ChatInput onSendMessage={handleSubmit} />
+      <ChatInput
+        onSendMessage={handleSubmit}
+        isLoading={isLoading}
+        onStop={stop}
+      />
     </div>
   );
 };
