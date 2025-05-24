@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
 import { MessageList } from '../types/message';
@@ -94,9 +94,26 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
   messages,
   toolCalls,
 }) => {
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const viewport = viewportRef.current?.querySelector(
+      '[data-radix-scroll-area-viewport]'
+    );
+    if (viewport) {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [messages]);
+
   return (
-    <ScrollArea className="flex-1 p-4">
-      <div className="space-y-4">
+    <ScrollArea
+      className="h-[calc(100vh-8rem)] scroll-smooth"
+      ref={viewportRef}
+    >
+      <div className="p-4 space-y-4">
         {messages.map((message) => {
           const maybeToolCall = toolCalls.find(
             (call) =>
