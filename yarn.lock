@@ -13496,6 +13496,11 @@ use-sidecar@^1.1.3:
     detect-node-es "^1.1.0"
     tslib "^2.0.0"
 
+use-stick-to-bottom@^1.0.46:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/use-stick-to-bottom/-/use-stick-to-bottom-1.1.0.tgz#c52c43eb848f6db84e4685a58281b1e497ecf82c"
+  integrity sha512-cmSs/RzVXoJRsI6V5nLeRxPab8mDcHmqWwvEACbyft1jAKLPvI6/PGp46Z6GvXxQ9SPzIGTEQXKexNQLAW8pcg==
+
 use-sync-external-store@1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/use-sync-external-store/-/use-sync-external-store-1.2.0.tgz#7dbefd6ef3fe4e767a0cf5d7287aacfb5846928a"
