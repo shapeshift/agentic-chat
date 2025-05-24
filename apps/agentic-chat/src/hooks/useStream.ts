@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   HumanMessage,
   OpenAIToolCall,
@@ -9,17 +9,28 @@ import { WalletClient } from 'viem';
 import { makeDynamicGraph } from '@agentic-chat/graph';
 
 type UseStreamResult = {
+  isLoading: boolean;
   messages: ChatMessage[];
   toolCalls: OpenAIToolCall[];
   run: (params: {
     message: string;
     walletClient: WalletClient | undefined;
   }) => Promise<void>;
+  stop: () => void;
 };
 
 export const useStream = (): UseStreamResult => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [toolCalls, setToolCalls] = useState<OpenAIToolCall[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const stop = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  }, []);
 
   const run = async (params: {
     message: string;
@@ -35,12 +46,16 @@ export const useStream = (): UseStreamResult => {
         },
       };
 
+      setIsLoading(true);
+      abortControllerRef.current = new AbortController();
+
       for await (const { event, data } of app.streamEvents(
         { messages: [paramMessage] },
         {
           ...config,
           streamMode: 'values',
           version: 'v2',
+          signal: abortControllerRef.current.signal,
         }
       )) {
         switch (event) {
@@ -129,14 +144,25 @@ export const useStream = (): UseStreamResult => {
           }
         }
       }
+
+      setIsLoading(false);
+      abortControllerRef.current = null;
     } catch (error) {
-      console.error('Error in run:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request was cancelled');
+      } else {
+        console.error('Error in run:', error);
+      }
+      setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
   return {
+    isLoading,
     messages,
     toolCalls,
     run,
+    stop,
   };
 };
