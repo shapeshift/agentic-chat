@@ -18,19 +18,19 @@ export const Chat: React.FC = () => {
     });
   };
 
-  const showExamples = messages.length === 0;
+  const displayExamplePrompts = messages.length === 0;
 
   return (
     <div className="flex flex-col h-full">
       {/* Main chat area */}
       <div className="flex-1 min-h-0">
-        {!showExamples && (
+        {!displayExamplePrompts && (
           <ChatMessageList messages={messages} toolCalls={toolCalls} />
         )}
       </div>
-      {/* Cards and input always at the bottom */}
+      {/* Maybe example cards, and input */}
       <div className="flex flex-col gap-2 w-full px-4 pb-4">
-        {showExamples && <ExamplePrompts onSelectPrompt={handleSubmit} />}
+        {displayExamplePrompts && <ExamplePrompts onSelectPrompt={handleSubmit} />}
         <ChatInput
           onSendMessage={handleSubmit}
           isLoading={isLoading}
