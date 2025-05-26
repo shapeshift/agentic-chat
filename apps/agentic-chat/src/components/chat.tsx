@@ -5,6 +5,7 @@ import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { useWalletClient } from 'wagmi';
 import { useStream } from '../hooks/useStream';
+import { ExamplePrompts } from './example-prompts';
 
 export const Chat: React.FC = () => {
   const { data: walletClient } = useWalletClient();
@@ -17,14 +18,27 @@ export const Chat: React.FC = () => {
     });
   };
 
+  const showExamples = messages.length === 0;
+
   return (
-    <div className="flex h-full flex-col">
-      <ChatMessageList messages={messages} toolCalls={toolCalls} />
-      <ChatInput
-        onSendMessage={handleSubmit}
-        isLoading={isLoading}
-        onStop={stop}
-      />
+    <div className="flex flex-col h-full">
+      {/* Main chat area */}
+      <div className="flex-1 min-h-0">
+        {!showExamples && (
+          <ChatMessageList messages={messages} toolCalls={toolCalls} />
+        )}
+      </div>
+      {/* Cards and input always at the bottom */}
+      <div className="flex flex-col gap-2 w-full px-4 pb-4">
+        {showExamples && (
+          <ExamplePrompts onSelectPrompt={handleSubmit} />
+        )}
+        <ChatInput
+          onSendMessage={handleSubmit}
+          isLoading={isLoading}
+          onStop={stop}
+        />
+      </div>
     </div>
   );
 };
