@@ -7,6 +7,8 @@ import {
 } from '@langchain/core/messages';
 import { WalletClient } from 'viem';
 import { makeDynamicGraph } from '@agentic-chat/graph';
+import { useThreadStore } from '../store/thread';
+import { useChatStore } from '../store/chat';
 
 type UseStreamResult = {
   isLoading: boolean;
@@ -20,10 +22,14 @@ type UseStreamResult = {
 };
 
 export const useStream = (): UseStreamResult => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [toolCalls, setToolCalls] = useState<OpenAIToolCall[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const { threadId } = useThreadStore();
+  const { threads, currentThreadId, setMessages, setToolCalls } = useChatStore();
+
+  const currentThread = currentThreadId ? threads[currentThreadId] : null;
+  const messages = (currentThread?.messages || []) as ChatMessage[];
+  const toolCalls = (currentThread?.toolCalls || []) as OpenAIToolCall[];
 
   const stop = useCallback(() => {
     if (abortControllerRef.current) {
@@ -36,13 +42,15 @@ export const useStream = (): UseStreamResult => {
     message: string;
     walletClient: WalletClient | undefined;
   }) => {
+    if (!threadId || !currentThreadId) return;
+
     try {
       const app = makeDynamicGraph(params.walletClient);
       const paramMessage = new HumanMessage(params.message);
 
       const config = {
         configurable: {
-          thread_id: 'default_thread',
+          thread_id: threadId,
         },
       };
 
@@ -63,7 +71,7 @@ export const useStream = (): UseStreamResult => {
             const chunk = data?.chunk;
             if (!chunk?.content?.length) break;
 
-            setMessages((prev) => {
+            setMessages(currentThreadId, (prev) => {
               const existingIndex = prev.findIndex((m) => m.id === chunk.id);
 
               // Chunk insertion on stream, this is the very first chunk for this message
@@ -101,7 +109,7 @@ export const useStream = (): UseStreamResult => {
 
             // Sets current messages on chat model start, i.e current ai, tools, and human messages
             // including the just sent human one
-            setMessages((previousMessages) => {
+            setMessages(currentThreadId, (previousMessages) => {
               const newMessages = inputMessages.filter(
                 (msg: ChatMessage) =>
                   !previousMessages.some((m) => m.id === msg.id)
@@ -121,17 +129,17 @@ export const useStream = (): UseStreamResult => {
 
             // If we've seen any tool calls for this chat model run, store them
             if (toolCalls?.length) {
-              setToolCalls((prev) => {
+              setToolCalls(currentThreadId, (prev: OpenAIToolCall[]) => {
                 const newToolCalls = toolCalls.filter(
                   (toolCall: OpenAIToolCall) =>
-                    !prev.some((t) => t.id === toolCall.id)
-                );
+                    !prev.some((t: OpenAIToolCall) => t.id === toolCall.id)
+                ) as OpenAIToolCall[];
                 return [...prev, ...newToolCalls];
               });
             }
 
             // If applicable (i.e always, unless the final content for this message is empty), replace the accumulated chunks with the final message
-            setMessages((prev) => {
+            setMessages(currentThreadId, (prev) => {
               if (!finalMessage.content?.length) return prev;
 
               const withoutChunks = prev.filter(
