@@ -5,32 +5,34 @@ export interface ExamplePrompt {
 
 export const EXAMPLE_PROMPTS: ExamplePrompt[] = [
   {
-    template: "Swap {amountCryptoPrecision} {sellAssetSymbol} to {buyAssetSymbol} on {evmNetworkName}",
+    template:
+      'Swap {amountCryptoPrecision} {sellAssetSymbol} to {buyAssetSymbol} on {evmNetworkName}',
     sampleVariables: {
-      amountCryptoPrecision: "0.01",
-      sellAssetSymbol: "USDC",
-      buyAssetSymbol: "ETH",
-      evmNetworkName: "Arbitrum"
-    }
+      amountCryptoPrecision: '0.01',
+      sellAssetSymbol: 'USDC',
+      buyAssetSymbol: 'ETH',
+      evmNetworkName: 'Arbitrum',
+    },
   },
   {
-    template: "Swap {sellAmountUsd} of {sellAssetSymbol} to {buyAssetSymbol} on {evmNetworkName}",
+    template:
+      'Swap {sellAmountUsd} of {sellAssetSymbol} to {buyAssetSymbol} on {evmNetworkName}',
     sampleVariables: {
-      sellAmountUsd: "1$",
-      sellAssetSymbol: "ETH",
-      buyAssetSymbol: "USDC",
-      evmNetworkName: "Arbitrum"
-    }
+      sellAmountUsd: '1$',
+      sellAssetSymbol: 'ETH',
+      buyAssetSymbol: 'USDC',
+      evmNetworkName: 'Arbitrum',
+    },
   },
   {
     template: "What's my address?",
-    sampleVariables: {}
+    sampleVariables: {},
   },
   {
     template: "What's my {asset} balance over {evmNetworks} networks",
     sampleVariables: {
-      asset: "native asset",
-      evmNetworks: "all"
-    }
-  }
-]; 
+      asset: 'native asset',
+      evmNetworks: 'all',
+    },
+  },
+];

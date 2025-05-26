@@ -1,16 +1,21 @@
 import React, { useMemo } from 'react';
 import { EXAMPLE_PROMPTS } from '../lib/constants/prompts';
-import { PromptTemplate } from "@langchain/core/prompts";
+import { PromptTemplate } from '@langchain/core/prompts';
 
 interface ExamplePromptsProps {
   onSelectPrompt: (prompt: string) => void;
 }
 
-export const ExamplePrompts: React.FC<ExamplePromptsProps> = ({ onSelectPrompt }) => (
+export const ExamplePrompts: React.FC<ExamplePromptsProps> = ({
+  onSelectPrompt,
+}) => (
   <div className="flex flex-row gap-3 w-full">
     {EXAMPLE_PROMPTS.map((example, idx) => {
       // Interpolate the template with sampleVariables for display
-      const promptTemplate = useMemo(() => PromptTemplate.fromTemplate(example.template), [example.template]);
+      const promptTemplate = useMemo(
+        () => PromptTemplate.fromTemplate(example.template),
+        [example.template]
+      );
       const [display, setDisplay] = React.useState(example.template);
       React.useEffect(() => {
         promptTemplate.format(example.sampleVariables).then(setDisplay);
@@ -27,4 +32,4 @@ export const ExamplePrompts: React.FC<ExamplePromptsProps> = ({ onSelectPrompt }
       );
     })}
   </div>
-); 
+);

@@ -30,9 +30,7 @@ export const Chat: React.FC = () => {
       </div>
       {/* Cards and input always at the bottom */}
       <div className="flex flex-col gap-2 w-full px-4 pb-4">
-        {showExamples && (
-          <ExamplePrompts onSelectPrompt={handleSubmit} />
-        )}
+        {showExamples && <ExamplePrompts onSelectPrompt={handleSubmit} />}
         <ChatInput
           onSendMessage={handleSubmit}
           isLoading={isLoading}
