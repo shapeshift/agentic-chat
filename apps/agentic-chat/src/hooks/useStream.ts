@@ -1,35 +1,65 @@
-import { useState, useRef, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   HumanMessage,
   OpenAIToolCall,
   StoredMessageData,
   ChatMessage,
+  BaseMessage,
 } from '@langchain/core/messages';
-import { WalletClient } from 'viem';
 import { makeDynamicGraph } from '@agentic-chat/graph';
 import { useThreadStore } from '../store/thread';
 import { useChatStore } from '../store/chat';
+import { useWalletClient } from 'wagmi';
 
 type UseStreamResult = {
   isLoading: boolean;
   messages: ChatMessage[];
   toolCalls: OpenAIToolCall[];
-  run: (params: {
-    message: string;
-    walletClient: WalletClient | undefined;
-  }) => Promise<void>;
+  run: (message: string) => Promise<void>;
   stop: () => void;
 };
 
+const rehydrateMessages = async (
+  messages: BaseMessage[],
+  threadId: string,
+  app: ReturnType<typeof makeDynamicGraph>
+) => {
+  if (!messages.length) return;
+
+  const config = {
+    configurable: {
+      thread_id: threadId,
+    },
+  };
+
+  await app.updateState(config, { messages });
+};
+
 export const useStream = (): UseStreamResult => {
+  const { data: walletClient } = useWalletClient();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { threadId } = useThreadStore();
   const { threads, currentThreadId, setMessages, setToolCalls } = useChatStore();
 
   const currentThread = currentThreadId ? threads[currentThreadId] : null;
-  const messages = (currentThread?.messages || []) as ChatMessage[];
-  const toolCalls = (currentThread?.toolCalls || []) as OpenAIToolCall[];
+  const messages = useMemo(() => (currentThread?.messages || []), [currentThread]);
+  const toolCalls = useMemo(() => (currentThread?.toolCalls || []), [currentThread]);
+  const graph = useMemo(() => {
+    if (!walletClient || !threadId) return
+
+    return makeDynamicGraph(walletClient)
+  }, [walletClient, threadId]);
+
+
+  useEffect(() => {
+    if (!(threadId && messages.length && graph)) return;
+
+      rehydrateMessages(messages, threadId, graph);
+    // Do *not* react on messages, we want this on rehydration only
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletClient, graph]);
 
   const stop = useCallback(() => {
     if (abortControllerRef.current) {
@@ -38,15 +68,11 @@ export const useStream = (): UseStreamResult => {
     }
   }, []);
 
-  const run = async (params: {
-    message: string;
-    walletClient: WalletClient | undefined;
-  }) => {
-    if (!threadId || !currentThreadId) return;
+  const run = async (message: string) => {
+    if (!threadId || !currentThreadId || !graph) return;
 
     try {
-      const app = makeDynamicGraph(params.walletClient);
-      const paramMessage = new HumanMessage(params.message);
+      const paramMessage = new HumanMessage({content: message, id: uuidv4()});
 
       const config = {
         configurable: {
@@ -57,7 +83,7 @@ export const useStream = (): UseStreamResult => {
       setIsLoading(true);
       abortControllerRef.current = new AbortController();
 
-      for await (const { event, data } of app.streamEvents(
+      for await (const { event, data } of graph.streamEvents(
         { messages: [paramMessage] },
         {
           ...config,
@@ -104,7 +130,7 @@ export const useStream = (): UseStreamResult => {
           case 'on_chat_model_start': {
             const inputMessages = (data.input?.messages?.[0] ?? []).filter(
               (msg: ChatMessage | null) =>
-                msg?.content?.length && msg._getType() !== 'system'
+                msg?.content?.length && !messages.some(_msg => _msg.id === msg.id)
             );
 
             // Sets current messages on chat model start, i.e current ai, tools, and human messages

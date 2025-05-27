@@ -1766,17 +1766,17 @@
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
 
-"@langchain/core@^0.3.55":
-  version "0.3.55"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.55.tgz#e8a0d60833cb709ce6ab2ac2d348683b439c9856"
-  integrity sha512-SojY2ugpT6t9eYfFB9Ysvyhhyh+KJTGXs50hdHUE9tAEQWp3WAwoxe4djwJnOZ6fSpWYdpFt2UT2ksHVDy2vXA==
+"@langchain/core@^0.3.57":
+  version "0.3.57"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.57.tgz#3e9d9414046873405f48c761fe632bd757250a91"
+  integrity sha512-jz28qCTKJmi47b6jqhQ6vYRTG5jRpqhtPQjriRTB5wR8mgvzo6xKs0fG/kExS3ZvM79ytD1npBvgf8i19xOo9Q==
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     ansi-styles "^5.0.0"
     camelcase "6"
     decamelize "1.2.0"
     js-tiktoken "^1.0.12"
-    langsmith "^0.3.16"
+    langsmith "^0.3.29"
     mustache "^4.2.0"
     p-queue "^6.6.2"
     p-retry "4"
@@ -1821,10 +1821,10 @@
     uuid "^10.0.0"
     zod "^3.23.8"
 
-"@langchain/langgraph@^0.2.69":
-  version "0.2.69"
-  resolved "https://registry.yarnpkg.com/@langchain/langgraph/-/langgraph-0.2.69.tgz#5abd6fbf35d73372543548d6fb090426740730bd"
-  integrity sha512-0/wAi4URNPopAPwApvtNgHhbeop89iZompTP5WvNtsGCqa80dMnA/3zhLNOKpDTm4fcpQvEKYyGn3ulaTegqPA==
+"@langchain/langgraph@^0.2.73":
+  version "0.2.73"
+  resolved "https://registry.yarnpkg.com/@langchain/langgraph/-/langgraph-0.2.73.tgz#f7fe53386c5dea046e7f0e498908c2fc65ff6e87"
+  integrity sha512-vw+IXV2Q7x/QaykNj3VE/Ak3aPlst3spkpM6zYtqwGkQlhLZU4Lb8PHHPjqNNYHSdOTDj9x4jIRUPZArGHx9Aw==
   dependencies:
     "@langchain/langgraph-checkpoint" "~0.0.17"
     "@langchain/langgraph-sdk" "~0.0.32"
@@ -10021,6 +10021,19 @@ langsmith@^0.3.16:
   version "0.3.22"
   resolved "https://registry.yarnpkg.com/langsmith/-/langsmith-0.3.22.tgz#bcfa5402275f51c3439a62e12d037b5389ac7fae"
   integrity sha512-WddAEl+++fbOF8IFpw9WmKdDN9/ec79vI58J9LcVqcVbuif+4lsuzhYwbpfN1kwNUfjg4yDcKbwlq9eFVLS4dg==
+  dependencies:
+    "@types/uuid" "^10.0.0"
+    chalk "^4.1.2"
+    console-table-printer "^2.12.1"
+    p-queue "^6.6.2"
+    p-retry "4"
+    semver "^7.6.3"
+    uuid "^10.0.0"
+
+langsmith@^0.3.29:
+  version "0.3.29"
+  resolved "https://registry.yarnpkg.com/langsmith/-/langsmith-0.3.29.tgz#75b8df90b8a724f320ff0cdc784768117e17a922"
+  integrity sha512-JPF2B339qpYy9FyuY4Yz1aWYtgPlFc/a+VTj3L/JcFLHCiMP7+Ig8I9jO+o1QwVa+JU3iugL1RS0wwc+Glw0zA==
   dependencies:
     "@types/uuid" "^10.0.0"
     chalk "^4.1.2"

@@ -5,7 +5,7 @@
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatOpenAI } from '@langchain/openai';
 import { tokensSearch, bebopRate, EvmKit } from '@agentic-chat/tools';
-import { fullPromptTemplate } from '@agentic-chat/utils';
+import { fullSystemTemplate } from '@agentic-chat/utils';
 import {
   END,
   MemorySaver,
@@ -28,7 +28,7 @@ const model = new ChatOpenAI({
 // Create a prompt runnable that will format the messages with our composed prompts
 const promptRunnable = RunnableLambda.from(
   (state: typeof MessagesAnnotation.State) => {
-    return fullPromptTemplate.formatMessages({ messages: state.messages });
+    return fullSystemTemplate.formatMessages({ messages: state.messages });
   }
 );
 

@@ -115,7 +115,7 @@ const formattingTemplate =
 const mathTemplate = SystemMessagePromptTemplate.fromTemplate(MATH_PROMPT);
 
 // Create a template that combines all prompts
-export const fullPromptTemplate = ChatPromptTemplate.fromMessages([
+export const fullSystemTemplate = ChatPromptTemplate.fromMessages([
   baseRoleTemplate,
   balanceCheckTemplate,
   tokenSearchTemplate,

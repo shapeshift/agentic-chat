@@ -147,7 +147,7 @@ export const ChatMessageList = ({
         content={
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
-              {messages.map((message) => {
+              {messages.filter(message => message._getType() !== 'system').map((message) => {
                 const maybeToolCall = isToolMessage(message)
                   ? toolCalls.find((call) => call.id === message.tool_call_id)
                   : undefined;

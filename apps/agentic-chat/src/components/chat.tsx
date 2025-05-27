@@ -3,19 +3,16 @@
 import React from 'react';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
-import { useWalletClient } from 'wagmi';
 import { useStream } from '../hooks/useStream';
 import { ExamplePrompts } from './example-prompts';
 
 export const Chat: React.FC = () => {
-  const { data: walletClient } = useWalletClient();
   const { messages, toolCalls, run, isLoading, stop } = useStream();
 
   const handleSubmit = async (message: string) => {
-    await run({
+    await run(
       message,
-      walletClient,
-    });
+    );
   };
 
   const displayExamplePrompts = messages.length === 0;
