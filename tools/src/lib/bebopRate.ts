@@ -1,4 +1,3 @@
-import { fromBaseUnit } from '@agentic-chat/utils';
 import { tool } from '@langchain/core/tools';
 import { getAddress } from 'viem';
 import { z } from 'zod';
@@ -15,20 +14,20 @@ const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 export const bebopRate = tool(
   async (input: {
     chain: string;
-    fromAsset: {
+    sellAsset: {
       address: string;
       precision: number;
       name: string;
       symbol: string;
     };
-    toAsset: {
+    buyAsset: {
       address: string;
       precision: number;
       name: string;
       symbol: string;
     };
     sellAmountCryptoBaseUnit: string;
-    fromAddress?: string;
+    sellAddress?: string;
   }) => {
     const bebopChainsMap: Record<string, string> = {
       ethereum: 'ethereum',
@@ -42,14 +41,14 @@ export const bebopRate = tool(
 
     // Convert ETH symbol to Bebop's ETH marker address
     const sellTokenAddress = getAddress(
-      input.fromAsset.symbol.trim().toUpperCase() === 'ETH'
+      input.sellAsset.symbol.trim().toUpperCase() === 'ETH'
         ? BEBOP_ETH_MARKER
-        : input.fromAsset.address
+        : input.sellAsset.address
     );
     const buyTokenAddress = getAddress(
-      input.toAsset.symbol.trim().toUpperCase() === 'ETH'
+      input.buyAsset.symbol.trim().toUpperCase() === 'ETH'
         ? BEBOP_ETH_MARKER
-        : input.toAsset.address
+        : input.buyAsset.address
     );
 
     const env = import.meta?.env ? import.meta.env : process.env;
@@ -60,7 +59,7 @@ export const bebopRate = tool(
       bebopChainsMap[input.chain] ?? input.chain
     }/v1/quote`;
     const takerAddress =
-      input.fromAddress || '0x0000000000000000000000000000000000000001';
+      input.sellAddress || '0x0000000000000000000000000000000000000001';
     const reqParams = new URLSearchParams({
       sell_tokens: sellTokenAddress,
       buy_tokens: buyTokenAddress,
@@ -155,7 +154,7 @@ export const bebopRate = tool(
       chain: z
         .string()
         .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
-      fromAsset: z
+      sellAsset: z
         .object({
           address: z.string(),
           precision: z.number(),
@@ -163,7 +162,7 @@ export const bebopRate = tool(
           symbol: z.string(),
         })
         .describe('Asset to sell'),
-      toAsset: z
+      buyAsset: z
         .object({
           address: z.string(),
           precision: z.number(),
@@ -172,10 +171,14 @@ export const bebopRate = tool(
         })
         .describe('Asset to buy'),
       sellAmountCryptoBaseUnit: z.string().describe('The amount to send in the base unit for that asset'),
-      fromAddress: z
+      sellAddress: z
         .string()
+        .optional()
         .describe(
-          `The address the user is swapping from (optional). Also referred to as "sell address", and can be gotten using the getAddress() tool if not explicitly provided.`
+          `
+          The address the user is swapping from. Always use the getAddress() tool to attempt getting it, unless the user has explicitly provided it.
+          If the getAddress() call fails, use undefined, but make sure to inform the user they can't execute their trade without a connected wallet.
+          `
         ),
     }),
     responseFormat: 'content_and_artifact',

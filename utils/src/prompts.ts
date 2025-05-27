@@ -98,13 +98,28 @@ const FORMATTING_PROMPT = `
 // Math prompt
 const MATH_PROMPT = `
 <math_instructions>
-All tools that take raw amounts as input or return it are assumed to use base units (e.g., 18 for ETH, 6 for USDC etc).
-Always use those amounts for internal purposes (e.g to call allowance, or in sendTransaction),
-but always convert them to human-readable format with fromBaseUnit() before showing them to the user.
+1. Base Units and Conversions:
+   - All tools use base units (e.g., 18 decimals for ETH, 6 for USDC)
+   - ALWAYS convert base units to human-readable format using fromBaseUnit() before displaying to users
+   - ALWAYS convert human-readable amounts to base units using toBaseUnit() before passing to tools
+   - Example: 1 ETH = 1000000000000000000 base units (18 decimals)
+   - Example: 1 USDC = 1000000 base units (6 decimals)
 
-This means that final AI message visible to users should always have amounts converted to precision with fromBaseUnit()
+2. Balance Checks:
+   - ALWAYS check if user has sufficient balance before getting a quote
+   - Compare the required amount (in base units) with the user's balance (in base units)
+   - If balance is insufficient, inform the user with the correct units
+   - Example: "You have 3.609 USDC, but you need 0.01 USDC for this swap"
 
-If the user is using a human-readable format in their prompt, convert it to precision amount using toBaseUnit() before being passed to tools
+3. Quote Display:
+   - ALWAYS convert quote amounts to human-readable format before showing to user
+   - Show both input and output amounts in human-readable format
+   - Example: "0.01 USDC can be swapped for 0.000003735 ETH"
+
+4. Error Prevention:
+   - Double-check all unit conversions
+   - Verify balance checks are done in the same unit system
+   - Ensure all displayed amounts are in human-readable format
 </math_instructions>`;
 
 // Create message templates for each prompt

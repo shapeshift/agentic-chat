@@ -108,7 +108,7 @@ export class EvmKit {
   );
 
   getErc20Balance = tool(
-    async (input: { token: Address; chainId: number }): Promise<string> => {
+    async (input: { tokenAddress: Address; chainId: number }): Promise<string> => {
       const walletClient = this.getWalletClient(input.chainId);
       const publicClient = this.getPublicClient(input.chainId);
       const account = walletClient.account;
@@ -116,7 +116,7 @@ export class EvmKit {
 
       try {
         const balance = await publicClient.readContract({
-          address: getAddress(input.token),
+          address: getAddress(input.tokenAddress),
           abi: erc20Abi,
           functionName: 'balanceOf',
           args: [account.address],
@@ -133,8 +133,8 @@ export class EvmKit {
       description: `Get the ERC20 token balance of the current account, represented in base units (e.g. 6 for USDC).
          Use precision/decimals as found from token search to then display this to the user in human-readable format.`,
       schema: z.object({
-        token: z.string().describe('The ERC20 token contract address'),
-        chainId: z.number().describe('The chain ID to get the balance on'),
+        tokenAddress: z.string().describe('The address of the token'),
+        chainId: z.number().describe('The EVM chain ID to get the balance on'),
       }),
     }
   );
