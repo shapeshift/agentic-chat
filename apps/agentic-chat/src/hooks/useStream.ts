@@ -137,6 +137,7 @@ export const useStream = (): UseStreamResult => {
             const inputMessages = (data.input?.messages?.[0] ?? []).filter(
               (msg: ChatMessage | null) =>
                 msg?.content?.length &&
+                msg._getType() !== 'system' &&
                 !messages.some((_msg) => _msg.id === msg.id)
             );
 
