@@ -5,9 +5,24 @@ import {
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem } from './ui/sidebar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/react-collapsible";
 import { useThreadStore } from '../store/thread';
+import { useChatStore } from '../store/chat';
+import { useCallback } from "react";
 
 export const ChatHistory = () => {
   const { threadIds, activeThreadId, setThreadId } = useThreadStore();
+  const { threads } = useChatStore();
+
+  const getThreadTitle = useCallback((threadId: string) => {
+    const thread = threads[threadId];
+    if (!thread || !thread.messages) return threadId;
+    // TODO(gomes): ideally, we'd store a summary alongside the thread on first human message
+    // https://js.langchain.com/docs/tutorials/summarization/
+    const firstHumanMessage = thread.messages.find((msg) => msg._getType() === 'human');
+    if (firstHumanMessage && firstHumanMessage.content) {
+      return String(firstHumanMessage.content).slice(0, 30) + (firstHumanMessage.content.length > 30 ? '…' : '');
+    }
+    return threadId;
+  }, [threads]);
 
   return (
     <SidebarGroup className="py-0">
@@ -37,7 +52,7 @@ export const ChatHistory = () => {
                 onClick={() => setThreadId(threadId)}
                 data-active={activeThreadId === threadId}
               >
-                {threadId}
+                {getThreadTitle(threadId)}
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
