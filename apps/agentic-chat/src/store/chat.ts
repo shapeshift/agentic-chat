@@ -7,7 +7,6 @@ import {
   OpenAIToolCall,
   StoredMessage,
 } from '@langchain/core/messages';
-import { v4 as uuidv4 } from 'uuid';
 
 type ChatThread = {
   id: string;
@@ -28,7 +27,6 @@ type ChatState = {
     threadId: string,
     toolCallsOrUpdater: OpenAIToolCall[] | ToolCallUpdater
   ) => void;
-  createNewThread: () => string;
 };
 
 export const useChatStore = create<ChatState>()(
@@ -71,20 +69,6 @@ export const useChatStore = create<ChatState>()(
             },
           };
         }),
-      createNewThread: () => {
-        const threadId = uuidv4();
-        set((state) => ({
-          threads: {
-            ...state.threads,
-            [threadId]: {
-              id: threadId,
-              messages: [],
-              toolCalls: [],
-            },
-          },
-        }));
-        return threadId;
-      },
     }),
     {
       name: 'chat-storage',
