@@ -15,7 +15,12 @@ import {
   StateGraph,
 } from '@langchain/langgraph/web';
 import { WalletClient } from 'viem';
-import { AIMessage, BaseMessage, mapChatMessagesToStoredMessages, mapStoredMessagesToChatMessages, StoredMessage, SystemMessage } from '@langchain/core/messages';
+import {
+  AIMessage,
+  BaseMessage,
+  mapChatMessagesToStoredMessages,
+  SystemMessage,
+} from '@langchain/core/messages';
 import { RunnableLambda, RunnableConfig } from '@langchain/core/runnables';
 
 // @ts-expect-error TODO: FIXME maybe
@@ -76,8 +81,8 @@ export const makeDynamicGraph = (walletClient: WalletClient | undefined) => {
       const systemMessagesWithIds = serialized.map((msg, index) => {
         // Assign a deterministic id to each system prompt
         // since langchain doesn't give them any, and this rugs rehydration
-        return new SystemMessage({ ...msg.data, id: `system-${index}` })
-      })
+        return new SystemMessage({ ...msg.data, id: `system-${index}` });
+      });
 
       return [...systemMessagesWithIds, ...state.messages];
     }

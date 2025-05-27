@@ -16,4 +16,4 @@ export const toBaseUnit = (
   return bn.multipliedBy(new BigNumber(10).pow(precision)).toString();
 };
 
-export * from './prompts'
+export * from './prompts';

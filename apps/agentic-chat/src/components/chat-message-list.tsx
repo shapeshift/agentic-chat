@@ -147,19 +147,21 @@ export const ChatMessageList = ({
         content={
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
-              {messages.filter(message => message._getType() !== 'system').map((message) => {
-                const maybeToolCall = isToolMessage(message)
-                  ? toolCalls.find((call) => call.id === message.tool_call_id)
-                  : undefined;
+              {messages
+                .filter((message) => message._getType() !== 'system')
+                .map((message) => {
+                  const maybeToolCall = isToolMessage(message)
+                    ? toolCalls.find((call) => call.id === message.tool_call_id)
+                    : undefined;
 
-                return (
-                  <ChatMessageItem
-                    key={message.id}
-                    message={message}
-                    toolCall={maybeToolCall}
-                  />
-                );
-              })}
+                  return (
+                    <ChatMessageItem
+                      key={message.id}
+                      message={message}
+                      toolCall={maybeToolCall}
+                    />
+                  );
+                })}
             </div>
           </ScrollArea>
         }

@@ -41,24 +41,30 @@ export const useStream = (): UseStreamResult => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { threadId } = useThreadStore();
-  const { threads, currentThreadId, setMessages, setToolCalls } = useChatStore();
+  const { threads, currentThreadId, setMessages, setToolCalls } =
+    useChatStore();
 
   const currentThread = currentThreadId ? threads[currentThreadId] : null;
-  const messages = useMemo(() => (currentThread?.messages || []), [currentThread]);
-  const toolCalls = useMemo(() => (currentThread?.toolCalls || []), [currentThread]);
+  const messages = useMemo(
+    () => currentThread?.messages || [],
+    [currentThread]
+  );
+  const toolCalls = useMemo(
+    () => currentThread?.toolCalls || [],
+    [currentThread]
+  );
   const graph = useMemo(() => {
-    if (!walletClient || !threadId) return
+    if (!walletClient || !threadId) return;
 
-    return makeDynamicGraph(walletClient)
+    return makeDynamicGraph(walletClient);
   }, [walletClient, threadId]);
-
 
   useEffect(() => {
     if (!(threadId && messages.length && graph)) return;
 
-      rehydrateMessages(messages, threadId, graph);
+    rehydrateMessages(messages, threadId, graph);
     // Do *not* react on messages, we want this on rehydration only
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletClient, graph]);
 
   const stop = useCallback(() => {
@@ -72,7 +78,7 @@ export const useStream = (): UseStreamResult => {
     if (!threadId || !currentThreadId || !graph) return;
 
     try {
-      const paramMessage = new HumanMessage({content: message, id: uuidv4()});
+      const paramMessage = new HumanMessage({ content: message, id: uuidv4() });
 
       const config = {
         configurable: {
@@ -130,7 +136,8 @@ export const useStream = (): UseStreamResult => {
           case 'on_chat_model_start': {
             const inputMessages = (data.input?.messages?.[0] ?? []).filter(
               (msg: ChatMessage | null) =>
-                msg?.content?.length && !messages.some(_msg => _msg.id === msg.id)
+                msg?.content?.length &&
+                !messages.some((_msg) => _msg.id === msg.id)
             );
 
             // Sets current messages on chat model start, i.e current ai, tools, and human messages

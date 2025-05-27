@@ -10,9 +10,7 @@ export const Chat: React.FC = () => {
   const { messages, toolCalls, run, isLoading, stop } = useStream();
 
   const handleSubmit = async (message: string) => {
-    await run(
-      message,
-    );
+    await run(message);
   };
 
   const displayExamplePrompts = messages.length === 0;
@@ -27,7 +25,9 @@ export const Chat: React.FC = () => {
       </div>
       {/* Maybe example cards, and input */}
       <div className="flex flex-col gap-2 w-full px-4 pb-4">
-        {displayExamplePrompts && <ExamplePrompts onSelectPrompt={handleSubmit} />}
+        {displayExamplePrompts && (
+          <ExamplePrompts onSelectPrompt={handleSubmit} />
+        )}
         <ChatInput
           onSendMessage={handleSubmit}
           isLoading={isLoading}

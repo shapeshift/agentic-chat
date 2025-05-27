@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ChatMessage, mapChatMessagesToStoredMessages, mapStoredMessagesToChatMessages, OpenAIToolCall, StoredMessage } from '@langchain/core/messages';
+import {
+  ChatMessage,
+  mapChatMessagesToStoredMessages,
+  mapStoredMessagesToChatMessages,
+  OpenAIToolCall,
+  StoredMessage,
+} from '@langchain/core/messages';
 
 type ChatThread = {
   id: string;
@@ -14,8 +20,14 @@ type ToolCallUpdater = (prev: OpenAIToolCall[]) => OpenAIToolCall[];
 type ChatState = {
   threads: Record<string, ChatThread>;
   currentThreadId: string | null;
-  setMessages: (threadId: string, messagesOrUpdater: ChatMessage[] | MessageUpdater) => void;
-  setToolCalls: (threadId: string, toolCallsOrUpdater: OpenAIToolCall[] | ToolCallUpdater) => void;
+  setMessages: (
+    threadId: string,
+    messagesOrUpdater: ChatMessage[] | MessageUpdater
+  ) => void;
+  setToolCalls: (
+    threadId: string,
+    toolCallsOrUpdater: OpenAIToolCall[] | ToolCallUpdater
+  ) => void;
   createNewThread: () => string;
   setCurrentThread: (threadId: string) => void;
 };
@@ -28,9 +40,10 @@ export const useChatStore = create<ChatState>()(
       setMessages: (threadId, messagesOrUpdater) =>
         set((state) => {
           const currentMessages = state.threads[threadId]?.messages || [];
-          const newMessages = typeof messagesOrUpdater === 'function'
-            ? messagesOrUpdater(currentMessages)
-            : messagesOrUpdater;
+          const newMessages =
+            typeof messagesOrUpdater === 'function'
+              ? messagesOrUpdater(currentMessages)
+              : messagesOrUpdater;
 
           return {
             threads: {
@@ -45,9 +58,10 @@ export const useChatStore = create<ChatState>()(
       setToolCalls: (threadId, toolCallsOrUpdater) =>
         set((state) => {
           const currentToolCalls = state.threads[threadId]?.toolCalls || [];
-          const newToolCalls = typeof toolCallsOrUpdater === 'function'
-            ? toolCallsOrUpdater(currentToolCalls)
-            : toolCallsOrUpdater;
+          const newToolCalls =
+            typeof toolCallsOrUpdater === 'function'
+              ? toolCallsOrUpdater(currentToolCalls)
+              : toolCallsOrUpdater;
 
           return {
             threads: {
@@ -102,7 +116,9 @@ export const useChatStore = create<ChatState>()(
               {
                 ...thread,
                 // Reserialize on rehydration
-                messages: mapStoredMessagesToChatMessages(thread.messages as unknown as StoredMessage[]),
+                messages: mapStoredMessagesToChatMessages(
+                  thread.messages as unknown as StoredMessage[]
+                ),
               },
             ])
           ) as Record<string, ChatThread>;
