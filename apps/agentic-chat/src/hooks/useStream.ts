@@ -3,7 +3,6 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   HumanMessage,
   OpenAIToolCall,
-  StoredMessageData,
   ChatMessage,
   BaseMessage,
 } from '@langchain/core/messages';
@@ -23,7 +22,7 @@ type UseStreamResult = {
 const rehydrateMessages = async (
   messages: BaseMessage[],
   threadId: string,
-  app: ReturnType<typeof makeDynamicGraph>
+  graph: ReturnType<typeof makeDynamicGraph>
 ) => {
   if (!messages.length) return;
 
@@ -33,7 +32,7 @@ const rehydrateMessages = async (
     },
   };
 
-  await app.updateState(config, { messages });
+  await graph.updateState(config, { messages });
 };
 
 export const useStream = (): UseStreamResult => {
@@ -158,16 +157,15 @@ export const useStream = (): UseStreamResult => {
 
             const finalMessage = data.output;
 
-            const toolCalls = (data.output as StoredMessageData)
-              ?.additional_kwargs?.tool_calls;
+            const toolCalls = data.output?.additional_kwargs?.tool_calls as OpenAIToolCall[] | undefined
 
             // If we've seen any tool calls for this chat model run, store them
             if (toolCalls?.length) {
-              setToolCalls(currentThreadId, (prev: OpenAIToolCall[]) => {
+              setToolCalls(currentThreadId, (prev) => {
                 const newToolCalls = toolCalls.filter(
-                  (toolCall: OpenAIToolCall) =>
-                    !prev.some((t: OpenAIToolCall) => t.id === toolCall.id)
-                ) as OpenAIToolCall[];
+                  (toolCall) =>
+                    !prev.some((tool) => tool.id === toolCall.id)
+                )
                 return [...prev, ...newToolCalls];
               });
             }
