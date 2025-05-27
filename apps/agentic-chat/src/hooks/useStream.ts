@@ -77,6 +77,12 @@ export const useStream = ({
     }
   }, []);
 
+  useEffect(() => {
+    return () => {
+      stop();
+    };
+  }, [stop]);
+
   const run = async (message: string) => {
     if (!activeThreadId || !graph) return;
 
