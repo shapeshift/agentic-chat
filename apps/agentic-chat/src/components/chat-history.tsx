@@ -11,30 +11,25 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@radix-ui/react-collapsible';
-import { useThreadStore } from '../store/thread';
 import { useChatStore } from '../store/chat';
 import { useCallback } from 'react';
 
 export const ChatHistory = () => {
-  const { threadIds, activeThreadId, setThreadId } = useThreadStore();
-  const { threads } = useChatStore();
+  const { threads, activeThreadId, setActiveThreadId } = useChatStore();
 
   const getThreadTitle = useCallback(
     (threadId: string) => {
-      const thread = threads[threadId];
+      const thread = threads.byId[threadId];
       if (!thread || !thread.messages) return threadId;
       // TODO(gomes): ideally, we'd store a summary alongside the thread on first human message
       // https://js.langchain.com/docs/tutorials/summarization/
       const firstHumanMessage = thread.messages.find(
         (msg) => msg._getType() === 'human'
       );
-      if (firstHumanMessage?.content) {
-        return (
-          firstHumanMessage.content.slice(0, 30) +
-          (firstHumanMessage.content.length > 30 ? '…' : '')
-        );
-      }
-      return threadId;
+      if (!firstHumanMessage?.content) return 'New Thread';
+      return `${firstHumanMessage.content.slice(0, 30)}${
+        firstHumanMessage.content.length > 30 ? '…' : ''
+      }`;
     },
     [threads]
   );
@@ -53,12 +48,12 @@ export const ChatHistory = () => {
         </SidebarGroupLabel>
         <CollapsibleContent>
           <SidebarMenu>
-            {threadIds.length === 0 && (
+            {threads.ids.length === 0 && (
               <div className="px-4 py-2 text-muted-foreground text-xs">
                 No chats yet
               </div>
             )}
-            {threadIds.map((threadId) => (
+            {threads.ids.map((threadId) => (
               <SidebarMenuItem
                 key={threadId}
                 className={`cursor-pointer text-sm px-4 py-2 truncate ${
@@ -66,7 +61,7 @@ export const ChatHistory = () => {
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
                     : ''
                 }`}
-                onClick={() => setThreadId(threadId)}
+                onClick={() => setActiveThreadId(threadId)}
                 data-active={activeThreadId === threadId}
               >
                 {getThreadTitle(threadId)}

@@ -14,15 +14,14 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '../../components/ui/sidebar';
-import { useThreadStore } from '../../store/thread';
-import { useCallback } from 'react';
+import { useChatStore } from '../../store/chat';
 
 export const Dashboard = () => {
-  const { setThreadId } = useThreadStore();
+  const { setActiveThreadId } = useChatStore();
 
-  const handleNewThreadClick = useCallback(() => {
-    setThreadId();
-  }, [setThreadId]);
+  const handleNewChat = () => {
+    setActiveThreadId();
+  };
 
   return (
     <SidebarProvider>
@@ -45,7 +44,7 @@ export const Dashboard = () => {
               variant="ghost"
               size="icon"
               className="ml-auto w-auto px-2"
-              onClick={handleNewThreadClick}
+              onClick={handleNewChat}
             >
               New Chat
             </Button>

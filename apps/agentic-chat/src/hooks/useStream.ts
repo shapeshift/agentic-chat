@@ -7,8 +7,7 @@ import {
   BaseMessage,
 } from '@langchain/core/messages';
 import { makeDynamicGraph } from '@agentic-chat/graph';
-import { useChatStore } from '../store/chat';
-import { useThreadStore } from '../store/thread';
+import { useActiveThread, useChatStore } from '../store/chat';
 import { useWalletClient } from 'wagmi';
 
 type UseStreamResult = {
@@ -39,17 +38,13 @@ export const useStream = (): UseStreamResult => {
   const { data: walletClient } = useWalletClient();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const { activeThreadId } = useThreadStore();
-  const { threads, setMessages, setToolCalls } = useChatStore();
+  const { activeThreadId, setMessages, setToolCalls } = useChatStore();
+  const activeThread = useActiveThread();
 
-  const currentThread = activeThreadId ? threads[activeThreadId] : null;
-  const messages = useMemo(
-    () => currentThread?.messages || [],
-    [currentThread]
-  );
+  const messages = useMemo(() => activeThread?.messages || [], [activeThread]);
   const toolCalls = useMemo(
-    () => currentThread?.toolCalls || [],
-    [currentThread]
+    () => activeThread?.toolCalls || [],
+    [activeThread]
   );
   const graph = useMemo(() => {
     if (!walletClient || !activeThreadId) return;
@@ -62,6 +57,7 @@ export const useStream = (): UseStreamResult => {
 
     rehydrateMessages(messages, activeThreadId, graph);
     // Do *not* react on messages, we want this on rehydration only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletClient, graph]);
 
   const stop = useCallback(() => {
