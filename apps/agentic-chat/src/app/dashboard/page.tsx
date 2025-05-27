@@ -14,8 +14,15 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '../../components/ui/sidebar';
+import { useThreadStore } from '../../store/thread';
 
 export const Dashboard = () => {
+  const { setThreadId } = useThreadStore();
+
+  const handleNewChat = () => {
+    setThreadId();
+  };
+
   return (
     <SidebarProvider>
       <SidebarLeft />
@@ -33,7 +40,12 @@ export const Dashboard = () => {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            <Button variant="ghost" size="icon" className="ml-auto w-auto px-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="ml-auto w-auto px-2"
+              onClick={handleNewChat}
+            >
               New Chat
             </Button>
           </div>
