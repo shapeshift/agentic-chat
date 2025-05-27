@@ -13,6 +13,7 @@ type ChatThread = {
   id: string;
   messages: ChatMessage[];
   toolCalls: OpenAIToolCall[];
+  isLoading: boolean;
 };
 
 type MessageUpdater = (prev: ChatMessage[]) => ChatMessage[];
@@ -33,6 +34,7 @@ type ChatState = {
     toolCallsOrUpdater: OpenAIToolCall[] | ToolCallUpdater
   ) => void;
   setActiveThreadId: (threadId?: string) => void;
+  setIsThreadLoading: (threadId: string, isLoading: boolean) => void;
 };
 
 export const useChatStore = create<ChatState>()(
@@ -57,7 +59,8 @@ export const useChatStore = create<ChatState>()(
                   ...state.threads.byId[threadId],
                   id: threadId,
                   messages: newMessages,
-                  toolCalls: state.threads.byId[threadId]?.toolCalls || [],
+                  toolCalls: state.threads.byId[threadId].toolCalls,
+                  isLoading: state.threads.byId[threadId].isLoading,
                 },
               },
             },
@@ -82,6 +85,7 @@ export const useChatStore = create<ChatState>()(
                   id: threadId,
                   messages: state.threads.byId[threadId]?.messages || [],
                   toolCalls: newToolCalls,
+                  isLoading: state.threads.byId[threadId]?.isLoading || false,
                 },
               },
             },
@@ -100,6 +104,7 @@ export const useChatStore = create<ChatState>()(
                   id: newThreadId,
                   messages: [],
                   toolCalls: [],
+                  isLoading: false,
                 },
               },
               ids: exists
@@ -109,6 +114,19 @@ export const useChatStore = create<ChatState>()(
           };
         });
       },
+      setIsThreadLoading: (threadId, isLoading) =>
+        set((state) => ({
+          threads: {
+            ...state.threads,
+            byId: {
+              ...state.threads.byId,
+              [threadId]: {
+                ...state.threads.byId[threadId],
+                isLoading,
+              },
+            },
+          },
+        })),
     }),
     {
       name: 'chat-storage',

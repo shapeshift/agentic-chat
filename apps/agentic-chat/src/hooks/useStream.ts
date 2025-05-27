@@ -10,6 +10,10 @@ import { makeDynamicGraph } from '@agentic-chat/graph';
 import { useActiveThread, useChatStore } from '../store/chat';
 import { useWalletClient } from 'wagmi';
 
+type UseStreamProps = {
+  activeThreadId: string | null;
+};
+
 type UseStreamResult = {
   isLoading: boolean;
   messages: ChatMessage[];
@@ -34,18 +38,24 @@ const rehydrateMessages = async (
   await graph.updateState(config, { messages });
 };
 
-export const useStream = (): UseStreamResult => {
+export const useStream = ({
+  activeThreadId,
+}: UseStreamProps): UseStreamResult => {
   const { data: walletClient } = useWalletClient();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const { activeThreadId, setMessages, setToolCalls } = useChatStore();
-  const activeThread = useActiveThread();
+  const { setMessages, setToolCalls, setIsThreadLoading } = useChatStore();
 
-  const messages = useMemo(() => activeThread?.messages || [], [activeThread]);
-  const toolCalls = useMemo(
-    () => activeThread?.toolCalls || [],
-    [activeThread]
+  const currentThread = useActiveThread();
+  const messages = useMemo(
+    () => currentThread?.messages || [],
+    [currentThread]
   );
+  const toolCalls = useMemo(
+    () => currentThread?.toolCalls || [],
+    [currentThread]
+  );
+  const isLoading = currentThread?.isLoading || false;
+
   const graph = useMemo(() => {
     if (!walletClient || !activeThreadId) return;
 
@@ -79,7 +89,7 @@ export const useStream = (): UseStreamResult => {
         },
       };
 
-      setIsLoading(true);
+      setIsThreadLoading(activeThreadId, true);
       abortControllerRef.current = new AbortController();
 
       for await (const { event, data } of graph.streamEvents(
@@ -186,7 +196,7 @@ export const useStream = (): UseStreamResult => {
         console.error('Error in run:', error);
       }
     } finally {
-      setIsLoading(false);
+      setIsThreadLoading(activeThreadId, false);
       abortControllerRef.current = null;
     }
   };

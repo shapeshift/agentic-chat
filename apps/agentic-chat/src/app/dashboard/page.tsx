@@ -17,7 +17,7 @@ import {
 import { useChatStore } from '../../store/chat';
 
 export const Dashboard = () => {
-  const { setActiveThreadId } = useChatStore();
+  const { setActiveThreadId, activeThreadId } = useChatStore();
 
   const handleNewChat = () => {
     setActiveThreadId();
@@ -50,7 +50,7 @@ export const Dashboard = () => {
             </Button>
           </div>
         </header>
-        <Chat />
+        <Chat key={activeThreadId} />
       </SidebarInset>
       <SidebarRight />
     </SidebarProvider>

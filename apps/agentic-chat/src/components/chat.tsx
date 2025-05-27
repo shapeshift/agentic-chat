@@ -5,9 +5,13 @@ import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { useStream } from '../hooks/useStream';
 import { ExamplePrompts } from './example-prompts';
+import { useChatStore } from '../store/chat';
 
 export const Chat: React.FC = () => {
-  const { messages, toolCalls, run, isLoading, stop } = useStream();
+  const { activeThreadId } = useChatStore();
+  const { messages, toolCalls, run, isLoading, stop } = useStream({
+    activeThreadId,
+  });
 
   const handleSubmit = async (message: string) => {
     await run(message);
