@@ -155,15 +155,16 @@ export const useStream = (): UseStreamResult => {
 
             const finalMessage = data.output;
 
-            const toolCalls = data.output?.additional_kwargs?.tool_calls as OpenAIToolCall[] | undefined
+            const toolCalls = data.output?.additional_kwargs?.tool_calls as
+              | OpenAIToolCall[]
+              | undefined;
 
             // If we've seen any tool calls for this chat model run, store them
             if (toolCalls?.length) {
               setToolCalls(threadId, (prev) => {
                 const newToolCalls = toolCalls.filter(
-                  (toolCall) =>
-                    !prev.some((tool) => tool.id === toolCall.id)
-                )
+                  (toolCall) => !prev.some((tool) => tool.id === toolCall.id)
+                );
                 return [...prev, ...newToolCalls];
               });
             }
@@ -183,7 +184,11 @@ export const useStream = (): UseStreamResult => {
         }
       }
     } catch (error) {
-      console.error('Error in stream:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request was cancelled');
+      } else {
+        console.error('Error in run:', error);
+      }
     } finally {
       setIsLoading(false);
       abortControllerRef.current = null;

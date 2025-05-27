@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 type ThreadState = {
   threadId: string | null;
   setThreadId: (threadId: string) => void;
-}
+};
 
 export const useThreadStore = create<ThreadState>()(
   persist(
