@@ -7,6 +7,7 @@ import {
   OpenAIToolCall,
   StoredMessage,
 } from '@langchain/core/messages';
+import { v4 as uuidv4 } from 'uuid';
 
 type ChatThread = {
   id: string;
@@ -19,7 +20,6 @@ type ToolCallUpdater = (prev: OpenAIToolCall[]) => OpenAIToolCall[];
 
 type ChatState = {
   threads: Record<string, ChatThread>;
-  currentThreadId: string | null;
   setMessages: (
     threadId: string,
     messagesOrUpdater: ChatMessage[] | MessageUpdater
@@ -29,14 +29,12 @@ type ChatState = {
     toolCallsOrUpdater: OpenAIToolCall[] | ToolCallUpdater
   ) => void;
   createNewThread: () => string;
-  setCurrentThread: (threadId: string) => void;
 };
 
 export const useChatStore = create<ChatState>()(
   persist(
     (set) => ({
       threads: {},
-      currentThreadId: null,
       setMessages: (threadId, messagesOrUpdater) =>
         set((state) => {
           const currentMessages = state.threads[threadId]?.messages || [];
@@ -74,7 +72,7 @@ export const useChatStore = create<ChatState>()(
           };
         }),
       createNewThread: () => {
-        const threadId = crypto.randomUUID();
+        const threadId = uuidv4();
         set((state) => ({
           threads: {
             ...state.threads,
@@ -84,14 +82,9 @@ export const useChatStore = create<ChatState>()(
               toolCalls: [],
             },
           },
-          currentThreadId: threadId,
         }));
         return threadId;
       },
-      setCurrentThread: (threadId) =>
-        set(() => ({
-          currentThreadId: threadId,
-        })),
     }),
     {
       name: 'chat-storage',
@@ -102,7 +95,6 @@ export const useChatStore = create<ChatState>()(
             id,
             {
               ...thread,
-              // Serialize message since this doesn't serialize
               messages: mapChatMessagesToStoredMessages(thread.messages),
             },
           ])
@@ -115,7 +107,6 @@ export const useChatStore = create<ChatState>()(
               id,
               {
                 ...thread,
-                // Reserialize on rehydration
                 messages: mapStoredMessagesToChatMessages(
                   thread.messages as unknown as StoredMessage[]
                 ),
@@ -127,8 +118,3 @@ export const useChatStore = create<ChatState>()(
     }
   )
 );
-
-// Initialize with a new thread if none exists
-if (!useChatStore.getState().currentThreadId) {
-  useChatStore.getState().createNewThread();
-}

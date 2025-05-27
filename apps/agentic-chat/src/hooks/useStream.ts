@@ -7,8 +7,8 @@ import {
   BaseMessage,
 } from '@langchain/core/messages';
 import { makeDynamicGraph } from '@agentic-chat/graph';
-import { useThreadStore } from '../store/thread';
 import { useChatStore } from '../store/chat';
+import { useThreadStore } from '../store/thread';
 import { useWalletClient } from 'wagmi';
 
 type UseStreamResult = {
@@ -40,10 +40,9 @@ export const useStream = (): UseStreamResult => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { threadId } = useThreadStore();
-  const { threads, currentThreadId, setMessages, setToolCalls } =
-    useChatStore();
+  const { threads, setMessages, setToolCalls } = useChatStore();
 
-  const currentThread = currentThreadId ? threads[currentThreadId] : null;
+  const currentThread = threadId ? threads[threadId] : null;
   const messages = useMemo(
     () => currentThread?.messages || [],
     [currentThread]
@@ -63,7 +62,6 @@ export const useStream = (): UseStreamResult => {
 
     rehydrateMessages(messages, threadId, graph);
     // Do *not* react on messages, we want this on rehydration only
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletClient, graph]);
 
   const stop = useCallback(() => {
@@ -74,7 +72,7 @@ export const useStream = (): UseStreamResult => {
   }, []);
 
   const run = async (message: string) => {
-    if (!threadId || !currentThreadId || !graph) return;
+    if (!threadId || !graph) return;
 
     try {
       const paramMessage = new HumanMessage({ content: message, id: uuidv4() });
@@ -102,7 +100,7 @@ export const useStream = (): UseStreamResult => {
             const chunk = data?.chunk;
             if (!chunk?.content?.length) break;
 
-            setMessages(currentThreadId, (prev) => {
+            setMessages(threadId, (prev) => {
               const existingIndex = prev.findIndex((m) => m.id === chunk.id);
 
               // Chunk insertion on stream, this is the very first chunk for this message
@@ -142,7 +140,7 @@ export const useStream = (): UseStreamResult => {
 
             // Sets current messages on chat model start, i.e current ai, tools, and human messages
             // including the just sent human one
-            setMessages(currentThreadId, (previousMessages) => {
+            setMessages(threadId, (previousMessages) => {
               const newMessages = inputMessages.filter(
                 (msg: ChatMessage) =>
                   !previousMessages.some((m) => m.id === msg.id)
@@ -161,7 +159,7 @@ export const useStream = (): UseStreamResult => {
 
             // If we've seen any tool calls for this chat model run, store them
             if (toolCalls?.length) {
-              setToolCalls(currentThreadId, (prev) => {
+              setToolCalls(threadId, (prev) => {
                 const newToolCalls = toolCalls.filter(
                   (toolCall) =>
                     !prev.some((tool) => tool.id === toolCall.id)
@@ -171,7 +169,7 @@ export const useStream = (): UseStreamResult => {
             }
 
             // If applicable (i.e always, unless the final content for this message is empty), replace the accumulated chunks with the final message
-            setMessages(currentThreadId, (prev) => {
+            setMessages(threadId, (prev) => {
               if (!finalMessage.content?.length) return prev;
 
               const withoutChunks = prev.filter(
@@ -184,15 +182,9 @@ export const useStream = (): UseStreamResult => {
           }
         }
       }
-
-      setIsLoading(false);
-      abortControllerRef.current = null;
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Request was cancelled');
-      } else {
-        console.error('Error in run:', error);
-      }
+      console.error('Error in stream:', error);
+    } finally {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
