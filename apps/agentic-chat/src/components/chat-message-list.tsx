@@ -7,6 +7,7 @@ import { MessageList } from '../types/message';
 import Markdown from 'react-markdown';
 import {
   ChatMessage,
+  isToolMessage,
   OpenAIToolCall,
   ToolMessage,
 } from '@langchain/core/messages';
@@ -20,7 +21,7 @@ type ChatMessageListProps = {
 };
 
 const ToolMessageItem: React.FC<{
-  message: ChatMessage;
+  message: ToolMessage;
   toolCall: OpenAIToolCall | undefined;
 }> = ({ message, toolCall }) => {
   if (!toolCall) return null;
@@ -71,10 +72,10 @@ const ToolMessageItem: React.FC<{
 };
 
 const ChatMessageItem: React.FC<{
-  message: ChatMessage;
+  message: ChatMessage | ToolMessage;
   toolCall: OpenAIToolCall | undefined;
 }> = ({ message, toolCall }) => {
-  if (message._getType() === 'tool') {
+  if (isToolMessage(message)) {
     return <ToolMessageItem message={message} toolCall={toolCall} />;
   }
   return (
@@ -147,10 +148,10 @@ export const ChatMessageList = ({
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
               {messages.map((message) => {
-                const maybeToolCall = toolCalls.find(
-                  (call) =>
-                    call.id === (message as unknown as ToolMessage).tool_call_id
-                );
+          const maybeToolCall = isToolMessage(message)
+            ? toolCalls.find((call) => call.id === message.tool_call_id)
+            : undefined;
+
                 return (
                   <ChatMessageItem
                     key={message.id}

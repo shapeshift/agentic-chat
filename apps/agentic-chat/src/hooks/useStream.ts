@@ -79,7 +79,7 @@ export const useStream = (): UseStreamResult => {
           }
 
           case 'on_chat_model_start': {
-            const inputMessages = data.input.messages[0].filter(
+            const inputMessages = (data.input?.messages?.[0] ?? []).filter(
               (msg: ChatMessage | null) =>
                 msg?.content?.length && msg._getType() !== 'system'
             );
