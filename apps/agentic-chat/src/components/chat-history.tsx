@@ -28,9 +28,9 @@ export const ChatHistory = () => {
       const firstHumanMessage = thread.messages.find(
         (msg) => msg._getType() === 'human'
       );
-      if (firstHumanMessage && firstHumanMessage.content) {
+      if (firstHumanMessage?.content) {
         return (
-          String(firstHumanMessage.content).slice(0, 30) +
+          firstHumanMessage.content.slice(0, 30) +
           (firstHumanMessage.content.length > 30 ? '…' : '')
         );
       }
