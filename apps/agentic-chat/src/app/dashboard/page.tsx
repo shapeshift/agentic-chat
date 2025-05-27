@@ -14,12 +14,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '../../components/ui/sidebar';
-import { useAccount } from 'wagmi';
 
 export const Dashboard = () => {
-  const { address } = useAccount();
-  console.log({ address });
-
   return (
     <SidebarProvider>
       <SidebarLeft />
