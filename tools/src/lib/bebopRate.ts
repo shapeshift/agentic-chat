@@ -95,10 +95,6 @@ export const bebopRate = tool(
 
     const buyAmountCryptoBaseUnit =
       quote.buyTokens[buyTokenAddress].amount.toString();
-    const buyAmountCryptoPrecision = fromBaseUnit(
-      buyAmountCryptoBaseUnit,
-      input.toAsset.precision
-    );
 
     const sellToken = Object.values(quote.sellTokens)[0];
     const buyToken = Object.values(quote.buyTokens)[0];
@@ -125,7 +121,8 @@ export const bebopRate = tool(
     };
 
     const content = {
-      sellAmountCryptoPrecision: fromBaseUnit(input.sellAmountCryptoBaseUnit, sellAsset.precision),
+      sellAmountCryptoBaseUnit: input.sellAmountCryptoBaseUnit,
+      buyAmountCryptoBaseUnit,
       sellAsset,
       buyAsset,
       txData: quote.tx,
@@ -135,31 +132,24 @@ export const bebopRate = tool(
       swapperName: 'bebop',
       sellAmountCryptoBaseUnit: input.sellAmountCryptoBaseUnit,
       buyAmountCryptoBaseUnit,
-      approvalTarget: quote.approvalTarget,
-      sellAsset,
-      buyAsset,
       txData: quote.tx,
-      buyTokens: quote.buyTokens,
-      sellTokens: quote.sellTokens,
-      quote: quote,
     };
 
     return [content, artifacts];
   },
   {
     name: 'bebopRate',
-    description: `Fetches a swap rate from Bebop and displays it to the user.
+    description: `
+    Fetches a swap rate from Bebop and displays it to the user.
+    Returns an object with the following fields:
+    - sellAmountCryptoBaseUnit: The sell amount in base unit for that token or native asset
+    - buyAmountCryptoBaseUnit: The buy amount in base unit for that token or native asset
+    - swapperName: The name of the swapper (e.g., 'Bebop'). **Internal use only.**
+    - txData: Transaction data for use in sendTransaction() tool. Do not trim, do not pad the data field.
 
-Returns an object with the following fields, for display to the user
-- sellAmountCryptoBaseUnit: The sell amount in base unit for that token or native asset
-- buyAmountCryptoBaseUnit: The buy amount in base unit for that token or native asset
-- swapperName: The name of the swapper (e.g., 'Bebop'). **Internal use only.**
-- buyAsset: Object describing the buy asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
-- sellAsset: Object describing the sell asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
-
-**Instructions for LLM:**
-- Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details.
-- If the user requests technical details, you may show base unit values and other internal fields.
+    **Instructions for LLM:**
+    - Only display sell amount and buy amount. The rest is not user-facing.
+    - If the user requests technical details, you may show base unit values and other internal fields.
 `,
     schema: z.object({
       chain: z
