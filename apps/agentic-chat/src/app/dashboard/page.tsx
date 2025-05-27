@@ -40,9 +40,9 @@ export const Dashboard = () => {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="ml-auto w-auto px-2"
               onClick={handleNewChat}
             >

@@ -17,8 +17,8 @@ export const useThreadStore = create<ThreadState>()(
         const newThreadId = threadId || uuidv4();
         set((state) => ({
           activeThreadId: newThreadId,
-          threadIds: state.threadIds.includes(newThreadId) 
-            ? state.threadIds 
+          threadIds: state.threadIds.includes(newThreadId)
+            ? state.threadIds
             : [...state.threadIds, newThreadId],
         }));
       },
