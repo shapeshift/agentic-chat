@@ -20,10 +20,6 @@ const BALANCE_CHECK_PROMPT = `### Balance Check Instructions
     * BSC: BNB
     * Gnosis: xDAI
   - For ERC20 tokens, use getErc20Balance
-  - ALWAYS convert balances to human-readable format using fromBaseUnit with the correct precision:
-    * ETH/AVAX/BNB/xDAI: precision = 18
-    * USDC/USDT: precision = 6
-    * Other tokens: use precision from token search
 
 - If user's balance is insufficient after the checks:
   - Inform user they don't have enough balance
@@ -60,14 +56,11 @@ ALWAYS check the user's balance before trying and getting a quote.
 1. There should always be a fromAddress (sell address), which is to be fetched with getAddress tool
 2. If a quote is for a non-native token, always use the getAllowance tool after getting a quote
 3. For allowance checks and approvals:
-   - ALWAYS use the exact amount from the quote's sellAmountCryptoPrecision field
-   - Convert the sellAmountCryptoPrecision to base units using toBaseUnit with the token's precision
+   - ALWAYS use the exact amount from the quote's sellAmountCryptoBaseUnit field
    - Compare the allowance with the exact base unit amount needed:
      * If allowance >= required amount in base units, proceed with the swap
      * If allowance < required amount in base units, request approval
-   - When requesting approval, use the exact base unit amount needed
-   - NEVER round or modify the amount for allowance/approval
-   - NEVER use a different amount than what's specified in the quote
+   - NEVER use a different base unit amount than what's specified in the quote
 4. If an approval has been made, refetch a quote before continuing
 5. Before execution of a transaction, user always has to confirm they wish to proceed
 6. When sending transactions:
@@ -87,19 +80,14 @@ const FORMATTING_PROMPT = `### Formatting Guidelines
 // Math prompt
 const MATH_PROMPT = `### Math Instructions
 
-1. For unit conversions:
-   - Converting from base unit (wei) to human readable unit (eth): use fromBaseUnit
-   - Converting from human readable unit (eth) to base unit (wei): use toBaseUnit
-2. Always use the correct precision for each token:
-   - ETH/AVAX/BNB/xDAI: precision = 18
-   - USDC/USDT: precision = 6
-   - Other tokens: use precision from token search
-3. When handling amounts:
-   - ALWAYS maintain the exact precision throughout the entire process
-   - NEVER round or modify amounts when converting between units
-   - Use the exact amount from quotes for allowances and approvals
-   - Display amounts to users in human-readable format
-   - Use base units (with correct precision) for all transactions`;
+All tools that take raw amounts as input or return it are assumed to use base units (e.g., 18 for ETH, 6 for USDC etc).
+Always use those amounts for internal purposes (e.g to call allowance, or in sendTransaction),
+but always convert them to human-readable format with fromBaseUnit() before showing them to the user.
+
+This means that final AI message visible to users should always have amounts converted to precision with fromBaseUnit()
+
+If the user is using a human-readable format in their prompt, convert it to precision amount using toBaseUnit() before being passed to tools
+`
 
 // Create message templates for each prompt
 const baseRoleTemplate = SystemMessagePromptTemplate.fromTemplate(BASE_ROLE);

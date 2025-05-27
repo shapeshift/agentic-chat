@@ -1,4 +1,4 @@
-import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
+import { fromBaseUnit } from '@agentic-chat/utils';
 import { tool } from '@langchain/core/tools';
 import { getAddress } from 'viem';
 import { z } from 'zod';
@@ -27,7 +27,7 @@ export const bebopRate = tool(
       name: string;
       symbol: string;
     };
-    amount: string;
+    sellAmountCryptoBaseUnit: string;
     fromAddress?: string;
   }) => {
     const bebopChainsMap: Record<string, string> = {
@@ -39,11 +39,6 @@ export const bebopRate = tool(
       optimism: 'optimism',
       bsc: 'bsc',
     };
-
-    const sellAmountCryptoBaseUnit = toBaseUnit(
-      input.amount,
-      input.fromAsset.precision
-    );
 
     // Convert ETH symbol to Bebop's ETH marker address
     const sellTokenAddress = getAddress(
@@ -69,7 +64,7 @@ export const bebopRate = tool(
     const reqParams = new URLSearchParams({
       sell_tokens: sellTokenAddress,
       buy_tokens: buyTokenAddress,
-      sell_amounts: sellAmountCryptoBaseUnit,
+      sell_amounts: input.sellAmountCryptoBaseUnit,
       taker_address: takerAddress,
       approval_type: 'Standard',
       skip_validation: 'true',
@@ -130,8 +125,7 @@ export const bebopRate = tool(
     };
 
     const content = {
-      sellAmountCryptoPrecision: input.amount,
-      buyAmountCryptoPrecision,
+      sellAmountCryptoPrecision: fromBaseUnit(input.sellAmountCryptoBaseUnit, sellAsset.precision),
       sellAsset,
       buyAsset,
       txData: quote.tx,
@@ -139,10 +133,8 @@ export const bebopRate = tool(
 
     const artifacts = {
       swapperName: 'bebop',
-      sellAmountCryptoBaseUnit,
-      sellAmountCryptoPrecision: input.amount,
+      sellAmountCryptoBaseUnit: input.sellAmountCryptoBaseUnit,
       buyAmountCryptoBaseUnit,
-      buyAmountCryptoPrecision,
       approvalTarget: quote.approvalTarget,
       sellAsset,
       buyAsset,
@@ -159,14 +151,13 @@ export const bebopRate = tool(
     description: `Fetches a swap rate from Bebop and displays it to the user.
 
 Returns an object with the following fields, for display to the user
-- sellAmountCryptoPrecision: The sell amount in human-readable precision (e.g., 1 for 1 USDC). **Display this to the user.**
-- buyAmountCryptoPrecision: The buy amount in human-readable precision (e.g., 0.032413 for 0.032413 USDC). **Display this to the user.**
+- sellAmountCryptoBaseUnit: The sell amount in base unit for that token or native asset
+- buyAmountCryptoBaseUnit: The buy amount in base unit for that token or native asset
 - swapperName: The name of the swapper (e.g., 'Bebop'). **Internal use only.**
 - buyAsset: Object describing the buy asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
 - sellAsset: Object describing the sell asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
 
 **Instructions for LLM:**
-- Only display the precision values (buyAmountCryptoPrecision, sellAmountCryptoPrecision, or buyAmount) to the user.
 - Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details.
 - If the user requests technical details, you may show base unit values and other internal fields.
 `,
@@ -190,7 +181,7 @@ Returns an object with the following fields, for display to the user
           symbol: z.string(),
         })
         .describe('Asset to buy'),
-      amount: z.string().describe('Amount in human format, e.g. 1 for 1 ETH'),
+      sellAmountCryptoBaseUnit: z.string().describe('The amount to send in the base unit for that asset'),
       fromAddress: z
         .string()
         .describe(

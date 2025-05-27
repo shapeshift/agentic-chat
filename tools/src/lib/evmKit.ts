@@ -158,7 +158,7 @@ export class EvmKit {
   sendTransaction = tool(
     async (input: {
       to: Address;
-      value: string;
+      valueCryptoBaseUnit: string;
       data?: Hex;
       chainId: number;
     }): Promise<Hex> => {
@@ -173,7 +173,7 @@ export class EvmKit {
           publicClient.estimateGas({
             account,
             to: getAddress(input.to),
-            value: BigInt(input.value),
+            value: BigInt(input.valueCryptoBaseUnit),
             data: input.data,
           }),
           publicClient.getGasPrice(),
@@ -183,7 +183,7 @@ export class EvmKit {
         const hash = await walletClient.sendTransaction({
           account,
           to: getAddress(input.to),
-          value: BigInt(input.value),
+          value: BigInt(input.valueCryptoBaseUnit),
           data: input.data,
           chain: getChainById(input.chainId),
           gas: gasLimit,
@@ -205,7 +205,7 @@ export class EvmKit {
       `,
       schema: z.object({
         to: z.string().describe('The recipient address of the transaction'),
-        value: z.string().describe('The amount to send in wei (1e18)'),
+        valueCryptoBaseUnit: z.string().describe('The amount of native asset to send, in base unit'),
         data: z
           .string()
           .optional()
@@ -296,7 +296,7 @@ export class EvmKit {
     async (input: {
       token: Address;
       spender: Address;
-      amount: string;
+      amountCryptoBaseUnit: string;
       chainId: number;
     }): Promise<Hex> => {
       const walletClient = this.getWalletClient(input.chainId);
@@ -307,7 +307,7 @@ export class EvmKit {
         const data = encodeFunctionData({
           abi: erc20Abi,
           functionName: 'approve',
-          args: [getAddress(input.spender), BigInt(input.amount)],
+          args: [getAddress(input.spender), BigInt(input.amountCryptoBaseUnit)],
         });
 
         const hash = await walletClient.sendTransaction({
@@ -333,9 +333,9 @@ export class EvmKit {
       schema: z.object({
         token: z.string().describe('The ERC20 token contract address'),
         spender: z.string().describe('The spender address to approve'),
-        amount: z
+        amountCryptoBaseUnit: z
           .string()
-          .describe('The amount to approve in base units (e.g. wei)'),
+          .describe('The amount of that token to approve in the base unit of the token'),
         chainId: z.number().describe('The chain ID to approve on'),
       }),
     }
@@ -345,7 +345,7 @@ export class EvmKit {
     async (input: {
       token: Address;
       to: Address;
-      amount: string;
+      amountCryptoBaseUnit: string;
       chainId: number;
     }): Promise<Hex> => {
       const walletClient = this.getWalletClient(input.chainId);
@@ -356,7 +356,7 @@ export class EvmKit {
         const data = encodeFunctionData({
           abi: erc20Abi,
           functionName: 'transfer',
-          args: [getAddress(input.to), BigInt(input.amount)],
+          args: [getAddress(input.to), BigInt(input.amountCryptoBaseUnit)],
         });
 
         const hash = await walletClient.sendTransaction({
@@ -384,9 +384,9 @@ export class EvmKit {
       schema: z.object({
         token: z.string().describe('The ERC20 token contract address'),
         to: z.string().describe('The recipient address'),
-        amount: z
+        amountCryptoBaseUnit: z
           .string()
-          .describe('The amount to send in base units (e.g. wei)'),
+          .describe('The amount of that token to send in the base unit of the token'),
         chainId: z.number().describe('The chain ID to send the token on'),
       }),
     }
