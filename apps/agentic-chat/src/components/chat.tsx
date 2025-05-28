@@ -8,7 +8,6 @@ import useTools from '../hooks/useTools';
 
 export const Chat: React.FC = () => {
   const { handleToolCall } = useTools();
-  const toolCalls = [];
 
   const {
     messages,
@@ -23,10 +22,11 @@ export const Chat: React.FC = () => {
     onToolCall: handleToolCall,
   });
 
+  console.log({ messages });
 
   return (
     <div className="flex h-full flex-col">
-      <ChatMessageList messages={messages} toolCalls={toolCalls} />
+      <ChatMessageList messages={messages} />
       <ChatInput
         onSubmit={handleSubmit}
         onInputChange={handleAiInputchange}

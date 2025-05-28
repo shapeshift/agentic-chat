@@ -5,33 +5,24 @@ import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
 import { MessageList } from '../types/message';
 import Markdown from 'react-markdown';
-import {
-  ChatMessage,
-  isToolMessage,
-  OpenAIToolCall,
-  ToolMessage,
-} from '@langchain/core/messages';
 import { Button } from './ui/button';
 import { ArrowDown } from 'lucide-react';
 import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
 
-import type { UIMessage } from '@ai-sdk/ui-utils';
+import type { ToolInvocationUIPart, UIMessage } from '@ai-sdk/ui-utils';
 
 type ChatMessageListProps = {
   messages: MessageList;
-  toolCalls: OpenAIToolCall[];
 };
 
 const ToolMessageItem: React.FC<{
-  message: ToolMessage;
-  toolCall: OpenAIToolCall | undefined;
-}> = ({ message, toolCall }) => {
-  if (!toolCall) return null;
+  toolInvocation: ToolInvocationUIPart
+}> = ({ toolInvocation }) => {
 
-  const name = toolCall.function.name;
-  const id = toolCall.id;
-  const args = JSON.parse(toolCall.function.arguments);
-  const content = message.content;
+  const name = toolInvocation.toolInvocation.toolName
+  const id = toolInvocation.toolInvocation.toolCallId
+  const args = toolInvocation.toolInvocation.args
+  const content = toolInvocation.toolInvocation.state === 'result' ? JSON.stringify(toolInvocation.toolInvocation.result, null, 2) : ''
 
   return (
     <div className="flex flex-col items-start max-w-[75%]">
@@ -75,10 +66,10 @@ const ToolMessageItem: React.FC<{
 
 const ChatMessageItem: React.FC<{
   message: UIMessage;
-  toolCall: OpenAIToolCall | undefined;
-}> = ({ message, toolCall }) => {
-  if (message.role === 'tool') {
-    return <ToolMessageItem message={message} toolCall={toolCall} />;
+}> = ({ message }) => {
+  const toolInvocations = message.parts.filter(part => part.type === 'tool-invocation')
+  if (toolInvocations.length) {
+    return toolInvocations.map(toolInvocation => (<ToolMessageItem toolInvocation={toolInvocation} />))
   }
   return (
     <div key={message.id} className="flex">
@@ -140,7 +131,6 @@ const ScrollToBottom = () => {
 
 export const ChatMessageList = ({
   messages,
-  toolCalls,
 }: ChatMessageListProps) => (
   <div className="relative">
     <StickToBottom className="h-[calc(100vh-8rem)]">
