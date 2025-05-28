@@ -57,7 +57,7 @@ app.post('/', async (req: Request, res: Response) => {
       e.g for approvals, you should ask for their confirmation to approve that specific amount.
       </wallet_actions>
     `,
-    model: openai('gpt-4o'),
+    model: openai('gpt-4o-mini'),
     tools: {
       switchEvmChain: {
         description:

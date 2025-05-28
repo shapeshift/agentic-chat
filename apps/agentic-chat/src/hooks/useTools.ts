@@ -66,10 +66,6 @@ const PORTALS_BASE_URL = env.VITE_PORTALS_BASE_URL;
 const PORTALS_API_KEY = env.VITE_PORTALS_API_KEY;
 const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY;
 
-if (!PORTALS_BASE_URL || !PORTALS_API_KEY || !BEBOP_API_KEY) {
-  throw new Error('Missing env vars');
-}
-
 const useTools = () => {
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -80,6 +76,10 @@ const useTools = () => {
   }: {
     toolCall: ToolCall<string, unknown>;
   }) => {
+    if (!PORTALS_BASE_URL || !PORTALS_API_KEY || !BEBOP_API_KEY) {
+      throw new Error('Missing env vars');
+    }
+
     switch (toolCall.toolName) {
       case 'getAddress': {
         return account.address;
