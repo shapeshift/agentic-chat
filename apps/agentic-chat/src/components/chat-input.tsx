@@ -29,10 +29,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onInputChange(e);
-  };
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -40,7 +36,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     >
       <Input
         value={input}
-        onChange={handleInputChange}
+        onChange={onInputChange}
         placeholder="Type your message..."
         className="flex-1"
         disabled={disabled || isLoading}
