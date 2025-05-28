@@ -59,6 +59,13 @@ app.post('/', async (req: Request, res: Response) => {
     `,
     model: openai('gpt-4o'),
     tools: {
+      switchEvmChain: {
+        description:
+          'Switches the current EVM chainId to the specified chainId',
+        parameters: z.object({
+          chainId: z.number().describe('The chain ID to switch to'),
+        }),
+      },
       getAddress: {
         description: 'Returns the user address across all EVM chains',
         parameters: z.object({}),

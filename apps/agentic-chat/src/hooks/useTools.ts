@@ -85,6 +85,20 @@ const useTools = () => {
         return account.address;
       }
 
+      case 'switchEvmChain': {
+        if (!walletClient) {
+          throw new Error('No account connected');
+        }
+
+        const { chainId } = toolCall.args as { chainId: number };
+
+        await walletClient.switchChain({
+          id: chainId,
+        });
+
+        return 'Succesfully switched chain';
+      }
+
       case 'getNativeBalance': {
         if (!account.address) {
           throw new Error('No account connected');
