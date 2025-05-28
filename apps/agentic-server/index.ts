@@ -145,8 +145,8 @@ app.post('/', async (req: Request, res: Response) => {
         Returns an object with the following fields, for display to the user
         - sellAmountCryptoPrecision: The sell amount in human-readable precision (e.g., 1 for 1 USDC). **Display this to the user.**
         - buyAmountCryptoPrecision: The buy amount in human-readable precision (e.g., 0.032413 for 0.032413 USDC). **Display this to the user.**
-        - buyAsset: Object describing the buy asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
-        - sellAsset: Object describing the sell asset (assetId, chainId, symbol, name, precision). **Use this as necessary**
+        - buyAsset: Object describing the buy asset (i.e symbol, decimals, name, address)
+        - sellAsset: Object describing the sell asset (i.e symbol, decimals, name, address)
         - approvalTarget: The address the funds will be spent to. Use this as the spender for allowance checks.
 
         **Instructions for LLM:**
@@ -160,7 +160,7 @@ app.post('/', async (req: Request, res: Response) => {
           fromAsset: z
             .object({
               address: z.string(),
-              precision: z.number(),
+              decimals: z.number(),
               name: z.string(),
               symbol: z.string(),
             })
@@ -168,7 +168,7 @@ app.post('/', async (req: Request, res: Response) => {
           toAsset: z
             .object({
               address: z.string(),
-              precision: z.number(),
+              decimals: z.number(),
               name: z.string(),
               symbol: z.string(),
             })
@@ -178,9 +178,8 @@ app.post('/', async (req: Request, res: Response) => {
             .describe('Amount in human format, e.g. 1 for 1 ETH'),
           fromAddress: z
             .string()
-            .optional()
             .describe(
-              'The address the user is swapping from (optional). Also referred to as "sell address", and can be gotten using the getAddress() tool if not explicitly provided.'
+              'The address the user is swapping from. Also referred to as "sell address", and should be gotten using the getAddress() tool beforehand'
             ),
         }),
       },

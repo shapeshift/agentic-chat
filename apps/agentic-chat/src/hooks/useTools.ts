@@ -13,7 +13,7 @@ import {
 import { ToolCall } from '@ai-sdk/provider-utils';
 import axios from 'axios';
 import qs from 'qs';
-import { BebopResponse, BebopQuote, Asset } from '@agentic-chat/types';
+import { BebopResponse, BebopQuote, Asset, PortalsResponse, PortalsToken } from '@agentic-chat/types';
 
 import {
   arbitrum,
@@ -157,7 +157,7 @@ const useTools = () => {
           sortDirection: 'desc',
         };
 
-        const { data } = await axios.get(tokensUrl, {
+        const { data } = await axios.get<PortalsResponse>(tokensUrl, {
           paramsSerializer: (params) =>
             qs.stringify(params, { arrayFormat: 'repeat' }),
           headers: {
@@ -177,9 +177,9 @@ const useTools = () => {
           'bebopRate',
           {
             amount: string;
-            fromAsset: Asset & { precision: number; address: string };
-            toAsset: Asset & { precision: number; address: string };
-            fromAddress?: Address;
+            fromAsset: PortalsToken
+            toAsset: PortalsToken
+            fromAddress: Address;
             chain: string;
           }
         >;
@@ -198,7 +198,7 @@ const useTools = () => {
 
         const sellAmountCryptoBaseUnit = toBaseUnit(
           amount,
-          fromAsset.precision
+          fromAsset.decimals
         );
 
         // Convert ETH symbol to Bebop's ETH marker address
@@ -221,7 +221,7 @@ const useTools = () => {
           bebopChainsMap[chain] ?? chain
         }/v1/quote`;
         const takerAddress =
-          fromAddress || '0x0000000000000000000000000000000000000001';
+          fromAddress;
         const reqParams = new URLSearchParams({
           sell_tokens: sellTokenAddress,
           buy_tokens: buyTokenAddress,
@@ -260,7 +260,7 @@ const useTools = () => {
           quote.buyTokens[buyTokenAddress].amount.toString();
         const buyAmountCryptoPrecision = fromBaseUnit(
           buyAmountCryptoBaseUnit,
-          toAsset.precision
+          toAsset.decimals
         );
 
         const sellToken = Object.values(quote.sellTokens)[0];
