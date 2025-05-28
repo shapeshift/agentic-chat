@@ -5,7 +5,7 @@
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatOpenAI } from '@langchain/openai';
 import { tokensSearch, bebopRate, EvmKit } from '@agentic-chat/tools';
-import { SYSTEM_PROMPT } from '@agentic-chat/utils';
+import { fullPromptTemplate } from '@agentic-chat/utils';
 import {
   END,
   MemorySaver,
@@ -14,7 +14,7 @@ import {
   StateGraph,
 } from '@langchain/langgraph/web';
 import { WalletClient } from 'viem';
-import { AIMessage, SystemMessage } from '@langchain/core/messages';
+import { AIMessage } from '@langchain/core/messages';
 import { RunnableLambda, RunnableConfig } from '@langchain/core/runnables';
 
 // @ts-expect-error TODO: FIXME maybe
@@ -61,10 +61,11 @@ export const makeDynamicGraph = (walletClient: WalletClient | undefined) => {
   const modelWithTools = model.bindTools(tools);
   const toolNode = new ConfigurableToolNode(tools) as ToolNode;
 
-  // Create a prompt runnable that will prepend the system message
+  // Create a prompt runnable that will prepend the system messages
   const promptRunnable = RunnableLambda.from(
-    (state: typeof MessagesAnnotation.State) => {
-      return [new SystemMessage(SYSTEM_PROMPT), ...state.messages];
+    async (state: typeof MessagesAnnotation.State) => {
+      const messages = await fullPromptTemplate.formatMessages({});
+      return [...messages, ...state.messages];
     }
   );
 

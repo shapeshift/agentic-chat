@@ -5,7 +5,7 @@
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatOpenAI } from '@langchain/openai';
 import { tokensSearch, bebopRate, EvmKit } from '@agentic-chat/tools';
-import { SYSTEM_PROMPT } from '@agentic-chat/utils';
+import { fullPromptTemplate } from '@agentic-chat/utils';
 import {
   END,
   MemorySaver,
@@ -13,7 +13,7 @@ import {
   START,
   StateGraph,
 } from '@langchain/langgraph/web';
-import { AIMessage, SystemMessage } from '@langchain/core/messages';
+import { AIMessage } from '@langchain/core/messages';
 import { RunnableLambda } from '@langchain/core/runnables';
 
 const env = process.env;
@@ -25,10 +25,10 @@ const model = new ChatOpenAI({
   openAIApiKey: env.VITE_OPENAI_API_KEY,
 });
 
-// Create a prompt runnable that will prepend the system message
+// Create a prompt runnable that will format the messages with our composed prompts
 const promptRunnable = RunnableLambda.from(
   (state: typeof MessagesAnnotation.State) => {
-    return [new SystemMessage(SYSTEM_PROMPT), ...state.messages];
+    return fullPromptTemplate.formatMessages({ messages: state.messages });
   }
 );
 
