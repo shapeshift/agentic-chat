@@ -87,4 +87,3 @@ export type Asset = {
   name: string;
   precision: number;
 };
-

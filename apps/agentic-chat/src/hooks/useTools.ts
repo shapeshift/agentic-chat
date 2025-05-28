@@ -90,8 +90,11 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const typedToolCall = toolCall as ToolCall<'switchEvmChain', { chainId: number }>;
-        const { chainId } = typedToolCall.args
+        const typedToolCall = toolCall as ToolCall<
+          'switchEvmChain',
+          { chainId: number }
+        >;
+        const { chainId } = typedToolCall.args;
 
         await walletClient.switchChain({
           id: chainId,
@@ -105,8 +108,11 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const typedToolCall = toolCall as ToolCall<'getNativeBalance', { chainId: number }>;
-        const { chainId } = typedToolCall.args
+        const typedToolCall = toolCall as ToolCall<
+          'getNativeBalance',
+          { chainId: number }
+        >;
+        const { chainId } = typedToolCall.args;
         const publicClient = getPublicClient(chainId);
         const balance = await publicClient.getBalance({
           address: account.address,
@@ -119,7 +125,10 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const typedToolCall = toolCall as ToolCall<'getErc20Balance', { tokenAddress: string; chainId: number }>;
+        const typedToolCall = toolCall as ToolCall<
+          'getErc20Balance',
+          { tokenAddress: string; chainId: number }
+        >;
         const { tokenAddress, chainId } = typedToolCall.args;
         const publicClient = getPublicClient(chainId);
         const balance = await publicClient.readContract({
@@ -133,7 +142,10 @@ const useTools = () => {
       }
 
       case 'tokensSearch': {
-        const typedToolCall = toolCall as ToolCall<'tokensSearch', { searchTerm: string; network?: string }>;
+        const typedToolCall = toolCall as ToolCall<
+          'tokensSearch',
+          { searchTerm: string; network?: string }
+        >;
         const { searchTerm, network } = typedToolCall.args;
         const tokensUrl = `${PORTALS_BASE_URL}/v2/tokens`;
         const params = {
@@ -161,15 +173,18 @@ const useTools = () => {
       }
 
       case 'bebopRate': {
-        const typedToolCall = toolCall as ToolCall<'bebopRate', {
-          amount: string;
-          fromAsset: Asset & { precision: number; address: string };
-          toAsset: Asset & { precision: number; address: string };
-          fromAddress?: Address;
-          chain: string;
-        }>;
+        const typedToolCall = toolCall as ToolCall<
+          'bebopRate',
+          {
+            amount: string;
+            fromAsset: Asset & { precision: number; address: string };
+            toAsset: Asset & { precision: number; address: string };
+            fromAddress?: Address;
+            chain: string;
+          }
+        >;
         const { amount, fromAsset, toAsset, fromAddress, chain } =
-          typedToolCall.args
+          typedToolCall.args;
 
         const bebopChainsMap: Record<string, string> = {
           ethereum: 'ethereum',
@@ -288,11 +303,14 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const typedToolCall = toolCall as ToolCall<'getAllowance', {
-          token: string;
-          spender: string;
-          chainId: number;
-        }>;
+        const typedToolCall = toolCall as ToolCall<
+          'getAllowance',
+          {
+            token: string;
+            spender: string;
+            chainId: number;
+          }
+        >;
         const { token, spender, chainId } = typedToolCall.args;
 
         const publicClient = getPublicClient(chainId);
@@ -311,12 +329,15 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const typedToolCall = toolCall as ToolCall<'approve', {
-          token: string;
-          spender: string;
-          amount: string;
-          chainId: number;
-        }>;
+        const typedToolCall = toolCall as ToolCall<
+          'approve',
+          {
+            token: string;
+            spender: string;
+            amount: string;
+            chainId: number;
+          }
+        >;
 
         const { token, spender, amount, chainId } = typedToolCall.args;
 
@@ -342,12 +363,15 @@ const useTools = () => {
       }
 
       case 'sendTransaction': {
-        const typedToolCall = toolCall as ToolCall<'sendTransaction', {
-          to: Address;
-          value: string;
-          data: Hex;
-          chainId: number;
-        }>;
+        const typedToolCall = toolCall as ToolCall<
+          'sendTransaction',
+          {
+            to: Address;
+            value: string;
+            data: Hex;
+            chainId: number;
+          }
+        >;
         const { to, value, data, chainId } = typedToolCall.args;
 
         const publicClient = getPublicClient(chainId);

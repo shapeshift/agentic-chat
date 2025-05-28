@@ -26,7 +26,7 @@ const NetworkEnum = z.enum([
 const openai = createOpenAI({
   // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below
   apiKey: process.env.VITE_OPENAI_API_KEY,
-  // baseURL: 'https://api.venice.ai/api/v1'
+  // baseURL: 'https://api.venice.ai/api/v1',
 });
 
 app.post('/', async (req: Request, res: Response) => {
