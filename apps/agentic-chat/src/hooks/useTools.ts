@@ -13,7 +13,13 @@ import {
 import { ToolCall } from '@ai-sdk/provider-utils';
 import axios from 'axios';
 import qs from 'qs';
-import { BebopResponse, BebopQuote, Asset, PortalsResponse, PortalsToken } from '@agentic-chat/types';
+import {
+  BebopResponse,
+  BebopQuote,
+  Asset,
+  PortalsResponse,
+  PortalsToken,
+} from '@agentic-chat/types';
 
 import {
   arbitrum,
@@ -177,8 +183,8 @@ const useTools = () => {
           'bebopRate',
           {
             amount: string;
-            fromAsset: PortalsToken
-            toAsset: PortalsToken
+            fromAsset: PortalsToken;
+            toAsset: PortalsToken;
             fromAddress: Address;
             chain: string;
           }
@@ -196,10 +202,7 @@ const useTools = () => {
           bsc: 'bsc',
         };
 
-        const sellAmountCryptoBaseUnit = toBaseUnit(
-          amount,
-          fromAsset.decimals
-        );
+        const sellAmountCryptoBaseUnit = toBaseUnit(amount, fromAsset.decimals);
 
         // Convert ETH symbol to Bebop's ETH marker address
         const sellTokenAddress = getAddress(
@@ -220,8 +223,7 @@ const useTools = () => {
         const url = `https://api.bebop.xyz/router/${
           bebopChainsMap[chain] ?? chain
         }/v1/quote`;
-        const takerAddress =
-          fromAddress;
+        const takerAddress = fromAddress;
         const reqParams = new URLSearchParams({
           sell_tokens: sellTokenAddress,
           buy_tokens: buyTokenAddress,
