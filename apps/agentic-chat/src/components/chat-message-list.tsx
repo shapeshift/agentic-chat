@@ -15,7 +15,7 @@ type ChatMessageListProps = {
   messages: MessageList;
 };
 
-export const ToolMessageItem: React.FC<{
+const ToolMessageItem: React.FC<{
   toolInvocation: ToolInvocationUIPart;
 }> = ({ toolInvocation }) => {
   const name = toolInvocation.toolInvocation.toolName;
