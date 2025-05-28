@@ -8,27 +8,31 @@ import {
   CHAIN_NAMESPACE,
   ChainId,
 } from '@shapeshiftoss/caip';
+import { LangGraphRunnableConfig } from '@langchain/langgraph';
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
 export const bebopRate = tool(
-  async (input: {
-    chain: string;
-    sellAsset: {
-      address: string;
-      precision: number;
-      name: string;
-      symbol: string;
-    };
-    buyAsset: {
-      address: string;
-      precision: number;
-      name: string;
-      symbol: string;
-    };
-    sellAmountCryptoBaseUnit: string;
-    sellAddress?: string;
-  }) => {
+  async (
+    input: {
+      chain: string;
+      sellAsset: {
+        address: string;
+        precision: number;
+        name: string;
+        symbol: string;
+      };
+      buyAsset: {
+        address: string;
+        precision: number;
+        name: string;
+        symbol: string;
+      };
+      sellAmountCryptoBaseUnit: string;
+      sellAddress?: string;
+    },
+    config: LangGraphRunnableConfig
+  ) => {
     const bebopChainsMap: Record<string, string> = {
       ethereum: 'ethereum',
       polygon: 'polygon',
@@ -91,6 +95,9 @@ export const bebopRate = tool(
     }
 
     const quote = data.routes[0].quote;
+
+    // Store the quote in the store
+    await config.store?.put(['bebopQuote'], 'latest', quote);
 
     const buyAmountCryptoBaseUnit =
       quote.buyTokens[buyTokenAddress].amount.toString();
@@ -170,7 +177,9 @@ export const bebopRate = tool(
           symbol: z.string(),
         })
         .describe('Asset to buy'),
-      sellAmountCryptoBaseUnit: z.string().describe('The amount to send in the base unit for that asset'),
+      sellAmountCryptoBaseUnit: z
+        .string()
+        .describe('The amount to send in the base unit for that asset'),
       sellAddress: z
         .string()
         .optional()

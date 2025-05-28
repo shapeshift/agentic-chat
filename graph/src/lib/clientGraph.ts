@@ -22,6 +22,7 @@ import {
   SystemMessage,
 } from '@langchain/core/messages';
 import { RunnableLambda, RunnableConfig } from '@langchain/core/runnables';
+import { InMemoryStore } from '@langchain/langgraph/web';
 
 // @ts-expect-error TODO: FIXME maybe
 const env = import.meta?.env ? import.meta.env : process.env;
@@ -108,5 +109,6 @@ export const makeDynamicGraph = (walletClient: WalletClient | undefined) => {
 
   return graph.compile({
     checkpointer,
+    store: new InMemoryStore(),
   });
 };

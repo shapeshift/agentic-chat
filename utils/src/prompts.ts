@@ -70,7 +70,7 @@ const SWAP_EXECUTION_PROMPT = `
 ALWAYS check the user's balance before trying and getting a quote.
 
 1. There should always be a fromAddress (sell address), which is to be fetched with getAddress tool
-2. If a quote is for a non-native token, always use the getAllowance tool after getting a quote
+2. If a quote is for a non-native token, always use the getSwapAllowance tool after getting a quote
 3. For allowance checks and approvals:
    - ALWAYS use the exact amount from the quote's sellAmountCryptoBaseUnit field
    - Compare the allowance with the exact base unit amount needed:

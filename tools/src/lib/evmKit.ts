@@ -25,6 +25,8 @@ import {
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
+import { LangGraphRunnableConfig } from '@langchain/langgraph/web';
+import { BebopQuote } from './types';
 
 const getNativeBalance = async (
   publicClient: PublicClient,
@@ -108,7 +110,10 @@ export class EvmKit {
   );
 
   getErc20Balance = tool(
-    async (input: { tokenAddress: Address; chainId: number }): Promise<string> => {
+    async (input: {
+      tokenAddress: Address;
+      chainId: number;
+    }): Promise<string> => {
       const walletClient = this.getWalletClient(input.chainId);
       const publicClient = this.getPublicClient(input.chainId);
       const account = walletClient.account;
@@ -205,7 +210,9 @@ export class EvmKit {
       `,
       schema: z.object({
         to: z.string().describe('The recipient address of the transaction'),
-        valueCryptoBaseUnit: z.string().describe('The amount of native asset to send, in base unit'),
+        valueCryptoBaseUnit: z
+          .string()
+          .describe('The amount of native asset to send, in base unit'),
         data: z
           .string()
           .optional()
@@ -292,6 +299,48 @@ export class EvmKit {
     }
   );
 
+  getSwapAllowance = tool(
+    async (input, config: LangGraphRunnableConfig) => {
+      // Get the quote from the store
+      const quote = (config.store as unknown as any)?.store.data
+        .get('bebopQuote')
+        .get('latest').value as BebopQuote | undefined;
+      if (!quote) {
+        throw new Error('No active swap quote found');
+      }
+
+      const walletClient = this.getWalletClient(quote.chainId);
+      const publicClient = this.getPublicClient(quote.chainId);
+      const account = walletClient.account;
+
+      const sellTokenAddress = Object.keys(quote.sellTokens)[0];
+
+      // If the token is ETH, no allowance is needed
+      if (sellTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+        return 'No allowance needed for ETH';
+      }
+
+      try {
+        const allowance = await publicClient.readContract({
+          address: getAddress(sellTokenAddress),
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [account?.address!, getAddress(quote.tx.to)],
+        });
+
+        return allowance.toString();
+      } catch (err) {
+        console.error('Error checking allowance', err);
+        throw err;
+      }
+    },
+    {
+      name: 'get_swap_allowance',
+      description: 'Get the current allowance for the active swap quote.',
+      schema: z.object({}),
+    }
+  );
+
   approve = tool(
     async (input: {
       token: Address;
@@ -335,7 +384,9 @@ export class EvmKit {
         spender: z.string().describe('The spender address to approve'),
         amountCryptoBaseUnit: z
           .string()
-          .describe('The amount of that token to approve in the base unit of the token'),
+          .describe(
+            'The amount of that token to approve in the base unit of the token'
+          ),
         chainId: z.number().describe('The chain ID to approve on'),
       }),
     }
@@ -386,7 +437,9 @@ export class EvmKit {
         to: z.string().describe('The recipient address'),
         amountCryptoBaseUnit: z
           .string()
-          .describe('The amount of that token to send in the base unit of the token'),
+          .describe(
+            'The amount of that token to send in the base unit of the token'
+          ),
         chainId: z.number().describe('The chain ID to send the token on'),
       }),
     }
@@ -432,6 +485,60 @@ export class EvmKit {
     }
   );
 
+  executeSwap = tool(
+    async (input: {}, config: LangGraphRunnableConfig) => {
+      // Get the quote from the store
+      const quote = (config.store as unknown as any)?.store.data
+        .get('bebopQuote')
+        .get('latest').value as BebopQuote | undefined;
+      if (!quote) {
+        throw new Error('No active swap quote found');
+      }
+
+      const walletClient = this.getWalletClient(quote.chainId);
+      const publicClient = this.getPublicClient(quote.chainId);
+      const account = walletClient.account;
+      if (!account) throw new Error('No account found');
+
+      try {
+        // First estimate gas to catch potential errors
+        const [gasLimit, gasPrice] = await Promise.all([
+          publicClient.estimateGas({
+            account,
+            to: getAddress(quote.tx.to),
+            value: BigInt(quote.tx.value),
+            data: quote.tx.data as Hex,
+          }),
+          publicClient.getGasPrice(),
+        ]);
+
+        // Now send the transaction with the estimated gas
+        const hash = await walletClient.sendTransaction({
+          account,
+          to: getAddress(quote.tx.to),
+          value: BigInt(quote.tx.value),
+          data: quote.tx.data as Hex,
+          chain: getChainById(quote.chainId),
+          gas: gasLimit,
+          gasPrice,
+        });
+        return hash;
+      } catch (err) {
+        console.error('Error executing swap', err);
+        throw err;
+      }
+    },
+    {
+      name: 'execute_swap',
+      description: `
+        Execute a swap transaction using the active quote from the store.
+        This will automatically estimate gas and catch potential errors before sending.
+        Make sure to check allowance first using get_swap_allowance.
+      `,
+      schema: z.object({}),
+    }
+  );
+
   getTools() {
     return [
       this.getNativeBalance,
@@ -441,9 +548,11 @@ export class EvmKit {
       this.fromBaseUnit,
       this.toBaseUnit,
       this.getAllowance,
+      this.getSwapAllowance,
       this.approve,
       this.sendToken,
       this.switchChain,
+      this.executeSwap,
     ];
   }
 }
