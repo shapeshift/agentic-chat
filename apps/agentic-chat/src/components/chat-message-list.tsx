@@ -16,13 +16,15 @@ type ChatMessageListProps = {
 };
 
 const ToolMessageItem: React.FC<{
-  toolInvocation: ToolInvocationUIPart
+  toolInvocation: ToolInvocationUIPart;
 }> = ({ toolInvocation }) => {
-
-  const name = toolInvocation.toolInvocation.toolName
-  const id = toolInvocation.toolInvocation.toolCallId
-  const args = toolInvocation.toolInvocation.args
-  const content = toolInvocation.toolInvocation.state === 'result' ? JSON.stringify(toolInvocation.toolInvocation.result, null, 2) : ''
+  const name = toolInvocation.toolInvocation.toolName;
+  const id = toolInvocation.toolInvocation.toolCallId;
+  const args = toolInvocation.toolInvocation.args;
+  const content =
+    toolInvocation.toolInvocation.state === 'result'
+      ? JSON.stringify(toolInvocation.toolInvocation.result, null, 2)
+      : '';
 
   return (
     <div className="flex flex-col items-start max-w-[75%]">
@@ -67,9 +69,13 @@ const ToolMessageItem: React.FC<{
 const ChatMessageItem: React.FC<{
   message: UIMessage;
 }> = ({ message }) => {
-  const toolInvocations = message.parts.filter(part => part.type === 'tool-invocation')
+  const toolInvocations = message.parts.filter(
+    (part) => part.type === 'tool-invocation'
+  );
   if (toolInvocations.length) {
-    return toolInvocations.map(toolInvocation => (<ToolMessageItem toolInvocation={toolInvocation} />))
+    return toolInvocations.map((toolInvocation) => (
+      <ToolMessageItem toolInvocation={toolInvocation} />
+    ));
   }
   return (
     <div key={message.id} className="flex">
@@ -129,9 +135,7 @@ const ScrollToBottom = () => {
   );
 };
 
-export const ChatMessageList = ({
-  messages,
-}: ChatMessageListProps) => (
+export const ChatMessageList = ({ messages }: ChatMessageListProps) => (
   <div className="relative">
     <StickToBottom className="h-[calc(100vh-8rem)]">
       <StickyToBottomContent

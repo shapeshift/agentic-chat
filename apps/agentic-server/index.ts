@@ -10,11 +10,20 @@ import cors from 'cors';
 
 const app = express();
 app.use(express.json());
-app.use(cors())
+app.use(cors());
 
-const NetworkEnum = z.enum(['avalanche', 'ethereum', 'polygon', 'bsc', 'optimism', 'arbitrum', 'gnosis', 'base']);
+const NetworkEnum = z.enum([
+  'avalanche',
+  'ethereum',
+  'polygon',
+  'bsc',
+  'optimism',
+  'arbitrum',
+  'gnosis',
+  'base',
+]);
 
-const openai = createOpenAI({ apiKey: process.env.VITE_OPENAI_API_KEY })
+const openai = createOpenAI({ apiKey: process.env.VITE_OPENAI_API_KEY });
 
 app.post('/', async (req: Request, res: Response) => {
   const { messages } = req.body;
@@ -47,11 +56,11 @@ app.post('/', async (req: Request, res: Response) => {
     tools: {
       getAddress: {
         description: 'Returns the user address across all EVM chains',
-        parameters: z.object({
-        }),
+        parameters: z.object({}),
       },
       getNativeBalance: {
-        description: 'Returns the native token balance of the current account, represented in base unit (e.g 1e18 for ETH).',
+        description:
+          'Returns the native token balance of the current account, represented in base unit (e.g 1e18 for ETH).',
         parameters: z.object({
           chainId: z.number().describe('The chain ID to get the balance on'),
         }),
@@ -68,7 +77,8 @@ app.post('/', async (req: Request, res: Response) => {
         }),
       },
       getAllowance: {
-        description: 'Get the allowance of an ERC20 token for a specific spender.',
+        description:
+          'Get the allowance of an ERC20 token for a specific spender.',
         parameters: z.object({
           token: z.string().describe('The ERC20 token contract address'),
           spender: z.string().describe('The address of the spender'),
@@ -85,18 +95,25 @@ app.post('/', async (req: Request, res: Response) => {
         }),
       },
       sendTransaction: {
-        description: 'Send a transaction to the specified address with the given value and optional calldata.',
+        description:
+          'Send a transaction to the specified address with the given value and optional calldata.',
         parameters: z.object({
-        to: z.string().describe('The recipient address of the transaction'),
-        value: z.string().describe('The amount to send in wei (1e18)'),
-        amount: z.string().describe('The native asset amount to send alongside the transaction in base units'),
-        chainId: z.number().describe('The chain ID to send the transaction on'),
+          to: z.string().describe('The recipient address of the transaction'),
+          value: z.string().describe('The amount to send in wei (1e18)'),
+          amount: z
+            .string()
+            .describe(
+              'The native asset amount to send alongside the transaction in base units'
+            ),
+          chainId: z
+            .number()
+            .describe('The chain ID to send the transaction on'),
         }),
       },
       executeSwap: {
-        description: 'Sends a transaction which executes the swap the user has confirmed.',
-        parameters: z.object({
-        }),
+        description:
+          'Sends a transaction which executes the swap the user has confirmed.',
+        parameters: z.object({}),
       },
       tokensSearch: {
         description: `
@@ -124,24 +141,37 @@ app.post('/', async (req: Request, res: Response) => {
         - Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details.
         - If the user requests technical details, you may show base unit values and other internal fields.`,
         parameters: z.object({
-          chain: z.string().describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
-          fromAsset: z.object({
-            address: z.string(),
-            precision: z.number(),
-            name: z.string(),
-            symbol: z.string(),
-          }).describe('Asset to sell'),
-          toAsset: z.object({
-            address: z.string(),
-            precision: z.number(),
-            name: z.string(),
-            symbol: z.string(),
-          }).describe('Asset to buy'),
-          amount: z.string().describe('Amount in human format, e.g. 1 for 1 ETH'),
-          fromAddress: z.string().optional().describe('The address the user is swapping from (optional). Also referred to as "sell address", and can be gotten using the getAddress() tool if not explicitly provided.'),
+          chain: z
+            .string()
+            .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
+          fromAsset: z
+            .object({
+              address: z.string(),
+              precision: z.number(),
+              name: z.string(),
+              symbol: z.string(),
+            })
+            .describe('Asset to sell'),
+          toAsset: z
+            .object({
+              address: z.string(),
+              precision: z.number(),
+              name: z.string(),
+              symbol: z.string(),
+            })
+            .describe('Asset to buy'),
+          amount: z
+            .string()
+            .describe('Amount in human format, e.g. 1 for 1 ETH'),
+          fromAddress: z
+            .string()
+            .optional()
+            .describe(
+              'The address the user is swapping from (optional). Also referred to as "sell address", and can be gotten using the getAddress() tool if not explicitly provided.'
+            ),
         }),
       },
-    }
+    },
   });
 
   result.pipeDataStreamToResponse(res);
