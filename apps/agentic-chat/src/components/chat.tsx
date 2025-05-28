@@ -6,7 +6,6 @@ import { ChatInput } from './chat-input';
 import { useChat } from '@ai-sdk/react';
 import useTools from '../hooks/useTools';
 
-
 export const Chat: React.FC = () => {
   const { handleToolCall } = useTools();
   const toolCalls = [];
