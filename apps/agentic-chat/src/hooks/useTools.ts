@@ -90,7 +90,8 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const { chainId } = toolCall.args as { chainId: number };
+        const typedToolCall = toolCall as ToolCall<'switchEvmChain', { chainId: number }>;
+        const { chainId } = typedToolCall.args
 
         await walletClient.switchChain({
           id: chainId,
@@ -104,7 +105,8 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const { chainId } = toolCall.args as { chainId: number };
+        const typedToolCall = toolCall as ToolCall<'getNativeBalance', { chainId: number }>;
+        const { chainId } = typedToolCall.args
         const publicClient = getPublicClient(chainId);
         const balance = await publicClient.getBalance({
           address: account.address,
@@ -117,10 +119,8 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const { tokenAddress, chainId } = toolCall.args as {
-          tokenAddress: string;
-          chainId: number;
-        };
+        const typedToolCall = toolCall as ToolCall<'getErc20Balance', { tokenAddress: string; chainId: number }>;
+        const { tokenAddress, chainId } = typedToolCall.args;
         const publicClient = getPublicClient(chainId);
         const balance = await publicClient.readContract({
           address: getAddress(tokenAddress),
@@ -133,10 +133,8 @@ const useTools = () => {
       }
 
       case 'tokensSearch': {
-        const { searchTerm, network } = toolCall.args as {
-          searchTerm: string;
-          network?: string;
-        };
+        const typedToolCall = toolCall as ToolCall<'tokensSearch', { searchTerm: string; network?: string }>;
+        const { searchTerm, network } = typedToolCall.args;
         const tokensUrl = `${PORTALS_BASE_URL}/v2/tokens`;
         const params = {
           search: searchTerm,
@@ -163,8 +161,15 @@ const useTools = () => {
       }
 
       case 'bebopRate': {
+        const typedToolCall = toolCall as ToolCall<'bebopRate', {
+          amount: string;
+          fromAsset: Asset;
+          toAsset: Asset;
+          fromAddress?: Address;
+          chain: string;
+        }>;
         const { amount, fromAsset, toAsset, fromAddress, chain } =
-          toolCall.args as Record<string, any>;
+          typedToolCall.args as Record<string, any>;
 
         const bebopChainsMap: Record<string, string> = {
           ethereum: 'ethereum',
