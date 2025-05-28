@@ -10,16 +10,7 @@
       "path": "./apps/agentic-chat"
     },
     {
-      "path": "./tools"
-    },
-    {
       "path": "./utils"
-    },
-    {
-      "path": "./apps/langchain"
-    },
-    {
-      "path": "./graph"
     }
   ]
 }

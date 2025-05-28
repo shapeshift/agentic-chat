@@ -7,10 +7,6 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^1.2.12",
-    "@langchain/core": "^0.3.57",
-    "@langchain/langgraph": "^0.2.73",
-    "@langchain/langgraph-sdk": "^0.0.74",
-    "@langchain/openai": "^0.5.10",
     "@radix-ui/react-avatar": "^1.1.4",
     "@radix-ui/react-collapsible": "^1.1.4",
     "@radix-ui/react-dialog": "^1.1.7",

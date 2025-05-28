@@ -15,5 +15,3 @@ export const toBaseUnit = (
   const bn = new BigNumber(value);
   return bn.multipliedBy(new BigNumber(10).pow(precision)).toString();
 };
-
-export * from './prompts';
