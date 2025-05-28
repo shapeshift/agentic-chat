@@ -13,7 +13,7 @@ import {
 import { ToolCall } from '@ai-sdk/provider-utils';
 import axios from 'axios';
 import qs from 'qs';
-import { BebopResponse, BebopQuote, Asset } from '@agentic-chat/tools';
+import { BebopResponse, BebopQuote, Asset } from '@agentic-chat/types';
 
 import {
   arbitrum,
@@ -163,13 +163,13 @@ const useTools = () => {
       case 'bebopRate': {
         const typedToolCall = toolCall as ToolCall<'bebopRate', {
           amount: string;
-          fromAsset: Asset;
-          toAsset: Asset;
+          fromAsset: Asset & { precision: number; address: string };
+          toAsset: Asset & { precision: number; address: string };
           fromAddress?: Address;
           chain: string;
         }>;
         const { amount, fromAsset, toAsset, fromAddress, chain } =
-          typedToolCall.args as Record<string, any>;
+          typedToolCall.args
 
         const bebopChainsMap: Record<string, string> = {
           ethereum: 'ethereum',
@@ -288,11 +288,12 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const { token, spender, chainId } = toolCall.args as {
+        const typedToolCall = toolCall as ToolCall<'getAllowance', {
           token: string;
           spender: string;
           chainId: number;
-        };
+        }>;
+        const { token, spender, chainId } = typedToolCall.args;
 
         const publicClient = getPublicClient(chainId);
         const allowance = await publicClient.readContract({
@@ -310,12 +311,14 @@ const useTools = () => {
           throw new Error('No account connected');
         }
 
-        const { token, spender, amount, chainId } = toolCall.args as {
+        const typedToolCall = toolCall as ToolCall<'approve', {
           token: string;
           spender: string;
           amount: string;
           chainId: number;
-        };
+        }>;
+
+        const { token, spender, amount, chainId } = typedToolCall.args;
 
         try {
           const data = encodeFunctionData({
@@ -339,12 +342,13 @@ const useTools = () => {
       }
 
       case 'sendTransaction': {
-        const { to, value, data, chainId } = toolCall.args as {
+        const typedToolCall = toolCall as ToolCall<'sendTransaction', {
           to: Address;
           value: string;
           data: Hex;
           chainId: number;
-        };
+        }>;
+        const { to, value, data, chainId } = typedToolCall.args;
 
         const publicClient = getPublicClient(chainId);
         const account = walletClient?.account;
