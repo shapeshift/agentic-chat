@@ -23,7 +23,6 @@ export const Chat: React.FC = () => {
     onToolCall: handleToolCall,
   });
 
-  console.log({ messages });
 
   return (
     <div className="flex h-full flex-col">
