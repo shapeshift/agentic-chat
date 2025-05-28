@@ -73,7 +73,8 @@ app.post('/', async (req: Request, res: Response) => {
       getErc20Balance: {
         description: `
         Returns the ERC20 token balance of the current account, represented in base units (e.g 1e18 for ETH).
-        Always display to the user in human-readable format in your final message.
+        Always display to the user in human-readable format in your final message i.e bring precision down to human.
+        e.g for ETH, 1000000000000000000 would be displayed as 1 ETH.
         If unaware of the token's decimals, use the decimals property from the tokensSearch tools to convert back to human-readable when displaying to the user.
         `,
         parameters: z.object({
