@@ -15,6 +15,8 @@ import { Button } from './ui/button';
 import { ArrowDown } from 'lucide-react';
 import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
 
+import type { UIMessage } from '@ai-sdk/ui-utils';
+
 type ChatMessageListProps = {
   messages: MessageList;
   toolCalls: OpenAIToolCall[];
@@ -72,10 +74,10 @@ const ToolMessageItem: React.FC<{
 };
 
 const ChatMessageItem: React.FC<{
-  message: ChatMessage | ToolMessage;
+  message: UIMessage;
   toolCall: OpenAIToolCall | undefined;
 }> = ({ message, toolCall }) => {
-  if (isToolMessage(message)) {
+  if (message.role === 'tool') {
     return <ToolMessageItem message={message} toolCall={toolCall} />;
   }
   return (
@@ -83,7 +85,7 @@ const ChatMessageItem: React.FC<{
       <div
         className={cn(
           'inline-block max-w-[75%] rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap',
-          message._getType() === 'human'
+          message.role === 'user'
             ? 'ml-auto bg-primary text-primary-foreground'
             : 'bg-muted'
         )}
@@ -148,15 +150,11 @@ export const ChatMessageList = ({
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
               {messages.map((message) => {
-                const maybeToolCall = isToolMessage(message)
-                  ? toolCalls.find((call) => call.id === message.tool_call_id)
-                  : undefined;
-
                 return (
                   <ChatMessageItem
                     key={message.id}
                     message={message}
-                    toolCall={maybeToolCall}
+                    toolCall={undefined}
                   />
                 );
               })}

@@ -3,26 +3,37 @@
 import React from 'react';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
-import { useWalletClient } from 'wagmi';
-import { useStream } from '../hooks/useStream';
+import { useChat } from '@ai-sdk/react';
+import useTools from '../hooks/useTools';
+
 
 export const Chat: React.FC = () => {
-  const { data: walletClient } = useWalletClient();
-  const { messages, toolCalls, run, isLoading, stop } = useStream();
+  const { handleToolCall } = useTools();
+  const toolCalls = [];
 
-  const handleSubmit = async (message: string) => {
-    await run({
-      message,
-      walletClient,
-    });
-  };
+  const {
+    messages,
+    input,
+    handleInputChange: handleAiInputchange,
+    handleSubmit,
+    stop,
+    status,
+  } = useChat({
+    api: 'http://localhost:8080/',
+    maxSteps: 5,
+    onToolCall: handleToolCall,
+  });
+
+  console.log({ messages });
 
   return (
     <div className="flex h-full flex-col">
       <ChatMessageList messages={messages} toolCalls={toolCalls} />
       <ChatInput
-        onSendMessage={handleSubmit}
-        isLoading={isLoading}
+        onSubmit={handleSubmit}
+        onInputChange={handleAiInputchange}
+        input={input}
+        isLoading={status === 'streaming'}
         onStop={stop}
       />
     </div>
