@@ -15,7 +15,7 @@ type ChatMessageListProps = {
   messages: MessageList;
 };
 
-const ToolMessageItem: React.FC<{
+export const ToolMessageItem: React.FC<{
   toolInvocation: ToolInvocationUIPart;
 }> = ({ toolInvocation }) => {
   const name = toolInvocation.toolInvocation.toolName;
@@ -69,27 +69,27 @@ const ToolMessageItem: React.FC<{
 const ChatMessageItem: React.FC<{
   message: UIMessage;
 }> = ({ message }) => {
-  const toolInvocations = message.parts.filter(
-    (part) => part.type === 'tool-invocation'
-  );
-  if (toolInvocations.length) {
-    return toolInvocations.map((toolInvocation) => (
+  const toolMessageItems = message.parts
+    .filter((part) => part.type === 'tool-invocation')
+    .map((toolInvocation) => (
       <ToolMessageItem toolInvocation={toolInvocation} />
     ));
-  }
   return (
-    <div key={message.id} className="flex">
-      <div
-        className={cn(
-          'inline-block max-w-[75%] rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap',
-          message.role === 'user'
-            ? 'ml-auto bg-primary text-primary-foreground'
-            : 'bg-muted'
-        )}
-      >
-        {<Markdown>{message.content as string}</Markdown>}
+    <>
+      {toolMessageItems}
+      <div key={message.id} className="flex">
+        <div
+          className={cn(
+            'inline-block max-w-[75%] rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap',
+            message.role === 'user'
+              ? 'ml-auto bg-primary text-primary-foreground'
+              : 'bg-muted'
+          )}
+        >
+          {<Markdown>{message.content as string}</Markdown>}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
@@ -144,13 +144,7 @@ export const ChatMessageList = ({ messages }: ChatMessageListProps) => (
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
               {messages.map((message) => {
-                return (
-                  <ChatMessageItem
-                    key={message.id}
-                    message={message}
-                    toolCall={undefined}
-                  />
-                );
+                return <ChatMessageItem key={message.id} message={message} />;
               })}
             </div>
           </ScrollArea>

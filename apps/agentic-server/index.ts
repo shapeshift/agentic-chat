@@ -23,14 +23,18 @@ const NetworkEnum = z.enum([
   'base',
 ]);
 
-const openai = createOpenAI({ apiKey: process.env.VITE_OPENAI_API_KEY });
+const openai = createOpenAI({
+  // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below
+  apiKey: process.env.VITE_OPENAI_API_KEY,
+  // baseURL: 'https://api.venice.ai/api/v1'
+});
 
 app.post('/', async (req: Request, res: Response) => {
   const { messages } = req.body;
   const result = streamText({
     messages,
     system: `
-      You are a powerful agentic wallet assistant.7 Sonnet. You always refer to yourself as "ShapeShift" agent.
+      You are a powerful agentic wallet assistant. You always refer to yourself as "ShapeShift" agent.
 
       You always respond in a friendly, helpful, and concise manner, using markdown.
 
@@ -41,10 +45,11 @@ app.post('/', async (req: Request, res: Response) => {
       You always reply to users with numbers in human-readable format, and you use the knowledge at your dispoal to convert it to full base unit within tools as necessary.
 
       <swap_flow>
-        A quote is gotten and returned to the user for confirmation using the bebopRate tool.
-        After they confirm their intent to swap, you check if the user has enough balance to perform the swap using the getAllowance() tool.
-        If they don't, it will need to be approved first using the approve tool.
-        If they do have enough (e.g after approving, or after checking for their allowance initially), you proceed to call the executeSwap() tool.
+        - A quote is gotten and returned to the user for confirmation using the bebopRate tool.
+        - After they confirm their intent to swap, you check if the user has enough balance to perform the swap using the getAllowance() tool.
+        - If they don't, it will need to be approved first using the approve tool.
+        - If they do have enough (e.g after approving, or after checking for their allowance initially), you proceed to call the executeSwap() tool.
+        - Every time the user asks for a specific swap/quote, we will get a new quote using the bebopRate tool.
       </swap_flow>
 
       <wallet_actions>

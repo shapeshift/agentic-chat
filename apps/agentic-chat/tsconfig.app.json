@@ -43,9 +43,6 @@
     },
     {
       "path": "../../tools/tsconfig.lib.json"
-    },
-    {
-      "path": "../../graph/tsconfig.lib.json"
     }
   ]
 }
