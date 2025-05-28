@@ -6,6 +6,9 @@
       "path": "../../utils"
     },
     {
+      "path": "../../types"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {
