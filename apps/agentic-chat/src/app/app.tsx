@@ -1,40 +1,7 @@
-import { wagmiConfig, wagmiAdapter } from '../lib/wagmi-config';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider } from 'wagmi';
-import Dashboard from './chat/page';
-import { createAppKit } from '@reown/appkit/react';
-import { networks } from '../lib/appkit';
+import { redirect } from 'next/navigation';
 
-const queryClient = new QueryClient();
-
-const metadata = {
-  name: 'Agentic Chat',
-  description: 'ShapeShift Agentic Chat',
-  url:
-    typeof window !== 'undefined'
-      ? window.location.origin
-      : 'https://chat.shapeshift.com',
-  icons: ['https://chat.shapeshift.com/favicon.ico'],
-};
-
-// Initialize AppKit
-if (process.env.VITE_PROJECT_ID) {
-  createAppKit({
-    adapters: [wagmiAdapter],
-    projectId: process.env.VITE_PROJECT_ID,
-    networks,
-    metadata,
-  });
-}
-
-export function App() {
+export default async function App() {
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <Dashboard />
-      </QueryClientProvider>
-    </WagmiProvider>
+      redirect('/chat')
   );
 }
-
-export default App;
