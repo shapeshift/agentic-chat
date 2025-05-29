@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { StreamData, streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
@@ -20,7 +20,7 @@ const openai = createOpenAI({
   // baseURL: 'https://api.venice.ai/api/v1',
 });
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest, res: NextResponse) {
   const { messages, id } = await req.json();
 
   console.log({messages, id})
@@ -129,6 +129,9 @@ export async function POST(req: NextRequest) {
           fromAddress: z.string().describe('The address the user is swapping from. Also referred to as "sell address", and should be gotten using the getAddress() tool beforehand'),
         }),
       },
+    },
+    onFinish() {
+      data.close();
     },
   });
 

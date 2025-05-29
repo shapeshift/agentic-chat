@@ -1,4 +1,5 @@
 import '../styles.css';
+import { ContextProvider } from '../components/context-provider';
 
 export const metadata = {
   title: 'AgenticChat',
@@ -12,7 +13,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ContextProvider cookies={null}>
+          {children}
+        </ContextProvider>
+      </body>
     </html>
   )
 }

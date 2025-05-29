@@ -24,6 +24,8 @@ export const Chat: React.FC = () => {
     onToolCall: handleToolCall,
   });
 
+  console.log({status})
+
   return (
     <div className="flex h-full flex-col">
       <ChatMessageList messages={messages} />
