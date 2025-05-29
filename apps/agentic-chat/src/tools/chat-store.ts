@@ -56,3 +56,11 @@ export async function getLatestChatId(): Promise<string | null> {
 
   return latestChat[0].split('.')[0]; // Return the ID part of the filename
 }
+
+export async function getChatIds(): Promise<string[]> {
+  const chatDir = path.join(process.cwd(), CHATS_DIR);
+  if (!existsSync(chatDir)) return [];
+
+  const files = await readdir(chatDir);
+  return files.map(file => file.split('.')[0]); // Return only the IDs
+}
