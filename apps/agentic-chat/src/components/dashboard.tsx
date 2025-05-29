@@ -1,3 +1,4 @@
+'use client'
 import { Button } from './ui/button';
 import { Chat } from './chat';
 import { SidebarLeft } from './sidebar-left';
@@ -11,8 +12,18 @@ import {
 import { Separator } from './ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from './ui/sidebar';
 import { Message } from 'ai';
+import { createChat } from '../tools/chat-store';
+import { useRouter } from 'next/navigation';
 
 export const Dashboard = ({chatId, initialMessages}: {chatId: string, initialMessages: Message[]}) => {
+
+  const router = useRouter()
+
+  const handleCreate = async () => {
+    const newChatId = await createChat();
+    router.push(`/chat/${newChatId}`);
+  };
+
   return (
     <SidebarProvider>
       <SidebarLeft />
@@ -30,7 +41,7 @@ export const Dashboard = ({chatId, initialMessages}: {chatId: string, initialMes
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            <Button variant="ghost" size="icon" className="ml-auto w-auto px-2">
+            <Button variant="ghost" size="icon" className="ml-auto w-auto px-2" onClick={handleCreate}>
               New Chat
             </Button>
           </div>

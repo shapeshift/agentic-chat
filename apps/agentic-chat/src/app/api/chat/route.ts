@@ -24,8 +24,6 @@ const openai = createOpenAI({
 export async function POST(req: NextRequest, res: NextResponse) {
   const { messages, id } = await req.json();
 
-  console.log({ messages, id });
-
   const data = new StreamData();
 
   const result = streamText({
