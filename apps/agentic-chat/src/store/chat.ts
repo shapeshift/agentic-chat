@@ -1,21 +1,91 @@
 import { create } from 'zustand';
-import { generateId } from 'ai';
+import { persist } from 'zustand/middleware';
+import { generateId } from 'ai'
+import type { UIMessage } from '@ai-sdk/ui-utils';
+
+type ChatThread = {
+  id: string;
+  messages: UIMessage[];
+};
+
+type MessageUpdater = (prev: UIMessage[]) => UIMessage[];
 
 type ChatState = {
-  activeThreadId: string;
+  threads: {
+    byId: Record<string, ChatThread>;
+    ids: string[];
+  };
+  activeThreadId: string | null;
+  setMessages: (
+    threadId: string,
+    messagesOrUpdater: UIMessage[] | MessageUpdater
+  ) => void;
   setActiveThreadId: (threadId?: string) => void;
 };
 
-export const useChatStore = create<ChatState>()(set => ({
-      activeThreadId: '',
+export const useChatStore = create<ChatState>()(
+  persist(
+    (set) => ({
+      threads: { byId: {}, ids: [] },
+      activeThreadId: null,
+      setMessages: (threadId, messagesOrUpdater) =>
+        set((state) => {
+          const currentMessages = state.threads.byId[threadId]?.messages || [];
+          const newMessages =
+            typeof messagesOrUpdater === 'function'
+              ? messagesOrUpdater(currentMessages)
+              : messagesOrUpdater;
+
+          return {
+            threads: {
+              ...state.threads,
+              byId: {
+                ...state.threads.byId,
+                [threadId]: {
+                  ...state.threads.byId[threadId],
+                  id: threadId,
+                  messages: newMessages,
+                },
+              },
+            },
+          };
+        }),
       setActiveThreadId: (threadId) => {
         const newThreadId = threadId || generateId();
-        set({ activeThreadId: newThreadId });
+        set((state) => {
+          const exists = state.threads.ids.includes(newThreadId);
+          return {
+            activeThreadId: newThreadId,
+            threads: {
+              byId: {
+                ...state.threads.byId,
+                [newThreadId]: state.threads.byId[newThreadId] || {
+                  id: newThreadId,
+                  messages: [],
+                  toolCalls: [],
+                  isLoading: false,
+                },
+              },
+              ids: exists
+                ? state.threads.ids
+                : [...state.threads.ids, newThreadId],
+            },
+          };
+        });
       },
-}))
+    }),
+    {
+      name: 'chat-storage',
+    }
+  )
+);
 
-// Initialize with a new thread on module eval if none exists
-// This should ensure we always have an active thread ID
-if (useChatStore.getState().activeThreadId === '') {
+export const useActiveThread = () =>
+  useChatStore((state) =>
+    state.activeThreadId ? state.threads.byId[state.activeThreadId] : undefined
+  );
+
+// Initialize with a new thread if none exists
+if (useChatStore.getState().activeThreadId === null) {
   useChatStore.getState().setActiveThreadId();
 }

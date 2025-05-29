@@ -29,8 +29,9 @@ const openai = createOpenAI({
   // baseURL: 'https://api.venice.ai/api/v1',
 });
 
-app.post('/', async (req: Request, res: Response) => {
-  const { messages } = req.body;
+app.post('/stream', async (req: Request, res: Response) => {
+  const { messages, id } = req.body;
+  console.log({id})
   const result = streamText({
     messages,
     system: `

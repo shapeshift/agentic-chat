@@ -19,7 +19,7 @@ export const Chat: React.FC = () => {
     stop,
     status,
   } = useChat({
-    api: 'http://localhost:8080/',
+    api: 'http://localhost:8080/stream',
     id: activeThreadId,
     maxSteps: 5,
     onToolCall: handleToolCall,
