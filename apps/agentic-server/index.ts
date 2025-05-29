@@ -31,7 +31,7 @@ const openai = createOpenAI({
 
 app.post('/stream', async (req: Request, res: Response) => {
   const { messages, id } = req.body;
-  console.log({id})
+  console.log({ id });
   const result = streamText({
     messages,
     system: `

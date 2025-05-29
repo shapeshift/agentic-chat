@@ -5,20 +5,18 @@ import React from 'react';
 export const metadata = {
   title: 'AgenticChat',
   description: 'ShapeShift Agentic Chat',
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" className="dark">
       <body>
-        <ContextProvider cookies={null}>
-          {children}
-        </ContextProvider>
+        <ContextProvider cookies={null}>{children}</ContextProvider>
       </body>
     </html>
-  )
+  );
 }

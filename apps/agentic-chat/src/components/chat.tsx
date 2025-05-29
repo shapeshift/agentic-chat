@@ -3,13 +3,12 @@
 import React from 'react';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
-import { useChat } from '@ai-sdk/react';
+import { Message, useChat } from '@ai-sdk/react';
 import useTools from '../hooks/useTools';
-import { useChatStore } from '../store/chat';
 
-export const Chat: React.FC = () => {
-  const { activeThreadId } = useChatStore()
+export const Chat: React.FC<{chatId: string, initialMessages: Message[]}> = ({ chatId, initialMessages }) => {
   const { handleToolCall } = useTools();
+
 
   const {
     messages,
@@ -19,12 +18,12 @@ export const Chat: React.FC = () => {
     stop,
     status,
   } = useChat({
-    id: activeThreadId,
+    id: chatId,
+    initialMessages,
     maxSteps: 5,
     onToolCall: handleToolCall,
   });
 
-  console.log({status})
 
   return (
     <div className="flex h-full flex-col">

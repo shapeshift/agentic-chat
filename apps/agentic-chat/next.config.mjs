@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // Outputs a Single-Page Application (SPA).
+  output: 'standalone',
   distDir: './dist', // Changes the build output directory to `./dist/`.
-  
+
   // Configure webpack to handle Node.js built-in modules
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -20,7 +20,7 @@ const nextConfig = {
         os: false,
       };
     }
-    config.externals.push("pino-pretty", "lokijs", "encoding");
+    config.externals.push('pino-pretty', 'lokijs', 'encoding');
     return config;
   },
 
@@ -31,6 +31,6 @@ const nextConfig = {
     NEXT_PUBLIC_BEBOP_API_KEY: process.env.VITE_BEBOP_API_KEY,
     NEXT_PUBLIC_OPENAI_API_KEY: process.env.VITE_OPENAI_API_KEY,
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;

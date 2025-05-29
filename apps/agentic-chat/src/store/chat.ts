@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { generateId } from 'ai'
+import { generateId } from 'ai';
 import type { UIMessage } from '@ai-sdk/ui-utils';
 
 type ChatThread = {

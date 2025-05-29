@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { StreamData, streamText } from 'ai';
+import { appendResponseMessages, StreamData, streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
+import { saveChat } from '../../../tools/chat-store';
 
 const NetworkEnum = z.enum([
   'avalanche',
@@ -23,7 +24,7 @@ const openai = createOpenAI({
 export async function POST(req: NextRequest, res: NextResponse) {
   const { messages, id } = await req.json();
 
-  console.log({messages, id})
+  console.log({ messages, id });
 
   const data = new StreamData();
 
@@ -50,7 +51,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
     model: openai.chat('gpt-4o-mini'),
     tools: {
       switchEvmChain: {
-        description: 'Switches the current EVM chainId to the specified chainId',
+        description:
+          'Switches the current EVM chainId to the specified chainId',
         parameters: z.object({
           chainId: z.number().describe('The chain ID to switch to'),
         }),
@@ -60,7 +62,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
         parameters: z.object({}),
       },
       getNativeBalance: {
-        description: 'Returns the native token balance of the current account, represented in base unit (e.g 1e18 for ETH).',
+        description:
+          'Returns the native token balance of the current account, represented in base unit (e.g 1e18 for ETH).',
         parameters: z.object({
           chainId: z.number().describe('The chain ID to get the balance on'),
         }),
@@ -73,7 +76,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
         }),
       },
       getAllowance: {
-        description: 'Get the allowance of an ERC20 token for a specific spender.',
+        description:
+          'Get the allowance of an ERC20 token for a specific spender.',
         parameters: z.object({
           token: z.string().describe('The ERC20 token contract address'),
           spender: z.string().describe('The address of the spender'),
@@ -90,16 +94,24 @@ export async function POST(req: NextRequest, res: NextResponse) {
         }),
       },
       sendTransaction: {
-        description: 'Send a transaction to the specified address with the given value and optional calldata.',
+        description:
+          'Send a transaction to the specified address with the given value and optional calldata.',
         parameters: z.object({
           to: z.string().describe('The recipient address of the transaction'),
           value: z.string().describe('The amount to send in wei (1e18)'),
-          amount: z.string().describe('The native asset amount to send alongside the transaction in base units'),
-          chainId: z.number().describe('The chain ID to send the transaction on'),
+          amount: z
+            .string()
+            .describe(
+              'The native asset amount to send alongside the transaction in base units'
+            ),
+          chainId: z
+            .number()
+            .describe('The chain ID to send the transaction on'),
         }),
       },
       executeSwap: {
-        description: 'Sends a transaction which executes the swap the user has confirmed.',
+        description:
+          'Sends a transaction which executes the swap the user has confirmed.',
         parameters: z.object({}),
       },
       tokensSearch: {
@@ -112,26 +124,46 @@ export async function POST(req: NextRequest, res: NextResponse) {
       bebopRate: {
         description: `Fetches a swap rate from Bebop and displays it to the user. Returns an object with the following fields, for display to the user - sellAmountCryptoPrecision: The sell amount in human-readable precision (e.g., 1 for 1 USDC). **Display this to the user.** - buyAmountCryptoPrecision: The buy amount in human-readable precision (e.g., 0.032413 for 0.032413 USDC). **Display this to the user.** - buyAsset: Object describing the buy asset (i.e symbol, decimals, name, address) - sellAsset: Object describing the sell asset (i.e symbol, decimals, name, address) - approvalTarget: The address the funds will be spent to. Use this as the spender for allowance checks. **Instructions for LLM:** - Only display the precision values (buyAmountCryptoPrecision, sellAmountCryptoPrecision, or buyAmount) to the user. - Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details. - If the user requests technical details, you may show base unit values and other internal fields.`,
         parameters: z.object({
-          chain: z.string().describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
-          fromAsset: z.object({
-            address: z.string(),
-            decimals: z.number(),
-            name: z.string(),
-            symbol: z.string(),
-          }).describe('Asset to sell'),
-          toAsset: z.object({
-            address: z.string(),
-            decimals: z.number(),
-            name: z.string(),
-            symbol: z.string(),
-          }).describe('Asset to buy'),
-          amount: z.string().describe('Amount in human format, e.g. 1 for 1 ETH'),
-          fromAddress: z.string().describe('The address the user is swapping from. Also referred to as "sell address", and should be gotten using the getAddress() tool beforehand'),
+          chain: z
+            .string()
+            .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
+          fromAsset: z
+            .object({
+              address: z.string(),
+              decimals: z.number(),
+              name: z.string(),
+              symbol: z.string(),
+            })
+            .describe('Asset to sell'),
+          toAsset: z
+            .object({
+              address: z.string(),
+              decimals: z.number(),
+              name: z.string(),
+              symbol: z.string(),
+            })
+            .describe('Asset to buy'),
+          amount: z
+            .string()
+            .describe('Amount in human format, e.g. 1 for 1 ETH'),
+          fromAddress: z
+            .string()
+            .describe(
+              'The address the user is swapping from. Also referred to as "sell address", and should be gotten using the getAddress() tool beforehand'
+            ),
         }),
       },
     },
-    onFinish() {
+    async onFinish({ response }) {
       data.close();
+
+      await saveChat({
+        id,
+        messages: appendResponseMessages({
+          messages,
+          responseMessages: response.messages,
+        }),
+      });
     },
   });
 

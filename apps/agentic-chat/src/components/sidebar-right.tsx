@@ -1,15 +1,20 @@
-import * as React from "react"
+'use client';
 
-import { Sidebar, SidebarContent, SidebarInput, SidebarSeparator } from './ui/sidebar';
-import { WalletBalances } from "./wallet-balances";
-import { TransactionHistory } from "./transaction-history";
-import { ChatHistory } from "./chat-history";
+import * as React from 'react';
 
-type SidebarRightProps = React.ComponentProps<typeof Sidebar>
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarInput,
+  SidebarSeparator,
+} from './ui/sidebar';
+import { WalletBalances } from './wallet-balances';
+import { TransactionHistory } from './transaction-history';
+import { ChatHistory } from './chat-history';
 
-export const SidebarRight: React.FC<SidebarRightProps> = ({
-  ...props
-}) => {
+type SidebarRightProps = React.ComponentProps<typeof Sidebar>;
+
+export const SidebarRight: React.FC<SidebarRightProps> = ({ ...props }) => {
   return (
     <Sidebar
       collapsible="none"
@@ -26,5 +31,5 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
         <ChatHistory />
       </SidebarContent>
     </Sidebar>
-  )
-}
+  );
+};

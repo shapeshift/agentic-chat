@@ -7,4 +7,4 @@ const App = dynamic(() => import('../../app/app'), { ssr: false });
 
 export function ClientOnly() {
   return <App />;
-} 
+}

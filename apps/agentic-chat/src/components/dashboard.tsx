@@ -1,21 +1,18 @@
-import { Button } from '../../components/ui/button';
-import { Chat } from '../../components/chat';
-import { SidebarLeft } from '../../components/sidebar-left';
-import { SidebarRight } from '../../components/sidebar-right';
+import { Button } from './ui/button';
+import { Chat } from './chat';
+import { SidebarLeft } from './sidebar-left';
+import { SidebarRight } from './sidebar-right';
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
   BreadcrumbPage,
-} from '../../components/ui/breadcrumb';
-import { Separator } from '../../components/ui/separator';
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from '../../components/ui/sidebar';
+} from './ui/breadcrumb';
+import { Separator } from './ui/separator';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from './ui/sidebar';
+import { Message } from 'ai';
 
-export const Dashboard = () => {
+export const Dashboard = ({chatId, initialMessages}: {chatId: string, initialMessages: Message[]}) => {
   return (
     <SidebarProvider>
       <SidebarLeft />
@@ -38,7 +35,7 @@ export const Dashboard = () => {
             </Button>
           </div>
         </header>
-        <Chat />
+        <Chat chatId={chatId} initialMessages={initialMessages} />
       </SidebarInset>
       <SidebarRight />
     </SidebarProvider>
