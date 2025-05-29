@@ -4,7 +4,7 @@
   "license": "MIT",
   "scripts": {
     "build": "nx run-many --target=build --all",
-    "dev": "nx run-many --target=build --all && nx run agentic-chat:dev"
+    "dev": "nx run agentic-chat:dev"
   },
   "private": true,
   "devDependencies": {
