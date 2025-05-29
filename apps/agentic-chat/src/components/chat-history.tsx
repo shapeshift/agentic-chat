@@ -13,27 +13,22 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@radix-ui/react-collapsible';
-import { useChatStore } from '../store/chat';
 import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getChatIds } from '../tools/chat-store';
+import { useParams, useRouter } from 'next/navigation';
 
 export const ChatHistory = () => {
-  const { threads, activeThreadId, setActiveThreadId } = useChatStore();
+  const { data: chatIds } = useQuery({
+    queryKey: ['chatIds'],
+    queryFn: () => getChatIds(),
+  })
 
-  const getThreadTitle = useCallback(
-    (threadId: string) => {
-      const thread = threads.byId[threadId];
-      if (!thread || !thread.messages) return threadId;
-      // TODO(gomes): ideally, we'd store a summary alongside the thread on first human message
-      const firstHumanMessage = thread.messages.find(
-        (msg) => msg.role === 'user'
-      );
-      if (!firstHumanMessage?.content) return 'New Thread';
-      return `${firstHumanMessage.content.slice(0, 30)}${
-        firstHumanMessage.content.length > 30 ? '…' : ''
-      }`;
-    },
-    [threads]
-  );
+  const params = useParams<{id: string}>()
+  const router = useRouter();
+  const handleThreadIdClick = useCallback((chatId: string) => {
+    router.push(`/chat/${chatId}`);
+    }, [router]);
 
   return (
     <SidebarGroup className="py-0">
@@ -49,18 +44,18 @@ export const ChatHistory = () => {
         </SidebarGroupLabel>
         <CollapsibleContent>
           <SidebarMenu>
-            {threads.ids.map((threadId) => (
+            {(chatIds ?? []).map((chatId) => (
               <SidebarMenuItem
-                key={threadId}
+                key={chatId}
                 className={`cursor-pointer text-sm px-4 py-2 truncate ${
-                  activeThreadId === threadId
+                  params.id === chatId
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
                     : ''
                 }`}
-                onClick={() => setActiveThreadId(threadId)}
-                data-active={activeThreadId === threadId}
+                onClick={() => handleThreadIdClick(chatId)}
+                data-active={params.id === chatId}
               >
-                {getThreadTitle(threadId)}
+                {chatId}
               </SidebarMenuItem>
             ))}
           </SidebarMenu>

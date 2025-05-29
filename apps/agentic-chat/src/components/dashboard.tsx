@@ -14,14 +14,19 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from './ui/sidebar';
 import { Message } from 'ai';
 import { createChat } from '../tools/chat-store';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const Dashboard = ({chatId, initialMessages}: {chatId: string, initialMessages: Message[]}) => {
 
   const router = useRouter()
 
+  const queryClient = useQueryClient()
   const handleCreate = async () => {
     const newChatId = await createChat();
     router.push(`/chat/${newChatId}`);
+    queryClient.invalidateQueries({
+      queryKey: ['chatIds'],
+    });
   };
 
   return (
