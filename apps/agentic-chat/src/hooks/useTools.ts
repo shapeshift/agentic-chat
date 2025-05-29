@@ -66,11 +66,9 @@ const getPublicClient = (chainId: number): PublicClient => {
   });
 };
 
-const env = import.meta?.env ? import.meta.env : process.env;
-
-const PORTALS_BASE_URL = env.VITE_PORTALS_BASE_URL;
-const PORTALS_API_KEY = env.VITE_PORTALS_API_KEY;
-const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY;
+const PORTALS_BASE_URL = process.env.NEXT_PUBLIC_PORTALS_BASE_URL;
+const PORTALS_API_KEY = process.env.NEXT_PUBLIC_PORTALS_API_KEY;
+const BEBOP_API_KEY = process.env.NEXT_PUBLIC_BEBOP_API_KEY;
 
 const useTools = () => {
   const account = useAccount();
@@ -216,9 +214,7 @@ const useTools = () => {
             : toAsset.address
         );
 
-        const env = import.meta?.env ? import.meta.env : process.env;
-
-        const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY || env.BEBOP_API_KEY;
+        const BEBOP_API_KEY = process.env.NEXT_PUBLIC_BEBOP_API_KEY;
 
         const url = `https://api.bebop.xyz/router/${
           bebopChainsMap[chain] ?? chain
@@ -240,7 +236,7 @@ const useTools = () => {
           method: 'GET',
           headers: {
             accept: 'application/json',
-            'source-auth': BEBOP_API_KEY,
+            'source-auth': BEBOP_API_KEY || '',
           },
         });
 

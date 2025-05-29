@@ -3,7 +3,7 @@ import { createStorage, cookieStorage } from 'wagmi';
 import { networks } from './appkit';
 
 // Read Project ID from environment variables
-export const projectId = import.meta.env.VITE_PROJECT_ID;
+export const projectId = process.env.VITE_PROJECT_ID!
 
 const storage = createStorage({ storage: cookieStorage });
 

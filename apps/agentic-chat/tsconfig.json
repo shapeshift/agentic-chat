@@ -1,6 +1,17 @@
 {
   "files": [],
-  "include": [],
+  "include": [
+    "./next-env.d.ts",
+    "/dist/types/**/*.ts",
+    "./dist/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "esModuleInterop": true,
+  "jsx": "preserve",
+  "allowJs": true,
+  "forceConsistentCasingInFileNames": true,
   "references": [
     {
       "path": "../../utils"
@@ -17,9 +28,22 @@
   ],
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "jsx": "preserve"
   }
 }

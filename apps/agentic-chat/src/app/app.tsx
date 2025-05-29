@@ -18,10 +18,10 @@ const metadata = {
 };
 
 // Initialize AppKit
-if (import.meta.env.VITE_PROJECT_ID) {
+if (process.env.VITE_PROJECT_ID) {
   createAppKit({
     adapters: [wagmiAdapter],
-    projectId: import.meta.env.VITE_PROJECT_ID,
+    projectId: process.env.VITE_PROJECT_ID,
     networks,
     metadata,
   });
