@@ -5,8 +5,10 @@ import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { useChat } from '@ai-sdk/react';
 import useTools from '../hooks/useTools';
+import { useChatStore } from '../store/chat';
 
 export const Chat: React.FC = () => {
+  const { activeThreadId } = useChatStore()
   const { handleToolCall } = useTools();
 
   const {
@@ -18,6 +20,7 @@ export const Chat: React.FC = () => {
     status,
   } = useChat({
     api: 'http://localhost:8080/',
+    id: activeThreadId,
     maxSteps: 5,
     onToolCall: handleToolCall,
   });
