@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronRight } from 'lucide-react';
+import axios from 'axios';
 
 import {
   SidebarGroup,
@@ -15,13 +16,15 @@ import {
 } from '@radix-ui/react-collapsible';
 import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getChatIds } from '../tools/chat-store';
 import { useParams, useRouter } from 'next/navigation';
 
 export const ChatHistory = () => {
   const { data: chatIds } = useQuery({
     queryKey: ['chatIds'],
-    queryFn: () => getChatIds(),
+    queryFn: async () => {
+      const { data } = await axios.get<string>("/api/chat-ids");
+      return data
+    },
   })
 
   const params = useParams<{id: string}>()

@@ -1,7 +1,7 @@
 'use server'
 import { Message } from 'ai';
-import { existsSync, mkdirSync } from 'fs';
-import { readdir, readFile, writeFile } from 'fs/promises';
+import { existsSync } from 'fs';
+import { mkdir, readdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 
 /**
@@ -14,19 +14,21 @@ import path from 'path';
 const CHATS_DIR = '.chats';
 
 export async function createChat(): Promise<string> {
+  console.log('Creating new chat...');
   const id = Date.now().toString()
-  await writeFile(getChatFile(id), '[]');
+  await writeFile(await getChatFile(id), '[]');
+  console.log('Wrote file', id);
   return id;
 }
 
-function getChatFile(id: string): string {
+async function getChatFile(id: string): Promise<string> {
   const chatDir = path.join(process.cwd(), CHATS_DIR);
-  if (!existsSync(chatDir)) mkdirSync(chatDir, { recursive: true });
+  if (!existsSync(chatDir)) await mkdir(chatDir, { recursive: true });
   return path.join(chatDir, `${id}.json`);
 }
 
 export async function loadChat(id: string): Promise<Message[]> {
-  return JSON.parse(await readFile(getChatFile(id), 'utf8'));
+  return JSON.parse(await readFile(await getChatFile(id), 'utf8'));
 }
 
 export async function saveChat({
@@ -37,7 +39,7 @@ export async function saveChat({
   messages: Message[];
 }): Promise<void> {
   const content = JSON.stringify(messages, null, 2);
-  await writeFile(getChatFile(id), content);
+  await writeFile(await getChatFile(id), content);
 }
 
 export async function getLatestChatId(): Promise<string | null> {
@@ -63,5 +65,5 @@ export async function getChatIds(): Promise<string[]> {
   if (!existsSync(chatDir)) return [];
 
   const files = await readdir(chatDir);
-  return files.map(file => file.split('.')[0]); // Return only the IDs
+  return files.map(file => file.split('.')[0]).reverse() // Return only the IDs, sorted by latest to oldest
 }
