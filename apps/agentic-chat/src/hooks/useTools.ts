@@ -1,3 +1,5 @@
+'use client'
+
 import { useAccount, useWalletClient } from 'wagmi';
 import {
   Address,
