@@ -29,7 +29,7 @@ export const ChatHistory = () => {
 
   const params = useParams<{id: string}>()
   const router = useRouter();
-  const handleThreadIdClick = useCallback((chatId: string) => {
+  const handleChatIdClick = useCallback((chatId: string) => {
     router.push(`/chat/${chatId}`);
     }, [router]);
 
@@ -55,7 +55,7 @@ export const ChatHistory = () => {
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
                     : ''
                 }`}
-                onClick={() => handleThreadIdClick(chatId)}
+                onClick={() => handleChatIdClick(chatId)}
                 data-active={params.id === chatId}
               >
                 {chatId}
