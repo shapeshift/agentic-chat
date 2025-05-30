@@ -27,7 +27,9 @@ async function getChatFile(id: string): Promise<string> {
   return path.join(chatDir, `${id}.json`);
 }
 
-export async function loadChat(id: string): Promise<Message[]> {
+export async function loadChat(id: string): Promise<Message[] | null > {
+  if (!existsSync(await getChatFile(id))) return null
+
   return JSON.parse(await readFile(await getChatFile(id), 'utf8'));
 }
 
