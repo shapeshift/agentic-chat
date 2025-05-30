@@ -15,12 +15,13 @@ import {
   SidebarTrigger,
 } from '../../components/ui/sidebar';
 import { useChatStore } from '../../store/chat';
+import { generateId } from '@ai-sdk/ui-utils';
 
 export const Dashboard = () => {
   const { setActiveThreadId, activeThreadId } = useChatStore();
 
   const handleNewChat = () => {
-    setActiveThreadId();
+    setActiveThreadId(generateId());
   };
 
   return (

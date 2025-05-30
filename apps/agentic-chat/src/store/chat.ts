@@ -50,7 +50,7 @@ export const useChatStore = create<ChatState>()(
           };
         }),
       setActiveThreadId: (threadId) => {
-        const newThreadId = threadId
+        const newThreadId = threadId;
         set((state) => {
           const exists = state.threads.ids.includes(newThreadId);
           return {
