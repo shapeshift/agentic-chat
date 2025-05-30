@@ -14,7 +14,7 @@ type ChatState = {
     byId: Record<string, ChatThread>;
     ids: string[];
   };
-  activeThreadId: string | null;
+  activeThreadId: string;
   setMessages: (
     threadId: string,
     messagesOrUpdater: UIMessage[] | MessageUpdater
@@ -26,7 +26,7 @@ export const useChatStore = create<ChatState>()(
   persist(
     (set) => ({
       threads: { byId: {}, ids: [] },
-      activeThreadId: null,
+      activeThreadId: '',
       setMessages: (threadId, messagesOrUpdater) =>
         set((state) => {
           const currentMessages = state.threads.byId[threadId]?.messages || [];
@@ -84,6 +84,6 @@ export const useActiveThread = () =>
   );
 
 // Initialize with a new thread if none exists
-if (useChatStore.getState().activeThreadId === null) {
+if (useChatStore.getState().activeThreadId === '') {
   useChatStore.getState().setActiveThreadId(generateId());
 }
