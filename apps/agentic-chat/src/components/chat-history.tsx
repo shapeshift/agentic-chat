@@ -12,10 +12,18 @@ import {
   CollapsibleTrigger,
 } from '@radix-ui/react-collapsible';
 import { useChatStore } from '../store/chat';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 export const ChatHistory = () => {
   const { threads, activeThreadId, setActiveThreadId } = useChatStore();
+
+  const sortedThreadIds = useMemo(() => {
+    return [...threads.ids].sort((a, b) => {
+      const threadA = threads.byId[a];
+      const threadB = threads.byId[b];
+      return threadB.updatedAt - threadA.updatedAt;
+    });
+  }, [threads]);
 
   const getThreadTitle = useCallback(
     (threadId: string) => {
@@ -47,7 +55,7 @@ export const ChatHistory = () => {
         </SidebarGroupLabel>
         <CollapsibleContent>
           <SidebarMenu>
-            {threads.ids.map((threadId) => (
+            {sortedThreadIds.map((threadId) => (
               <SidebarMenuItem
                 key={threadId}
                 className={`cursor-pointer text-sm px-4 py-2 truncate ${

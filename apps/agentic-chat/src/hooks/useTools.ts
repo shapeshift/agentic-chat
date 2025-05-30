@@ -37,8 +37,9 @@ import {
   CHAIN_NAMESPACE,
   ChainId,
 } from '@shapeshiftoss/caip';
-import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 import { useState } from 'react';
+import { Account } from '../types/account';
+import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
@@ -89,6 +90,25 @@ const useTools = () => {
     switch (toolCall.toolName) {
       case 'getAddress': {
         return account.address;
+      }
+
+      case 'getAccount': {
+        if (!account.address) {
+          throw new Error('No account connected');
+        }
+
+        const typedToolCall = toolCall as ToolCall<
+          'getAccount',
+          { network: string }
+        >;
+
+        const env = import.meta?.env ? import.meta.env : process.env;
+
+        const baseUrl = env[`VITE_UNCHAINED_${typedToolCall.args.network.toUpperCase()}_HTTP_URL`]
+
+        const balance = await axios.get<Account>(`${baseUrl}/api/v1/account/${account.address}`)
+
+        return balance.data
       }
 
       case 'switchEvmChain': {
@@ -202,7 +222,7 @@ const useTools = () => {
           bsc: 'bsc',
         };
 
-        const sellAmountCryptoBaseUnit = toBaseUnit(amount, fromAsset.decimals);
+        const sellAmountCryptoBaseUnit = amount
 
         // Convert ETH symbol to Bebop's ETH marker address
         const sellTokenAddress = getAddress(
@@ -260,10 +280,6 @@ const useTools = () => {
 
         const buyAmountCryptoBaseUnit =
           quote.buyTokens[buyTokenAddress].amount.toString();
-        const buyAmountCryptoPrecision = fromBaseUnit(
-          buyAmountCryptoBaseUnit,
-          toAsset.decimals
-        );
 
         const sellToken = Object.values(quote.sellTokens)[0];
         const buyToken = Object.values(quote.buyTokens)[0];
@@ -290,8 +306,8 @@ const useTools = () => {
         };
 
         const content = {
-          sellAmountCryptoPrecision: amount,
-          buyAmountCryptoPrecision,
+          sellAmountCryptoBaseUnit: amount,
+          buyAmountCryptoBaseUnit,
           sellAsset,
           buyAsset,
           approvalTarget: quote.approvalTarget,

@@ -5,6 +5,8 @@ import { generateId, type UIMessage } from '@ai-sdk/ui-utils';
 type ChatThread = {
   id: string;
   messages: UIMessage[];
+  createdAt: number;
+  updatedAt: number;
 };
 
 type MessageUpdater = (prev: UIMessage[]) => UIMessage[];
@@ -44,6 +46,7 @@ export const useChatStore = create<ChatState>()(
                   ...state.threads.byId[threadId],
                   id: threadId,
                   messages: newMessages,
+                  updatedAt: Date.now(),
                 },
               },
             },
@@ -53,6 +56,7 @@ export const useChatStore = create<ChatState>()(
         const newThreadId = threadId;
         set((state) => {
           const exists = state.threads.ids.includes(newThreadId);
+          const now = Date.now();
           return {
             activeThreadId: newThreadId,
             threads: {
@@ -61,7 +65,8 @@ export const useChatStore = create<ChatState>()(
                 [newThreadId]: state.threads.byId[newThreadId] || {
                   id: newThreadId,
                   messages: [],
-                  toolCalls: [],
+                  createdAt: now,
+                  updatedAt: now,
                 },
               },
               ids: exists

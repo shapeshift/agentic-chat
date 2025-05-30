@@ -36,17 +36,40 @@ app.post('/', async (req: Request, res: Response) => {
     system: `
       You are a powerful agentic wallet assistant. You always refer to yourself as "ShapeShift" agent.
 
-      You always respond in a friendly, helpful, and concise manner, using markdown.
-
-      Your main goal is to assist users in getting quotes for swapping tokens, checking balances, providing information about their wallet, and letting them execute swaps with their wallet.
+      Your main goal is to assist users in getting quotes for swapping tokens, providing info about their wallet such as balances, and letting them execute swaps.
 
       You have tools at your disposal to help you achieve this.
 
-      You always reply to users with numbers in human-readable format, and you use the knowledge at your dispoal to convert it to full base unit within tools as necessary.
+      You always reply in a friendly, helpful, and concise manner, using markdown.
+
+      You think in terms of steps.
+      Every tool call is a step, and you always return a AI message explaining the intermediary action that you are taking, as you take it.
+      Add line breaks in between the different steps.
+      You always display quotes in a separate message.
+
+      <amounts_and_units>
+      All tools expect to receive and return numbers in base unit
+      You always assume the user is referring to numbers in human format
+      You ensure user input is converted into base unit for use in tools, and tools responses are converted back to human-readable format before displaying to the user.
+      You use the decimals/precision properties from previous or current tool calls to do this conversion, as different assets have different decimals.
+      You never use scientific notation anywhere, ever. When converting to base unit, you simply multiply the human-readable number by 10 to the power of the asset's decimals, and the other way around when converting down to human format.
+
+      Examples:
+        - 1 ETH = 100000000000000000 in base unit (18 decimals)
+        - 1 USDC = 1000000 in base unit (6 decimals)
+      </amounts_and_units>
+
+      <tokens_info>
+      When users ask for anything related to a token or asset, you always use the getAccount tool in priority to get their balance and token info.
+      You always assume the user is referring to tokens they are holding when you don't know about a specific token (i.e ensure you have called getaccount()), and only use the tokensSearch tool as a fallback if you don't know about a specific token,
+      of if the user explicitly mentions that the token you are referring to is the wrong one.
+      </tokens_info>
 
       <swap_flow>
+        - You always ensure that you know about the from and to asset needed for input, either with getaccount or tokensSearch tools.
         - A quote is gotten and returned to the user for confirmation using the bebopRate tool.
-        - After they confirm their intent to swap, you check if the user has enough balance to perform the swap using the getAllowance() tool.
+        - You don't automatically fetch a quote if the user doesn't have enough sell asset balance. You inform them of that, but still let them fetch a quote if they want to, however, they won't be able to continue and execute the quote.
+        - You check if the user has enough allowance to perform the swap using the getAllowance() tool.
         - If they don't, it will need to be approved first using the approve tool.
         - If they do have enough (e.g after approving, or after checking for their allowance initially), you proceed to call the executeSwap() tool.
         - Every time the user asks for a specific swap/quote, we will get a new quote using the bebopRate tool.
@@ -70,6 +93,15 @@ app.post('/', async (req: Request, res: Response) => {
         description: 'Returns the user address across all EVM chains',
         parameters: z.object({}),
       },
+      getAccount: {
+        description: `
+        Fetches the current account native balance for a given chain, as well as tokens balances and their info (balance, contract address, decimals, name, symbol).
+        All balance values are in base unit. If you need to convert these back to human-readable format for display purposes, you can use the decimals property from the tokens info.
+        `,
+        parameters: z.object({
+          network: z.enum(['ethereum', 'arbitrum', 'polygon', 'optimism', 'base', 'avalanche', 'bnbsmartchain', 'gnosis']).describe('The network to get the account balance on'),
+        }),
+      },
       getNativeBalance: {
         description:
           'Returns the native token balance of the current account, represented in base unit (e.g 1e18 for ETH).',
@@ -81,7 +113,6 @@ app.post('/', async (req: Request, res: Response) => {
         description: `
         Returns the ERC20 token balance of the current account, represented in base units (e.g 1e18 for ETH).
         Always display to the user in human-readable format in your final message i.e bring precision down to human.
-        e.g for ETH, 1000000000000000000 would be displayed as 1 ETH.
         If unaware of the token's decimals, use the decimals property from the tokensSearch tools to convert back to human-readable when displaying to the user.
         `,
         parameters: z.object({
@@ -175,7 +206,7 @@ app.post('/', async (req: Request, res: Response) => {
             .describe('Asset to buy'),
           amount: z
             .string()
-            .describe('Amount in human format, e.g. 1 for 1 ETH'),
+            .describe('Amount in base unit, e.g. 1 for 1 ETH'),
           fromAddress: z
             .string()
             .describe(

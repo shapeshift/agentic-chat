@@ -21,7 +21,7 @@ export const Chat: React.FC = () => {
     status,
   } = useChat({
     api: 'http://localhost:8080/',
-    maxSteps: 5,
+    maxSteps: 10,
     onToolCall: handleToolCall,
     initialMessages: activeThread?.messages || [],
     id: activeThreadId ?? '',

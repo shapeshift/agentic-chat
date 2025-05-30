@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
 import { MessageList } from '../types/message';
 import Markdown from 'react-markdown';
 import { Button } from './ui/button';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, ChevronDown } from 'lucide-react';
 import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
 
 import type { ToolInvocationUIPart, UIMessage } from '@ai-sdk/ui-utils';
@@ -18,6 +18,7 @@ type ChatMessageListProps = {
 const ToolMessageItem: React.FC<{
   toolInvocation: ToolInvocationUIPart;
 }> = ({ toolInvocation }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const name = toolInvocation.toolInvocation.toolName;
   const id = toolInvocation.toolInvocation.toolCallId;
   const args = toolInvocation.toolInvocation.args;
@@ -28,39 +29,46 @@ const ToolMessageItem: React.FC<{
 
   return (
     <div className="flex flex-col items-start max-w-[75%]">
-      {/* Tool Call Table */}
       <div className="w-full mb-2 border rounded-lg overflow-hidden bg-muted">
-        <div className="flex justify-between items-center px-3 py-2 border-b bg-muted/70">
+        <div 
+          className="flex justify-between items-center px-3 py-2 border-b bg-muted/70 cursor-pointer hover:bg-muted/90 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
           <span className="font-semibold text-sm">{name}</span>
-          <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-            {id}
-          </span>
-        </div>
-        {Object.entries(args).map(([key, value]) => (
-          <div
-            key={key}
-            className="flex justify-between items-center px-3 py-2 border-b last:border-b-0"
-          >
-            <span className="font-semibold text-xs text-muted-foreground">
-              {key}
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+              {id}
             </span>
-            <span className="text-xs text-muted-foreground/80 break-all">
-              {typeof value === 'string' ? value : JSON.stringify(value)}
-            </span>
+            <ChevronDown 
+              className={cn(
+                "h-4 w-4 transition-transform",
+                isExpanded ? "transform rotate-180" : ""
+              )} 
+            />
           </div>
-        ))}
-      </div>
-      {/* Tool Result Table */}
-      <div className="w-full border rounded-lg overflow-hidden bg-muted">
-        <div className="flex justify-between items-center px-3 py-2 border-b bg-muted/70">
-          <span className="font-semibold text-sm">{name}</span>
-          <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-            {id}
-          </span>
         </div>
-        <div className="px-3 py-2 text-xs text-muted-foreground/80 break-all">
-          {typeof content === 'string' ? content : JSON.stringify(content)}
-        </div>
+        {isExpanded && (
+          <>
+            {Object.entries(args).map(([key, value]) => (
+              <div
+                key={key}
+                className="flex justify-between items-center px-3 py-2 border-b"
+              >
+                <span className="font-semibold text-xs text-muted-foreground">
+                  {key}
+                </span>
+                <span className="text-xs text-muted-foreground/80 break-all">
+                  {typeof value === 'string' ? value : JSON.stringify(value)}
+                </span>
+              </div>
+            ))}
+            {content && (
+              <div className="px-3 py-2 text-xs text-muted-foreground/80 break-all">
+                {typeof content === 'string' ? content : JSON.stringify(content)}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
