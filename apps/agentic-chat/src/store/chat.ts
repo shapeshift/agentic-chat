@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
-import type { UIMessage } from '@ai-sdk/ui-utils';
+import { generateId, type UIMessage } from '@ai-sdk/ui-utils';
 
 type ChatThread = {
   id: string;
@@ -20,7 +19,7 @@ type ChatState = {
     threadId: string,
     messagesOrUpdater: UIMessage[] | MessageUpdater
   ) => void;
-  setActiveThreadId: (threadId?: string) => void;
+  setActiveThreadId: (threadId: string) => void;
 };
 
 export const useChatStore = create<ChatState>()(
@@ -51,7 +50,7 @@ export const useChatStore = create<ChatState>()(
           };
         }),
       setActiveThreadId: (threadId) => {
-        const newThreadId = threadId || uuidv4();
+        const newThreadId = threadId
         set((state) => {
           const exists = state.threads.ids.includes(newThreadId);
           return {
@@ -86,5 +85,5 @@ export const useActiveThread = () =>
 
 // Initialize with a new thread if none exists
 if (useChatStore.getState().activeThreadId === null) {
-  useChatStore.getState().setActiveThreadId();
+  useChatStore.getState().setActiveThreadId(generateId());
 }
