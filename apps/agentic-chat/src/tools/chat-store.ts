@@ -13,11 +13,9 @@ import path from 'path';
 
 const CHATS_DIR = '.chats';
 
-export async function createChat(): Promise<string> {
-  console.log('Creating new chat...');
-  const id = Date.now().toString()
+export async function createChat(_id?: string): Promise<string> {
+  const id = _id ?? Date.now().toString()
   await writeFile(await getChatFile(id), '[]');
-  console.log('Wrote file', id);
   return id;
 }
 

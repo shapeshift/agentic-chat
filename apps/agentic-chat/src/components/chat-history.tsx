@@ -22,7 +22,7 @@ export const ChatHistory = () => {
   const { data: chatIds } = useQuery({
     queryKey: ['chatIds'],
     queryFn: async () => {
-      const { data } = await axios.get<string>("/api/chat-ids");
+      const { data } = await axios.get<string[]>("/api/chat-ids");
       return data
     },
   })

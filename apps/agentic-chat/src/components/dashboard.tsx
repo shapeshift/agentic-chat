@@ -22,8 +22,13 @@ export const Dashboard = ({chatId, initialMessages}: {chatId: string, initialMes
 
   const queryClient = useQueryClient()
   const handleCreate = async () => {
-    const newChatId = await createChat();
-    router.push(`/chat/${newChatId}`);
+    const id = Date.now().toString();
+
+    // Optimistically push so this feels immediate
+    router.push(`/chat/${id}`);
+
+    // And *actually* create the chat
+    await createChat(id);
     queryClient.invalidateQueries({
       queryKey: ['chatIds'],
     });
