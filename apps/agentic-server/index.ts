@@ -113,11 +113,16 @@ app.post('/', async (req: Request, res: Response) => {
       },
       getAllowance: {
         description:
-          'Get the allowance of an ERC20 token for a specific spender.',
+          'Get the allowance of an ERC20 token for a specific spender, in precision.',
         parameters: z.object({
           token: z.string().describe('The ERC20 token contract address'),
           spender: z.string().describe('The address of the spender'),
           chainId: z.number().describe('The chain ID to get the allowance on'),
+          decimals: z
+            .number()
+            .describe(
+              'The number of decimals for the token to check allowance for'
+            ),
         }),
       },
       approve: {

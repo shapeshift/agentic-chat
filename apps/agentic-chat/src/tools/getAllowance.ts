@@ -3,6 +3,7 @@ import { ToolCall } from '@ai-sdk/provider-utils';
 import { getPublicClient } from '@wagmi/core';
 import { wagmiConfig } from '../lib/wagmi-config';
 import { erc20Abi, getAddress } from 'viem';
+import { fromBaseUnit } from '@agentic-chat/utils';
 
 export const getAllowance = async (
   account: UseAccountReturnType,
@@ -16,11 +17,12 @@ export const getAllowance = async (
     'getAllowance',
     {
       token: string;
+      decimals: number;
       spender: string;
       chainId: number;
     }
   >;
-  const { token, spender, chainId } = typedToolCall.args;
+  const { token, decimals, spender, chainId } = typedToolCall.args;
 
   const publicClient = getPublicClient(wagmiConfig, { chainId });
 
@@ -34,5 +36,5 @@ export const getAllowance = async (
     args: [account.address, getAddress(spender)],
   });
 
-  return allowance.toString();
+  return fromBaseUnit(allowance.toString(), decimals);
 };
