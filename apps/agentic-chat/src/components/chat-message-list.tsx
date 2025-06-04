@@ -9,21 +9,19 @@ import { Button } from './ui/button';
 import { ArrowDown } from 'lucide-react';
 import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
 
-import type { ToolInvocationUIPart, UIMessage } from '@ai-sdk/ui-utils';
+import type { ToolInvocation, UIMessage } from '@ai-sdk/ui-utils';
 
 type ChatMessageListProps = {
   messages: MessageList;
 };
 
 const ToolMessageItem: React.FC<{
-  toolInvocation: ToolInvocationUIPart;
+  toolInvocation: ToolInvocation;
 }> = ({ toolInvocation }) => {
-  const name = toolInvocation.toolInvocation.toolName;
-  const id = toolInvocation.toolInvocation.toolCallId;
-  const args = toolInvocation.toolInvocation.args;
+  const { toolName, toolCallId, args } = toolInvocation;
   const content =
-    toolInvocation.toolInvocation.state === 'result'
-      ? JSON.stringify(toolInvocation.toolInvocation.result, null, 2)
+    toolInvocation.state === 'result'
+      ? JSON.stringify(toolInvocation.result, null, 2)
       : '';
 
   return (
@@ -31,9 +29,9 @@ const ToolMessageItem: React.FC<{
       {/* Tool Call Table */}
       <div className="w-full mb-2 border rounded-lg overflow-hidden bg-muted">
         <div className="flex justify-between items-center px-3 py-2 border-b bg-muted/70">
-          <span className="font-semibold text-sm">{name}</span>
+          <span className="font-semibold text-sm">{toolName}</span>
           <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-            {id}
+            {toolCallId}
           </span>
         </div>
         {Object.entries(args).map(([key, value]) => (
@@ -53,9 +51,9 @@ const ToolMessageItem: React.FC<{
       {/* Tool Result Table */}
       <div className="w-full border rounded-lg overflow-hidden bg-muted">
         <div className="flex justify-between items-center px-3 py-2 border-b bg-muted/70">
-          <span className="font-semibold text-sm">{name}</span>
+          <span className="font-semibold text-sm">{toolName}</span>
           <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-            {id}
+            {toolCallId}
           </span>
         </div>
         <div className="px-3 py-2 text-xs text-muted-foreground/80 break-all">
@@ -71,7 +69,7 @@ const ChatMessageItem: React.FC<{
 }> = ({ message }) => {
   const toolMessageItems = message.parts
     .filter((part) => part.type === 'tool-invocation')
-    .map((toolInvocation) => (
+    .map(({ toolInvocation }) => (
       <ToolMessageItem toolInvocation={toolInvocation} />
     ));
   return (
@@ -86,7 +84,7 @@ const ChatMessageItem: React.FC<{
               : 'bg-muted'
           )}
         >
-          {<Markdown>{message.content as string}</Markdown>}
+          {<Markdown>{message.content}</Markdown>}
         </div>
       </div>
     </>

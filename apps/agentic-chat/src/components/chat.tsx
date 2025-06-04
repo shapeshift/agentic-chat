@@ -1,13 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ChatMessageList } from './chat-message-list';
 import { ChatInput } from './chat-input';
 import { useChat } from '@ai-sdk/react';
 import useTools from '../hooks/useTools';
+import { useActiveThread, useChatStore } from '../store/chat';
 
 export const Chat: React.FC = () => {
   const { handleToolCall } = useTools();
+  const { setMessages, activeThreadId } = useChatStore();
+  const activeThread = useActiveThread();
 
   const {
     messages,
@@ -20,7 +23,15 @@ export const Chat: React.FC = () => {
     api: 'http://localhost:8080/',
     maxSteps: 5,
     onToolCall: handleToolCall,
+    initialMessages: activeThread?.messages || [],
+    id: activeThreadId ?? '',
   });
+
+  useEffect(() => {
+    if (!activeThreadId) return;
+
+    setMessages(activeThreadId, messages);
+  }, [messages, activeThreadId, setMessages]);
 
   return (
     <div className="flex h-full flex-col">
