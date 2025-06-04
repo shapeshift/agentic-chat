@@ -137,7 +137,6 @@ app.post('/', async (req: Request, res: Response) => {
           'Send a transaction to the specified address with the given value and optional calldata.',
         parameters: z.object({
           to: z.string().describe('The recipient address of the transaction'),
-          // TODO(gomes): this is probably wrong and should be precision too
           valueCryptoPrecision: z
             .string()
             .describe(
