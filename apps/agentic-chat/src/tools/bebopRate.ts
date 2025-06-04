@@ -8,9 +8,9 @@ import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 import { ToolCall } from '@ai-sdk/provider-utils';
 import {
   ASSET_NAMESPACE,
-  AssetId,
   CHAIN_NAMESPACE,
   ChainId,
+  toAssetId,
 } from '@shapeshiftoss/caip';
 import { Address, getAddress } from 'viem';
 
@@ -114,13 +114,23 @@ export const getBebopRate = async ({
 
   const sellToken = Object.values(quote.sellTokens)[0];
   const buyToken = Object.values(quote.buyTokens)[0];
+
+  if (!sellToken?.address || !buyToken?.address) throw new Error('Missing token address in quote');
+
   // TODO(gomes): re-declare caip from web as a monorepo package here, but this will work for now
   // published caip is way too old and misses many chains
   const chainId = `${CHAIN_NAMESPACE.Evm}:${quote.chainId}` as ChainId;
-  const sellAssetId =
-    `${chainId}/${ASSET_NAMESPACE.erc20}:${sellToken.address}` as AssetId;
-  const buyAssetId =
-    `${chainId}/${ASSET_NAMESPACE.erc20}:${buyToken.address}` as AssetId;
+  const sellAssetId = toAssetId({
+    chainId,
+    assetNamespace: ASSET_NAMESPACE.erc20,
+    assetReference: sellToken.address,
+  })
+  const buyAssetId = toAssetId({
+    chainId,
+    assetNamespace: ASSET_NAMESPACE.erc20,
+    assetReference: buyToken.address,
+  })
+
   const sellAsset: Asset = {
     name: sellToken.name ?? '',
     symbol: sellToken.symbol,
