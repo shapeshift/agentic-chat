@@ -30,7 +30,7 @@ const ToolMessageItem: React.FC<{
   return (
     <div className="flex flex-col items-start max-w-[75%]">
       <div className="w-full mb-2 border rounded-lg overflow-hidden bg-muted">
-        <div 
+        <div
           className="flex justify-between items-center px-3 py-2 border-b bg-muted/70 cursor-pointer hover:bg-muted/90 transition-colors"
           onClick={() => setIsExpanded(!isExpanded)}
         >
@@ -39,11 +39,11 @@ const ToolMessageItem: React.FC<{
             <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
               {id}
             </span>
-            <ChevronDown 
+            <ChevronDown
               className={cn(
-                "h-4 w-4 transition-transform",
-                isExpanded ? "transform rotate-180" : ""
-              )} 
+                'h-4 w-4 transition-transform',
+                isExpanded ? 'transform rotate-180' : ''
+              )}
             />
           </div>
         </div>
@@ -64,7 +64,9 @@ const ToolMessageItem: React.FC<{
             ))}
             {content && (
               <div className="px-3 py-2 text-xs text-muted-foreground/80 break-all">
-                {typeof content === 'string' ? content : JSON.stringify(content)}
+                {typeof content === 'string'
+                  ? content
+                  : JSON.stringify(content)}
               </div>
             )}
           </>

@@ -13,5 +13,5 @@ export const toBaseUnit = (
   precision: number
 ): string => {
   const bn = new BigNumber(value);
-  return bn.multipliedBy(new BigNumber(10).pow(precision)).toString();
+  return bn.multipliedBy(new BigNumber(10).pow(precision)).dp(0).toString();
 };

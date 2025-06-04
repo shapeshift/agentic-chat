@@ -48,25 +48,21 @@ app.post('/', async (req: Request, res: Response) => {
       You always display quotes in a separate message.
 
       <amounts_and_units>
-      All tools expect to receive and return numbers in base unit
-      You always assume the user is referring to numbers in human format
-      You ensure user input is converted into base unit for use in tools, and tools responses are converted back to human-readable format before displaying to the user.
-      You use the decimals/precision properties from previous or current tool calls to do this conversion, as different assets have different decimals.
-      You never use scientific notation anywhere, ever. When converting to base unit, you simply multiply the human-readable number by 10 to the power of the asset's decimals, and the other way around when converting down to human format.
-
-      Examples:
-        - 1 ETH = 100000000000000000 in base unit (18 decimals)
-        - 1 USDC = 1000000 in base unit (6 decimals)
+      There are two formats for amounts:
+        - Precision e.g 1.1234567812345678 for ETH, 1.123456 for USDC, which is the human-readable amount.
+        - Base unit, e.g 11234567812345678 for ETH, 1123456 for USDC, which is the amount in the smallest unit of the token (wei for ETH, and 6 decimals for USDC).
+      All tools expect to receive and return numbers in precision format.
+      Never return base unit amounts to users, and never expect them to provide such format.
       </amounts_and_units>
 
       <tokens_info>
       When users ask for anything related to a token or asset, you always use the getAccount tool in priority to get their balance and token info.
-      You always assume the user is referring to tokens they are holding when you don't know about a specific token (i.e ensure you have called getaccount()), and only use the tokensSearch tool as a fallback if you don't know about a specific token,
+      You always assume the user is referring to tokens they are holding when you don't know about a specific token (i.e ensure you have called getaccount()), and only use the searchTokens tool as a fallback if you don't know about a specific token,
       of if the user explicitly mentions that the token you are referring to is the wrong one.
       </tokens_info>
 
       <swap_flow>
-        - You always ensure that you know about the from and to asset needed for input, either with getaccount or tokensSearch tools.
+        - You always ensure that you know about the from and to asset needed for input, either with getaccount or searchTokens tools.
         - A quote is gotten and returned to the user for confirmation using the bebopRate tool.
         - You don't automatically fetch a quote if the user doesn't have enough sell asset balance. You inform them of that, but still let them fetch a quote if they want to, however, they won't be able to continue and execute the quote.
         - You check if the user has enough allowance to perform the swap using the getAllowance() tool.
@@ -96,28 +92,21 @@ app.post('/', async (req: Request, res: Response) => {
       getAccount: {
         description: `
         Fetches the current account native balance for a given chain, as well as tokens balances and their info (balance, contract address, decimals, name, symbol).
-        All balance values are in base unit. If you need to convert these back to human-readable format for display purposes, you can use the decimals property from the tokens info.
+        All balance values are in precision format.
         `,
         parameters: z.object({
-          network: z.enum(['ethereum', 'arbitrum', 'polygon', 'optimism', 'base', 'avalanche', 'bnbsmartchain', 'gnosis']).describe('The network to get the account balance on'),
-        }),
-      },
-      getNativeBalance: {
-        description:
-          'Returns the native token balance of the current account, represented in base unit (e.g 1e18 for ETH).',
-        parameters: z.object({
-          chainId: z.number().describe('The chain ID to get the balance on'),
-        }),
-      },
-      getErc20Balance: {
-        description: `
-        Returns the ERC20 token balance of the current account, represented in base units (e.g 1e18 for ETH).
-        Always display to the user in human-readable format in your final message i.e bring precision down to human.
-        If unaware of the token's decimals, use the decimals property from the tokensSearch tools to convert back to human-readable when displaying to the user.
-        `,
-        parameters: z.object({
-          tokenAddress: z.string().describe('The ERC20 token contract address'),
-          chainId: z.number().describe('The chain ID to get the balance on'),
+          network: z
+            .enum([
+              'ethereum',
+              'arbitrum',
+              'polygon',
+              'optimism',
+              'base',
+              'avalanche',
+              'bnbsmartchain',
+              'gnosis',
+            ])
+            .describe('The network to get the account balance on'),
         }),
       },
       getAllowance: {
@@ -134,8 +123,11 @@ app.post('/', async (req: Request, res: Response) => {
         parameters: z.object({
           token: z.string().describe('The ERC20 token contract address'),
           spender: z.string().describe('The address of the spender'),
-          amount: z.string().describe('The amount to approve in base units'),
+          amountCryptoPrecision: z
+            .string()
+            .describe('The amount to approve in precision format'),
           chainId: z.number().describe('The chain ID to approve on'),
+          decimals: z.number().describe('The number of decimals for the token'),
         }),
       },
       sendTransaction: {
@@ -143,11 +135,11 @@ app.post('/', async (req: Request, res: Response) => {
           'Send a transaction to the specified address with the given value and optional calldata.',
         parameters: z.object({
           to: z.string().describe('The recipient address of the transaction'),
-          value: z.string().describe('The amount to send in wei (1e18)'),
-          amount: z
+          // TODO(gomes): this is probably wrong and should be precision too
+          valueCryptoPrecision: z
             .string()
             .describe(
-              'The native asset amount to send alongside the transaction in base units'
+              'The amount of native asset to send along with the Tx, in precision'
             ),
           chainId: z
             .number()
@@ -159,11 +151,11 @@ app.post('/', async (req: Request, res: Response) => {
           'Sends a transaction which executes the swap the user has confirmed.',
         parameters: z.object({}),
       },
-      tokensSearch: {
+      searchTokens: {
         description: `
-        Search for tokens using the Portals API /v2/tokens endpoint.
+        Search for tokens by name or symbol
         Returns tokens matching the search term, sorted by 7-day USD volume.
-        Use text proximity to map user input to the correct network.
+        For args parsing, use text proximity to map user input to the correct network.
         `,
         parameters: z.object({
           searchTerm: z.string().describe('The search term to find tokens'),
@@ -174,16 +166,15 @@ app.post('/', async (req: Request, res: Response) => {
         description: `Fetches a swap rate from Bebop and displays it to the user.
 
         Returns an object with the following fields, for display to the user
-        - sellAmountCryptoPrecision: The sell amount in human-readable precision (e.g., 1 for 1 USDC). **Display this to the user.**
-        - buyAmountCryptoPrecision: The buy amount in human-readable precision (e.g., 0.032413 for 0.032413 USDC). **Display this to the user.**
+        - sellAmountCryptoPrecision: The sell amount in precision format
+        - buyAmountCryptoPrecision: The buy amount in precision format
         - buyAsset: Object describing the buy asset (i.e symbol, decimals, name, address)
         - sellAsset: Object describing the sell asset (i.e symbol, decimals, name, address)
         - approvalTarget: The address the funds will be spent to. Use this as the spender for allowance checks.
 
         **Instructions for LLM:**
-        - Only display the precision values (buyAmountCryptoPrecision, sellAmountCryptoPrecision, or buyAmount) to the user.
         - Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details.
-        - If the user requests technical details, you may show base unit values and other internal fields.`,
+        - If the user requests technical details, you may display internal fields.`,
         parameters: z.object({
           chain: z
             .string()
@@ -204,9 +195,9 @@ app.post('/', async (req: Request, res: Response) => {
               symbol: z.string(),
             })
             .describe('Asset to buy'),
-          amount: z
+          sellAmountCryptoPrecision: z
             .string()
-            .describe('Amount in base unit, e.g. 1 for 1 ETH'),
+            .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
           fromAddress: z
             .string()
             .describe(

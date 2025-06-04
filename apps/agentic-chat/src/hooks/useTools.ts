@@ -1,76 +1,20 @@
 import { useAccount, useWalletClient } from 'wagmi';
-import {
-  Address,
-  Chain,
-  createPublicClient,
-  encodeFunctionData,
-  erc20Abi,
-  getAddress,
-  Hex,
-  http,
-  PublicClient,
-} from 'viem';
+import { Address, getAddress, Hex } from 'viem';
 import { ToolCall } from '@ai-sdk/provider-utils';
-import axios from 'axios';
-import qs from 'qs';
-import {
-  BebopResponse,
-  BebopQuote,
-  Asset,
-  PortalsResponse,
-  PortalsToken,
-} from '@agentic-chat/types';
+import { BebopQuote } from '@agentic-chat/types';
 
-import {
-  arbitrum,
-  mainnet,
-  polygon,
-  optimism,
-  base,
-  avalanche,
-  bsc,
-  gnosis,
-} from 'viem/chains';
-import {
-  ASSET_NAMESPACE,
-  AssetId,
-  CHAIN_NAMESPACE,
-  ChainId,
-} from '@shapeshiftoss/caip';
 import { useState } from 'react';
-import { Account } from '../types/account';
-import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
-
-const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-
-const getChainById = (chainId: number): Chain => {
-  const chains: Record<number, Chain> = {
-    [mainnet.id]: mainnet,
-    [arbitrum.id]: arbitrum,
-    [polygon.id]: polygon,
-    [optimism.id]: optimism,
-    [base.id]: base,
-    [avalanche.id]: avalanche,
-    [gnosis.id]: gnosis,
-    [bsc.id]: bsc,
-  };
-  const chain = chains[chainId];
-  if (!chain) throw new Error(`Unsupported chain ID: ${chainId}`);
-  return chain;
-};
-
-const getPublicClient = (chainId: number): PublicClient => {
-  const chain = getChainById(chainId);
-  return createPublicClient({
-    chain,
-    transport: http(),
-  });
-};
+import { getAccount } from '../tools/getAccount';
+import { switchEvmChain } from '../tools/switchEvmChain';
+import { searchTokens } from '../tools/searchTokens';
+import { getBebopRate } from '../tools/bebopRate';
+import { getAllowance } from '../tools/getAllowance';
+import { approve } from '../tools/approve';
+import { sendTransaction } from '../tools/sendTransaction';
+import { toBaseUnit } from '@agentic-chat/utils';
 
 const env = import.meta?.env ? import.meta.env : process.env;
 
-const PORTALS_BASE_URL = env.VITE_PORTALS_BASE_URL;
-const PORTALS_API_KEY = env.VITE_PORTALS_API_KEY;
 const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY;
 
 const useTools = () => {
@@ -83,7 +27,7 @@ const useTools = () => {
   }: {
     toolCall: ToolCall<string, unknown>;
   }) => {
-    if (!PORTALS_BASE_URL || !PORTALS_API_KEY || !BEBOP_API_KEY) {
+    if (!BEBOP_API_KEY) {
       throw new Error('Missing env vars');
     }
 
@@ -93,291 +37,27 @@ const useTools = () => {
       }
 
       case 'getAccount': {
-        if (!account.address) {
-          throw new Error('No account connected');
-        }
-
-        const typedToolCall = toolCall as ToolCall<
-          'getAccount',
-          { network: string }
-        >;
-
-        const env = import.meta?.env ? import.meta.env : process.env;
-
-        const baseUrl = env[`VITE_UNCHAINED_${typedToolCall.args.network.toUpperCase()}_HTTP_URL`]
-
-        const balance = await axios.get<Account>(`${baseUrl}/api/v1/account/${account.address}`)
-
-        return balance.data
+        return getAccount(account, toolCall);
       }
 
       case 'switchEvmChain': {
-        if (!walletClient) {
-          throw new Error('No account connected');
-        }
-
-        const typedToolCall = toolCall as ToolCall<
-          'switchEvmChain',
-          { chainId: number }
-        >;
-        const { chainId } = typedToolCall.args;
-
-        await walletClient.switchChain({
-          id: chainId,
-        });
-
-        return 'Succesfully switched chain';
+        return switchEvmChain(walletClient, toolCall);
       }
 
-      case 'getNativeBalance': {
-        if (!account.address) {
-          throw new Error('No account connected');
-        }
-
-        const typedToolCall = toolCall as ToolCall<
-          'getNativeBalance',
-          { chainId: number }
-        >;
-        const { chainId } = typedToolCall.args;
-        const publicClient = getPublicClient(chainId);
-        const balance = await publicClient.getBalance({
-          address: account.address,
-        });
-        return balance.toString();
-      }
-
-      case 'getErc20Balance': {
-        if (!account.address) {
-          throw new Error('No account connected');
-        }
-
-        const typedToolCall = toolCall as ToolCall<
-          'getErc20Balance',
-          { tokenAddress: string; chainId: number }
-        >;
-        const { tokenAddress, chainId } = typedToolCall.args;
-        const publicClient = getPublicClient(chainId);
-        const balance = await publicClient.readContract({
-          address: getAddress(tokenAddress),
-          abi: erc20Abi,
-          functionName: 'balanceOf',
-          args: [account.address],
-        });
-
-        return balance.toString();
-      }
-
-      case 'tokensSearch': {
-        const typedToolCall = toolCall as ToolCall<
-          'tokensSearch',
-          { searchTerm: string; network?: string }
-        >;
-        const { searchTerm, network } = typedToolCall.args;
-        const tokensUrl = `${PORTALS_BASE_URL}/v2/tokens`;
-        const params = {
-          search: searchTerm,
-          networks: network ? [network] : [],
-          platforms: ['basic', 'native'],
-          sortBy: 'volumeUsd7d',
-          limit: 10,
-          sortDirection: 'desc',
-        };
-
-        const { data } = await axios.get<PortalsResponse>(tokensUrl, {
-          paramsSerializer: (params) =>
-            qs.stringify(params, { arrayFormat: 'repeat' }),
-          headers: {
-            Authorization: `Bearer ${PORTALS_API_KEY}`,
-          },
-          params,
-        });
-
-        return {
-          tokens: data.tokens ?? [],
-          total: data.total,
-        };
+      case 'searchTokens': {
+        return searchTokens(toolCall);
       }
 
       case 'bebopRate': {
-        const typedToolCall = toolCall as ToolCall<
-          'bebopRate',
-          {
-            amount: string;
-            fromAsset: PortalsToken;
-            toAsset: PortalsToken;
-            fromAddress: Address;
-            chain: string;
-          }
-        >;
-        const { amount, fromAsset, toAsset, fromAddress, chain } =
-          typedToolCall.args;
-
-        const bebopChainsMap: Record<string, string> = {
-          ethereum: 'ethereum',
-          polygon: 'polygon',
-          arbitrum: 'arbitrum',
-          base: 'base',
-          avalanche: 'avalanche',
-          optimism: 'optimism',
-          bsc: 'bsc',
-        };
-
-        const sellAmountCryptoBaseUnit = amount
-
-        // Convert ETH symbol to Bebop's ETH marker address
-        const sellTokenAddress = getAddress(
-          fromAsset.symbol.trim().toUpperCase() === 'ETH'
-            ? BEBOP_ETH_MARKER
-            : fromAsset.address
-        );
-        const buyTokenAddress = getAddress(
-          toAsset.symbol.trim().toUpperCase() === 'ETH'
-            ? BEBOP_ETH_MARKER
-            : toAsset.address
-        );
-
-        const env = import.meta?.env ? import.meta.env : process.env;
-
-        const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY || env.BEBOP_API_KEY;
-
-        const url = `https://api.bebop.xyz/router/${
-          bebopChainsMap[chain] ?? chain
-        }/v1/quote`;
-        const takerAddress = fromAddress;
-        const reqParams = new URLSearchParams({
-          sell_tokens: sellTokenAddress,
-          buy_tokens: buyTokenAddress,
-          sell_amounts: sellAmountCryptoBaseUnit,
-          taker_address: takerAddress,
-          approval_type: 'Standard',
-          skip_validation: 'true',
-          gasless: 'false',
-          source: 'shapeshift',
-        });
-
-        const fullUrl = `${url}?${reqParams.toString()}`;
-        const response = await fetch(fullUrl, {
-          method: 'GET',
-          headers: {
-            accept: 'application/json',
-            'source-auth': BEBOP_API_KEY,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch Bebop rate: ${response.statusText}`);
-        }
-
-        const data = (await response.json()) as BebopResponse;
-
-        if (!data.routes?.[0]?.quote) {
-          throw new Error('No routes found in Bebop response');
-        }
-
-        const quote = data.routes[0].quote;
-
-        setBebopQuote(quote);
-
-        const buyAmountCryptoBaseUnit =
-          quote.buyTokens[buyTokenAddress].amount.toString();
-
-        const sellToken = Object.values(quote.sellTokens)[0];
-        const buyToken = Object.values(quote.buyTokens)[0];
-        // TODO(gomes): re-declare caip from web as a monorepo package here, but this will work for now
-        // published caip is way too old and misses many chains
-        const chainId = `${CHAIN_NAMESPACE.Evm}:${quote.chainId}` as ChainId;
-        const sellAssetId =
-          `${chainId}/${ASSET_NAMESPACE.erc20}:${sellToken.address}` as AssetId;
-        const buyAssetId =
-          `${chainId}/${ASSET_NAMESPACE.erc20}:${buyToken.address}` as AssetId;
-        const sellAsset: Asset = {
-          name: sellToken.name ?? '',
-          symbol: sellToken.symbol,
-          precision: sellToken.decimals,
-          chainId,
-          assetId: sellAssetId,
-        };
-        const buyAsset: Asset = {
-          name: buyToken.name ?? '',
-          symbol: buyToken.symbol,
-          precision: buyToken.decimals,
-          chainId,
-          assetId: buyAssetId,
-        };
-
-        const content = {
-          sellAmountCryptoBaseUnit: amount,
-          buyAmountCryptoBaseUnit,
-          sellAsset,
-          buyAsset,
-          approvalTarget: quote.approvalTarget,
-        };
-
-        return content;
+        return getBebopRate({ toolCall, setBebopQuote });
       }
 
       case 'getAllowance': {
-        if (!account.address) {
-          throw new Error('No account connected');
-        }
-
-        const typedToolCall = toolCall as ToolCall<
-          'getAllowance',
-          {
-            token: string;
-            spender: string;
-            chainId: number;
-          }
-        >;
-        const { token, spender, chainId } = typedToolCall.args;
-
-        const publicClient = getPublicClient(chainId);
-        const allowance = await publicClient.readContract({
-          address: getAddress(token),
-          abi: erc20Abi,
-          functionName: 'allowance',
-          args: [account.address, getAddress(spender)],
-        });
-
-        return allowance.toString();
+        return getAllowance(account, toolCall);
       }
 
       case 'approve': {
-        if (!account.address || !walletClient) {
-          throw new Error('No account connected');
-        }
-
-        const typedToolCall = toolCall as ToolCall<
-          'approve',
-          {
-            token: string;
-            spender: string;
-            amount: string;
-            chainId: number;
-          }
-        >;
-
-        const { token, spender, amount, chainId } = typedToolCall.args;
-
-        try {
-          const data = encodeFunctionData({
-            abi: erc20Abi,
-            functionName: 'approve',
-            args: [getAddress(spender), BigInt(amount)],
-          });
-
-          const hash = await walletClient.sendTransaction({
-            account: walletClient.account,
-            to: getAddress(token),
-            data,
-            chain: getChainById(chainId),
-          });
-
-          return hash;
-        } catch (err) {
-          console.error('Error approving token', err);
-          throw err;
-        }
+        return approve(walletClient, toolCall);
       }
 
       case 'sendTransaction': {
@@ -385,46 +65,26 @@ const useTools = () => {
           'sendTransaction',
           {
             to: Address;
-            value: string;
+            valueCryptoPrecision: string;
             data: Hex;
             chainId: number;
           }
         >;
-        const { to, value, data, chainId } = typedToolCall.args;
 
-        const publicClient = getPublicClient(chainId);
-        const account = walletClient?.account;
-        if (!walletClient || !account?.address) {
-          throw new Error('No account connected');
-        }
+        const { to, valueCryptoPrecision, data, chainId } = typedToolCall.args;
 
-        try {
-          // First estimate gas to catch potential errors
-          const [gasLimit, gasPrice] = await Promise.all([
-            publicClient.estimateGas({
-              account,
-              to: getAddress(to),
-              value: BigInt(value),
-              data: data,
-            }),
-            publicClient.getGasPrice(),
-          ]);
+        const valueCryptoBaseUnit = toBaseUnit(
+          valueCryptoPrecision,
+          18 // Assuming 18 decimals for ETH-like transactions
+        );
 
-          // Now send the transaction with the estimated gas
-          const hash = await walletClient.sendTransaction({
-            account,
-            to: getAddress(to),
-            value: BigInt(value),
-            data: data,
-            chain: getChainById(chainId),
-            gas: gasLimit,
-            gasPrice,
-          });
-          return hash;
-        } catch (err) {
-          console.error('Error sending transaction', err);
-          throw err;
-        }
+        return sendTransaction({
+          walletClient,
+          value: valueCryptoBaseUnit,
+          data,
+          chainId,
+          to,
+        });
       }
 
       case 'executeSwap': {
@@ -432,43 +92,16 @@ const useTools = () => {
           throw new Error('No quote available');
         }
 
-        const { tx } = bebopQuote;
+        const { chainId, tx } = bebopQuote;
+        const { to, value, data } = tx;
 
-        const { to, value, data, chainId } = tx;
-
-        const publicClient = getPublicClient(chainId);
-        const account = walletClient?.account;
-        if (!walletClient || !account?.address) {
-          throw new Error('No account connected');
-        }
-
-        try {
-          // First estimate gas to catch potential errors
-          const [gasLimit, gasPrice] = await Promise.all([
-            publicClient.estimateGas({
-              account,
-              to: getAddress(to),
-              value: BigInt(value),
-              data: data,
-            }),
-            publicClient.getGasPrice(),
-          ]);
-
-          // Now send the transaction with the estimated gas
-          const hash = await walletClient.sendTransaction({
-            account,
-            to: getAddress(to),
-            value: BigInt(value),
-            data: data,
-            chain: getChainById(chainId),
-            gas: gasLimit,
-            gasPrice,
-          });
-          return hash;
-        } catch (err) {
-          console.error('Error sending transaction', err);
-          throw err;
-        }
+        return sendTransaction({
+          walletClient,
+          to: getAddress(to),
+          value: value,
+          data,
+          chainId,
+        });
       }
 
       default:
