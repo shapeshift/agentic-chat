@@ -5,31 +5,26 @@ import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
 import { MessageList } from '../types/message';
 import Markdown from 'react-markdown';
-import {
-  ChatMessage,
-  isToolMessage,
-  OpenAIToolCall,
-  ToolMessage,
-} from '@langchain/core/messages';
 import { Button } from './ui/button';
 import { ArrowDown } from 'lucide-react';
 import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
 
+import type { ToolInvocationUIPart, UIMessage } from '@ai-sdk/ui-utils';
+
 type ChatMessageListProps = {
   messages: MessageList;
-  toolCalls: OpenAIToolCall[];
 };
 
 const ToolMessageItem: React.FC<{
-  message: ToolMessage;
-  toolCall: OpenAIToolCall | undefined;
-}> = ({ message, toolCall }) => {
-  if (!toolCall) return null;
-
-  const name = toolCall.function.name;
-  const id = toolCall.id;
-  const args = JSON.parse(toolCall.function.arguments);
-  const content = message.content;
+  toolInvocation: ToolInvocationUIPart;
+}> = ({ toolInvocation }) => {
+  const name = toolInvocation.toolInvocation.toolName;
+  const id = toolInvocation.toolInvocation.toolCallId;
+  const args = toolInvocation.toolInvocation.args;
+  const content =
+    toolInvocation.toolInvocation.state === 'result'
+      ? JSON.stringify(toolInvocation.toolInvocation.result, null, 2)
+      : '';
 
   return (
     <div className="flex flex-col items-start max-w-[75%]">
@@ -72,25 +67,29 @@ const ToolMessageItem: React.FC<{
 };
 
 const ChatMessageItem: React.FC<{
-  message: ChatMessage | ToolMessage;
-  toolCall: OpenAIToolCall | undefined;
-}> = ({ message, toolCall }) => {
-  if (isToolMessage(message)) {
-    return <ToolMessageItem message={message} toolCall={toolCall} />;
-  }
+  message: UIMessage;
+}> = ({ message }) => {
+  const toolMessageItems = message.parts
+    .filter((part) => part.type === 'tool-invocation')
+    .map((toolInvocation) => (
+      <ToolMessageItem toolInvocation={toolInvocation} />
+    ));
   return (
-    <div key={message.id} className="flex">
-      <div
-        className={cn(
-          'inline-block max-w-[75%] rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap',
-          message._getType() === 'human'
-            ? 'ml-auto bg-primary text-primary-foreground'
-            : 'bg-muted'
-        )}
-      >
-        {<Markdown>{message.content as string}</Markdown>}
+    <>
+      {toolMessageItems}
+      <div key={message.id} className="flex">
+        <div
+          className={cn(
+            'inline-block max-w-[75%] rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap',
+            message.role === 'user'
+              ? 'ml-auto bg-primary text-primary-foreground'
+              : 'bg-muted'
+          )}
+        >
+          {<Markdown>{message.content as string}</Markdown>}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
@@ -136,10 +135,7 @@ const ScrollToBottom = () => {
   );
 };
 
-export const ChatMessageList = ({
-  messages,
-  toolCalls,
-}: ChatMessageListProps) => (
+export const ChatMessageList = ({ messages }: ChatMessageListProps) => (
   <div className="relative">
     <StickToBottom className="h-[calc(100vh-8rem)]">
       <StickyToBottomContent
@@ -148,17 +144,7 @@ export const ChatMessageList = ({
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
               {messages.map((message) => {
-                const maybeToolCall = isToolMessage(message)
-                  ? toolCalls.find((call) => call.id === message.tool_call_id)
-                  : undefined;
-
-                return (
-                  <ChatMessageItem
-                    key={message.id}
-                    message={message}
-                    toolCall={maybeToolCall}
-                  />
-                );
+                return <ChatMessageItem key={message.id} message={message} />;
               })}
             </div>
           </ScrollArea>

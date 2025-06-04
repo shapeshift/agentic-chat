@@ -4,8 +4,7 @@
   "license": "MIT",
   "scripts": {
     "build": "nx run-many --target=build --all",
-    "serve": "npx concurrently \"nx run langchain:dev\" \"nx serve agentic-chat\"",
-    "dev": "nx run-many --target=build --all && npx concurrently \"nx run langchain:dev\" \"nx serve agentic-chat\""
+    "dev": "nx run-many --target=build --all && npx concurrently \"nx run shapeshift-agentic-server:dev\" \"nx serve agentic-chat\""
   },
   "private": true,
   "devDependencies": {
@@ -56,9 +55,9 @@
   },
   "workspaces": [
     "apps/*",
-    "tools",
     "utils",
-    "graph"
+    "types"
   ],
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "dependencies": {}
 }

@@ -3,7 +3,10 @@
   "include": [],
   "references": [
     {
-      "path": "../../graph"
+      "path": "../../utils"
+    },
+    {
+      "path": "../../types"
     },
     {
       "path": "./tsconfig.app.json"

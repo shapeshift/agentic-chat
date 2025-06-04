@@ -6,25 +6,26 @@ import { Button } from './ui/button';
 import { Send, Loader2 } from 'lucide-react';
 
 interface ChatInputProps {
-  onSendMessage: (content: string) => void;
   disabled?: boolean;
   isLoading: boolean;
   onStop?: () => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  input: string;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
-  onSendMessage,
   disabled = false,
   isLoading,
   onStop,
+  onSubmit,
+  onInputChange,
+  input,
 }) => {
-  const [inputValue, setInputValue] = useState('');
-
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputValue.trim() && !disabled && !isLoading) {
-      onSendMessage(inputValue.trim());
-      setInputValue('');
+    if (input.trim() && !disabled && !isLoading) {
+      e.preventDefault();
+      onSubmit(e);
     }
   };
 
@@ -34,8 +35,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       className="flex items-center gap-2 border-t p-4 sticky bottom-0 bg-background"
     >
       <Input
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        value={input}
+        onChange={onInputChange}
         placeholder="Type your message..."
         className="flex-1"
         disabled={disabled || isLoading}
@@ -50,11 +51,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <span>Cancel</span>
         </Button>
       ) : (
-        <Button
-          type="submit"
-          size="icon"
-          disabled={!inputValue.trim() || disabled}
-        >
+        <Button type="submit" size="icon" disabled={!input.trim() || disabled}>
           <Send className="h-4 w-4" />
         </Button>
       )}

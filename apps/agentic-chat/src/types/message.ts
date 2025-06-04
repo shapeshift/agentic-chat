@@ -1,3 +1,3 @@
-import { ChatMessage, ToolMessage } from '@langchain/core/messages';
+import type { UIMessage } from '@ai-sdk/ui-utils';
 
-export type MessageList = (ChatMessage | ToolMessage)[];
+export type MessageList = UIMessage[];

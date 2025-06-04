@@ -38,6 +38,9 @@ describe('App', () => {
       'alcohol woman abuse must during monitor noble actual mixed trade anger aisle'
     );
     vi.stubEnv('VITE_PROJECT_ID', 'gmsers');
+    vi.stubEnv('VITE_PORTALS_BASE_URL', 'dummyurl');
+    vi.stubEnv('VITE_PORTALS_API_KEY', 'dummyApiKey');
+    vi.stubEnv('VITE_BEBOP_API_KEY', 'dummyApiKey');
   });
   it('should render successfully', () => {
     const { baseElement } = render(
