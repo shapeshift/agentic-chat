@@ -4,9 +4,9 @@ dotenv.config();
 
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
+import cors from 'cors';
 import express, { Request, Response } from 'express';
 import z from 'zod';
-import cors from 'cors';
 
 const app = express();
 app.use(express.json());
@@ -44,7 +44,8 @@ app.post('/', async (req: Request, res: Response) => {
 
       You think in terms of steps.
       Every tool call is a step, and you always return a AI message explaining the intermediary action that you are taking, as you take it.
-      Add line breaks in between the different steps.
+      You make sure to execute all steps in sequence as-needed without the user needing to prompt you for the next step.
+      You add line breaks in between the different steps e.g different tool calls.
       You always display quotes in a separate message.
 
       <amounts_and_units>
@@ -56,19 +57,18 @@ app.post('/', async (req: Request, res: Response) => {
       </amounts_and_units>
 
       <tokens_info>
-      When users ask for anything related to a token or asset, you always use the getAccount tool in priority to get their balance and token info.
-      You always assume the user is referring to tokens they are holding when you don't know about a specific token (i.e ensure you have called getaccount()), and only use the searchTokens tool as a fallback if you don't know about a specific token,
-      of if the user explicitly mentions that the token you are referring to is the wrong one.
-      If user mentions native assets such as ETH, MATIC, AVAX, BNB, XDAI, you assume they refer to the native asset of the chain they are on, not e.g WETH instead of ETH.
+      When users ask for anything related to a token or asset, you always use the getAccount tool in priority to get their balance and token info
+      You only use the searchTokens tool as a fallback if you don't know about a specific token, of if the user explicitly mentions that the token you are referring to is the wrong one.
       </tokens_info>
 
       <swap_flow>
-        - You always ensure that you know about the from and to asset needed for input, either with getaccount or searchTokens tools.
+        - You should already know about the sell asset from previous getAccount calls
+        - Native assets such as ETH, MATIC, AVAX, etc use the following (either as fromAsset or toAsset):
+          {name: 'ETH', symbol: 'ETH', address: '', decimals: 18}
         - A quote is gotten and returned to the user for confirmation using the bebopRate tool.
-        - You don't automatically fetch a quote if the user doesn't have enough sell asset balance. You inform them of that, but still let them fetch a quote if they want to, however, they won't be able to continue and execute the quote.
-        - You check if the user has enough allowance to perform the swap using the getAllowance() tool.
-        - If they don't, it will need to be approved first using the approve tool.
-        - If they do have enough (e.g after approving, or after checking for their allowance initially), you proceed to call the executeSwap() tool.
+        - You still let users fetch a quote if they don't have enough sell asset balance, however, they won't be able to continue and execute the quote.
+        - You check for allowance as a separate step after getting a quote *for tokens sell assets only, not native assets*
+        - If they don't have enough allowance, it will need to be approved first using the approve tool.
         - Every time the user asks for a specific swap/quote, we will get a new quote using the bebopRate tool.
       </swap_flow>
 
@@ -184,15 +184,13 @@ app.post('/', async (req: Request, res: Response) => {
             .object({
               address: z.string(),
               decimals: z.number(),
-              name: z.string(),
-              symbol: z.string(),
+              symbol: z.string().optional(),
             })
             .describe('Asset to sell'),
           toAsset: z
             .object({
               address: z.string(),
               decimals: z.number(),
-              name: z.string(),
               symbol: z.string(),
             })
             .describe('Asset to buy'),
