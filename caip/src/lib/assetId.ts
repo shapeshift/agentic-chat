@@ -121,11 +121,13 @@ export const toAssetId: ToAssetId = (args: ToAssetIdArgs): AssetId => {
       case 'erc1155':
       case 'bep721':
       case 'bep1155':
-        // caip-22 (https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-22.md)
-        // caip-29 (https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-29.md)
+      // caip-22 (https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-22.md)
+      // caip-29 (https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-29.md)
+      {
         const [address] = assetReference.split('/');
         assertContractAddress(address);
         return assetReference.toLowerCase();
+      }
       default:
         return assetReference;
     }
