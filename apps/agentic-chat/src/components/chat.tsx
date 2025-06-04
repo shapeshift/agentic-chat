@@ -32,8 +32,12 @@ export const Chat: React.FC = () => {
   useEffect(() => {
     if (!activeThreadId) return;
 
-    setMessages(activeThreadId, messages);
-  }, [messages, activeThreadId, setMessages]);
+    setMessages(
+      activeThreadId,
+      messages,
+      messages.length === activeThread?.messages.length
+    );
+  }, [messages, activeThreadId, setMessages, activeThread?.messages]);
 
   return (
     <div className="flex h-full flex-col">
