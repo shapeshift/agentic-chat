@@ -12,6 +12,9 @@ export const Chat: React.FC = () => {
   const { setMessages, activeThreadId } = useChatStore();
   const activeThread = useActiveThread();
 
+
+  const env = import.meta?.env ? import.meta.env : process.env;
+
   const {
     messages,
     input,
@@ -20,7 +23,7 @@ export const Chat: React.FC = () => {
     stop,
     status,
   } = useChat({
-    api: 'http://localhost:8080/',
+    api: env.VITE_AGENTIC_SERVER_BASE_URL,
     maxSteps: 10,
     onToolCall: handleToolCall,
     initialMessages: activeThread?.messages || [],
