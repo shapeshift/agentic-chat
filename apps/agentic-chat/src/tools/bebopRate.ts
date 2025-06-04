@@ -115,20 +115,18 @@ export const getBebopRate = async ({
   const sellToken = Object.values(quote.sellTokens)[0];
   const buyToken = Object.values(quote.buyTokens)[0];
 
-  if (!sellToken?.address || !buyToken?.address) throw new Error('Missing token address in quote');
-
   // TODO(gomes): re-declare caip from web as a monorepo package here, but this will work for now
   // published caip is way too old and misses many chains
   const chainId = `${CHAIN_NAMESPACE.Evm}:${quote.chainId}` as ChainId;
   const sellAssetId = toAssetId({
     chainId,
     assetNamespace: ASSET_NAMESPACE.erc20,
-    assetReference: sellToken.address,
+    assetReference: sellToken.address ?? BEBOP_ETH_MARKER,
   })
   const buyAssetId = toAssetId({
     chainId,
     assetNamespace: ASSET_NAMESPACE.erc20,
-    assetReference: buyToken.address,
+    assetReference: buyToken.address ?? BEBOP_ETH_MARKER,
   })
 
   const sellAsset: Asset = {
