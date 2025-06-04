@@ -57,13 +57,14 @@ app.post('/', async (req: Request, res: Response) => {
       </amounts_and_units>
 
       <tokens_info>
-      When users ask for anything related to a token or asset, you always use the getAccount tool in priority to get their balance and token info
-      You only use the searchTokens tool as a fallback if you don't know about a specific token, of if the user explicitly mentions that the token you are referring to is the wrong one.
+      - Native assets refer to ETH, MATIC, AVAX, XDAI, and BNB. Those are *not* ERC20 tokens but native assets.
+      - When users ask for anything related to a token or asset, you always use the getAccount tool in priority to get their balance and token info
+      - You only use the searchTokens tool as a fallback if you don't know about a specific token, of if the user explicitly mentions that the token you are referring to is the wrong one.
       </tokens_info>
 
       <swap_flow>
         - You should already know about the sell asset from previous getAccount calls
-        - Native assets such as ETH, MATIC, AVAX, etc use the following (either as fromAsset or toAsset):
+        - Native assets such as use the following (either as fromAsset or toAsset):
           {name: 'ETH', symbol: 'ETH', address: '', decimals: 18}
         - A quote is gotten and returned to the user for confirmation using the bebopRate tool.
         - You still let users fetch a quote if they don't have enough sell asset balance, however, they won't be able to continue and execute the quote.

@@ -11,9 +11,7 @@ import {
   CHAIN_NAMESPACE,
   toAssetId,
 } from '@agentic-chat/caip';
-import type {
-  ChainId
-} from '@agentic-chat/caip';
+import type { ChainId } from '@agentic-chat/caip';
 import { Address, getAddress } from 'viem';
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
@@ -124,12 +122,12 @@ export const getBebopRate = async ({
     chainId,
     assetNamespace: ASSET_NAMESPACE.erc20,
     assetReference: sellToken.address ?? BEBOP_ETH_MARKER,
-  })
+  });
   const buyAssetId = toAssetId({
     chainId,
     assetNamespace: ASSET_NAMESPACE.erc20,
     assetReference: buyToken.address ?? BEBOP_ETH_MARKER,
-  })
+  });
 
   const sellAsset: Asset = {
     name: sellToken.name ?? '',

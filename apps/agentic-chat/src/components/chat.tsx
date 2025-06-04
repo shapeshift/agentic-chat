@@ -12,7 +12,6 @@ export const Chat: React.FC = () => {
   const { setMessages, activeThreadId } = useChatStore();
   const activeThread = useActiveThread();
 
-
   const env = import.meta?.env ? import.meta.env : process.env;
 
   const {
@@ -22,7 +21,6 @@ export const Chat: React.FC = () => {
     handleSubmit,
     stop,
     status,
-    error,
   } = useChat({
     api: env.VITE_AGENTIC_SERVER_BASE_URL,
     maxSteps: 10,
@@ -30,8 +28,6 @@ export const Chat: React.FC = () => {
     initialMessages: activeThread?.messages || [],
     id: activeThreadId ?? '',
   });
-
-  console.log({messages, error})
 
   useEffect(() => {
     if (!activeThreadId) return;
