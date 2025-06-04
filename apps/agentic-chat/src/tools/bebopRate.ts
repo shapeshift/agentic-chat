@@ -9,9 +9,11 @@ import { ToolCall } from '@ai-sdk/provider-utils';
 import {
   ASSET_NAMESPACE,
   CHAIN_NAMESPACE,
-  ChainId,
   toAssetId,
-} from '@shapeshiftoss/caip';
+} from '@agentic-chat/caip';
+import type {
+  ChainId
+} from '@agentic-chat/caip';
 import { Address, getAddress } from 'viem';
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
