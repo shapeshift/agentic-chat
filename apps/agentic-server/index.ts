@@ -64,7 +64,7 @@ app.post('/', async (req: Request, res: Response) => {
 
       <swap_flow>
         - You should already know about the sell asset from previous getAccount calls
-        - Native assets such as use the following (either as fromAsset or toAsset):
+        - Native assets use the following (either as fromAsset or toAsset):
           {name: 'ETH', symbol: 'ETH', address: '', decimals: 18}
         - A quote is gotten and returned to the user for confirmation using the bebopRate tool.
         - You still let users fetch a quote if they don't have enough sell asset balance, however, they won't be able to continue and execute the quote.

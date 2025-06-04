@@ -13,10 +13,6 @@ import { approve } from '../tools/approve';
 import { sendTransaction } from '../tools/sendTransaction';
 import { toBaseUnit } from '@agentic-chat/utils';
 
-const env = import.meta?.env ? import.meta.env : process.env;
-
-const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY;
-
 const useTools = () => {
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -27,10 +23,6 @@ const useTools = () => {
   }: {
     toolCall: ToolCall<string, unknown>;
   }) => {
-    if (!BEBOP_API_KEY) {
-      throw new Error('Missing env vars');
-    }
-
     switch (toolCall.toolName) {
       case 'getAddress': {
         return account.address;
