@@ -59,6 +59,7 @@ app.post('/', async (req: Request, res: Response) => {
       When users ask for anything related to a token or asset, you always use the getAccount tool in priority to get their balance and token info.
       You always assume the user is referring to tokens they are holding when you don't know about a specific token (i.e ensure you have called getaccount()), and only use the searchTokens tool as a fallback if you don't know about a specific token,
       of if the user explicitly mentions that the token you are referring to is the wrong one.
+      If user mentions native assets such as ETH, MATIC, AVAX, BNB, XDAI, you assume they refer to the native asset of the chain they are on, not e.g WETH instead of ETH.
       </tokens_info>
 
       <swap_flow>
