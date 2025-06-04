@@ -96,7 +96,7 @@ const ChatMessageItem: React.FC<{
               : 'bg-muted'
           )}
         >
-          {<Markdown>{message.content as string}</Markdown>}
+          {<Markdown>{message.content}</Markdown>}
         </div>
       </div>
     </>
