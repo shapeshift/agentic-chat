@@ -4,6 +4,7 @@ import { WagmiProvider } from 'wagmi';
 import { Dashboard } from './dashboard/page';
 import { createAppKit } from '@reown/appkit/react';
 import { networks } from '../lib/appkit';
+import { MyRuntimeProvider } from '../components/MyRuntimeProvider';
 
 const queryClient = new QueryClient();
 
@@ -31,7 +32,9 @@ export function App() {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <Dashboard />
+        <MyRuntimeProvider>
+          <Dashboard />
+        </MyRuntimeProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
