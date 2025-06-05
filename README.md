@@ -9,7 +9,6 @@
 
 ### Troubleshooting
 
-- If you're having `expected workspace package to exist` issues with `yarn add <somePackage>`, it is related to wrong version of yarn i.e a regression introduced somewhere around ~1.20.0. 
+- If you're having `expected workspace package to exist` issues with `yarn add <somePackage>`, it is related to wrong version of yarn i.e a regression introduced somewhere around ~1.20.0.
   You will want to ensure yarn 3.5.0 is installed, which doesn't contain this bug. This can be done with `yarn set version 3.5.0` and checking with `yarn -v` the correct version is insalled
 - If after many many tries, `yarn -v` still outputs 1.2x, this is probably related to corepack. Ensure you run `corepack enable` before running `yarn set version`
-

@@ -5,8 +5,8 @@ import {
   ErrorPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
-} from "@assistant-ui/react";
-import type { FC } from "react";
+} from '@assistant-ui/react';
+import type { FC } from 'react';
 import {
   ArrowDownIcon,
   CheckIcon,
@@ -16,7 +16,7 @@ import {
   PencilIcon,
   RefreshCwIcon,
   SendHorizontalIcon,
-} from "lucide-react";
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 import { Button } from '../ui/button';
@@ -28,7 +28,7 @@ export const Thread: FC = () => {
     <ThreadPrimitive.Root
       className="bg-background box-border flex h-full flex-col overflow-hidden"
       style={{
-        ["--thread-max-width" as string]: "42rem",
+        ['--thread-max-width' as string]: '42rem',
       }}
     >
       <ThreadPrimitive.Viewport className="flex h-full flex-col items-center overflow-y-scroll scroll-smooth bg-inherit px-4 pt-8">
@@ -74,9 +74,7 @@ const ThreadWelcome: FC = () => {
     <ThreadPrimitive.Empty>
       <div className="flex w-full max-w-[var(--thread-max-width)] flex-grow flex-col">
         <div className="flex w-full flex-grow flex-col items-center justify-center">
-          <p className="mt-4 font-medium">
-            How can I help you today?
-          </p>
+          <p className="mt-4 font-medium">How can I help you today?</p>
         </div>
         <ThreadWelcomeSuggestions />
       </div>
@@ -260,7 +258,10 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
   return (
     <BranchPickerPrimitive.Root
       hideWhenSingleBranch
-      className={cn("text-muted-foreground inline-flex items-center text-xs", className)}
+      className={cn(
+        'text-muted-foreground inline-flex items-center text-xs',
+        className
+      )}
       {...rest}
     >
       <BranchPickerPrimitive.Previous asChild>
