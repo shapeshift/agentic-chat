@@ -12,6 +12,8 @@ export const Chat: React.FC = () => {
   const { setMessages, activeThreadId } = useChatStore();
   const activeThread = useActiveThread();
 
+  const env = import.meta?.env ? import.meta.env : process.env;
+
   const {
     messages,
     input,
@@ -20,8 +22,8 @@ export const Chat: React.FC = () => {
     stop,
     status,
   } = useChat({
-    api: 'http://localhost:8080/',
-    maxSteps: 5,
+    api: env.VITE_AGENTIC_SERVER_BASE_URL,
+    maxSteps: 10,
     onToolCall: handleToolCall,
     initialMessages: activeThread?.messages || [],
     id: activeThreadId ?? '',
@@ -30,8 +32,12 @@ export const Chat: React.FC = () => {
   useEffect(() => {
     if (!activeThreadId) return;
 
-    setMessages(activeThreadId, messages);
-  }, [messages, activeThreadId, setMessages]);
+    setMessages(
+      activeThreadId,
+      messages,
+      messages.length === activeThread?.messages.length
+    );
+  }, [messages, activeThreadId, setMessages, activeThread?.messages]);
 
   return (
     <div className="flex h-full flex-col">

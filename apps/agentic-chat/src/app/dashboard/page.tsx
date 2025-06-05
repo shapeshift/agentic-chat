@@ -18,10 +18,10 @@ import { useChatStore } from '../../store/chat';
 import { generateId } from '@ai-sdk/ui-utils';
 
 export const Dashboard = () => {
-  const { setActiveThreadId, activeThreadId } = useChatStore();
+  const { createThread, activeThreadId } = useChatStore();
 
   const handleNewChat = () => {
-    setActiveThreadId(generateId());
+    createThread(generateId());
   };
 
   return (

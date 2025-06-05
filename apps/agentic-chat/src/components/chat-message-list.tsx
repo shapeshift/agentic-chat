@@ -1,64 +1,76 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '../lib/utils';
 import { MessageList } from '../types/message';
 import Markdown from 'react-markdown';
 import { Button } from './ui/button';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, ChevronDown } from 'lucide-react';
 import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
 
-import type { ToolInvocation, UIMessage } from '@ai-sdk/ui-utils';
+import type { ToolInvocationUIPart, UIMessage } from '@ai-sdk/ui-utils';
 
 type ChatMessageListProps = {
   messages: MessageList;
 };
 
 const ToolMessageItem: React.FC<{
-  toolInvocation: ToolInvocation;
+  toolInvocation: ToolInvocationUIPart;
 }> = ({ toolInvocation }) => {
-  const { toolName, toolCallId, args } = toolInvocation;
+  const [isExpanded, setIsExpanded] = useState(false);
+  const name = toolInvocation.toolInvocation.toolName;
+  const id = toolInvocation.toolInvocation.toolCallId;
+  const args = toolInvocation.toolInvocation.args;
   const content =
-    toolInvocation.state === 'result'
-      ? JSON.stringify(toolInvocation.result, null, 2)
+    toolInvocation.toolInvocation.state === 'result'
+      ? JSON.stringify(toolInvocation.toolInvocation.result, null, 2)
       : '';
 
   return (
     <div className="flex flex-col items-start max-w-[75%]">
-      {/* Tool Call Table */}
       <div className="w-full mb-2 border rounded-lg overflow-hidden bg-muted">
-        <div className="flex justify-between items-center px-3 py-2 border-b bg-muted/70">
-          <span className="font-semibold text-sm">{toolName}</span>
-          <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-            {toolCallId}
-          </span>
-        </div>
-        {Object.entries(args).map(([key, value]) => (
-          <div
-            key={key}
-            className="flex justify-between items-center px-3 py-2 border-b last:border-b-0"
-          >
-            <span className="font-semibold text-xs text-muted-foreground">
-              {key}
+        <div
+          className="flex justify-between items-center px-3 py-2 border-b bg-muted/70 cursor-pointer hover:bg-muted/90 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <span className="font-semibold text-sm">{name}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+              {id}
             </span>
-            <span className="text-xs text-muted-foreground/80 break-all">
-              {typeof value === 'string' ? value : JSON.stringify(value)}
-            </span>
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 transition-transform',
+                isExpanded ? 'transform rotate-180' : ''
+              )}
+            />
           </div>
-        ))}
-      </div>
-      {/* Tool Result Table */}
-      <div className="w-full border rounded-lg overflow-hidden bg-muted">
-        <div className="flex justify-between items-center px-3 py-2 border-b bg-muted/70">
-          <span className="font-semibold text-sm">{toolName}</span>
-          <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-            {toolCallId}
-          </span>
         </div>
-        <div className="px-3 py-2 text-xs text-muted-foreground/80 break-all">
-          {typeof content === 'string' ? content : JSON.stringify(content)}
-        </div>
+        {isExpanded && (
+          <>
+            {Object.entries(args).map(([key, value]) => (
+              <div
+                key={key}
+                className="flex justify-between items-center px-3 py-2 border-b"
+              >
+                <span className="font-semibold text-xs text-muted-foreground">
+                  {key}
+                </span>
+                <span className="text-xs text-muted-foreground/80 break-all">
+                  {typeof value === 'string' ? value : JSON.stringify(value)}
+                </span>
+              </div>
+            ))}
+            {content && (
+              <div className="px-3 py-2 text-xs text-muted-foreground/80 break-all">
+                {typeof content === 'string'
+                  ? content
+                  : JSON.stringify(content)}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -69,7 +81,7 @@ const ChatMessageItem: React.FC<{
 }> = ({ message }) => {
   const toolMessageItems = message.parts
     .filter((part) => part.type === 'tool-invocation')
-    .map(({ toolInvocation }) => (
+    .map((toolInvocation) => (
       <ToolMessageItem toolInvocation={toolInvocation} />
     ));
   return (

@@ -1,10 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 import { generateId, type UIMessage } from '@ai-sdk/ui-utils';
 
 type ChatThread = {
   id: string;
   messages: UIMessage[];
+  createdAt: number;
+  updatedAt: number;
 };
 
 type MessageUpdater = (prev: UIMessage[]) => UIMessage[];
@@ -17,22 +20,25 @@ type ChatState = {
   activeThreadId: string;
   setMessages: (
     threadId: string,
-    messagesOrUpdater: UIMessage[] | MessageUpdater
+    messagesOrUpdater: UIMessage[] | MessageUpdater,
+    isInitial?: boolean
   ) => void;
+  createThread: (threadId: string) => void;
   setActiveThreadId: (threadId: string) => void;
 };
 
 export const useChatStore = create<ChatState>()(
   persist(
-    (set) => ({
+    immer((set) => ({
       threads: { byId: {}, ids: [] },
       activeThreadId: '',
-      setMessages: (threadId, messagesOrUpdater) =>
+      setMessages: (threadId, messagesOrUpdater, isInitial) =>
         set((state) => {
           const currentMessages = state.threads.byId[threadId]?.messages || [];
           const newMessages =
             typeof messagesOrUpdater === 'function'
-              ? messagesOrUpdater(currentMessages)
+              ? // @ts-expect-error ts is drunk with immer middleware
+                messagesOrUpdater(currentMessages)
               : messagesOrUpdater;
 
           return {
@@ -44,15 +50,19 @@ export const useChatStore = create<ChatState>()(
                   ...state.threads.byId[threadId],
                   id: threadId,
                   messages: newMessages,
+                  updatedAt: isInitial
+                    ? state.threads.byId[threadId]?.updatedAt
+                    : Date.now(),
                 },
               },
             },
           };
         }),
-      setActiveThreadId: (threadId) => {
+      createThread: (threadId) => {
         const newThreadId = threadId;
         set((state) => {
           const exists = state.threads.ids.includes(newThreadId);
+          const now = Date.now();
           return {
             activeThreadId: newThreadId,
             threads: {
@@ -61,7 +71,8 @@ export const useChatStore = create<ChatState>()(
                 [newThreadId]: state.threads.byId[newThreadId] || {
                   id: newThreadId,
                   messages: [],
-                  toolCalls: [],
+                  createdAt: now,
+                  updatedAt: now,
                 },
               },
               ids: exists
@@ -71,7 +82,12 @@ export const useChatStore = create<ChatState>()(
           };
         });
       },
-    }),
+      setActiveThreadId: (threadId) => {
+        set((state) => {
+          state.activeThreadId = threadId;
+        });
+      },
+    })),
     {
       name: 'chat-storage',
     }
