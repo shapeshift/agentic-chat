@@ -1,6 +1,5 @@
 import { Button } from '../../components/ui/button';
 import { Thread } from '../../components/assistant-ui/thread';
-import { ThreadList } from '../../components/assistant-ui/thread-list';
 import { SidebarLeft } from '../../components/sidebar-left';
 import { SidebarRight } from '../../components/sidebar-right';
 import {
@@ -15,8 +14,16 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '../../components/ui/sidebar';
+import { useChatStore } from '../../store/chat';
+import { generateId } from '@ai-sdk/ui-utils';
 
 export const Dashboard = () => {
+  const { createThread, activeThreadId } = useChatStore();
+
+  const handleNewChat = () => {
+    createThread(generateId());
+  };
+
   return (
     <SidebarProvider>
       <SidebarLeft />
@@ -34,11 +41,18 @@ export const Dashboard = () => {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto w-auto px-2"
+              onClick={handleNewChat}
+            >
+              New Chat
+            </Button>
           </div>
         </header>
-        <div className="grid h-[calc(100vh-3.5rem)] grid-cols-[200px_1fr]">
-          <ThreadList />
-          <Thread />
+        <div className="h-[calc(100vh-3.5rem)]">
+          <Thread key={activeThreadId} />
         </div>
       </SidebarInset>
       <SidebarRight />

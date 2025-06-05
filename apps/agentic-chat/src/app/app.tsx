@@ -4,7 +4,7 @@ import { WagmiProvider } from 'wagmi';
 import { Dashboard } from './dashboard/page';
 import { createAppKit } from '@reown/appkit/react';
 import { networks } from '../lib/appkit';
-import { MyRuntimeProvider } from '../components/MyRuntimeProvider';
+import { OpenAiProvider } from '../components/OpenAiProvider';
 
 const queryClient = new QueryClient();
 
@@ -32,9 +32,9 @@ export function App() {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <MyRuntimeProvider>
+        <OpenAiProvider>
           <Dashboard />
-        </MyRuntimeProvider>
+        </OpenAiProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

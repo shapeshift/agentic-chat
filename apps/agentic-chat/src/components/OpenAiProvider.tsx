@@ -5,9 +5,9 @@ import { AssistantRuntimeProvider } from '@assistant-ui/react';
 import { useVercelUseChatRuntime } from '@assistant-ui/react-ai-sdk';
 import useTools from '../hooks/useTools';
 import { useActiveThread, useChatStore } from '../store/chat';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-export function MyRuntimeProvider({
+export function OpenAiProvider({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -15,6 +15,7 @@ export function MyRuntimeProvider({
   const { handleToolCall } = useTools();
   const { setMessages, activeThreadId } = useChatStore();
   const activeThread = useActiveThread();
+  const prevMessagesRef = useRef<string>('');
 
   const chat = useChat({
     api: import.meta.env.VITE_AGENTIC_SERVER_BASE_URL,
@@ -41,11 +42,16 @@ export function MyRuntimeProvider({
   useEffect(() => {
     if (!activeThreadId) return;
 
-    setMessages(
-      activeThreadId,
-      chat.messages,
-      chat.messages.length === activeThread?.messages.length
-    );
+    // Only update if messages have actually changed
+    const currentMessagesStr = JSON.stringify(chat.messages);
+    if (currentMessagesStr !== prevMessagesRef.current) {
+      prevMessagesRef.current = currentMessagesStr;
+      setMessages(
+        activeThreadId,
+        chat.messages,
+        chat.messages.length === activeThread?.messages.length
+      );
+    }
   }, [chat.messages, activeThreadId, setMessages, activeThread?.messages]);
 
   const runtime = useVercelUseChatRuntime(chat);
@@ -55,4 +61,4 @@ export function MyRuntimeProvider({
       {children}
     </AssistantRuntimeProvider>
   );
-} 
+}
