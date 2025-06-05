@@ -29,15 +29,19 @@ export const Chat: React.FC = () => {
     id: activeThreadId ?? '',
     experimental_prepareRequestBody: (request) => {
       // Ensure messages array is not empty and get the last message
-      const lastMessage = request.messages.length > 0 ? request.messages[request.messages.length - 1] : null;
-      const id = request.id
+      const lastMessage =
+        request.messages.length > 0
+          ? request.messages[request.messages.length - 1]
+          : null;
+      const id = request.id;
 
       // Return the structured body for your API route
       return {
         message: lastMessage,
         id,
       };
-    },  });
+    },
+  });
 
   useEffect(() => {
     if (!activeThreadId) return;
