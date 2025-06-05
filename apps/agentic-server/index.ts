@@ -11,10 +11,13 @@ app.use(express.json());
 app.use(cors());
 
 app.post('/', async (req: Request, res: Response) => {
-  const { messages } = req.body;
+  const { message, id } = req.body;
 
   const agent = mastra.getAgent('shapeshiftAgent');
-  const result = await agent.stream(messages);
+  const result = await agent.stream(message, {
+    resourceId: 'user',
+    threadId: id,
+  });
 
   result.pipeDataStreamToResponse(res);
 });

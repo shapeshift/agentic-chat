@@ -1,19 +1,16 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
-import z from 'zod';
 import { createOpenAI } from '@ai-sdk/openai';
-
-const NetworkEnum = z.enum([
-  'avalanche',
-  'ethereum',
-  'polygon',
-  'bsc',
-  'optimism',
-  'arbitrum',
-  'gnosis',
-  'base',
-]);
+import { switchEvmChain } from '../tools/switchEvmChain';
+import { getAddress } from '../tools/getAddress';
+import { getAccount } from '../tools/getAccount';
+import { getAllowance } from '../tools/getAllowance';
+import { approve } from '../tools/approve';
+import { sendTransaction } from '../tools/sendTransaction';
+import { executeSwap } from '../tools/executeSwap';
+import { searchTokens } from '../tools/searchTokens';
+import { bebopRate } from '../tools/bebopRate';
 
 const openai = createOpenAI({
   // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below
@@ -70,132 +67,15 @@ export const shapeshiftAgent = new Agent({
 `,
   model: openai('gpt-4o-mini'),
   tools: {
-    switchEvmChain: {
-      description: 'Switches the current EVM chainId to the specified chainId',
-      parameters: z.object({
-        chainId: z.number().describe('The chain ID to switch to'),
-      }),
-    },
-    getAddress: {
-      description: 'Returns the user address across all EVM chains',
-      parameters: z.object({}),
-    },
-    getAccount: {
-      description: `
-        Fetches the current account native balance for a given chain, as well as tokens balances and their info (balance, contract address, decimals, name, symbol).
-        All balance values are in precision format.
-        `,
-      parameters: z.object({
-        network: z
-          .enum([
-            'ethereum',
-            'arbitrum',
-            'polygon',
-            'optimism',
-            'base',
-            'avalanche',
-            'bnbsmartchain',
-            'gnosis',
-          ])
-          .describe('The network to get the account balance on'),
-      }),
-    },
-    getAllowance: {
-      description:
-        'Get the allowance of an ERC20 token for a specific spender, in precision.',
-      parameters: z.object({
-        token: z.string().describe('The ERC20 token contract address'),
-        spender: z.string().describe('The address of the spender'),
-        chainId: z.number().describe('The chain ID to get the allowance on'),
-        decimals: z
-          .number()
-          .describe(
-            'The number of decimals for the token to check allowance for'
-          ),
-      }),
-    },
-    approve: {
-      description: 'Approve an ERC20 token for a specific spender.',
-      parameters: z.object({
-        token: z.string().describe('The ERC20 token contract address'),
-        spender: z.string().describe('The address of the spender'),
-        amountCryptoPrecision: z
-          .string()
-          .describe('The amount to approve in precision format'),
-        chainId: z.number().describe('The chain ID to approve on'),
-        decimals: z.number().describe('The number of decimals for the token'),
-      }),
-    },
-    sendTransaction: {
-      description:
-        'Send a transaction to the specified address with the given value and optional calldata.',
-      parameters: z.object({
-        to: z.string().describe('The recipient address of the transaction'),
-        valueCryptoPrecision: z
-          .string()
-          .describe(
-            'The amount of native asset to send along with the Tx, in precision'
-          ),
-        chainId: z.number().describe('The chain ID to send the transaction on'),
-      }),
-    },
-    executeSwap: {
-      description:
-        'Sends a transaction which executes the swap the user has confirmed.',
-      parameters: z.object({}),
-    },
-    searchTokens: {
-      description: `
-        Search for tokens by name or symbol
-        Returns tokens matching the search term, sorted by 7-day USD volume.
-        For args parsing, use text proximity to map user input to the correct network.
-        `,
-      parameters: z.object({
-        searchTerm: z.string().describe('The search term to find tokens'),
-        network: NetworkEnum.optional().describe('The network to search on'),
-      }),
-    },
-    bebopRate: {
-      description: `Fetches a swap rate from Bebop and displays it to the user.
-
-        Returns an object with the following fields, for display to the user
-        - sellAmountCryptoPrecision: The sell amount in precision format
-        - buyAmountCryptoPrecision: The buy amount in precision format
-        - buyAsset: Object describing the buy asset (i.e symbol, decimals, name, address)
-        - sellAsset: Object describing the sell asset (i.e symbol, decimals, name, address)
-        - approvalTarget: The address the funds will be spent to. Use this as the spender for allowance checks.
-
-        **Instructions for LLM:**
-        - Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details.
-        - If the user requests technical details, you may display internal fields.`,
-      parameters: z.object({
-        chain: z
-          .string()
-          .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
-        fromAsset: z
-          .object({
-            address: z.string(),
-            decimals: z.number(),
-            symbol: z.string().optional(),
-          })
-          .describe('Asset to sell'),
-        toAsset: z
-          .object({
-            address: z.string(),
-            decimals: z.number(),
-            symbol: z.string(),
-          })
-          .describe('Asset to buy'),
-        sellAmountCryptoPrecision: z
-          .string()
-          .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-        fromAddress: z
-          .string()
-          .describe(
-            'The address the user is swapping from. Also referred to as "sell address", and should be gotten using the getAddress() tool beforehand'
-          ),
-      }),
-    },
+    switchEvmChain,
+    getAddress,
+    getAccount,
+    getAllowance,
+    approve,
+    sendTransaction,
+    executeSwap,
+    searchTokens,
+    bebopRate,
   },
 
   memory: new Memory({
