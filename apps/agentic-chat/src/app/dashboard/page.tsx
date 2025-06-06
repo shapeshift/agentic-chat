@@ -18,6 +18,7 @@ import { useChatStore } from '../../store/chat';
 import { generateId } from '@ai-sdk/ui-utils';
 import { ThreadList } from '../../components/assistant-ui/thread-list';
 import useTools from '@/hooks/useTools';
+import BebopQuoteUI from '@/components/assistant-ui/BebopQuoteUI';
 
 export const Dashboard = () => {
   const { createThread, activeThreadId } = useChatStore();
@@ -55,6 +56,7 @@ export const Dashboard = () => {
           </div>
         </header>
         <div className="grid h-full grid-cols-[200px_1fr]">
+          <BebopQuoteUI />
           <ThreadList />
           <Thread key={activeThreadId} />
         </div>
