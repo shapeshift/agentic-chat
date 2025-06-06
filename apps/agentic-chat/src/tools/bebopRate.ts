@@ -123,7 +123,7 @@ export const getBebopRate = async ({
     assetReference: buyToken.address ?? BEBOP_ETH_MARKER,
   });
 
-  console.log({fromAsset, toAsset})
+  console.log({ fromAsset, toAsset });
   const sellAsset: Asset = {
     name: sellToken.name ?? '',
     symbol: sellToken.symbol,

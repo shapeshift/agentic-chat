@@ -2,12 +2,6 @@ import { Button } from '../../components/ui/button';
 import { Thread } from '../../components/assistant-ui/thread';
 import { SidebarLeft } from '../../components/sidebar-left';
 import { SidebarRight } from '../../components/sidebar-right';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from '../../components/ui/breadcrumb';
 import { Separator } from '../../components/ui/separator';
 import {
   SidebarInset,
@@ -17,8 +11,14 @@ import {
 import { useChatStore } from '../../store/chat';
 import { generateId } from '@ai-sdk/ui-utils';
 import { ThreadList } from '../../components/assistant-ui/thread-list';
-import useTools from '@/hooks/useTools';
-import BebopQuoteUI from '@/components/assistant-ui/BebopQuoteUI';
+import BebopQuoteUI from '../../components/assistant-ui/BebopQuoteUI';
+import { ConnectWallet } from '../../components/connect-wallet';
+import useTools from '../../hooks/useTools';
+
+const isSidebarLeftEnabled =
+  import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true';
+const isSidebarRightEnabled =
+  import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true';
 
 export const Dashboard = () => {
   const { createThread, activeThreadId } = useChatStore();
@@ -30,21 +30,15 @@ export const Dashboard = () => {
 
   return (
     <SidebarProvider>
-      <SidebarLeft />
+      {isSidebarLeftEnabled && <SidebarLeft />}
       <SidebarInset>
-        <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background z-10">
-          <div className="flex flex-1 items-center gap-2 px-3">
-            <SidebarTrigger />
+        <header className="sticky top-0 flex flex-col gap-2 bg-background z-10 px-3 pt-3">
+          <div>
+            <ConnectWallet />
+          </div>
+          <div className="flex items-center gap-2">
+            {isSidebarLeftEnabled && <SidebarTrigger />}
             <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="line-clamp-1">
-                    Chat Name
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
             <Button
               variant="ghost"
               size="icon"
@@ -61,7 +55,7 @@ export const Dashboard = () => {
           <Thread key={activeThreadId} />
         </div>
       </SidebarInset>
-      <SidebarRight />
+      {isSidebarRightEnabled && <SidebarRight />}
     </SidebarProvider>
   );
 };
