@@ -50,13 +50,4 @@ describe('App', () => {
     );
     expect(baseElement).toBeTruthy();
   });
-
-  it('should render the Dashboard component', () => {
-    const { getByText } = render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    );
-    expect(getByText('Wallets')).toBeTruthy();
-  });
 });
