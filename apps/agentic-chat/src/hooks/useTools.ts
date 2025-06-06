@@ -195,9 +195,13 @@ const useTools = () => {
     description: 'Sends a transaction to the blockchain',
     parameters: z.object({
       to: z.string().describe('The address to send the transaction to'),
-      valueCryptoPrecision: z.string().describe('Amount to send in human format, e.g. 1 for 1 ETH'),
+      valueCryptoPrecision: z
+        .string()
+        .describe('Amount to send in human format, e.g. 1 for 1 ETH'),
       data: z.string().describe('The transaction data (hex string)'),
-      chainId: z.number().describe('The chain ID where the transaction will be sent'),
+      chainId: z
+        .number()
+        .describe('The chain ID where the transaction will be sent'),
     }),
     execute: async ({ to, valueCryptoPrecision, data, chainId }) => {
       const valueCryptoBaseUnit = toBaseUnit(
