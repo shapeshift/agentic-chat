@@ -5,7 +5,6 @@ import {
   PortalsToken,
 } from '@agentic-chat/types';
 import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
-import { ToolCall } from '@ai-sdk/provider-utils';
 import {
   ASSET_NAMESPACE,
   CHAIN_NAMESPACE,
@@ -17,25 +16,20 @@ import { Address, getAddress } from 'viem';
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
 export const getBebopRate = async ({
-  toolCall,
+  chain,
+  fromAsset,
+  toAsset,
+  sellAmountCryptoPrecision,
+  fromAddress,
   setBebopQuote,
 }: {
-  toolCall: ToolCall<string, unknown>;
+  chain: string;
+  fromAsset: PortalsToken;
+  toAsset: PortalsToken;
+  sellAmountCryptoPrecision: string;
+  fromAddress: Address;
   setBebopQuote: (bebopQuote: BebopQuote) => void;
 }) => {
-  const typedToolCall = toolCall as ToolCall<
-    'bebopRate',
-    {
-      sellAmountCryptoPrecision: string;
-      fromAsset: PortalsToken;
-      toAsset: PortalsToken;
-      fromAddress: Address;
-      chain: string;
-    }
-  >;
-  const { sellAmountCryptoPrecision, fromAsset, toAsset, fromAddress, chain } =
-    typedToolCall.args;
-
   const bebopChainsMap: Record<string, string> = {
     ethereum: 'ethereum',
     polygon: 'polygon',

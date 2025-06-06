@@ -16,9 +16,12 @@ import {
 } from '../../components/ui/sidebar';
 import { useChatStore } from '../../store/chat';
 import { generateId } from '@ai-sdk/ui-utils';
+import { ThreadList } from '../../components/assistant-ui/thread-list';
+import useTools from '@/hooks/useTools';
 
 export const Dashboard = () => {
   const { createThread, activeThreadId } = useChatStore();
+  useTools();
 
   const handleNewChat = () => {
     createThread(generateId());
@@ -51,7 +54,8 @@ export const Dashboard = () => {
             </Button>
           </div>
         </header>
-        <div className="h-[calc(100vh-3.5rem)]">
+        <div className="grid h-full grid-cols-[200px_1fr]">
+          <ThreadList />
           <Thread key={activeThreadId} />
         </div>
       </SidebarInset>
