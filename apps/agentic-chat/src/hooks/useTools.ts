@@ -1,6 +1,5 @@
 import { useAccount, useWalletClient } from 'wagmi';
 import { getAddress, Hex } from 'viem';
-import { ToolCall } from '@ai-sdk/provider-utils';
 import { BebopQuote } from '@agentic-chat/types';
 import { useAssistantTool } from '@assistant-ui/react';
 import { z } from 'zod';
@@ -219,18 +218,7 @@ const useTools = () => {
     },
   });
 
-  const handleToolCall = async ({
-    toolCall,
-  }: {
-    toolCall: ToolCall<string, unknown>;
-  }) => {
-    switch (toolCall.toolName) {
-      default:
-        return 'Tool not implemented';
-    }
-  };
-
-  return { handleToolCall };
+  return null;
 };
 
 export default useTools;

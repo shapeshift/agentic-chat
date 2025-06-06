@@ -2,15 +2,6 @@ import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
 import { createOpenAI } from '@ai-sdk/openai';
-import { switchEvmChain } from '../tools/switchEvmChain';
-import { getAddress } from '../tools/getAddress';
-import { getAccount } from '../tools/getAccount';
-import { getAllowance } from '../tools/getAllowance';
-import { approve } from '../tools/approve';
-import { sendTransaction } from '../tools/sendTransaction';
-import { executeSwap } from '../tools/executeSwap';
-import { searchTokens } from '../tools/searchTokens';
-import { bebopRate } from '../tools/bebopRate';
 
 const openai = createOpenAI({
   // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below
@@ -66,17 +57,7 @@ export const shapeshiftAgent = new Agent({
       </wallet_actions>
 `,
   model: openai('gpt-4o-mini'),
-  tools: {
-    switchEvmChain,
-    getAddress,
-    getAccount,
-    getAllowance,
-    approve,
-    sendTransaction,
-    executeSwap,
-    searchTokens,
-    bebopRate,
-  },
+  tools: {}, // all tools are currently client-side only and passed as `clientTools`
 
   memory: new Memory({
     storage: new LibSQLStore({

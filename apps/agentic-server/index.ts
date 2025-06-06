@@ -13,10 +13,6 @@ app.use(cors());
 app.post('/', async (req: Request, res: Response) => {
   const { messages, tools } = req.body;
 
-  const lastMessage = messages[messages.length - 1];
-
-  console.log({ reqBody: req.body, lastMessage });
-
   const agent = mastra.getAgent('shapeshiftAgent');
   const result = await agent.stream(messages, { clientTools: tools });
 
