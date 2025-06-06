@@ -1,14 +1,17 @@
-import * as React from "react"
+import * as React from 'react';
 
-import { Sidebar, SidebarContent, SidebarInput, SidebarSeparator } from './ui/sidebar';
-import { WalletBalances } from "./wallet-balances";
-import { TransactionHistory } from "./transaction-history";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarInput,
+  SidebarSeparator,
+} from './ui/sidebar';
+import { WalletBalances } from './wallet-balances';
+import { TransactionHistory } from './transaction-history';
 
-type SidebarRightProps = React.ComponentProps<typeof Sidebar>
+type SidebarRightProps = React.ComponentProps<typeof Sidebar>;
 
-export const SidebarRight: React.FC<SidebarRightProps> = ({
-  ...props
-}) => {
+export const SidebarRight: React.FC<SidebarRightProps> = ({ ...props }) => {
   return (
     <Sidebar
       collapsible="none"
@@ -24,5 +27,5 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({
         <SidebarSeparator className="mx-0" />
       </SidebarContent>
     </Sidebar>
-  )
-}
+  );
+};
