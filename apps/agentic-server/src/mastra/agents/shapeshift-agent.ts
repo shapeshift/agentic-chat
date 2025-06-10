@@ -56,7 +56,7 @@ export const shapeshiftAgent = new Agent({
       e.g for approvals, you should ask for their confirmation to approve that specific amount.
       </wallet_actions>
 `,
-  model: openai('llama-3.3-70b'),
+  model: openai('mistral-31-24b'),
   tools: {}, // all tools are currently client-side only and passed as `clientTools`
 
   memory: new Memory({

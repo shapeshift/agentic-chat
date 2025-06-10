@@ -5,7 +5,6 @@ dotenv.config();
 import cors from 'cors';
 import express, { Request, Response } from 'express';
 import { mastra } from './src/mastra';
-import { inspect } from 'util';
 
 const app = express();
 app.use(express.json());
@@ -24,7 +23,7 @@ app.post('/', async (req: Request, res: Response) => {
 
   debugger
 
-  console.log({req: inspect(reqBody, false, null, true)});
+  console.log({req: JSON.parse(reqBody!)});
 });
 
 app.listen(8080, () => {
