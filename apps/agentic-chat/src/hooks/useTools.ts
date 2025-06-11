@@ -1,5 +1,5 @@
 import { useAccount, useWalletClient } from 'wagmi';
-import { getAddress, Hex } from 'viem';
+import { Address, getAddress, Hex } from 'viem';
 import { BebopQuote } from '@agentic-chat/types';
 import { useAssistantTool } from '@assistant-ui/react';
 import { z } from 'zod';
@@ -31,17 +31,6 @@ const useTools = () => {
       return getAccount(account?.address, network);
     },
   });
-
-  useAssistantTool({
-    toolName: 'getAddress',
-    description: 'Gets the user address for use in other tools',
-    parameters: z.object({
-    }),
-    execute: () => {
-      return account?.address
-    },
-  });
-
 
   useAssistantTool({
     toolName: 'switchEvmChain',
@@ -142,18 +131,12 @@ const useTools = () => {
       sellAmountCryptoPrecision: z
         .string()
         .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-      fromAddress: z
-        .string()
-        .describe(
-          'The address the user is swapping from. Also referred to as "sell address", and should ALWAYS be gotten using the getAddress() tool beforehand'
-        ),
     }),
     execute: async ({
       chain,
       fromAsset,
       toAsset,
       sellAmountCryptoPrecision,
-      fromAddress,
     }) => {
       return getBebopRate({
         chain,
@@ -162,7 +145,7 @@ const useTools = () => {
         // @ts-expect-error partial PortalsToken type, we should move to Asset type anyway so no point to type this proper for now as this would go away
         toAsset,
         sellAmountCryptoPrecision,
-        fromAddress: getAddress(fromAddress),
+        fromAddress: getAddress(account?.address as Address),
         setBebopQuote,
       });
     },
