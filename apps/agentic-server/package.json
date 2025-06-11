@@ -1,16 +1,10 @@
 {
-  "name": "shapeshift-agentic-server",
+  "name": "@shapeshiftoss/agentic-server",
   "version": "1.0.0",
-  "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "npx tsx index.ts"
-  },
-  "devDependencies": {
-    "@types/node": "^22.15.23",
-    "@types/express": "^5.0.2",
-    "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "dev": "yarn run -T tsx --watch src/index.ts",
+    "start": "yarn run -T tsx src/index.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",
@@ -20,5 +14,9 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "zod": "^3.25.32"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.2"
   }
 }

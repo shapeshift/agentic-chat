@@ -1,33 +1,30 @@
 {
-  "name": "@agentic-chat/source",
+  "name": "@shapeshiftoss/agentic",
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "nx run-many --target=build --all",
-    "dev": "nx run-many --target=build --all && npx concurrently \"nx run shapeshift-agentic-server:dev\" \"nx serve agentic-chat\""
+    "clean": "yarn workspaces foreach --all --parallel run clean && rm -rf node_modules",
+    "build": "yarn workspaces foreach --all --include 'packages/*' --parallel run build",
+    "dev": "yarn dev:packages && npx concurrently \"nx run shapeshift-agentic-server:dev\" \"nx serve agentic-chat\"",
+    "dev:apps": "npx concurrently \"yarn workspace @shapeshiftoss/agentic-server dev\" \"@shapeshiftoss/agentic-chat dev\"",
+    "dev:packages": "yarn workspaces foreach --all --include 'packages/*' --parallel run dev",
+    "lint": "yarn eslint --cache '*/**/*.{ts,tsx}'",
+    "type-check": "yarn workspaces foreach --all --parallel run type-check"
   },
   "private": true,
+  "dependencies": {
+    "@shapeshiftoss/caip": "workspace:^",
+    "@shapeshiftoss/types": "workspace:^",
+    "@shapeshiftoss/utils": "workspace:^",
+    "bignumber.js": "^9.1.2",
+    "viem": "^2.7.9",
+    "zod": "^3.25.32"
+  },
   "devDependencies": {
-    "@eslint/js": "^9.25.1",
-    "@nx/devkit": "20.7.2",
-    "@nx/eslint": "20.8.1",
-    "@nx/eslint-plugin": "20.7.2",
-    "@nx/js": "20.7.2",
-    "@nx/playwright": "20.7.2",
-    "@nx/react": "20.7.2",
-    "@nx/vite": "20.7.2",
-    "@nx/web": "20.7.2",
-    "@nx/workspace": "20.7.2",
-    "@playwright/test": "^1.36.0",
-    "@swc-node/register": "~1.9.1",
-    "@swc/cli": "~0.6.0",
-    "@swc/core": "~1.5.7",
-    "@swc/helpers": "~0.5.11",
-    "@tailwindcss/postcss": "^4.1.4",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.1.0",
     "@types/jsdom": "^21.1.7",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.15.23",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
     "@vitejs/plugin-react": "^4.2.0",
@@ -44,11 +41,10 @@
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "^2.1.0",
-    "nx": "20.7.2",
     "postcss": "8.4.38",
     "prettier": "^2.6.2",
-    "tslib": "^2.3.0",
-    "typescript": "~5.7.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
     "typescript-eslint": "^8.19.0",
     "vite": "^6.0.0",
     "vite-plugin-dts": "^4.5.3",
@@ -56,10 +52,7 @@
   },
   "workspaces": [
     "apps/*",
-    "utils",
-    "types",
-    "caip"
+    "packages/*"
   ],
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
-  "dependencies": {}
+  "packageManager": "yarn@4.9.2"
 }

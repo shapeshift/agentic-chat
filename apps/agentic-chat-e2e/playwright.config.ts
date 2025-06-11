@@ -1,6 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { nxE2EPreset } from '@nx/playwright/preset';
-import { workspaceRoot } from '@nx/devkit';
+import path from 'node:path';
 
 // For CI, you may want to set BASE_URL to the deployed application.
 const baseURL = process.env['BASE_URL'] || 'http://localhost:4300';
@@ -15,19 +14,23 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4300';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  ...nxE2EPreset(__filename, { testDir: './src' }),
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  testDir: './src',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
   use: {
     baseURL,
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'yarn nx run agentic-chat:preview',
+    command: 'yarn dev:apps',
     url: 'http://localhost:4300',
     reuseExistingServer: !process.env.CI,
-    cwd: workspaceRoot,
+    cwd: path.resolve(__dirname, '../../'),
+
   },
   projects: [
     {

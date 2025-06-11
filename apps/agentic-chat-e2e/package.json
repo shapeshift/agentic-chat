@@ -1,10 +1,11 @@
 {
-  "name": "agentic-chat-e2e",
-  "version": "0.0.1",
+  "name": "@shapeshiftoss/agentic-chat-e2e",
+  "version": "0.0.0",
   "private": true,
-  "nx": {
-    "implicitDependencies": [
-      "agentic-chat"
-    ]
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.36.0"
   }
 }

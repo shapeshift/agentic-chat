@@ -1,22 +1,40 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compileOnSave": false,
-  "files": [],
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "lib": ["es2022"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "noEmitOnError": true,
+
+    /* Type Checking */
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "strict": true,
+    "noImplicitReturns": false,
+
+    /* Module Resolution Options */
+    "baseUrl": ".",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+
+    /* Interop Constraints */
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "apps/**/*",
+    "apps/**/*.json",
+    "packages/**/*",
+    "packages/**/*.json"
+  ],
+  "exclude": ["dist", "node_modules"],
   "references": [
-    {
-      "path": "./apps/agentic-chat-e2e"
-    },
-    {
-      "path": "./apps/agentic-chat"
-    },
-    {
-      "path": "./utils"
-    },
-    {
-      "path": "./types"
-    },
-    {
-      "path": "./caip"
-    }
+    { "path": "./packages/caip" },
+    { "path": "./packages/types" },
+    { "path": "./packages/utils" }
   ]
 }
