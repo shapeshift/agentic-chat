@@ -33,6 +33,17 @@ const useTools = () => {
   });
 
   useAssistantTool({
+    toolName: 'getAddress',
+    description: 'Gets the user address for use in other tools',
+    parameters: z.object({
+    }),
+    execute: () => {
+      return account?.address
+    },
+  });
+
+
+  useAssistantTool({
     toolName: 'switchEvmChain',
     description: 'Switches the connected wallet to a different EVM chain',
     parameters: z.object({

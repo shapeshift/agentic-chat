@@ -5,8 +5,8 @@ import { createOpenAI } from '@ai-sdk/openai';
 
 const openai = createOpenAI({
   // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below
-  apiKey: process.env.VITE_OPENAI_API_KEY,
-  // baseURL: 'https://api.venice.ai/api/v1',
+  apiKey: process.env.VITE_VENICE_API_KEY,
+  baseURL: 'https://api.venice.ai/api/v1',
 });
 
 export const shapeshiftAgent = new Agent({
@@ -56,7 +56,7 @@ export const shapeshiftAgent = new Agent({
       e.g for approvals, you should ask for their confirmation to approve that specific amount.
       </wallet_actions>
 `,
-  model: openai('gpt-4o-mini'),
+  model: openai('qwen3-235b:strip_thinking_response=true'),
   tools: {}, // all tools are currently client-side only and passed as `clientTools`
 
   memory: new Memory({
