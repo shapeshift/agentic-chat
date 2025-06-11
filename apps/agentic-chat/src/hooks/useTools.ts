@@ -18,15 +18,6 @@ const useTools = () => {
   const [bebopQuote, setBebopQuote] = useState<BebopQuote | null>(null);
 
   useAssistantTool({
-    toolName: 'getAddress',
-    description: 'Returns the user address across all EVM chains',
-    parameters: z.object({}),
-    execute: async () => {
-      return account.address;
-    },
-  });
-
-  useAssistantTool({
     toolName: 'getAccount',
     description: 'Get account information including balances and token details',
     parameters: z.object({
