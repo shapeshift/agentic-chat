@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "npx tsx index.ts"
+    "dev": "npx tsx --inspect index.ts"
   },
   "devDependencies": {
     "@types/express": "^5.0.2",
