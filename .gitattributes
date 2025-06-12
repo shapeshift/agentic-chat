@@ -1,0 +1,3 @@
+.yarn/releases/** -text
+*.cjs binary
+*.js.map -text

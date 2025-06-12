@@ -1,8 +1,9 @@
-import { defineConfig, devices } from '@playwright/test';
-import path from 'node:path';
+import path from 'node:path'
+
+import { defineConfig, devices } from '@playwright/test'
 
 // For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['BASE_URL'] || 'http://localhost:4300';
+const baseURL = process.env['BASE_URL'] || 'http://localhost:4300'
 
 /**
  * Read environment variables from file.
@@ -30,7 +31,6 @@ export default defineConfig({
     url: 'http://localhost:4300',
     reuseExistingServer: !process.env.CI,
     cwd: path.resolve(__dirname, '../../'),
-
   },
   projects: [
     {
@@ -68,4 +68,4 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     } */
   ],
-});
+})

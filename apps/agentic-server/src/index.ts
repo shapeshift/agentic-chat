@@ -1,36 +1,28 @@
-import dotenv from 'dotenv';
+import { createOpenAI } from '@ai-sdk/openai'
+import { streamText } from 'ai'
+import cors from 'cors'
+import dotenv from 'dotenv'
+import type { Request, Response } from 'express'
+import express from 'express'
+import z from 'zod'
 
-dotenv.config();
+dotenv.config()
 
-import { createOpenAI } from '@ai-sdk/openai';
-import { streamText } from 'ai';
-import cors from 'cors';
-import express, { Request, Response } from 'express';
-import z from 'zod';
+const app = express()
+app.use(express.json())
+app.use(cors())
 
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-const NetworkEnum = z.enum([
-  'avalanche',
-  'ethereum',
-  'polygon',
-  'bsc',
-  'optimism',
-  'arbitrum',
-  'gnosis',
-  'base',
-]);
+const NetworkEnum = z.enum(['avalanche', 'ethereum', 'polygon', 'bsc', 'optimism', 'arbitrum', 'gnosis', 'base'])
 
 const openai = createOpenAI({
   // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below
   apiKey: process.env.VITE_OPENAI_API_KEY,
   // baseURL: 'https://api.venice.ai/api/v1',
-});
+})
 
-app.post('/', async (req: Request, res: Response) => {
-  const { messages } = req.body;
+app.post('/', (req: Request, res: Response) => {
+  const { messages } = req.body
+
   const result = streamText({
     messages,
     system: `
@@ -81,8 +73,7 @@ app.post('/', async (req: Request, res: Response) => {
     model: openai('gpt-4o-mini'),
     tools: {
       switchEvmChain: {
-        description:
-          'Switches the current EVM chainId to the specified chainId',
+        description: 'Switches the current EVM chainId to the specified chainId',
         parameters: z.object({
           chainId: z.number().describe('The chain ID to switch to'),
         }),
@@ -98,31 +89,17 @@ app.post('/', async (req: Request, res: Response) => {
         `,
         parameters: z.object({
           network: z
-            .enum([
-              'ethereum',
-              'arbitrum',
-              'polygon',
-              'optimism',
-              'base',
-              'avalanche',
-              'bnbsmartchain',
-              'gnosis',
-            ])
+            .enum(['ethereum', 'arbitrum', 'polygon', 'optimism', 'base', 'avalanche', 'bnbsmartchain', 'gnosis'])
             .describe('The network to get the account balance on'),
         }),
       },
       getAllowance: {
-        description:
-          'Get the allowance of an ERC20 token for a specific spender, in precision.',
+        description: 'Get the allowance of an ERC20 token for a specific spender, in precision.',
         parameters: z.object({
           token: z.string().describe('The ERC20 token contract address'),
           spender: z.string().describe('The address of the spender'),
           chainId: z.number().describe('The chain ID to get the allowance on'),
-          decimals: z
-            .number()
-            .describe(
-              'The number of decimals for the token to check allowance for'
-            ),
+          decimals: z.number().describe('The number of decimals for the token to check allowance for'),
         }),
       },
       approve: {
@@ -130,31 +107,23 @@ app.post('/', async (req: Request, res: Response) => {
         parameters: z.object({
           token: z.string().describe('The ERC20 token contract address'),
           spender: z.string().describe('The address of the spender'),
-          amountCryptoPrecision: z
-            .string()
-            .describe('The amount to approve in precision format'),
+          amountCryptoPrecision: z.string().describe('The amount to approve in precision format'),
           chainId: z.number().describe('The chain ID to approve on'),
           decimals: z.number().describe('The number of decimals for the token'),
         }),
       },
       sendTransaction: {
-        description:
-          'Send a transaction to the specified address with the given value and optional calldata.',
+        description: 'Send a transaction to the specified address with the given value and optional calldata.',
         parameters: z.object({
           to: z.string().describe('The recipient address of the transaction'),
           valueCryptoPrecision: z
             .string()
-            .describe(
-              'The amount of native asset to send along with the Tx, in precision'
-            ),
-          chainId: z
-            .number()
-            .describe('The chain ID to send the transaction on'),
+            .describe('The amount of native asset to send along with the Tx, in precision'),
+          chainId: z.number().describe('The chain ID to send the transaction on'),
         }),
       },
       executeSwap: {
-        description:
-          'Sends a transaction which executes the swap the user has confirmed.',
+        description: 'Sends a transaction which executes the swap the user has confirmed.',
         parameters: z.object({}),
       },
       searchTokens: {
@@ -182,9 +151,7 @@ app.post('/', async (req: Request, res: Response) => {
         - Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details.
         - If the user requests technical details, you may display internal fields.`,
         parameters: z.object({
-          chain: z
-            .string()
-            .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
+          chain: z.string().describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
           fromAsset: z
             .object({
               address: z.string(),
@@ -199,9 +166,7 @@ app.post('/', async (req: Request, res: Response) => {
               symbol: z.string(),
             })
             .describe('Asset to buy'),
-          sellAmountCryptoPrecision: z
-            .string()
-            .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
+          sellAmountCryptoPrecision: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
           fromAddress: z
             .string()
             .describe(
@@ -210,11 +175,11 @@ app.post('/', async (req: Request, res: Response) => {
         }),
       },
     },
-  });
+  })
 
-  result.pipeDataStreamToResponse(res);
-});
+  result.pipeDataStreamToResponse(res)
+})
 
 app.listen(8080, () => {
-  console.log(`agentic-server listening on port ${8080}`);
-});
+  console.log(`agentic-server listening on port ${8080}`)
+})

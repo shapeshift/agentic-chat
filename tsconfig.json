@@ -29,7 +29,9 @@
     "apps/**/*",
     "apps/**/*.json",
     "packages/**/*",
-    "packages/**/*.json"
+    "packages/**/*.json",
+    "eslint.config.ts",
+    "*.json"
   ],
   "exclude": ["dist", "node_modules"],
   "references": [
