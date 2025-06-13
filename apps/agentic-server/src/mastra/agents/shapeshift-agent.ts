@@ -35,6 +35,7 @@ export const shapeshiftAgent = new Agent({
       </tokens_info>
 
       <swap_flow>
+        - Swaps are executed with the executeSwap tool
         - You should already know about the sell asset from previous getAccount calls
         - Native assets use the following (either as fromAsset or toAsset):
           {name: 'ETH', symbol: 'ETH', address: '', decimals: 18}
@@ -46,11 +47,11 @@ export const shapeshiftAgent = new Agent({
       </swap_flow>
 
       <wallet_actions>
-      All tools that are wallet actions (approve, sendTransaction), should be run only after the user explicitly confirms their intent to perform that specific action.
+      All tools that are wallet actions (approve, executeSwap), should be run only after the user explicitly confirms their intent to perform that specific action.
       e.g for approvals, you should ask for their confirmation to approve that specific amount.
       </wallet_actions>
 `,
-  model: openai('qwen3-235b:strip_thinking_response=true'),
+  model: openai('qwen3-4b:strip_thinking_response=true'),
   tools: {}, // all tools are currently client-side only and passed as `clientTools`
 
   memory: new Memory({

@@ -1,5 +1,5 @@
 import { useAccount, useWalletClient } from 'wagmi';
-import { Address, getAddress, Hex } from 'viem';
+import { Address, getAddress } from 'viem';
 import { BebopQuote } from '@agentic-chat/types';
 import { useAssistantTool } from '@assistant-ui/react';
 import { z } from 'zod';
@@ -8,7 +8,6 @@ import { searchTokens } from '../tools/searchTokens';
 import { getAllowance } from '../tools/getAllowance';
 import { approve } from '../tools/approve';
 import { sendTransaction } from '../tools/sendTransaction';
-import { toBaseUnit } from '@agentic-chat/utils';
 import { getAccount } from '../tools/getAccount';
 import { getBebopRate } from '../tools/bebopRate';
 
@@ -174,34 +173,35 @@ const useTools = () => {
     },
   });
 
-  useAssistantTool({
-    toolName: 'sendTransaction',
-    description: 'Sends a transaction to the blockchain',
-    parameters: z.object({
-      to: z.string().describe('The address to send the transaction to'),
-      valueCryptoPrecision: z
-        .string()
-        .describe('Amount to send in human format, e.g. 1 for 1 ETH'),
-      data: z.string().describe('The transaction data (hex string)'),
-      chainId: z
-        .number()
-        .describe('The chain ID where the transaction will be sent'),
-    }),
-    execute: async ({ to, valueCryptoPrecision, data, chainId }) => {
-      const valueCryptoBaseUnit = toBaseUnit(
-        valueCryptoPrecision,
-        18 // Assuming 18 decimals for ETH-like transactions
-      );
-
-      return sendTransaction({
-        walletClient,
-        to: getAddress(to),
-        value: valueCryptoBaseUnit,
-        data: data as Hex,
-        chainId,
-      });
-    },
-  });
+  // This does not play nicely with qwen alongside executeSwap, commenting out for now
+  // useAssistantTool({
+    // toolName: 'sendTransaction',
+    // description: 'Sends a transaction to the blockchain',
+    // parameters: z.object({
+      // to: z.string().describe('The address to send the transaction to'),
+      // valueCryptoPrecision: z
+        // .string()
+        // .describe('Amount to send in human format, e.g. 1 for 1 ETH'),
+      // data: z.string().describe('The transaction data (hex string)'),
+      // chainId: z
+        // .number()
+        // .describe('The chain ID where the transaction will be sent'),
+    // }),
+    // execute: async ({ to, valueCryptoPrecision, data, chainId }) => {
+      // const valueCryptoBaseUnit = toBaseUnit(
+        // valueCryptoPrecision,
+        // 18 // Assuming 18 decimals for ETH-like transactions
+      // );
+//
+      // return sendTransaction({
+        // walletClient,
+        // to: getAddress(to),
+        // value: valueCryptoBaseUnit,
+        // data: data as Hex,
+        // chainId,
+      // });
+    // },
+  // });
 
   return null;
 };
