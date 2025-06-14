@@ -1,3 +1,4 @@
+import { ToolFallback } from "@/components/assistant-ui/tool-fallback";
 import {
   ActionBarPrimitive,
   BranchPickerPrimitive,
@@ -203,7 +204,7 @@ const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root className="grid grid-cols-[auto_auto_1fr] grid-rows-[auto_1fr] relative w-full max-w-[var(--thread-max-width)] py-4">
       <div className="text-foreground max-w-[calc(var(--thread-max-width)*0.8)] break-words leading-7 col-span-2 col-start-2 row-start-1 my-1.5">
-        <MessagePrimitive.Content components={{ Text: MarkdownText }} />
+        <MessagePrimitive.Content components={{ Text: MarkdownText, Fallback: ToolFallback }} />
         <MessageError />
       </div>
 
