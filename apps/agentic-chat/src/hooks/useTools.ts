@@ -51,6 +51,7 @@ const useTools = () => {
   });
 
   useAssistantTool({
+    disabled: !bebopQuote,
     toolName: 'approve',
     description: 'Approves a token for spending by a specific address',
     parameters: z.object({
@@ -70,6 +71,7 @@ const useTools = () => {
   });
 
   useAssistantTool({
+    disabled: !bebopQuote,
     toolName: 'getAllowance',
     description: 'Gets the allowance of a token for a specific spender',
     parameters: z.object({
@@ -151,6 +153,7 @@ const useTools = () => {
   });
 
   useAssistantTool({
+    disabled: !bebopQuote,
     toolName: 'executeSwap',
     description:
       'Sends a transaction which executes the swap the user has confirmed',
