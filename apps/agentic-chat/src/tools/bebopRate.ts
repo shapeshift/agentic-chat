@@ -13,7 +13,7 @@ import {
 import type { ChainId } from '@agentic-chat/caip';
 import { Address, getAddress } from 'viem';
 
-const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+export const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
 export const getBebopRate = async ({
   chain,

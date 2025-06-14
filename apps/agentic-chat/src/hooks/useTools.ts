@@ -9,12 +9,14 @@ import { getAllowance } from '../tools/getAllowance';
 import { approve } from '../tools/approve';
 import { sendTransaction } from '../tools/sendTransaction';
 import { getAccount } from '../tools/getAccount';
-import { getBebopRate } from '../tools/bebopRate';
+import { BEBOP_ETH_MARKER, getBebopRate } from '../tools/bebopRate';
 
 const useTools = () => {
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
   const [bebopQuote, setBebopQuote] = useState<BebopQuote | null>(null);
+
+  console.log({bebopQuote})
 
   useAssistantTool({
     toolName: 'getAccount',
@@ -51,7 +53,7 @@ const useTools = () => {
   });
 
   useAssistantTool({
-    disabled: !bebopQuote,
+    disabled: !bebopQuote || (bebopQuote && Object.keys(bebopQuote.sellTokens)[0] === BEBOP_ETH_MARKER),
     toolName: 'approve',
     description: 'Approves a token for spending by a specific address',
     parameters: z.object({
@@ -71,7 +73,7 @@ const useTools = () => {
   });
 
   useAssistantTool({
-    disabled: !bebopQuote,
+    disabled: !bebopQuote || (bebopQuote && Object.keys(bebopQuote.sellTokens)[0] === BEBOP_ETH_MARKER),
     toolName: 'getAllowance',
     description: 'Gets the allowance of a token for a specific spender',
     parameters: z.object({
