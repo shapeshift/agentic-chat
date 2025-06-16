@@ -5,9 +5,11 @@
   "scripts": {
     "clean": "yarn workspaces foreach --all --parallel run clean && rm -rf node_modules",
     "build": "yarn workspaces foreach --all --include 'packages/*' --parallel run build",
-    "dev": "yarn dev:packages && npx concurrently \"nx run shapeshift-agentic-server:dev\" \"nx serve agentic-chat\"",
+    "dev": "yarn dev:packages && yarn dev:apps",
     "dev:apps": "npx concurrently \"yarn workspace @shapeshiftoss/agentic-server dev\" \"@shapeshiftoss/agentic-chat dev\"",
     "dev:packages": "yarn workspaces foreach --all --include 'packages/*' --parallel run dev",
+    "test": "yarn vitest run",
+    "test:e2e": "yarn workspace @shapeshiftoss/agentic-chat-e2e test",
     "lint": "yarn eslint . --cache",
     "lint:fix": "yarn lint --fix",
     "type-check": "yarn workspaces foreach --all --parallel run type-check"
@@ -36,6 +38,7 @@
     "eslint-plugin-prettier": "^5.4.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "happy-dom": "^18.0.1",
     "prettier": "^3.5.3",
     "tsx": "^4.20.2",
     "typescript": "^5.8.3",

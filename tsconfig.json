@@ -35,6 +35,7 @@
     "packages/**/*",
     "packages/**/*.json",
     "eslint.config.ts",
+    "vitest.config.ts",
     "*.json"
   ],
   "exclude": ["dist", "node_modules"],
