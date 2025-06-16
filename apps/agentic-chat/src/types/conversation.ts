@@ -1,11 +1,11 @@
-import { Message } from "./message";
+import type { Message } from './message'
 
 export type Conversation = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  messages: Message[];
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+  messages: Message[]
 }
 
-export type ConversationList = Conversation[];
+export type ConversationList = Conversation[]

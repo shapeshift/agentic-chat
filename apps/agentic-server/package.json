@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "yarn run -T tsx --watch src/index.ts",
-    "start": "yarn run -T tsx src/index.ts"
+    "start": "yarn run -T tsx src/index.ts",
+    "type-check": "yarn run -T tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",

@@ -1,28 +1,13 @@
-'use client';
+'use client'
 
-import * as React from 'react';
-import {
-  AudioWaveform,
-  Command,
-  Home,
-  Inbox,
-  PlusCircleIcon,
-  Search,
-  Sparkles,
-} from 'lucide-react';
+import { AudioWaveform, Command, Home, Inbox, PlusCircleIcon, Search, Sparkles } from 'lucide-react'
+import * as React from 'react'
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarInput,
-  SidebarRail,
-} from './ui/sidebar';
-import { NavUser } from './nav-user';
-import { NavWallets } from './nav-wallets';
-import { Button } from './ui/button';
-import { ConnectWallet } from './connect-wallet';
+import { ConnectWallet } from './connect-wallet'
+import { NavUser } from './nav-user'
+import { NavWallets } from './nav-wallets'
+import { Button } from './ui/button'
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInput, SidebarRail } from './ui/sidebar'
 
 // This is sample data.
 const data = {
@@ -75,11 +60,9 @@ const data = {
       badge: '10',
     },
   ],
-};
+}
 
-export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({
-  ...props
-}) => {
+export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }) => {
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader className="gap-3.5 border-b p-4">
@@ -88,13 +71,7 @@ export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({
         </div>
         <div className="flex w-full items-center justify-between">
           <div className="text-base font-medium text-foreground">Wallets</div>
-          <Button
-            data-sidebar="trigger"
-            data-slot="sidebar-trigger"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-          >
+          <Button data-sidebar="trigger" data-slot="sidebar-trigger" variant="ghost" size="icon" className="size-7">
             <PlusCircleIcon />
           </Button>
         </div>
@@ -108,5 +85,5 @@ export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
-  );
-};
+  )
+}

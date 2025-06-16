@@ -1,18 +1,20 @@
-'use client';
+'use client'
 
-import React, { useEffect } from 'react';
-import { ChatMessageList } from './chat-message-list';
-import { ChatInput } from './chat-input';
-import { useChat } from '@ai-sdk/react';
-import useTools from '../hooks/useTools';
-import { useActiveThread, useChatStore } from '../store/chat';
+import { useChat } from '@ai-sdk/react'
+import React, { useEffect } from 'react'
+
+import useTools from '../hooks/useTools'
+import { useActiveThread, useChatStore } from '../store/chat'
+
+import { ChatInput } from './chat-input'
+import { ChatMessageList } from './chat-message-list'
 
 export const Chat: React.FC = () => {
-  const { handleToolCall } = useTools();
-  const { setMessages, activeThreadId } = useChatStore();
-  const activeThread = useActiveThread();
+  const { handleToolCall } = useTools()
+  const { setMessages, activeThreadId } = useChatStore()
+  const activeThread = useActiveThread()
 
-  const env = import.meta?.env ? import.meta.env : process.env;
+  const env = import.meta?.env ? import.meta.env : process.env
 
   const {
     messages,
@@ -27,17 +29,13 @@ export const Chat: React.FC = () => {
     onToolCall: handleToolCall,
     initialMessages: activeThread?.messages || [],
     id: activeThreadId ?? '',
-  });
+  })
 
   useEffect(() => {
-    if (!activeThreadId) return;
+    if (!activeThreadId) return
 
-    setMessages(
-      activeThreadId,
-      messages,
-      messages.length === activeThread?.messages.length
-    );
-  }, [messages, activeThreadId, setMessages, activeThread?.messages]);
+    setMessages(activeThreadId, messages, messages.length === activeThread?.messages.length)
+  }, [messages, activeThreadId, setMessages, activeThread?.messages])
 
   return (
     <div className="flex h-full flex-col">
@@ -50,5 +48,5 @@ export const Chat: React.FC = () => {
         onStop={stop}
       />
     </div>
-  );
-};
+  )
+}

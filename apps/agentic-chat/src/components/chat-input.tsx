@@ -1,17 +1,18 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react'
+import React from 'react'
+
+import { Button } from './ui/button'
+import { Input } from './ui/input'
 
 interface ChatInputProps {
-  disabled?: boolean;
-  isLoading: boolean;
-  onStop?: () => void;
-  onSubmit: (e: React.FormEvent) => void;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  input: string;
+  disabled?: boolean
+  isLoading: boolean
+  onStop?: () => void
+  onSubmit: (e: React.FormEvent) => void
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  input: string
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -24,16 +25,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     if (input.trim() && !disabled && !isLoading) {
-      e.preventDefault();
-      onSubmit(e);
+      e.preventDefault()
+      onSubmit(e)
     }
-  };
+  }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex items-center gap-2 border-t p-4 sticky bottom-0 bg-background"
-    >
+    <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t p-4 sticky bottom-0 bg-background">
       <Input
         value={input}
         onChange={onInputChange}
@@ -56,5 +54,5 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </Button>
       )}
     </form>
-  );
-};
+  )
+}

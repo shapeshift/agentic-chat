@@ -1,28 +1,20 @@
-import { Button } from '../../components/ui/button';
-import { Chat } from '../../components/chat';
-import { SidebarLeft } from '../../components/sidebar-left';
-import { SidebarRight } from '../../components/sidebar-right';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from '../../components/ui/breadcrumb';
-import { Separator } from '../../components/ui/separator';
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from '../../components/ui/sidebar';
-import { useChatStore } from '../../store/chat';
-import { generateId } from '@ai-sdk/ui-utils';
+import { generateId } from '@ai-sdk/ui-utils'
+
+import { Chat } from '../../components/chat'
+import { SidebarLeft } from '../../components/sidebar-left'
+import { SidebarRight } from '../../components/sidebar-right'
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '../../components/ui/breadcrumb'
+import { Button } from '../../components/ui/button'
+import { Separator } from '../../components/ui/separator'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '../../components/ui/sidebar'
+import { useChatStore } from '../../store/chat'
 
 export const Dashboard = () => {
-  const { createThread, activeThreadId } = useChatStore();
+  const { createThread, activeThreadId } = useChatStore()
 
   const handleNewChat = () => {
-    createThread(generateId());
-  };
+    createThread(generateId())
+  }
 
   return (
     <SidebarProvider>
@@ -35,18 +27,11 @@ export const Dashboard = () => {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="line-clamp-1">
-                    Chat Name
-                  </BreadcrumbPage>
+                  <BreadcrumbPage className="line-clamp-1">Chat Name</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto w-auto px-2"
-              onClick={handleNewChat}
-            >
+            <Button variant="ghost" size="icon" className="ml-auto w-auto px-2" onClick={handleNewChat}>
               New Chat
             </Button>
           </div>
@@ -55,5 +40,5 @@ export const Dashboard = () => {
       </SidebarInset>
       <SidebarRight />
     </SidebarProvider>
-  );
-};
+  )
+}

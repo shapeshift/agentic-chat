@@ -4,16 +4,12 @@
     "rootDir": "src",
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
-    "jsx": "react-jsx",
-    "lib": ["dom"],
-    "types": ["node", "vite/client"],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
   },
-  "exclude": ["dist"],
   "include": ["src/**/*.{ts,tsx}"],
+  "exclude": ["dist"],
   "references": [
-    { "path": "../../packages/caip" }
+    { "path": "../../packages/caip" },
+    { "path": "../../packages/types" },
+    { "path": "../../packages/utils" }
   ]
 }
