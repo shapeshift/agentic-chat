@@ -1,5 +1,5 @@
-import { createTool } from '@mastra/core/tools';
-import { z } from 'zod';
+import { createTool } from '@mastra/core/tools'
+import { z } from 'zod'
 
 export const switchEvmChain = createTool({
   id: 'switchEvmChain',
@@ -7,4 +7,4 @@ export const switchEvmChain = createTool({
     chainId: z.string().describe('The chain ID to switch to'),
   }),
   description: 'Switches the current EVM chain to the specified chain ID',
-});
+})

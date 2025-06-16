@@ -1,12 +1,10 @@
-import { createTool } from '@mastra/core/tools';
-import { z } from 'zod';
+import { createTool } from '@mastra/core/tools'
+import { z } from 'zod'
 
 export const bebopRate = createTool({
   id: 'bebopRate',
   inputSchema: z.object({
-    chain: z
-      .string()
-      .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
+    chain: z.string().describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
     fromAsset: z
       .object({
         address: z.string(),
@@ -21,9 +19,7 @@ export const bebopRate = createTool({
         symbol: z.string(),
       })
       .describe('Asset to buy'),
-    sellAmountCryptoPrecision: z
-      .string()
-      .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
+    sellAmountCryptoPrecision: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
     fromAddress: z
       .string()
       .describe(
@@ -42,4 +38,4 @@ export const bebopRate = createTool({
     **Instructions for LLM:**
     - Do not display base unit values, feeData, rate, swapperName, asset objects, allowanceTarget, or quote to the user unless specifically asked for technical details.
     - If the user requests technical details, you may display internal fields.`,
-});
+})

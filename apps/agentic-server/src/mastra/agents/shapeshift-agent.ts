@@ -1,22 +1,23 @@
-import { Agent } from '@mastra/core/agent';
-import { Memory } from '@mastra/memory';
-import { LibSQLStore } from '@mastra/libsql';
-import { createOpenAI } from '@ai-sdk/openai';
-import { switchEvmChain } from '../tools/switchEvmChain';
-import { getAddress } from '../tools/getAddress';
-import { getAccount } from '../tools/getAccount';
-import { getAllowance } from '../tools/getAllowance';
-import { approve } from '../tools/approve';
-import { sendTransaction } from '../tools/sendTransaction';
-import { executeSwap } from '../tools/executeSwap';
-import { searchTokens } from '../tools/searchTokens';
-import { bebopRate } from '../tools/bebopRate';
+import { createOpenAI } from '@ai-sdk/openai'
+import { Agent } from '@mastra/core/agent'
+import { LibSQLStore } from '@mastra/libsql'
+import { Memory } from '@mastra/memory'
+
+import { approve } from '../tools/approve'
+import { bebopRate } from '../tools/bebopRate'
+import { executeSwap } from '../tools/executeSwap'
+import { getAccount } from '../tools/getAccount'
+import { getAddress } from '../tools/getAddress'
+import { getAllowance } from '../tools/getAllowance'
+import { searchTokens } from '../tools/searchTokens'
+import { sendTransaction } from '../tools/sendTransaction'
+import { switchEvmChain } from '../tools/switchEvmChain'
 
 const openai = createOpenAI({
   // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below
   apiKey: process.env.VITE_OPENAI_API_KEY,
   // baseURL: 'https://api.venice.ai/api/v1',
-});
+})
 
 export const shapeshiftAgent = new Agent({
   name: 'ShapeShift Agent',
@@ -83,4 +84,4 @@ export const shapeshiftAgent = new Agent({
       url: 'file:../mastra.db', // path is relative to the .mastra/output directory
     }),
   }),
-});
+})
