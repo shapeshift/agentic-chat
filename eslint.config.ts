@@ -7,7 +7,7 @@ import prettier from 'eslint-plugin-prettier'
 
 export default [
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{mts,ts,tsx}'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {

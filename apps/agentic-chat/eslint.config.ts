@@ -7,7 +7,7 @@ import baseConfig from '../../eslint.config'
 export default [
   ...baseConfig,
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{mts,ts,tsx}'],
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,

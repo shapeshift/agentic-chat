@@ -5,8 +5,8 @@
   "scripts": {
     "clean": "yarn workspaces foreach --all --parallel run clean && rm -rf node_modules",
     "build": "yarn workspaces foreach --all --include 'packages/*' --parallel run build",
-    "dev": "yarn dev:packages && yarn dev:apps",
-    "dev:apps": "npx concurrently \"yarn workspace @shapeshiftoss/agentic-server dev\" \"@shapeshiftoss/agentic-chat dev\"",
+    "dev": "npx concurrently \"yarn dev:packages\" \"yarn dev:apps\"",
+    "dev:apps": "npx concurrently \"yarn workspace @shapeshiftoss/agentic-server dev\" \"yarn workspace @shapeshiftoss/agentic-chat dev\"",
     "dev:packages": "yarn workspaces foreach --all --include 'packages/*' --parallel run dev",
     "test": "yarn vitest run",
     "test:e2e": "yarn workspace @shapeshiftoss/agentic-chat-e2e test",
