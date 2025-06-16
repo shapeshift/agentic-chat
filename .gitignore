@@ -51,3 +51,4 @@ test-output
 
 # LangGraph API
 .langgraph_api
+apps/mastra.db*
