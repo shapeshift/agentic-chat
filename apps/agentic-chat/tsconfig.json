@@ -6,7 +6,6 @@
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
   },
   "include": ["src/**/*.{ts,tsx}"],
-  "exclude": ["dist"],
   "references": [
     { "path": "../../packages/caip" },
     { "path": "../../packages/types" },

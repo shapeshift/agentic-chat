@@ -1,4 +1,4 @@
-import path from 'node:path'
+import { resolve } from 'path'
 
 import { defineConfig, devices } from '@playwright/test'
 
@@ -24,19 +24,18 @@ export default defineConfig({
     baseURL,
     trace: 'on-first-retry',
   },
-  /* Run your local dev server before starting the tests */
   webServer: [
     {
-      command: 'yarn workspace @shapeshiftoss/agentic-chat preview',
+      command: 'yarn workspace @shapeshiftoss/agentic-chat dev',
       url: 'http://localhost:4300',
       reuseExistingServer: !process.env.CI,
-      cwd: path.resolve(__dirname, '../../'),
+      cwd: resolve(__dirname, '../../'),
     },
     {
       command: 'yarn workspace @shapeshiftoss/agentic-server start',
       url: 'http://localhost:8080',
       reuseExistingServer: !process.env.CI,
-      cwd: path.resolve(__dirname, '../../'),
+      cwd: resolve(__dirname, '../../'),
     },
   ],
   projects: [

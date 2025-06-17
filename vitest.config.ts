@@ -1,20 +1,32 @@
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig(() => {
-  return {
-    test: {
-      globals: true,
-      environment: 'happy-dom',
-      clearMocks: true,
-      poolOptions: {
-        threads: {
-          singleThread: true,
-        },
-        forks: {
-          isolate: false,
+export default defineConfig({
+  test: {
+    watch: false,
+    poolOptions: {
+      threads: { singleThread: true },
+      forks: { isolate: false },
+    },
+    exclude: ['**/node_modules/**', '**/dist/**', 'apps/agentic-chat-e2e/**'],
+    projects: [
+      {
+        test: {
+          globals: true,
+          clearMocks: true,
+          name: 'agentic-chat',
+          environment: 'happy-dom',
+          include: ['apps/agentic-chat/src/**/*.{test,spec}.{js,ts,tsx}'],
         },
       },
-      exclude: ['node_modules', 'apps/agentic-chat-e2e/**'],
-    },
-  }
+      {
+        test: {
+          globals: true,
+          clearMocks: true,
+          name: 'packages',
+          environment: 'node',
+          include: ['packages/*/src/**/*.{test,spec}.{js,ts}'],
+        },
+      },
+    ],
+  },
 })

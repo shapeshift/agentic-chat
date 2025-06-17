@@ -5194,7 +5194,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@shapeshiftoss/agentic-chat@workspace:apps/agentic-chat"
   dependencies:
+    "@ai-sdk/provider-utils": "npm:^2.2.8"
     "@ai-sdk/react": "npm:^1.2.12"
+    "@ai-sdk/ui-utils": "npm:^1.2.11"
     "@radix-ui/react-avatar": "npm:^1.1.4"
     "@radix-ui/react-collapsible": "npm:^1.1.4"
     "@radix-ui/react-dialog": "npm:^1.1.7"
@@ -5211,6 +5213,7 @@ __metadata:
     "@tanstack/react-query": "npm:^5.75.5"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/react": "npm:16.1.0"
+    "@types/qs": "npm:^6"
     "@types/react": "npm:19.0.0"
     "@types/react-dom": "npm:19.0.0"
     "@wagmi/core": "npm:^2.17.2"
@@ -5223,6 +5226,7 @@ __metadata:
     immer: "npm:^10.1.1"
     lucide-react: "npm:^0.488.0"
     postcss: "npm:8.4.38"
+    qs: "npm:^6.14.0"
     react: "npm:19.0.0"
     react-day-picker: "npm:8.10.1"
     react-dom: "npm:19.0.0"
@@ -5250,7 +5254,6 @@ __metadata:
     ai: "npm:^4.3.16"
     body-parser: "npm:^2.2.0"
     cors: "npm:^2.8.5"
-    dotenv: "npm:^16.5.0"
     express: "npm:^5.1.0"
     mastra: "npm:^0.10.3"
     zod: "npm:^3.25.32"
@@ -5266,6 +5269,8 @@ __metadata:
     "@shapeshiftoss/utils": "workspace:^"
     "@types/eslint-plugin-jsx-a11y": "npm:^6.10.0"
     "@types/node": "npm:^24.0.1"
+    "@typescript-eslint/eslint-plugin": "npm:^8.34.1"
+    "@typescript-eslint/parser": "npm:^8.34.1"
     "@vitejs/plugin-react": "npm:^4.5.2"
     "@vitest/coverage-v8": "npm:^3.2.3"
     "@vitest/ui": "npm:^3.2.3"
@@ -6578,7 +6583,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/qs@npm:*":
+"@types/qs@npm:*, @types/qs@npm:^6":
   version: 6.14.0
   resolution: "@types/qs@npm:6.14.0"
   checksum: 10/1909205514d22b3cbc7c2314e2bd8056d5f05dfb21cf4377f0730ee5e338ea19957c41735d5e4806c746176563f50005bbab602d8358432e25d900bdf4970826
@@ -6707,7 +6712,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/eslint-plugin@npm:8.34.1":
+"@typescript-eslint/eslint-plugin@npm:8.34.1, @typescript-eslint/eslint-plugin@npm:^8.34.1":
   version: 8.34.1
   resolution: "@typescript-eslint/eslint-plugin@npm:8.34.1"
   dependencies:
@@ -6728,7 +6733,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/parser@npm:8.34.1":
+"@typescript-eslint/parser@npm:8.34.1, @typescript-eslint/parser@npm:^8.34.1":
   version: 8.34.1
   resolution: "@typescript-eslint/parser@npm:8.34.1"
   dependencies:
@@ -9077,7 +9082,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^16.4.7, dotenv@npm:^16.5.0":
+"dotenv@npm:^16.4.7":
   version: 16.5.0
   resolution: "dotenv@npm:16.5.0"
   checksum: 10/e68a16834f1a41cc2dfb01563bc150668ad675e6cd09191211467b5c0806b6ecd6ec438e021aa8e01cd0e72d2b70ef4302bec7cc0fe15b6955f85230b62dc8a9

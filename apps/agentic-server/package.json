@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "yarn run -T tsx --watch src/index.ts",
-    "start": "yarn run -T tsx src/index.ts",
+    "dev": "yarn run -T tsx --env-file ../../.env --watch src/index.ts",
+    "start": "yarn run -T tsx --env-file ../../.env src/index.ts",
     "type-check": "yarn run -T tsc --noEmit"
   },
   "dependencies": {
@@ -15,7 +15,6 @@
     "ai": "^4.3.16",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "mastra": "^0.10.3",
     "zod": "^3.25.32"

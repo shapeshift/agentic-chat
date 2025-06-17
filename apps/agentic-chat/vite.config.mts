@@ -1,4 +1,4 @@
-import path from 'path'
+import { resolve } from 'path'
 
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -6,6 +6,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
+  envDir: resolve(__dirname, '../..'),
   server: {
     port: 4200,
     host: 'localhost',
@@ -16,7 +17,7 @@ export default defineConfig(() => ({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': resolve(__dirname, './src'),
     },
   },
   build: {
@@ -25,17 +26,6 @@ export default defineConfig(() => ({
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
-    },
-  },
-  test: {
-    watch: false,
-    globals: true,
-    environment: 'jsdom',
-    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    reporters: ['default'],
-    coverage: {
-      reportsDirectory: './test-output/vitest/coverage',
-      provider: 'v8',
     },
   },
 }))

@@ -2,19 +2,22 @@
   "name": "@shapeshiftoss/agentic",
   "version": "0.0.0",
   "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=23"
+  },
   "scripts": {
     "clean": "yarn workspaces foreach --all --parallel run clean && rm -rf node_modules",
     "build": "yarn workspaces foreach --all --include 'packages/*' --parallel run build",
     "dev": "npx concurrently \"yarn dev:packages\" \"yarn dev:apps\"",
     "dev:apps": "npx concurrently \"yarn workspace @shapeshiftoss/agentic-server dev\" \"yarn workspace @shapeshiftoss/agentic-chat dev\"",
     "dev:packages": "yarn workspaces foreach --all --include 'packages/*' --parallel run dev",
-    "test": "yarn vitest run",
+    "test": "yarn vitest",
     "test:e2e": "yarn workspace @shapeshiftoss/agentic-chat-e2e test",
     "lint": "yarn eslint . --cache",
     "lint:fix": "yarn lint --fix",
     "type-check": "yarn workspaces foreach --all --parallel run type-check"
   },
-  "private": true,
   "dependencies": {
     "@shapeshiftoss/caip": "workspace:^",
     "@shapeshiftoss/types": "workspace:^",
@@ -26,6 +29,8 @@
   "devDependencies": {
     "@types/eslint-plugin-jsx-a11y": "^6.10.0",
     "@types/node": "^24.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
     "@vitejs/plugin-react": "^4.5.2",
     "@vitest/coverage-v8": "^3.2.3",
     "@vitest/ui": "^3.2.3",

@@ -68,7 +68,7 @@ const ChatMessageItem: React.FC<{
 }> = ({ message }) => {
   const toolMessageItems = message.parts
     .filter(part => part.type === 'tool-invocation')
-    .map(toolInvocation => <ToolMessageItem toolInvocation={toolInvocation} />)
+    .map((toolInvocation, i) => <ToolMessageItem key={i} toolInvocation={toolInvocation} />)
   return (
     <>
       {toolMessageItems}
