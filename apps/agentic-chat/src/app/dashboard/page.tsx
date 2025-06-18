@@ -29,7 +29,7 @@ export const Dashboard = () => {
     <SidebarProvider>
       {isSidebarLeftEnabled && <SidebarLeft />}
       <SidebarInset className='h-screen'>
-        <header className="top-0 flex gap-2 bg-background z-10 px-3 pt-3 items-center">
+        <header className="top-0 flex gap-2 bg-background z-10 px-2 pt-2 items-center">
         <div className="flex items-center gap-2">
             {isSidebarLeftEnabled && <SidebarTrigger />}
           </div>
