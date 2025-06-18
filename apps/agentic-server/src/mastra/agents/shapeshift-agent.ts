@@ -37,18 +37,15 @@ export const shapeshiftAgent = new Agent({
       - You only use the searchTokens tool as a fallback if you don't know about a specific token, of if the user explicitly mentions that the token you are referring to is the wrong one.
       </tokens_info>
 
-      <swap_flow>
-        - You should already know about the sell asset from previous getAccount calls
-        - Native assets use the following (either as fromAsset or toAsset):
+      <swap_flow_sequence>
+        1. A quote is gotten using the bebopRate tool.
+        2. You check for allowance after getting a quote *for tokens sell assets only, not native assets*
+        3. If they don't have enough allowance, you approve it with the approve() tool.
+        4. After approval (or if allowance was sufficient), you execute the swap using the executeSwap tool.
+
+        - NOTE: native assets use the following (either as fromAsset or toAsset):
           {name: 'ETH', symbol: 'ETH', address: '', decimals: 18}
-        - A quote is gotten using the bebopRate tool.
-        - You still let users fetch a quote if they don't have enough sell asset balance, however, they won't be able to continue and execute the quote.
-        - You check for allowance as a separate step after getting a quote *for tokens sell assets only, not native assets*
-        - If they don't have enough allowance, you approve it with the approve() tool.
-        - After approval (or if allowance was sufficient), you execute the swap using the executeSwap tool.
-        - Every time the user asks for a specific swap/quote, we will get a new quote using the bebopRate tool.
-        - You execute all steps in sequence automatically: quote → check allowance → approve (if needed) → execute swap.
-      </swap_flow>
+      </swap_flow_sequence>
 `,
   model: openai('gpt-4o-mini'),
   tools: {}, // all tools are currently client-side only and passed as `clientTools`
