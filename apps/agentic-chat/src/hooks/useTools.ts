@@ -131,18 +131,12 @@ const useTools = () => {
       sellAmountCryptoPrecision: z
         .string()
         .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-      fromAddress: z
-        .string()
-        .describe(
-          'The address the user is swapping from. Also referred to as "sell address", and should ALWAYS be gotten using the getAddress() tool beforehand'
-        ),
     }),
     execute: async ({
       chain,
       fromAsset,
       toAsset,
       sellAmountCryptoPrecision,
-      fromAddress,
     }) => {
       return getBebopRate({
         chain,
@@ -151,7 +145,7 @@ const useTools = () => {
         // @ts-expect-error partial PortalsToken type, we should move to Asset type anyway so no point to type this proper for now as this would go away
         toAsset,
         sellAmountCryptoPrecision,
-        fromAddress: getAddress(fromAddress),
+        fromAddress: getAddress(account?.address ?? ''),
         setBebopQuote,
       });
     },
