@@ -154,7 +154,7 @@ const useTools = () => {
   useAssistantTool({
     toolName: 'executeSwap',
     description:
-      'Sends a transaction which executes the swap the user has confirmed',
+      'Executes the swap previously requested using bebopRate tool.',
     parameters: z.object({}),
     execute: async () => {
       if (!bebopQuote) {

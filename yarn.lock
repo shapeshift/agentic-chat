@@ -18,7 +18,7 @@ __metadata:
   dependencies:
     "@ai-sdk/openai": ^1.3.22
     "@ai-sdk/react": ^1.2.12
-    "@assistant-ui/react": ^0.10.20
+    "@assistant-ui/react": ^0.10.24
     "@assistant-ui/react-ai-sdk": ^0.10.13
     "@assistant-ui/react-markdown": ^0.10.4
     "@radix-ui/react-avatar": ^1.1.4
@@ -44,7 +44,7 @@ __metadata:
     eslint: ^9.25.1
     eslint-plugin-react-hooks: 5.0.0
     immer: ^10.1.1
-    lucide-react: ^0.513.0
+    lucide-react: ^0.517.0
     react: 19.0.0
     react-day-picker: 8.10.1
     react-dom: 19.0.0
@@ -300,9 +300,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@assistant-ui/react@npm:^0.10.20":
-  version: 0.10.20
-  resolution: "@assistant-ui/react@npm:0.10.20"
+"@assistant-ui/react@npm:^0.10.24":
+  version: 0.10.24
+  resolution: "@assistant-ui/react@npm:0.10.24"
   dependencies:
     "@radix-ui/primitive": ^1.1.2
     "@radix-ui/react-compose-refs": ^1.1.2
@@ -313,11 +313,12 @@ __metadata:
     "@radix-ui/react-use-callback-ref": ^1.1.1
     "@radix-ui/react-use-escape-keydown": ^1.1.1
     "@standard-schema/spec": ^1.0.0
-    assistant-stream: ^0.2.14
+    assistant-cloud: 0.0.2
+    assistant-stream: ^0.2.17
     json-schema: ^0.4.0
     nanoid: 5.1.5
     react-textarea-autosize: ^8.5.9
-    zod: ^3.25.28
+    zod: ^3.25.64
     zustand: ^5.0.5
   peerDependencies:
     "@types/react": "*"
@@ -329,7 +330,7 @@ __metadata:
       optional: true
     "@types/react-dom":
       optional: true
-  checksum: 2f8c21a2da6d4c610898a919fc383651698f3aa6e9214b492de264a259f96615df3305387f9acad9176a7611b1b7c808ebae5d66efa883603f96aad8c7b7c46f
+  checksum: 4f9483464ac24caf7271161683dc8a8ab17c2263b16ebb5f1a4da75ea1ecda93048f93c7b06c90202e76215d72beb190408d3833ab54e4d19bdbd0ee2523a5f3
   languageName: node
   linkType: hard
 
@@ -10979,7 +10980,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"assistant-stream@npm:^0.2.13, assistant-stream@npm:^0.2.14":
+"assistant-cloud@npm:0.0.2":
+  version: 0.0.2
+  resolution: "assistant-cloud@npm:0.0.2"
+  dependencies:
+    assistant-stream: ^0.2.17
+  checksum: 5a4df3ca6c40dad15eb38c3f974bffd321bf52859f41bc3459d75f912e37579211a07876a5d28ce462396407f87a863dc849034f9bc24e04c010ab31827c6f82
+  languageName: node
+  linkType: hard
+
+"assistant-stream@npm:^0.2.13":
   version: 0.2.14
   resolution: "assistant-stream@npm:0.2.14"
   dependencies:
@@ -10987,6 +10997,17 @@ __metadata:
     nanoid: 5.1.5
     secure-json-parse: ^4.0.0
   checksum: 9151d13de4809cfcd2deab53c84d552c64f144f9ae4706f5b6f6a69c588e667eaf63920944aa33cf0f7be85ee6d8975f728210ce735aa13f69bd948a58e14d77
+  languageName: node
+  linkType: hard
+
+"assistant-stream@npm:^0.2.17":
+  version: 0.2.17
+  resolution: "assistant-stream@npm:0.2.17"
+  dependencies:
+    "@types/json-schema": ^7.0.15
+    nanoid: 5.1.5
+    secure-json-parse: ^4.0.0
+  checksum: 1b317f2e5c19ce013cb8673ff73461b5ba39fe80ff05c3d4b6e67704d89a70ab76337dac6974901962caedcffc45429e990856c3e551122de6a3b37649a2d8cb
   languageName: node
   linkType: hard
 
@@ -16845,12 +16866,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-react@npm:^0.513.0":
-  version: 0.513.0
-  resolution: "lucide-react@npm:0.513.0"
+"lucide-react@npm:^0.517.0":
+  version: 0.517.0
+  resolution: "lucide-react@npm:0.517.0"
   peerDependencies:
     react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: 76eeae8637afc4ac9ac95f92e2ad8a335151834a6a748ca581dc8f2999a0059e6b60257a47cfae6789db5c6ee4c288a4e68410b302f4227bda86d2807a093097
+  checksum: 167e1dd4159edf48c78d7ae2b645c6a46168b75355e0c5af1d14325369f17a436aff6b4a6cd3e1e5bccf6298d9bcec3c985cd0354a6be2073e488b2af4e7610b
   languageName: node
   linkType: hard
 
@@ -23308,6 +23329,13 @@ __metadata:
   version: 3.25.51
   resolution: "zod@npm:3.25.51"
   checksum: 37ff0e4ef274d4a5d46882d351797f609d14decae16af46692295a68a0f34f4895bd3233ce2514027d08f7a77abcc8b47d005dba0a17bfe4f7e8410f99595441
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.25.64":
+  version: 3.25.67
+  resolution: "zod@npm:3.25.67"
+  checksum: 56ab904d33b1cd00041ce64ae05b0628fcbfeb7e707fa31cd498a97b540135e4dfe685200c9c62aea307695ee132870b4bc34f035228ea728aa75cc96a4954cb
   languageName: node
   linkType: hard
 
