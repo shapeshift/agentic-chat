@@ -1,6 +1,7 @@
 import { makeAssistantToolUI } from '@assistant-ui/react';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Send } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
+import { CollapsableDetails } from './CollapsableDetails';
 
 export type SendTransactionArgs = {
   to: string;
@@ -9,35 +10,30 @@ export type SendTransactionArgs = {
   chainId: number;
 };
 
+const Icon = Send
 export type SendTransactionResult = string; // tx hash
 
 const SendTransactionUI = makeAssistantToolUI<SendTransactionArgs, SendTransactionResult>({
   toolName: 'sendTransaction',
-  render: ({ status, result, args, isError }) => {
+  render: ({ status, result, args, isError, toolName }) => {
     switch (status.type) {
-      case 'running':
-      case 'requires-action':
-      case 'incomplete':
-        return (
-          <TextShimmer>
-            Sending transaction to {args.to}...
-          </TextShimmer>
-        );
+
       case 'complete':
         if (isError) {
           return (
-            <div className='flex items-center gap-2'>
-              <AlertCircle className='w-4 h-4 text-red-500' />
-              <p className='text-muted-foreground'>{result}</p>
-            </div>
+            <CollapsableDetails title={`An Error Occured with ${toolName}`} leftIcon={<Icon className='w-4 h-4 text-red-500' />}>
+              {result}
+            </CollapsableDetails>
           );
         }
         return (
           <div className='flex items-center gap-2'>
-            <CheckCircle className='w-4 h-4 text-primary' />
+            <Icon className='w-4 h-4 text-green-500' />
             <p className='text-muted-foreground'>Transaction sent: {result}</p>
           </div>
         );
+      default:
+        return <TextShimmer>Sending transaction to {args.to}...</TextShimmer>;
     }
   },
 });

@@ -16,21 +16,12 @@ const GetAllowanceUI = makeAssistantToolUI<GetAllowanceArgs, GetAllowanceResult>
   toolName: 'getAllowance',
   render: ({ status, result, args, isError }) => {
     switch (status.type) {
-      case 'running':
-      case 'requires-action':
-      case 'incomplete':
-        return (
-          <TextShimmer>
-            Fetching allowance for {args.token}...
-          </TextShimmer>
-        );
       case 'complete':
         if (isError) {
           return (
-            <div className='flex items-center gap-2'>
-              <AlertCircle className='w-4 h-4 text-red-500' />
-              <p className='text-muted-foreground'>{result}</p>
-            </div>
+            <CollapsableDetails title='An Error Occured' leftIcon={<AlertCircle className='w-4 h-4 text-red-500' />}>
+              {result}
+            </CollapsableDetails>
           );
         }
         return (
@@ -41,6 +32,8 @@ const GetAllowanceUI = makeAssistantToolUI<GetAllowanceArgs, GetAllowanceResult>
             <pre>{result}</pre>
           </CollapsableDetails>
         );
+      default:
+        return <TextShimmer>Fetching allowance for {args.token}...</TextShimmer>;
     }
   },
 });

@@ -1,5 +1,5 @@
 import { makeAssistantToolUI } from '@assistant-ui/react';
-import { AlertCircle, SearchIcon } from 'lucide-react';
+import { AlertCircle, Search, SearchIcon } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
 import { TokenSearchResult, PortalsToken } from '@agentic-chat/types';
@@ -11,32 +11,27 @@ export type SearchTokensArgs = {
 
 export type SearchTokensResult = TokenSearchResult;
 
+const Icon = Search
+
 const SearchTokensUI = makeAssistantToolUI<SearchTokensArgs, SearchTokensResult>({
   toolName: 'searchTokens',
   render: ({ status, result, args, isError }) => {
     switch (status.type) {
-      case 'running':
-      case 'requires-action':
-      case 'incomplete':
-        return (
-          <TextShimmer>
-            Searching tokens for "{args.searchTerm}"...
-          </TextShimmer>
-        );
+
+
       case 'complete':
         if (isError || !result) {
           return (
-            <div className='flex items-center gap-2'>
-              <AlertCircle className='w-4 h-4 text-red-500' />
-              <p className='text-muted-foreground'>No tokens found</p>
-            </div>
+            <CollapsableDetails title='No tokens found' leftIcon={<Icon className='w-4 h-4 text-red-500' />}>
+              {result ? result.total : 'No tokens found'}
+            </CollapsableDetails>
           );
         }
 
         return (
           <CollapsableDetails
-            title={`Found ${result.total} tokens`}
-            leftIcon={<SearchIcon className='w-4 h-4 text-muted-foreground' />}
+            title={`Found ${result.tokens.length} tokens`}
+            leftIcon={<Icon className='w-4 h-4 text-green-500' />}
           >
             <ul className='space-y-2'>
               {result.tokens.map((token: PortalsToken) => (
@@ -50,6 +45,8 @@ const SearchTokensUI = makeAssistantToolUI<SearchTokensArgs, SearchTokensResult>
             </ul>
           </CollapsableDetails>
         );
+      default:
+        return <TextShimmer>Searching tokens for "{args.searchTerm}"...</TextShimmer>;
     }
   },
 });
