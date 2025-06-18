@@ -31,7 +31,8 @@ export type BebopRateResult = {
 
 const BebopQuoteUI = makeAssistantToolUI<BebopRateArgs, BebopRateResult>({
   toolName: 'bebopRate',
-  render: ({ args, result }) => {
+  render: ({ result }) => {
+    if (typeof result === 'string') return null;
     if (!result) return null;
     return (
       <div
