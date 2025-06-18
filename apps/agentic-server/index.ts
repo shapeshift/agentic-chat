@@ -14,7 +14,7 @@ app.post('/', async (req: Request, res: Response) => {
   const { messages, tools } = req.body;
 
   const agent = mastra.getAgent('shapeshiftAgent');
-  const result = await agent.stream(messages, { clientTools: tools });
+  const result = await agent.stream(messages, { clientTools: tools, maxSteps: 10 });
 
   result.pipeDataStreamToResponse(res);
 });
