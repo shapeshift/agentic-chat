@@ -1,9 +1,10 @@
 import { makeAssistantToolUI } from '@assistant-ui/react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { AlertCircle, ArrowRightLeft } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
+import { Button } from '../ui/button';
 
 
 // Types for bebopRate tool args and result
@@ -81,6 +82,9 @@ const BebopQuoteUI = makeAssistantToolUI<BebopRateArgs, BebopRateResult>({
                 </div>
               </div>
             </CardContent>
+            <CardFooter>
+              <Button>Confirm Swap</Button>
+            </CardFooter>
           </Card>
         );
     }
