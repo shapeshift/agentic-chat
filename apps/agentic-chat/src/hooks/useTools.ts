@@ -47,7 +47,7 @@ const useTools = () => {
         id: chainId,
       });
 
-      return 'Successfully switched chain';
+      return chainId;
     },
   });
 

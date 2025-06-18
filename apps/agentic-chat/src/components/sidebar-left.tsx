@@ -14,14 +14,12 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarInput,
   SidebarRail,
 } from './ui/sidebar';
-import { NavUser } from './nav-user';
-import { NavWallets } from './nav-wallets';
 import { Button } from './ui/button';
+import { ThreadList } from './assistant-ui/thread-list';
 
 // This is sample data.
 const data = {
@@ -81,7 +79,7 @@ export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({
 }) => {
   return (
     <Sidebar className="border-r-0" {...props}>
-      <SidebarHeader className="gap-3.5 border-b p-4">
+      {/* <SidebarHeader className="gap-3.5 border-b p-4">
         <div className="flex w-full items-center justify-between">
           <div className="text-base font-medium text-foreground">Wallets</div>
           <Button
@@ -95,14 +93,15 @@ export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({
           </Button>
         </div>
         <SidebarInput placeholder="Type to search..." />
-      </SidebarHeader>
-      <SidebarContent>
-        <NavWallets wallets={data.wallets} />
+      </SidebarHeader> */}
+      <SidebarContent className='px-2 pt-2'>
+        <ThreadList />
+        {/* <NavWallets wallets={data.wallets} /> */}
       </SidebarContent>
       <SidebarRail />
-      <SidebarFooter>
+      {/* <SidebarFooter>
         <NavUser user={data.user} />
-      </SidebarFooter>
+      </SidebarFooter> */}
     </Sidebar>
   );
 };

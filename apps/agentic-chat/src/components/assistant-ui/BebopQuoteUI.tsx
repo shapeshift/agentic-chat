@@ -1,4 +1,9 @@
 import { makeAssistantToolUI } from '@assistant-ui/react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { ArrowRightLeft } from 'lucide-react';
+
 
 // Types for bebopRate tool args and result
 export type BebopRateArgs = {
@@ -35,60 +40,31 @@ const BebopQuoteUI = makeAssistantToolUI<BebopRateArgs, BebopRateResult>({
     if (typeof result === 'string') return null;
     if (!result) return null;
     return (
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 20,
-          padding: 32,
-          maxWidth: 400,
-          margin: '0 auto',
-          boxShadow: '0 2px 16px rgba(0,0,0,0.08)',
-        }}
-      >
-        <h2 style={{ textAlign: 'center', fontWeight: 700, marginBottom: 32 }}>
-          Confirm Trade
-        </h2>
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ color: '#888', fontWeight: 500, marginBottom: 8 }}>
-            Sell Amount
+      <Card className='mt-4'>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2'><ArrowRightLeft className='w-4 h-4 text-muted-foreground' /> Trade</CardTitle>
+        </CardHeader>
+        <CardContent className='grid gap-4'>
+          <div className="grid gap-3">
+            <Label>Sell Amount</Label>
+            <div className='relative'>
+              <Input className='md:text-lg p-6' value={result.sellAmountCryptoPrecision} readOnly />
+              <div className='absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
+                <span>{result.sellAsset.symbol}</span>
+              </div>
+            </div>
           </div>
-          <div
-            style={{
-              background: '#f5f5f5',
-              borderRadius: 8,
-              padding: '16px 20px',
-              fontSize: 20,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              color: '#aaa',
-            }}
-          >
-            <span>{result.sellAmountCryptoPrecision}</span>
-            <span style={{ color: '#444', fontWeight: 600 }}>
-              {result.sellAsset.symbol}
-            </span>
+          <div className='grid gap-3 mt-4'>
+            <Label>Buy Amount</Label>
+            <div className='relative'>
+              <Input className='md:text-lg p-6' value={result.buyAmountCryptoPrecision} readOnly />
+              <div className='absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
+                <span>{result.buyAsset.symbol}</span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div>
-          <div style={{ color: '#888', fontWeight: 500, marginBottom: 8 }}>
-            Buy Amount
-          </div>
-          <div
-            style={{
-              background: '#f5f5f5',
-              borderRadius: 8,
-              padding: '16px 20px',
-              fontSize: 20,
-              color: '#aaa',
-            }}
-          >
-            <span>
-              {result.buyAmountCryptoPrecision} {result.buyAsset.symbol}
-            </span>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   },
 });
