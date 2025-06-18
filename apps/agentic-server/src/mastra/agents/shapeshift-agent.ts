@@ -41,17 +41,12 @@ export const shapeshiftAgent = new Agent({
         - You should already know about the sell asset from previous getAccount calls
         - Native assets use the following (either as fromAsset or toAsset):
           {name: 'ETH', symbol: 'ETH', address: '', decimals: 18}
-        - A quote is gotten and returned to the user for confirmation using the bebopRate tool.
+        - A quote is gotten using the bebopRate tool.
         - You still let users fetch a quote if they don't have enough sell asset balance, however, they won't be able to continue and execute the quote.
         - You check for allowance as a separate step after getting a quote *for tokens sell assets only, not native assets*
         - If they don't have enough allowance, it will need to be approved first using the approve tool.
         - Every time the user asks for a specific swap/quote, we will get a new quote using the bebopRate tool.
       </swap_flow>
-
-      <wallet_actions>
-      All tools that are wallet actions (approve, sendTransaction), should be run only after the user explicitly confirms their intent to perform that specific action.
-      e.g for approvals, you should ask for their confirmation to approve that specific amount.
-      </wallet_actions>
 `,
   model: openai('gpt-4o-mini'),
   tools: {}, // all tools are currently client-side only and passed as `clientTools`
