@@ -6,7 +6,7 @@ import { CollapsableDetails } from './CollapsableDetails';
 export type ExecuteSwapArgs = Record<string, never>; // no args
 export type ExecuteSwapResult = string; // tx hash
 
-const Icon = ArrowRightLeft
+const Icon = ArrowRightLeft;
 
 const ExecuteSwapUI = makeAssistantToolUI<ExecuteSwapArgs, ExecuteSwapResult>({
   toolName: 'executeSwap',
@@ -15,15 +15,20 @@ const ExecuteSwapUI = makeAssistantToolUI<ExecuteSwapArgs, ExecuteSwapResult>({
       case 'complete':
         if (isError) {
           return (
-            <CollapsableDetails title={`An Error Occured with ${toolName}`} leftIcon={<Icon className='w-4 h-4 text-red-500' />}>
+            <CollapsableDetails
+              title={`An Error Occured with ${toolName}`}
+              leftIcon={<Icon className="w-4 h-4 text-red-500" />}
+            >
               {result}
             </CollapsableDetails>
           );
         }
         return (
-          <div className='flex items-center gap-2'>
-            <Icon className='w-4 h-4 text-green-500' />
-            <p className='text-muted-foreground'>Swap transaction sent: {result}</p>
+          <div className="flex items-center gap-2">
+            <Icon className="w-4 h-4 text-green-500" />
+            <p className="text-muted-foreground">
+              Swap transaction sent: {result}
+            </p>
           </div>
         );
       default:

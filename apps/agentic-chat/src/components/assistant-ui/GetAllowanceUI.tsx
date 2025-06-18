@@ -12,28 +12,36 @@ export type GetAllowanceArgs = {
 
 export type GetAllowanceResult = string; // allowance in human units
 
-const GetAllowanceUI = makeAssistantToolUI<GetAllowanceArgs, GetAllowanceResult>({
+const GetAllowanceUI = makeAssistantToolUI<
+  GetAllowanceArgs,
+  GetAllowanceResult
+>({
   toolName: 'getAllowance',
   render: ({ status, result, args, isError, toolName }) => {
     switch (status.type) {
       case 'complete':
         if (isError) {
           return (
-            <CollapsableDetails title={`An Error Occured with ${toolName}`} leftIcon={<AlertCircle className='w-4 h-4 text-red-500' />}>
+            <CollapsableDetails
+              title={`An Error Occured with ${toolName}`}
+              leftIcon={<AlertCircle className="w-4 h-4 text-red-500" />}
+            >
               {result}
             </CollapsableDetails>
           );
         }
         return (
           <CollapsableDetails
-            title='Token allowance'
-            leftIcon={<CheckCircle className='w-4 h-4 text-primary' />}
+            title="Token allowance"
+            leftIcon={<CheckCircle className="w-4 h-4 text-primary" />}
           >
             <pre>{result}</pre>
           </CollapsableDetails>
         );
       default:
-        return <TextShimmer>Fetching allowance for {args.token}...</TextShimmer>;
+        return (
+          <TextShimmer>Fetching allowance for {args.token}...</TextShimmer>
+        );
     }
   },
 });

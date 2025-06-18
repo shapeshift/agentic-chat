@@ -28,15 +28,14 @@ export const Dashboard = () => {
   return (
     <SidebarProvider>
       {isSidebarLeftEnabled && <SidebarLeft />}
-      <SidebarInset className='h-screen'>
+      <SidebarInset className="h-screen">
         <header className="top-0 flex gap-2 bg-background z-10 px-2 pt-2 items-center">
-        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {isSidebarLeftEnabled && <SidebarTrigger />}
           </div>
-          <div className='ml-auto'>
+          <div className="ml-auto">
             <ConnectWallet />
           </div>
-
         </header>
         <div className="overflow-hidden h-full">
           <BebopQuoteUI />

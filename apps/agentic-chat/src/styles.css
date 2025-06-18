@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -110,7 +110,6 @@
   --sidebar-ring: oklch(0.541 0.281 293.009);
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -120,7 +119,6 @@
   }
 }
 
-
 .loading-shimmer {
   -webkit-text-fill-color: transparent;
   animation-delay: 0.5s;
@@ -128,8 +126,7 @@
   animation-iteration-count: infinite;
   animation-name: loading-shimmer;
   background: var(--muted-foreground)
-    gradient(linear, 100% 0, 0 0, from(var(--muted-foreground)), color-stop(0.5, var(--foreground)), to(var(--muted-foreground)));
-  background: var(--muted-foreground) -webkit-gradient(
+    gradient(
       linear,
       100% 0,
       0 0,
@@ -137,6 +134,7 @@
       color-stop(0.5, var(--foreground)),
       to(var(--muted-foreground))
     );
+  background: var(--muted-foreground) -webkit-gradient(linear, 100% 0, 0 0, from(var(--muted-foreground)), color-stop(0.5, var(--foreground)), to(var(--muted-foreground)));
   background-clip: text;
   -webkit-background-clip: text;
   background-repeat: no-repeat;

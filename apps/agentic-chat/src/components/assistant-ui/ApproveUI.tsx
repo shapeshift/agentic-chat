@@ -13,7 +13,7 @@ export type ApproveArgs = {
 
 export type ApproveResult = string; // transaction hash
 
-const Icon = BadgeCheck
+const Icon = BadgeCheck;
 
 const ApproveUI = makeAssistantToolUI<ApproveArgs, ApproveResult>({
   toolName: 'approve',
@@ -22,15 +22,18 @@ const ApproveUI = makeAssistantToolUI<ApproveArgs, ApproveResult>({
       case 'complete':
         if (isError) {
           return (
-            <CollapsableDetails title={`An Error Occured with ${toolName}`} leftIcon={<Icon className='w-4 h-4 text-red-500' />}>
+            <CollapsableDetails
+              title={`An Error Occured with ${toolName}`}
+              leftIcon={<Icon className="w-4 h-4 text-red-500" />}
+            >
               {result}
             </CollapsableDetails>
           );
         }
         return (
-          <div className='flex items-center gap-2'>
-            <Icon className='w-4 h-4 text-green-500' />
-            <p className='text-muted-foreground'>
+          <div className="flex items-center gap-2">
+            <Icon className="w-4 h-4 text-green-500" />
+            <p className="text-muted-foreground">
               Approval transaction sent: {result}
             </p>
           </div>
