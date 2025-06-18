@@ -1,5 +1,5 @@
 import { makeAssistantToolUI } from '@assistant-ui/react';
-import { AlertCircle, ArrowRightLeft, CheckCircle } from 'lucide-react';
+import { ArrowRightLeft } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
 

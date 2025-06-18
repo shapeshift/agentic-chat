@@ -1,5 +1,5 @@
 import { makeAssistantToolUI } from '@assistant-ui/react';
-import { AlertCircle, BadgeCheck, CheckCircle, ThumbsUp } from 'lucide-react';
+import { BadgeCheck } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
 

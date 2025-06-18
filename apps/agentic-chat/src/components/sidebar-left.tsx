@@ -6,7 +6,6 @@ import {
   Command,
   Home,
   Inbox,
-  PlusCircleIcon,
   Search,
   Sparkles,
 } from 'lucide-react';
@@ -15,10 +14,8 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
-  SidebarInput,
   SidebarRail,
 } from './ui/sidebar';
-import { Button } from './ui/button';
 import { ThreadList } from './assistant-ui/thread-list';
 
 // This is sample data.

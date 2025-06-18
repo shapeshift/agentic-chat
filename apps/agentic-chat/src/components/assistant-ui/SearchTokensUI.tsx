@@ -1,5 +1,5 @@
 import { makeAssistantToolUI } from '@assistant-ui/react';
-import { AlertCircle, Search, SearchIcon } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
 import { TokenSearchResult, PortalsToken } from '@agentic-chat/types';
