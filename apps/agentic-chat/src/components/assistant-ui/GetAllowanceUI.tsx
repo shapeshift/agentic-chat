@@ -14,12 +14,12 @@ export type GetAllowanceResult = string; // allowance in human units
 
 const GetAllowanceUI = makeAssistantToolUI<GetAllowanceArgs, GetAllowanceResult>({
   toolName: 'getAllowance',
-  render: ({ status, result, args, isError }) => {
+  render: ({ status, result, args, isError, toolName }) => {
     switch (status.type) {
       case 'complete':
         if (isError) {
           return (
-            <CollapsableDetails title='An Error Occured' leftIcon={<AlertCircle className='w-4 h-4 text-red-500' />}>
+            <CollapsableDetails title={`An Error Occured with ${toolName}`} leftIcon={<AlertCircle className='w-4 h-4 text-red-500' />}>
               {result}
             </CollapsableDetails>
           );
