@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Asset, PartialRecord } from '@agentic-chat/types';
-import { AssetId } from '@agentic-chat/caip';
+import { AssetId } from '@shapeshiftoss/caip';
 
 type AssetsState = {
   ids: AssetId[];

@@ -1,4 +1,4 @@
-import { AssetId, ChainId } from '@agentic-chat/caip';
+import { AssetId, ChainId } from '@shapeshiftoss/caip';
 
 export type Asset = {
   assetId: AssetId;

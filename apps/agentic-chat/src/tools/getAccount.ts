@@ -7,7 +7,7 @@ import {
   arbitrumChainId,
   AssetId,
   arbitrumAssetId,
-} from '@agentic-chat/caip';
+} from '@shapeshiftoss/caip';
 import { AssetsStore } from '../stores/assets';
 import { PortfolioStore } from '../stores/portfolio';
 import { Asset } from '../types/asset';

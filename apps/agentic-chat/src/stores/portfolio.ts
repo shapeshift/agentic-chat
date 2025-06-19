@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AssetId } from '@agentic-chat/caip';
+import { AssetId } from '@shapeshiftoss/caip';
 
 type PortfolioState = {
   balances: Record<AssetId, string>;

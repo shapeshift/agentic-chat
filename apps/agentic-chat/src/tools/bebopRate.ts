@@ -9,8 +9,8 @@ import {
   fromAssetId,
   optimismChainId,
   polygonChainId,
-} from '@agentic-chat/caip';
-import type { AssetId, ChainId } from '@agentic-chat/caip';
+} from '@shapeshiftoss/caip';
+import type { AssetId, ChainId } from '@shapeshiftoss/caip';
 import { Address, getAddress } from 'viem';
 import { AssetsStore } from '../stores/assets';
 import z from 'zod';

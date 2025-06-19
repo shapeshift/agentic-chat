@@ -2,7 +2,7 @@ import { getPublicClient } from '@wagmi/core';
 import { wagmiConfig } from '../lib/wagmi-config';
 import { Address, erc20Abi, getAddress } from 'viem';
 import { fromBaseUnit } from '@agentic-chat/utils';
-import { fromAssetId, fromChainId } from '@agentic-chat/caip';
+import { fromAssetId, fromChainId } from '@shapeshiftoss/caip';
 import { AssetsStore } from '../stores/assets';
 import z from 'zod';
 

@@ -9,7 +9,7 @@ import {
 import { toBaseUnit } from '@agentic-chat/utils';
 import { networks } from '../lib/appkit';
 import { AssetsStore } from '../stores/assets';
-import { fromAssetId, fromChainId } from '@agentic-chat/caip';
+import { fromAssetId, fromChainId } from '@shapeshiftoss/caip';
 import z from 'zod';
 
 export const approveParamsSchema = z.object({

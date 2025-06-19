@@ -33,6 +33,7 @@ __metadata:
     "@radix-ui/react-tooltip": ^1.2.7
     "@reown/appkit": ^1.0.0
     "@reown/appkit-adapter-wagmi": ^1.0.0
+    "@shapeshiftoss/caip": ^8.16.0
     "@tailwindcss/vite": ^4.1.4
     "@tanstack/react-query": ^5.75.5
     "@types/node": ^22.14.1
@@ -65,14 +66,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@agentic-chat/caip@workspace:caip":
-  version: 0.0.0-use.local
-  resolution: "@agentic-chat/caip@workspace:caip"
-  dependencies:
-    tslib: ^2.3.0
-  languageName: unknown
-  linkType: soft
-
 "@agentic-chat/source@workspace:.":
   version: 0.0.0-use.local
   resolution: "@agentic-chat/source@workspace:."
@@ -88,6 +81,7 @@ __metadata:
     "@nx/web": 20.7.2
     "@nx/workspace": 20.7.2
     "@playwright/test": ^1.36.0
+    "@shapeshiftoss/caip": ^8.16.0
     "@swc-node/register": ~1.9.1
     "@swc/cli": ~0.6.0
     "@swc/core": ~1.5.7
@@ -7548,6 +7542,13 @@ __metadata:
   version: 0.4.1
   resolution: "@sec-ant/readable-stream@npm:0.4.1"
   checksum: eb56f72a70995f725269f1c1c206d6dbeb090e88413b1302a456c600041175a7a484c2f0172454f7bed65a8ab95ffed7647d8ad03e6c23b1e3bbc9845f78cd17
+  languageName: node
+  linkType: hard
+
+"@shapeshiftoss/caip@npm:^8.16.0":
+  version: 8.16.0
+  resolution: "@shapeshiftoss/caip@npm:8.16.0"
+  checksum: 311825bfa5af5530a259a94a502be74d9751b0682041211eaaddb5fa7f9883eea2a1ba318716f8155bf589a1b1546723ec92925407a4b73f1dd8fd4c1587a71d
   languageName: node
   linkType: hard
 

@@ -1,7 +1,7 @@
 import qs from 'qs';
 import axios from 'axios';
 import { PortalsResponse, Asset } from '@agentic-chat/types';
-import { toAssetId } from '@agentic-chat/caip';
+import { toAssetId } from '@shapeshiftoss/caip';
 import { AssetsStore } from '../stores/assets';
 import { networkToChainIdMap } from '../lib/utils';
 import z from 'zod';

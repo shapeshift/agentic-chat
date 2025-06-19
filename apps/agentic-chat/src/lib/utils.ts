@@ -7,7 +7,7 @@ import {
   ethChainId,
   optimismChainId,
   polygonChainId,
-} from '@agentic-chat/caip';
+} from '@shapeshiftoss/caip';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
