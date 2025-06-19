@@ -5,6 +5,6 @@ export type Asset = {
   chainId: ChainId;
   symbol: string;
   name: string;
-  precision: string;
+  precision: number;
   icon: string | undefined;
 };

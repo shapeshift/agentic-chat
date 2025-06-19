@@ -8,12 +8,11 @@ import { searchTokens } from '../tools/searchTokens';
 import { getAllowance } from '../tools/getAllowance';
 import { approve } from '../tools/approve';
 import { sendTransaction } from '../tools/sendTransaction';
-import { toBaseUnit, fromBaseUnit } from '@agentic-chat/utils';
+import { toBaseUnit } from '@agentic-chat/utils';
 import { getAccount } from '../tools/getAccount';
 import { getBebopRate } from '../tools/bebopRate';
 import { useAssetsStore } from '../stores/assets';
 import { usePortfolioStore } from '../stores/portfolio';
-import { toAssetId, arbitrumChainId, AssetId } from '@agentic-chat/caip';
 
 const useTools = () => {
   const account = useAccount();
@@ -119,6 +118,8 @@ const useTools = () => {
     toolName: 'bebopRate',
     description: 'Fetches a swap rate from Bebop and displays it to the user',
     parameters: z.object({
+      sellAssetId: z.string().describe('The sell AssetID to fetch rate for'),
+      buyAssetId: z.string().describe('The buy AssetID to fetch rate for'),
       chain: z
         .string()
         .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
@@ -140,21 +141,14 @@ const useTools = () => {
         .string()
         .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
     }),
-    execute: async ({
-      chain,
-      fromAsset,
-      toAsset,
-      sellAmountCryptoPrecision,
-    }) => {
+    execute: async ({ sellAssetId, buyAssetId, sellAmountCryptoPrecision }) => {
       return getBebopRate({
-        chain,
-        // @ts-expect-error partial PortalsToken type, we should move to Asset type anyway so no point to type this proper for now as this would go away
-        fromAsset,
-        // @ts-expect-error partial PortalsToken type, we should move to Asset type anyway so no point to type this proper for now as this would go away
-        toAsset,
+        sellAssetId,
+        buyAssetId,
         sellAmountCryptoPrecision,
         fromAddress: getAddress(account?.address ?? ''),
         setBebopQuote,
+        assetsStore,
       });
     },
   });

@@ -2,9 +2,15 @@ import axios from 'axios';
 import { Account } from '../types/account';
 import { Address } from 'viem';
 import { fromBaseUnit } from '@agentic-chat/utils';
-import { toAssetId, arbitrumChainId, AssetId } from '@agentic-chat/caip';
+import {
+  toAssetId,
+  arbitrumChainId,
+  AssetId,
+  arbitrumAssetId,
+} from '@agentic-chat/caip';
 import { AssetsStore } from '../stores/assets';
 import { PortfolioStore } from '../stores/portfolio';
+import { Asset } from '../types/asset';
 
 export const getAccount = async (
   address: Address | undefined,
@@ -24,7 +30,7 @@ export const getAccount = async (
     `${baseUrl}/api/v1/account/${address}`
   );
 
-  const assets = data.tokens.map((token) => ({
+  const assets = data.tokens.map<Asset>((token) => ({
     assetId: toAssetId({
       // TODO(gomes): programmatic
       chainId: arbitrumChainId,
@@ -38,6 +44,15 @@ export const getAccount = async (
     precision: token.decimals,
     icon: undefined, // no icon available from unchained
   }));
+
+  assets.push({
+    assetId: arbitrumAssetId,
+    chainId: arbitrumChainId,
+    symbol: 'ETH',
+    name: 'Ethereum on Arbitrum',
+    precision: 18,
+    icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/ethereum/info/logo.png',
+  });
 
   assetsStore.upsert(assets);
 
@@ -55,18 +70,19 @@ export const getAccount = async (
     {}
   );
 
-  portfolioStore.upsert(portfolio);
-
   // Process balances
-  const nativeBalance = fromBaseUnit(
+  const nativeBalanceCryptoPrecision = fromBaseUnit(
     data.balance,
     18 // assume 18 decimals for all native EVM tokens
   );
 
-  const tokensBalances = data.tokens.map((token) => ({
-    ...token,
-    balance: fromBaseUnit(token.balance, token.decimals),
-  }));
+  // TODO(gomes): programmatic
+  portfolio[arbitrumAssetId] = nativeBalanceCryptoPrecision;
 
-  return { nativeBalance, tokensBalances };
+  portfolioStore.upsert(portfolio);
+
+  return {
+    assets,
+    portfolio,
+  };
 };
