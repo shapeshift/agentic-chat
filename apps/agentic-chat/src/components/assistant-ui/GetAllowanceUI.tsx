@@ -31,13 +31,13 @@ const GetAllowanceContent: React.FC<GetAllowanceContentProps> = ({
     case 'running':
     case 'requires-action':
     case 'incomplete': {
-      if (!(args.assetId && args.spender)) {
+      if (!asset) {
         return <TextShimmer>Fetching allowance</TextShimmer>;
       }
 
       return (
         <TextShimmer>
-          Fetching allowance for {asset?.symbol ?? ''}...
+          Fetching allowance for {asset.symbol ?? ''}...
         </TextShimmer>
       );
     }

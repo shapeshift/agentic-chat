@@ -38,14 +38,14 @@ const BebopUiContent: React.FC<BebopUiContentProps> = ({
     case 'running':
     case 'requires-action':
     case 'incomplete': {
-      if (!(args.sellAmountCryptoPrecision && args.buyAssetId)) {
+      if (!(args.sellAmountCryptoPrecision && buyAsset && sellAsset)) {
         return <TextShimmer>Getting quote</TextShimmer>;
       }
 
       return (
         <TextShimmer>
-          Getting quote for {args.sellAmountCryptoPrecision}{' '}
-          {sellAsset?.symbol ?? ''} → {buyAsset?.symbol ?? ''}
+          Getting quote for {args.sellAmountCryptoPrecision} {sellAsset.symbol}{' '}
+          → {buyAsset.symbol}
         </TextShimmer>
       );
     }
