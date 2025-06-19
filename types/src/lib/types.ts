@@ -81,13 +81,4 @@ export type BebopResponse = {
   routes: BebopRoute[];
 };
 
-export type Asset = {
-  icon?: string;
-  assetId: string;
-  chainId: string;
-  symbol: string;
-  name: string;
-  precision: number;
-};
-
 export type PartialRecord<K extends PropertyKey, V> = Partial<Record<K, V>>;

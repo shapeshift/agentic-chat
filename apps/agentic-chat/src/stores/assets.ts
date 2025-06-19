@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Asset, PartialRecord } from '@agentic-chat/types';
 import { AssetId } from '@shapeshiftoss/caip';
+import { initialAssets } from './constants';
 
 type AssetsState = {
   ids: AssetId[];
@@ -14,8 +15,8 @@ type AssetsActions = {
 export type AssetsStore = AssetsState & AssetsActions;
 
 export const useAssetsStore = create<AssetsStore>((set) => ({
-  ids: [],
-  assetsById: {},
+  ids: Object.keys(initialAssets),
+  assetsById: initialAssets,
   upsert: (assets: Asset[]) => {
     set((state) => {
       const newAssetsById = { ...state.assetsById };

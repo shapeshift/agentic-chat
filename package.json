@@ -20,6 +20,7 @@
     "@nx/workspace": "20.7.2",
     "@playwright/test": "^1.36.0",
     "@shapeshiftoss/caip": "^8.16.0",
+    "@shapeshiftoss/types": "^8.6.1",
     "@swc-node/register": "~1.9.1",
     "@swc/cli": "~0.6.0",
     "@swc/core": "~1.5.7",

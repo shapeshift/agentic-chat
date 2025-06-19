@@ -82,6 +82,7 @@ __metadata:
     "@nx/workspace": 20.7.2
     "@playwright/test": ^1.36.0
     "@shapeshiftoss/caip": ^8.16.0
+    "@shapeshiftoss/types": ^8.6.1
     "@swc-node/register": ~1.9.1
     "@swc/cli": ~0.6.0
     "@swc/core": ~1.5.7
@@ -7549,6 +7550,13 @@ __metadata:
   version: 8.16.0
   resolution: "@shapeshiftoss/caip@npm:8.16.0"
   checksum: 311825bfa5af5530a259a94a502be74d9751b0682041211eaaddb5fa7f9883eea2a1ba318716f8155bf589a1b1546723ec92925407a4b73f1dd8fd4c1587a71d
+  languageName: node
+  linkType: hard
+
+"@shapeshiftoss/types@npm:^8.6.1":
+  version: 8.6.1
+  resolution: "@shapeshiftoss/types@npm:8.6.1"
+  checksum: 384c2a9ce23f275fcb018514ab76f7eddf1813002357621aade7b166afd3d9a01fde1cfbc75789aba20dc44208e60869303b6a839887c9954d2f592a3554cf23
   languageName: node
   linkType: hard
 

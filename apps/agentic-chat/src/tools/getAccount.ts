@@ -4,14 +4,14 @@ import { Address } from 'viem';
 import { fromBaseUnit } from '@agentic-chat/utils';
 import {
   toAssetId,
-  arbitrumChainId,
   AssetId,
-  arbitrumAssetId,
 } from '@shapeshiftoss/caip';
 import { AssetsStore } from '../stores/assets';
 import { PortfolioStore } from '../stores/portfolio';
 import { Asset } from '../types/asset';
 import z from 'zod';
+import { networkToChainIdMap } from '../lib/utils';
+import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId';
 
 export const getAccountParams = z.object({
   network: z
@@ -35,6 +35,12 @@ export const getAccount = async ({
   assetsStore: AssetsStore;
   portfolioStore: PortfolioStore;
 }): Promise<GetAccountResult> => {
+  const chainId = networkToChainIdMap[network];
+
+  if (!chainId) {
+    throw new Error(`Unsupported network: ${network}`);
+  }
+
   if (!address) {
     throw new Error('No account connected');
   }
@@ -49,35 +55,34 @@ export const getAccount = async ({
 
   const assets = data.tokens.map<Asset>((token) => ({
     assetId: toAssetId({
-      // TODO(gomes): programmatic
-      chainId: arbitrumChainId,
+      chainId: chainId,
       assetNamespace: 'erc20',
       assetReference: token.contract,
     }),
-    // TODO(gomes): programmatic
-    chainId: arbitrumChainId,
+    chainId: chainId,
     symbol: token.symbol,
     name: token.name,
     precision: token.decimals,
     icon: undefined, // no icon available from unchained
   }));
 
-  assets.push({
-    assetId: arbitrumAssetId,
-    chainId: arbitrumChainId,
-    symbol: 'ETH',
-    name: 'Ethereum on Arbitrum',
-    precision: 18,
-    icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/ethereum/info/logo.png',
-  });
+  const feeAssetId = getFeeAssetByChainId(chainId);
+
+  const feeAsset = assetsStore.assetsById[feeAssetId ?? '']
+
+  if (!(feeAsset && feeAssetId)) {
+    throw new Error(`Fee asset not found for chainId: ${chainId}`);
+  }
+
+
+  assets.push(feeAsset);
 
   assetsStore.upsert(assets);
 
   const portfolio = data.tokens.reduce<Record<AssetId, string>>(
     (acc, token) => {
-      // TODO(gomes): programmatic
       const assetId = toAssetId({
-        chainId: arbitrumChainId,
+        chainId: chainId,
         assetNamespace: 'erc20',
         assetReference: token.contract,
       });
@@ -93,8 +98,7 @@ export const getAccount = async ({
     18 // assume 18 decimals for all native EVM tokens
   );
 
-  // TODO(gomes): programmatic
-  portfolio[arbitrumAssetId] = nativeBalanceCryptoPrecision;
+  portfolio[feeAssetId] = nativeBalanceCryptoPrecision;
 
   portfolioStore.upsert(portfolio);
 
