@@ -19,7 +19,7 @@ const GetAccountUI = makeAssistantToolUI<GetAccountArgs, GetAccountResult>({
         if (isError) {
           return (
             <CollapsableDetails
-              title={`An Error Occured with ${toolName}`}
+              title={`An error occurred with ${toolName}`}
               leftIcon={<Icon className="w-4 h-4 text-red-500" />}
             >
               {result}
