@@ -11,12 +11,8 @@ import { ApproveParams, ApproveResult } from '../../tools/approve';
 const Icon = BadgeCheck;
 
 const ApproveUiContent: ToolCallContentPartComponent<
-  {
-    assetId: string;
-    spender: string;
-    amountCryptoPrecision: string;
-  },
-  string
+  ApproveParams,
+  ApproveResult
 > = ({ status, result, args, isError, toolName }) => {
   const assetsStore = useAssetsStore();
   const asset = assetsStore.assetsById[args.assetId];
