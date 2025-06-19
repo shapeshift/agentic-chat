@@ -4,7 +4,7 @@ import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
 import z from 'zod';
 
-export const executeSwapParams = z.object({}).strict()
+export const executeSwapParams = z.object({}).strict();
 
 export type ExecuteSwapArgs = z.infer<typeof executeSwapParams>;
 export type ExecuteSwapResult = string; // tx hash
@@ -15,6 +15,11 @@ const ExecuteSwapUI = makeAssistantToolUI<ExecuteSwapArgs, ExecuteSwapResult>({
   toolName: 'executeSwap',
   render: ({ status, result, isError, toolName }) => {
     switch (status.type) {
+    case 'running':
+    case 'requires-action':
+    case 'incomplete': {
+        return <TextShimmer>Executing swap...</TextShimmer>;
+    }
       case 'complete':
         if (isError) {
           return (
@@ -34,8 +39,6 @@ const ExecuteSwapUI = makeAssistantToolUI<ExecuteSwapArgs, ExecuteSwapResult>({
             </p>
           </div>
         );
-      default:
-        return <TextShimmer>Executing swap...</TextShimmer>;
     }
   },
 });

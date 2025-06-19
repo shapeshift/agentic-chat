@@ -10,6 +10,13 @@ const GetAccountUI = makeAssistantToolUI<GetAccountParams, GetAccountResult>({
   toolName: 'getAccount',
   render: ({ status, result, args, isError, toolName }) => {
     switch (status.type) {
+    case 'running':
+    case 'requires-action':
+    case 'incomplete': {
+        if (!args.network) return <TextShimmer>Getting account</TextShimmer>;
+
+        return <TextShimmer>Getting account for {args.network}...</TextShimmer>;
+    }
       case 'complete':
         if (isError) {
           return (
@@ -29,8 +36,6 @@ const GetAccountUI = makeAssistantToolUI<GetAccountParams, GetAccountResult>({
             <pre>{JSON.stringify(result, null, 2)}</pre>
           </CollapsableDetails>
         );
-      default:
-        return <TextShimmer>Getting account for {args.network}...</TextShimmer>;
     }
   },
 });

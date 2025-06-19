@@ -14,6 +14,14 @@ const SendTransactionUI = makeAssistantToolUI<
   toolName: 'sendTransaction',
   render: ({ status, result, args, isError, toolName }) => {
     switch (status.type) {
+      case 'running':
+      case 'requires-action':
+      case 'incomplete': {
+        if (!args.to) return <TextShimmer>Sending transaction</TextShimmer>;
+
+        return <TextShimmer>Sending transaction to {args.to}...</TextShimmer>;
+      }
+
       case 'complete':
         if (isError) {
           return (
@@ -31,8 +39,6 @@ const SendTransactionUI = makeAssistantToolUI<
             <p className="text-muted-foreground">Transaction sent: {result}</p>
           </div>
         );
-      default:
-        return <TextShimmer>Sending transaction to {args.to}...</TextShimmer>;
     }
   },
 });
