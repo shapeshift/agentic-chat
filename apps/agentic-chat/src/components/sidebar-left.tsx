@@ -6,7 +6,6 @@ import {
   Command,
   Home,
   Inbox,
-  PlusCircleIcon,
   Search,
   Sparkles,
 } from 'lucide-react';
@@ -14,14 +13,10 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
-  SidebarInput,
   SidebarRail,
 } from './ui/sidebar';
-import { NavUser } from './nav-user';
-import { NavWallets } from './nav-wallets';
-import { Button } from './ui/button';
+import { ThreadList } from './assistant-ui/thread-list';
 
 // This is sample data.
 const data = {
@@ -83,26 +78,19 @@ export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader className="gap-3.5 border-b p-4">
         <div className="flex w-full items-center justify-between">
-          <div className="text-base font-medium text-foreground">Wallets</div>
-          <Button
-            data-sidebar="trigger"
-            data-slot="sidebar-trigger"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-          >
-            <PlusCircleIcon />
-          </Button>
+          <div className="text-base font-medium text-foreground">
+            ShapeShift Agent
+          </div>
         </div>
-        <SidebarInput placeholder="Type to search..." />
       </SidebarHeader>
-      <SidebarContent>
-        <NavWallets wallets={data.wallets} />
+      <SidebarContent className="px-2 pt-2">
+        <ThreadList />
+        {/* <NavWallets wallets={data.wallets} /> */}
       </SidebarContent>
       <SidebarRail />
-      <SidebarFooter>
+      {/* <SidebarFooter>
         <NavUser user={data.user} />
-      </SidebarFooter>
+      </SidebarFooter> */}
     </Sidebar>
   );
 };
