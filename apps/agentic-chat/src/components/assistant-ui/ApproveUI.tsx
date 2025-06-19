@@ -1,6 +1,6 @@
 import {
   makeAssistantToolUI,
-  ToolCallContentPartComponent,
+  ToolCallContentPartProps,
 } from '@assistant-ui/react';
 import { BadgeCheck } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
@@ -10,12 +10,22 @@ import { ApproveParams, ApproveResult } from '../../tools/approve';
 
 const Icon = BadgeCheck;
 
-const ApproveUiContent: ToolCallContentPartComponent<
-  ApproveParams,
-  ApproveResult
-> = ({ status, result, args, isError, toolName }) => {
+type ApproveUiContentProps = Omit<
+  ToolCallContentPartProps<ApproveParams, ApproveResult>,
+  'args'
+> & {
+  args: Partial<ApproveParams>;
+};
+
+const ApproveUiContent: React.FC<ApproveUiContentProps> = ({
+  status,
+  result,
+  args,
+  isError,
+  toolName,
+}) => {
   const assetsStore = useAssetsStore();
-  const asset = assetsStore.assetsById[args.assetId];
+  const asset = assetsStore.assetsById[args.assetId ?? ''];
 
   switch (status.type) {
     case 'running':

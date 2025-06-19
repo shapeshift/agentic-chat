@@ -1,6 +1,6 @@
 import {
   makeAssistantToolUI,
-  ToolCallContentPartComponent,
+  ToolCallContentPartProps,
 } from '@assistant-ui/react';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
@@ -11,15 +11,22 @@ import {
 } from '../../tools/getAllowance';
 import { useAssetsStore } from '../../stores/assets';
 
-const GetAllowanceContent: ToolCallContentPartComponent<
-  {
-    assetId: string;
-    spender: string;
-  },
-  string
-> = ({ status, result, args, isError, toolName }) => {
+type GetAllowanceContentProps = Omit<
+  ToolCallContentPartProps<GetAllowanceParams, GetAllowanceResult>,
+  'args'
+> & {
+  args: Partial<GetAllowanceParams>;
+};
+
+const GetAllowanceContent: React.FC<GetAllowanceContentProps> = ({
+  status,
+  result,
+  args,
+  isError,
+  toolName,
+}) => {
   const assetsStore = useAssetsStore();
-  const asset = assetsStore.assetsById[args.assetId];
+  const asset = assetsStore.assetsById[args.assetId ?? ''];
   switch (status.type) {
     case 'running':
     case 'requires-action':

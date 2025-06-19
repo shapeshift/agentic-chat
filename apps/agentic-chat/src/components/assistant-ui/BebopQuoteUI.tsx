@@ -1,6 +1,6 @@
 import {
   makeAssistantToolUI,
-  ToolCallContentPartComponent,
+  ToolCallContentPartProps,
 } from '@assistant-ui/react';
 import {
   Card,
@@ -17,13 +17,22 @@ import { Button } from '../ui/button';
 import { useAssetsStore } from '../../stores/assets';
 import { BebopRateParams, BebopRateResult } from '../../tools/bebopRate';
 
-const BebopUiContent: ToolCallContentPartComponent<
-  BebopRateParams,
-  BebopRateResult
-> = ({ status, result, args, isError }) => {
+type BebopUiContentProps = Omit<
+  ToolCallContentPartProps<BebopRateParams, BebopRateResult>,
+  'args'
+> & {
+  args: Partial<BebopRateParams>;
+};
+
+const BebopUiContent: React.FC<BebopUiContentProps> = ({
+  status,
+  result,
+  args,
+  isError,
+}) => {
   const assetsStore = useAssetsStore();
-  const sellAsset = assetsStore.assetsById[args.sellAssetId];
-  const buyAsset = assetsStore.assetsById[args.buyAssetId];
+  const sellAsset = assetsStore.assetsById[args.sellAssetId ?? ''];
+  const buyAsset = assetsStore.assetsById[args.buyAssetId ?? ''];
 
   switch (status.type) {
     case 'running':
