@@ -10,8 +10,6 @@
 
 # compiled output
 dist
-test-results
-playwright-report
 
 # dependencies
 node_modules

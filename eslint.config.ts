@@ -4,7 +4,6 @@ import prettierConfig from 'eslint-config-prettier'
 // @ts-expect-error - package doesn't provide types and has exports conflicts
 import importPlugin from 'eslint-plugin-import'
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y'
-import playwright from 'eslint-plugin-playwright'
 import prettier from 'eslint-plugin-prettier'
 import reactPlugin from 'eslint-plugin-react'
 import reactHooksPlugin from 'eslint-plugin-react-hooks'
@@ -105,10 +104,6 @@ export default [
       'react/jsx-key': 'error',
       'react/self-closing-comp': 'error',
     },
-  },
-  {
-    ...playwright.configs['flat/recommended'],
-    files: ['apps/agentic-chat-e2e/**/*.{mts,ts,tsx}'],
   },
   {
     ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts'],

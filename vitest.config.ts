@@ -7,7 +7,7 @@ export default defineConfig({
       threads: { singleThread: true },
       forks: { isolate: false },
     },
-    exclude: ['**/node_modules/**', '**/dist/**', 'apps/agentic-chat-e2e/**'],
+    exclude: ['**/dist/**', '**/node_modules/**'],
     projects: [
       {
         test: {
