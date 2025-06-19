@@ -8,14 +8,22 @@ import { searchTokens } from '../tools/searchTokens';
 import { getAllowance } from '../tools/getAllowance';
 import { approve } from '../tools/approve';
 import { sendTransaction } from '../tools/sendTransaction';
-import { toBaseUnit } from '@agentic-chat/utils';
+import { toBaseUnit, fromBaseUnit } from '@agentic-chat/utils';
 import { getAccount } from '../tools/getAccount';
 import { getBebopRate } from '../tools/bebopRate';
+import { useAssetsStore } from '../stores/assets';
+import { usePortfolioStore } from '../stores/portfolio';
+import { toAssetId, arbitrumChainId, AssetId } from '@agentic-chat/caip';
 
 const useTools = () => {
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
   const [bebopQuote, setBebopQuote] = useState<BebopQuote | null>(null);
+
+  const assetsStore = useAssetsStore();
+  const portfolioStore = usePortfolioStore();
+
+  console.log({ assetsStore, portfolioStore });
 
   useAssistantTool({
     toolName: 'getAccount',
@@ -28,7 +36,7 @@ const useTools = () => {
         ),
     }),
     execute: async ({ network }) => {
-      return getAccount(account?.address, network);
+      return getAccount(account?.address, network, assetsStore, portfolioStore);
     },
   });
 
