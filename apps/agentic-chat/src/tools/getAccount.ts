@@ -2,7 +2,12 @@ import axios from 'axios';
 import { Account } from '../types/account';
 import { Address } from 'viem';
 import { fromBaseUnit } from '@agentic-chat/utils';
-import { toAssetId, AssetId } from '@shapeshiftoss/caip';
+import {
+  toAssetId,
+  AssetId,
+  bscChainId,
+  ASSET_NAMESPACE,
+} from '@shapeshiftoss/caip';
 import { AssetsStore } from '../stores/assets';
 import { PortfolioStore } from '../stores/portfolio';
 import { Asset } from '../types/asset';
@@ -12,7 +17,15 @@ import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId';
 
 export const getAccountParams = z.object({
   network: z
-    .string()
+    .enum([
+      'ethereum',
+      'polygon',
+      'arbitrum',
+      'base',
+      'avalanche',
+      'optimism',
+      'bsc',
+    ])
     .describe('The network to get account info for (e.g., ethereum, bitcoin)'),
 });
 
@@ -43,7 +56,9 @@ export const getAccount = async ({
   }
 
   const baseUrl = import.meta.env[
-    `VITE_UNCHAINED_${network.toUpperCase()}_HTTP_URL`
+    `VITE_UNCHAINED_${network
+      .replace('bsc', 'bnbsmartchain')
+      .toUpperCase()}_HTTP_URL`
   ];
 
   const { data } = await axios.get<Account>(
@@ -53,7 +68,8 @@ export const getAccount = async ({
   const assets = data.tokens.map<Asset>((token) => ({
     assetId: toAssetId({
       chainId: chainId,
-      assetNamespace: 'erc20',
+      assetNamespace:
+        chainId === bscChainId ? ASSET_NAMESPACE.bep20 : ASSET_NAMESPACE.erc20,
       assetReference: token.contract,
     }),
     chainId: chainId,
@@ -79,7 +95,10 @@ export const getAccount = async ({
     (acc, token) => {
       const assetId = toAssetId({
         chainId: chainId,
-        assetNamespace: 'erc20',
+        assetNamespace:
+          chainId === bscChainId
+            ? ASSET_NAMESPACE.bep20
+            : ASSET_NAMESPACE.erc20,
         assetReference: token.contract,
       });
       acc[assetId] = fromBaseUnit(token.balance, token.decimals);

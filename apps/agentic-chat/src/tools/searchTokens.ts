@@ -1,7 +1,7 @@
 import qs from 'qs';
 import axios from 'axios';
 import { PortalsResponse, Asset } from '@agentic-chat/types';
-import { toAssetId } from '@shapeshiftoss/caip';
+import { ASSET_NAMESPACE, bscChainId, toAssetId } from '@shapeshiftoss/caip';
 import { AssetsStore } from '../stores/assets';
 import { networkToChainIdMap } from '../lib/utils';
 import z from 'zod';
@@ -62,7 +62,10 @@ export const searchTokens = async ({
 
       const assetId = toAssetId({
         chainId,
-        assetNamespace: 'erc20',
+        assetNamespace:
+          chainId === bscChainId
+            ? ASSET_NAMESPACE.bep20
+            : ASSET_NAMESPACE.erc20,
         assetReference: token.address,
       });
 

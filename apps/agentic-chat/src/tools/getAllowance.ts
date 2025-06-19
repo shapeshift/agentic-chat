@@ -5,6 +5,7 @@ import { fromBaseUnit } from '@agentic-chat/utils';
 import { fromAssetId, fromChainId } from '@shapeshiftoss/caip';
 import { AssetsStore } from '../stores/assets';
 import z from 'zod';
+import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId';
 
 export const getAllowanceParams = z.object({
   assetId: z.string().describe('The token AssetId to check allowance against'),
@@ -27,6 +28,10 @@ export const getAllowance = async ({
 }): Promise<GetAllowanceResult> => {
   if (!from) {
     throw new Error('No account connected');
+  }
+
+  if (assetId === getFeeAssetByChainId(fromAssetId(assetId).chainId)) {
+    return 'No allowance is needed for native assets';
   }
 
   const { chainId, assetReference } = fromAssetId(assetId);

@@ -1,12 +1,12 @@
 import {
   baseChainId,
   avalancheChainId,
-  binanceChainId,
   ChainId,
   arbitrumChainId,
   ethChainId,
   optimismChainId,
   polygonChainId,
+  bscChainId,
 } from '@shapeshiftoss/caip';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -22,5 +22,5 @@ export const networkToChainIdMap: Record<string, ChainId> = {
   base: baseChainId,
   avalanche: avalancheChainId,
   optimism: optimismChainId,
-  bsc: binanceChainId,
+  bsc: bscChainId,
 };
