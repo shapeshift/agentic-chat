@@ -22,7 +22,6 @@ import {
 import { NavUser } from './nav-user';
 import { NavWallets } from './nav-wallets';
 import { Button } from './ui/button';
-import { ConnectWallet } from './connect-wallet';
 
 // This is sample data.
 const data = {
@@ -83,9 +82,6 @@ export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader className="gap-3.5 border-b p-4">
-        <div className="flex w-full items-center justify-between mb-2">
-          <ConnectWallet />
-        </div>
         <div className="flex w-full items-center justify-between">
           <div className="text-base font-medium text-foreground">Wallets</div>
           <Button

@@ -6,33 +6,29 @@ import {
   getAddress,
   WalletClient,
 } from 'viem';
-import { ToolCall } from '@ai-sdk/provider-utils';
 import { toBaseUnit } from '@agentic-chat/utils';
 import { networks } from '../lib/appkit';
 
-export const approve = async (
-  walletClient: WalletClient | undefined,
-  toolCall: ToolCall<string, unknown>
-) => {
+export const approve = async ({
+  walletClient,
+  token,
+  spender,
+  amountCryptoPrecision,
+  chainId,
+  decimals,
+}: {
+  walletClient: WalletClient | undefined;
+  token: string;
+  spender: string;
+  amountCryptoPrecision: string;
+  chainId: number;
+  decimals: number;
+}) => {
   const account = walletClient?.account;
 
   if (!account?.address || !walletClient) {
     throw new Error('No account connected');
   }
-
-  const typedToolCall = toolCall as ToolCall<
-    'approve',
-    {
-      token: string;
-      spender: string;
-      amountCryptoPrecision: string;
-      chainId: number;
-      decimals: number;
-    }
-  >;
-
-  const { token, spender, amountCryptoPrecision, decimals, chainId } =
-    typedToolCall.args;
 
   const amountCryptoBaseUnit = toBaseUnit(amountCryptoPrecision, decimals);
 

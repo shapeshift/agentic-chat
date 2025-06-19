@@ -81,6 +81,7 @@ export type BebopResponse = {
 };
 
 export type Asset = {
+  icon?: string;
   assetId: string;
   chainId: string;
   symbol: string;

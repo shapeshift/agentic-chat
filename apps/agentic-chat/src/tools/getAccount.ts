@@ -1,26 +1,22 @@
 import axios from 'axios';
-import { UseAccountReturnType } from 'wagmi';
-import { ToolCall } from '@ai-sdk/provider-utils';
 import { Account } from '../types/account';
 import { fromBaseUnit } from '@agentic-chat/utils';
+import { Address } from 'viem';
 
 export const getAccount = async (
-  account: UseAccountReturnType,
-  toolCall: ToolCall<string, unknown>
+  address: Address | undefined,
+  network: string
 ) => {
-  if (!account.address) {
+  if (!address) {
     throw new Error('No account connected');
   }
 
-  const typedToolCall = toolCall as ToolCall<'getAccount', { network: string }>;
-
-  const env = import.meta?.env ? import.meta.env : process.env;
-
-  const baseUrl =
-    env[`VITE_UNCHAINED_${typedToolCall.args.network.toUpperCase()}_HTTP_URL`];
+  const baseUrl = import.meta.env[
+    `VITE_UNCHAINED_${network.toUpperCase()}_HTTP_URL`
+  ];
 
   const { data } = await axios.get<Account>(
-    `${baseUrl}/api/v1/account/${account.address}`
+    `${baseUrl}/api/v1/account/${address}`
   );
 
   const nativeBalance = fromBaseUnit(

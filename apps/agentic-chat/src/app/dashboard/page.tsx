@@ -1,59 +1,43 @@
-import { Button } from '../../components/ui/button';
-import { Chat } from '../../components/chat';
+import { Thread } from '../../components/assistant-ui/thread';
 import { SidebarLeft } from '../../components/sidebar-left';
 import { SidebarRight } from '../../components/sidebar-right';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from '../../components/ui/breadcrumb';
-import { Separator } from '../../components/ui/separator';
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from '../../components/ui/sidebar';
-import { useChatStore } from '../../store/chat';
-import { generateId } from '@ai-sdk/ui-utils';
+import { ThreadList } from '../../components/assistant-ui/thread-list';
+import BebopQuoteUI from '../../components/assistant-ui/BebopQuoteUI';
+import { ConnectWallet } from '../../components/connect-wallet';
+import useTools from '../../hooks/useTools';
+
+const isSidebarLeftEnabled =
+  import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true';
+const isSidebarRightEnabled =
+  import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true';
 
 export const Dashboard = () => {
-  const { createThread, activeThreadId } = useChatStore();
-
-  const handleNewChat = () => {
-    createThread(generateId());
-  };
+  useTools();
 
   return (
     <SidebarProvider>
-      <SidebarLeft />
+      {isSidebarLeftEnabled && <SidebarLeft />}
       <SidebarInset>
-        <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background z-10">
-          <div className="flex flex-1 items-center gap-2 px-3">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="line-clamp-1">
-                    Chat Name
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto w-auto px-2"
-              onClick={handleNewChat}
-            >
-              New Chat
-            </Button>
+        <header className="sticky top-0 flex flex-col gap-2 bg-background z-10 px-3 pt-3">
+          <div>
+            <ConnectWallet />
+          </div>
+          <div className="flex items-center gap-2">
+            {isSidebarLeftEnabled && <SidebarTrigger />}
           </div>
         </header>
-        <Chat key={activeThreadId} />
+        <div className="grid h-full grid-cols-[200px_1fr]">
+          <BebopQuoteUI />
+          <ThreadList />
+          <Thread />
+        </div>
       </SidebarInset>
-      <SidebarRight />
+      {isSidebarRightEnabled && <SidebarRight />}
     </SidebarProvider>
   );
 };

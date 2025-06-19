@@ -1,18 +1,18 @@
 import qs from 'qs';
 import axios from 'axios';
-import { ToolCall } from '@ai-sdk/provider-utils';
 import { PortalsResponse } from '@agentic-chat/types';
 
 const env = import.meta?.env ? import.meta.env : process.env;
 const PORTALS_BASE_URL = env.VITE_PORTALS_BASE_URL;
 const PORTALS_API_KEY = env.VITE_PORTALS_API_KEY;
 
-export const searchTokens = async (toolCall: ToolCall<string, unknown>) => {
-  const typedToolCall = toolCall as ToolCall<
-    'searchTokens',
-    { searchTerm: string; network?: string }
-  >;
-  const { searchTerm, network } = typedToolCall.args;
+export const searchTokens = async ({
+  searchTerm,
+  network,
+}: {
+  searchTerm: string;
+  network?: string | undefined;
+}) => {
   const tokensUrl = `${PORTALS_BASE_URL}/v2/tokens`;
   const params = {
     search: searchTerm,
