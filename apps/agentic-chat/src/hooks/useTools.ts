@@ -17,6 +17,7 @@ import { useAssetsStore } from '../stores/assets';
 import { usePortfolioStore } from '../stores/portfolio';
 import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain';
 import { executeSwap } from '../tools/executeSwap';
+import { executeSwapParams } from '../components/assistant-ui/ExecuteSwapUI';
 
 const useTools = () => {
   const account = useAccount();
@@ -102,7 +103,7 @@ const useTools = () => {
   useAssistantTool({
     toolName: 'executeSwap',
     description: 'Executes the swap previously requested using bebopRate tool.',
-    parameters: z.object({}),
+    parameters: executeSwapParams,
     execute: async () => {
       return executeSwap({
         walletClient,

@@ -2,8 +2,11 @@ import { makeAssistantToolUI } from '@assistant-ui/react';
 import { ArrowRightLeft } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
+import z from 'zod';
 
-export type ExecuteSwapArgs = Record<string, never>; // no args
+export const executeSwapParams = z.object({}).strict()
+
+export type ExecuteSwapArgs = z.infer<typeof executeSwapParams>;
 export type ExecuteSwapResult = string; // tx hash
 
 const Icon = ArrowRightLeft;
