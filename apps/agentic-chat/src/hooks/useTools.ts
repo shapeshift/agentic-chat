@@ -26,7 +26,7 @@ const useTools = () => {
   const assetsStore = useAssetsStore();
   const portfolioStore = usePortfolioStore();
 
-  console.log({assetsStore, portfolioStore});
+  console.log({ assetsStore, portfolioStore });
 
   useAssistantTool({
     toolName: 'getAccount',

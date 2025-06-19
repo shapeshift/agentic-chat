@@ -17,28 +17,28 @@ import {
   optimismChainId,
   polygonAssetId,
   polygonChainId,
-  type ChainId
-} from '@shapeshiftoss/caip'
+  type ChainId,
+} from '@shapeshiftoss/caip';
 
 export const getFeeAssetByChainId = (chainId: ChainId): string | undefined => {
   switch (chainId) {
     case ethChainId:
-      return ethAssetId
+      return ethAssetId;
     case optimismChainId:
-      return optimismAssetId
+      return optimismAssetId;
     case bscChainId:
-      return bscAssetId
+      return bscAssetId;
     case polygonChainId:
-      return polygonAssetId
+      return polygonAssetId;
     case gnosisChainId:
-      return gnosisAssetId
+      return gnosisAssetId;
     case arbitrumChainId:
-      return arbitrumAssetId
+      return arbitrumAssetId;
     case avalancheChainId:
-      return avalancheAssetId
+      return avalancheAssetId;
     case baseChainId:
-      return baseAssetId
+      return baseAssetId;
     default:
-      return undefined
+      return undefined;
   }
-}
+};

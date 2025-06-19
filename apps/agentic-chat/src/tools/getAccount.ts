@@ -2,10 +2,7 @@ import axios from 'axios';
 import { Account } from '../types/account';
 import { Address } from 'viem';
 import { fromBaseUnit } from '@agentic-chat/utils';
-import {
-  toAssetId,
-  AssetId,
-} from '@shapeshiftoss/caip';
+import { toAssetId, AssetId } from '@shapeshiftoss/caip';
 import { AssetsStore } from '../stores/assets';
 import { PortfolioStore } from '../stores/portfolio';
 import { Asset } from '../types/asset';
@@ -68,12 +65,11 @@ export const getAccount = async ({
 
   const feeAssetId = getFeeAssetByChainId(chainId);
 
-  const feeAsset = assetsStore.assetsById[feeAssetId ?? '']
+  const feeAsset = assetsStore.assetsById[feeAssetId ?? ''];
 
   if (!(feeAsset && feeAssetId)) {
     throw new Error(`Fee asset not found for chainId: ${chainId}`);
   }
-
 
   assets.push(feeAsset);
 
