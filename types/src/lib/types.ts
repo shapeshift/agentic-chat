@@ -1,12 +1,13 @@
 import { Address, Hex } from 'viem';
 
 export type PortalsToken = {
+  network: string;
   address: string;
   symbol: string;
   name: string;
   decimals: number;
   chainId: number;
-  logoURI: string;
+  image: string;
   volumeUsd7d: number;
   priceUsd: number;
 };

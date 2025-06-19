@@ -1,49 +1,57 @@
-import { makeAssistantToolUI } from '@assistant-ui/react';
+import {
+  makeAssistantToolUI,
+  ToolCallContentPartComponent,
+} from '@assistant-ui/react';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
+import {
+  GetAllowanceParams,
+  GetAllowanceResult,
+} from '../../tools/getAllowance';
+import { useAssetsStore } from '../../stores/assets';
 
-export type GetAllowanceArgs = {
-  token: string;
-  decimals: number;
-  spender: string;
-  chainId: number;
+const GetAllowanceContent: ToolCallContentPartComponent<
+  {
+    assetId: string;
+    spender: string;
+  },
+  string
+> = ({ status, result, args, isError, toolName }) => {
+  const assetsStore = useAssetsStore();
+  const asset = assetsStore.assetsById[args.assetId];
+  switch (status.type) {
+    case 'complete':
+      if (isError) {
+        return (
+          <CollapsableDetails
+            title={`An Error Occured with ${toolName}`}
+            leftIcon={<AlertCircle className="w-4 h-4 text-red-500" />}
+          >
+            {result}
+          </CollapsableDetails>
+        );
+      }
+      return (
+        <CollapsableDetails
+          title="Token allowance"
+          leftIcon={<CheckCircle className="w-4 h-4 text-primary" />}
+        >
+          <pre>{result}</pre>
+        </CollapsableDetails>
+      );
+    default:
+      return (
+        <TextShimmer>Fetching allowance for {asset.symbol}...</TextShimmer>
+      );
+  }
 };
-
-export type GetAllowanceResult = string; // allowance in human units
-
 const GetAllowanceUI = makeAssistantToolUI<
-  GetAllowanceArgs,
+  GetAllowanceParams,
   GetAllowanceResult
 >({
   toolName: 'getAllowance',
-  render: ({ status, result, args, isError, toolName }) => {
-    switch (status.type) {
-      case 'complete':
-        if (isError) {
-          return (
-            <CollapsableDetails
-              title={`An Error Occured with ${toolName}`}
-              leftIcon={<AlertCircle className="w-4 h-4 text-red-500" />}
-            >
-              {result}
-            </CollapsableDetails>
-          );
-        }
-        return (
-          <CollapsableDetails
-            title="Token allowance"
-            leftIcon={<CheckCircle className="w-4 h-4 text-primary" />}
-          >
-            <pre>{result}</pre>
-          </CollapsableDetails>
-        );
-      default:
-        return (
-          <TextShimmer>Fetching allowance for {args.token}...</TextShimmer>
-        );
-    }
-  },
+  render: GetAllowanceContent,
 });
 
 export default GetAllowanceUI;

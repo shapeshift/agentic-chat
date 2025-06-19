@@ -1,37 +1,52 @@
-import { UseAccountReturnType } from 'wagmi';
 import { getPublicClient } from '@wagmi/core';
 import { wagmiConfig } from '../lib/wagmi-config';
-import { erc20Abi, getAddress } from 'viem';
+import { Address, erc20Abi, getAddress } from 'viem';
 import { fromBaseUnit } from '@agentic-chat/utils';
+import { fromAssetId, fromChainId } from '@agentic-chat/caip';
+import { AssetsStore } from '../stores/assets';
+import z from 'zod';
+
+export const getAllowanceParams = z.object({
+  assetId: z.string().describe('The token AssetId to check allowance against'),
+  spender: z
+    .string()
+    .describe('The address of the spender to check allowance from'),
+});
+
+export type GetAllowanceParams = z.infer<typeof getAllowanceParams>;
+export type GetAllowanceResult = string;
 
 export const getAllowance = async ({
-  account,
-  token,
-  decimals,
+  assetId,
+  from,
   spender,
-  chainId,
-}: {
-  account: UseAccountReturnType;
-  token: string;
-  decimals: number;
-  spender: string;
-  chainId: number;
-}) => {
-  if (!account.address) {
+  assetsStore,
+}: GetAllowanceParams & {
+  from: Address | undefined;
+  assetsStore: AssetsStore;
+}): Promise<GetAllowanceResult> => {
+  if (!from) {
     throw new Error('No account connected');
   }
 
-  const publicClient = getPublicClient(wagmiConfig, { chainId });
+  const { chainId, assetReference } = fromAssetId(assetId);
+  const { chainReference } = fromChainId(chainId);
+
+  const asset = assetsStore.assetsById[assetId];
+
+  const publicClient = getPublicClient(wagmiConfig, {
+    chainId: Number(chainReference),
+  });
 
   if (!publicClient)
     throw new Error('Public client not found for the specified chain');
 
   const allowance = await publicClient.readContract({
-    address: getAddress(token),
+    address: getAddress(assetReference),
     abi: erc20Abi,
     functionName: 'allowance',
-    args: [account.address, getAddress(spender)],
+    args: [from, getAddress(spender)],
   });
 
-  return fromBaseUnit(allowance.toString(), decimals);
+  return fromBaseUnit(allowance.toString(), asset.precision);
 };

@@ -1,4 +1,4 @@
-import { Asset, BebopQuote, BebopResponse } from '@agentic-chat/types';
+import {  BebopQuote, BebopResponse } from '@agentic-chat/types';
 import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 import {
   arbitrumChainId,
@@ -13,8 +13,26 @@ import {
 import type { AssetId, ChainId } from '@agentic-chat/caip';
 import { Address, getAddress } from 'viem';
 import { AssetsStore } from '../stores/assets';
+import z from 'zod';
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+
+export const bebopRateParams = z.object({
+  sellAssetId: z.string().describe('The sell AssetID to fetch rate for'),
+  buyAssetId: z.string().describe('The buy AssetID to fetch rate for'),
+  sellAmountCryptoPrecision: z
+    .string()
+    .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
+});
+
+export type BebopRateParams = z.infer<typeof bebopRateParams>;
+export type BebopRateResult = {
+  sellAmountCryptoPrecision: string;
+  buyAmountCryptoPrecision: string;
+  sellAssetId: AssetId;
+  buyAssetId: AssetId;
+  approvalTarget: string;
+};
 
 export const getBebopRate = async ({
   sellAssetId,
@@ -23,14 +41,11 @@ export const getBebopRate = async ({
   fromAddress,
   setBebopQuote,
   assetsStore,
-}: {
-  sellAssetId: AssetId;
-  buyAssetId: AssetId;
-  sellAmountCryptoPrecision: string;
+}: BebopRateParams & {
   fromAddress: Address;
   setBebopQuote: (bebopQuote: BebopQuote) => void;
   assetsStore: AssetsStore;
-}) => {
+}): Promise<BebopRateResult> => {
   const sellAsset = assetsStore.assetsById[sellAssetId];
   const buyAsset = assetsStore.assetsById[buyAssetId];
 

@@ -2,19 +2,13 @@ import { makeAssistantToolUI } from '@assistant-ui/react';
 import { Send } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
-
-export type SendTransactionArgs = {
-  to: string;
-  valueCryptoPrecision: string;
-  data: string;
-  chainId: number;
-};
+import { SendTransactionParams } from '../../tools/sendTransaction';
 
 const Icon = Send;
 export type SendTransactionResult = string; // tx hash
 
 const SendTransactionUI = makeAssistantToolUI<
-  SendTransactionArgs,
+  SendTransactionParams,
   SendTransactionResult
 >({
   toolName: 'sendTransaction',

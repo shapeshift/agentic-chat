@@ -2,19 +2,16 @@ import { makeAssistantToolUI } from '@assistant-ui/react';
 import { Search } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
-import { TokenSearchResult, PortalsToken } from '@agentic-chat/types';
-
-export type SearchTokensArgs = {
-  searchTerm: string;
-  network?: string;
-};
-
-export type SearchTokensResult = TokenSearchResult;
+import { Asset } from '@agentic-chat/types';
+import {
+  SearchTokensParams,
+  SearchTokensResult,
+} from '../../tools/searchTokens';
 
 const Icon = Search;
 
 const SearchTokensUI = makeAssistantToolUI<
-  SearchTokensArgs,
+  SearchTokensParams,
   SearchTokensResult
 >({
   toolName: 'searchTokens',
@@ -34,15 +31,15 @@ const SearchTokensUI = makeAssistantToolUI<
 
         return (
           <CollapsableDetails
-            title={`Found ${result.tokens.length} tokens`}
+            title={`Found ${result.assets.length} tokens`}
             leftIcon={<Icon className="w-4 h-4 text-green-500" />}
           >
             <ul className="space-y-2">
-              {result.tokens.map((token: PortalsToken) => (
-                <li key={token.address} className="flex items-center gap-2">
-                  <span className="font-mono text-sm">{token.symbol}</span>
+              {result.assets.map((asset: Asset) => (
+                <li key={asset.assetId} className="flex items-center gap-2">
+                  <span className="font-mono text-sm">{asset.symbol}</span>
                   <span className="text-muted-foreground text-xs truncate">
-                    {token.address}
+                    {asset.assetId}
                   </span>
                 </li>
               ))}

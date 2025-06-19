@@ -4,15 +4,19 @@ import { BebopQuote } from '@agentic-chat/types';
 import { useAssistantTool } from '@assistant-ui/react';
 import { z } from 'zod';
 import { useState } from 'react';
-import { searchTokens } from '../tools/searchTokens';
-import { getAllowance } from '../tools/getAllowance';
-import { approve } from '../tools/approve';
-import { sendTransaction } from '../tools/sendTransaction';
-import { toBaseUnit } from '@agentic-chat/utils';
-import { getAccount } from '../tools/getAccount';
-import { getBebopRate } from '../tools/bebopRate';
+import { searchTokens, searchTokensParams } from '../tools/searchTokens';
+import { getAllowance, getAllowanceParams } from '../tools/getAllowance';
+import { approve, approveParamsSchema } from '../tools/approve';
+import {
+  sendTransaction,
+  sendTransactionParams,
+} from '../tools/sendTransaction';
+import { getAccount, getAccountParams } from '../tools/getAccount';
+import { bebopRateParams, getBebopRate } from '../tools/bebopRate';
 import { useAssetsStore } from '../stores/assets';
 import { usePortfolioStore } from '../stores/portfolio';
+import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain';
+import { executeSwap } from '../tools/executeSwap';
 
 const useTools = () => {
   const account = useAccount();
@@ -22,125 +26,67 @@ const useTools = () => {
   const assetsStore = useAssetsStore();
   const portfolioStore = usePortfolioStore();
 
-  console.log({ assetsStore, portfolioStore });
-
   useAssistantTool({
     toolName: 'getAccount',
     description: 'Get account information including balances and token details',
-    parameters: z.object({
-      network: z
-        .string()
-        .describe(
-          'The network to get account info for (e.g., ethereum, bitcoin)'
-        ),
-    }),
+    parameters: getAccountParams,
     execute: async ({ network }) => {
-      return getAccount(account?.address, network, assetsStore, portfolioStore);
+      return getAccount({
+        address: account?.address,
+        network,
+        assetsStore,
+        portfolioStore,
+      });
     },
   });
 
   useAssistantTool({
     toolName: 'switchEvmChain',
     description: 'Switches the connected wallet to a different EVM chain',
-    parameters: z.object({
-      chainId: z.number().describe('The chain ID to switch to'),
-    }),
+    parameters: switchEvmChainParams,
     execute: async ({ chainId }) => {
-      if (!walletClient) {
-        throw new Error('No account connected');
-      }
-
-      await walletClient.switchChain({
-        id: chainId,
+      return switchEvmChain({
+        walletClient,
+        chainId,
       });
-
-      return chainId;
     },
   });
 
   useAssistantTool({
     toolName: 'approve',
     description: 'Approves a token for spending by a specific address',
-    parameters: z.object({
-      token: z.string().describe('The token contract address to approve'),
-      spender: z
-        .string()
-        .describe('The address that will be approved to spend the tokens'),
-      amountCryptoPrecision: z
-        .string()
-        .describe('Amount to approve in human format, e.g. 1 for 1 token'),
-      chainId: z.number().describe('The chain ID where the token exists'),
-      decimals: z.number().describe('The number of decimals the token uses'),
-    }),
+    parameters: approveParamsSchema,
     execute: async (args) => {
-      return approve({ walletClient, ...args });
+      return approve({ walletClient, assetsStore, ...args });
     },
   });
 
   useAssistantTool({
     toolName: 'getAllowance',
     description: 'Gets the allowance of a token for a specific spender',
-    parameters: z.object({
-      token: z
-        .string()
-        .describe('The token contract address to check allowance for'),
-      decimals: z.number().describe('The number of decimals the token uses'),
-      spender: z
-        .string()
-        .describe('The address that has been approved to spend the tokens'),
-      chainId: z.number().describe('The chain ID where the token exists'),
-    }),
+    parameters: getAllowanceParams,
     execute: async (args) => {
-      return getAllowance({ account, ...args });
+      return getAllowance({
+        ...args,
+        from: account.address,
+        assetsStore,
+      });
     },
   });
 
   useAssistantTool({
     toolName: 'searchTokens',
     description: 'Searches for tokens by name or symbol',
-    parameters: z.object({
-      searchTerm: z
-        .string()
-        .describe('The search term to find tokens by name or symbol'),
-      network: z
-        .string()
-        .optional()
-        .describe(
-          'Optional network to filter tokens by (e.g., ethereum, arbitrum)'
-        ),
-    }),
+    parameters: searchTokensParams,
     execute: async (args) => {
-      return searchTokens(args);
+      return searchTokens({ ...args, assetsStore });
     },
   });
 
   useAssistantTool({
     toolName: 'bebopRate',
     description: 'Fetches a swap rate from Bebop and displays it to the user',
-    parameters: z.object({
-      sellAssetId: z.string().describe('The sell AssetID to fetch rate for'),
-      buyAssetId: z.string().describe('The buy AssetID to fetch rate for'),
-      chain: z
-        .string()
-        .describe('Chain name, e.g. ethereum, arbitrum, polygon, etc.'),
-      fromAsset: z
-        .object({
-          address: z.string(),
-          decimals: z.number(),
-          symbol: z.string().optional(),
-        })
-        .describe('Asset to sell'),
-      toAsset: z
-        .object({
-          address: z.string(),
-          decimals: z.number(),
-          symbol: z.string(),
-        })
-        .describe('Asset to buy'),
-      sellAmountCryptoPrecision: z
-        .string()
-        .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-    }),
+    parameters: bebopRateParams,
     execute: async ({ sellAssetId, buyAssetId, sellAmountCryptoPrecision }) => {
       return getBebopRate({
         sellAssetId,
@@ -158,19 +104,9 @@ const useTools = () => {
     description: 'Executes the swap previously requested using bebopRate tool.',
     parameters: z.object({}),
     execute: async () => {
-      if (!bebopQuote) {
-        throw new Error('No quote available');
-      }
-
-      const { chainId, tx } = bebopQuote;
-      const { to, value, data } = tx;
-
-      return sendTransaction({
+      return executeSwap({
         walletClient,
-        to: getAddress(to),
-        value: value,
-        data,
-        chainId,
+        bebopQuote,
       });
     },
   });
@@ -178,26 +114,13 @@ const useTools = () => {
   useAssistantTool({
     toolName: 'sendTransaction',
     description: 'Sends a transaction to the blockchain',
-    parameters: z.object({
-      to: z.string().describe('The address to send the transaction to'),
-      valueCryptoPrecision: z
-        .string()
-        .describe('Amount to send in human format, e.g. 1 for 1 ETH'),
-      data: z.string().describe('The transaction data (hex string)'),
-      chainId: z
-        .number()
-        .describe('The chain ID where the transaction will be sent'),
-    }),
+    parameters: sendTransactionParams,
     execute: async ({ to, valueCryptoPrecision, data, chainId }) => {
-      const valueCryptoBaseUnit = toBaseUnit(
-        valueCryptoPrecision,
-        18 // Assuming 18 decimals for ETH-like transactions
-      );
 
       return sendTransaction({
         walletClient,
         to: getAddress(to),
-        value: valueCryptoBaseUnit,
+        valueCryptoPrecision,
         data: data as Hex,
         chainId,
       });

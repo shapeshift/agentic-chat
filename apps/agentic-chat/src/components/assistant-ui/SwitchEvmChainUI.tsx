@@ -2,30 +2,15 @@ import { makeAssistantToolUI } from '@assistant-ui/react';
 import { ArrowRightLeft } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { CollapsableDetails } from './CollapsableDetails';
-
-// Types for bebopRate tool args and result
-export type SwitchEvmChainArgs = {
-  chain: string;
-  fromAsset: {
-    address: string;
-    decimals: number;
-    symbol?: string;
-  };
-  toAsset: {
-    address: string;
-    decimals: number;
-    symbol: string;
-  };
-  sellAmountCryptoPrecision: string;
-  fromAddress: string;
-};
+import {
+  SwitchEvmChainParams,
+  SwitchEvmChainResult,
+} from '../../tools/switchEvmChain';
 
 const Icon = ArrowRightLeft;
 
-export type SwitchEvmChainResult = string;
-
 const SwitchEvmChainUI = makeAssistantToolUI<
-  SwitchEvmChainArgs,
+  SwitchEvmChainParams,
   SwitchEvmChainResult
 >({
   toolName: 'switchEvmChain',

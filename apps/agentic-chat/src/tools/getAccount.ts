@@ -11,13 +11,30 @@ import {
 import { AssetsStore } from '../stores/assets';
 import { PortfolioStore } from '../stores/portfolio';
 import { Asset } from '../types/asset';
+import z from 'zod';
 
-export const getAccount = async (
-  address: Address | undefined,
-  network: string,
-  assetsStore: AssetsStore,
-  portfolioStore: PortfolioStore
-) => {
+export const getAccountParams = z.object({
+  network: z
+    .string()
+    .describe('The network to get account info for (e.g., ethereum, bitcoin)'),
+});
+
+export type GetAccountParams = z.infer<typeof getAccountParams>;
+export type GetAccountResult = {
+  assets: Asset[];
+  portfolio: Record<AssetId, string>;
+};
+
+export const getAccount = async ({
+  address,
+  network,
+  assetsStore,
+  portfolioStore,
+}: GetAccountParams & {
+  address: Address | undefined;
+  assetsStore: AssetsStore;
+  portfolioStore: PortfolioStore;
+}): Promise<GetAccountResult> => {
   if (!address) {
     throw new Error('No account connected');
   }

@@ -2,16 +2,11 @@ import { makeAssistantToolUI } from '@assistant-ui/react';
 import { Wallet } from 'lucide-react';
 import { CollapsableDetails } from './CollapsableDetails';
 import { TextShimmer } from '../TextShimmer';
+import { GetAccountParams, GetAccountResult } from '../../tools/getAccount';
 
 const Icon = Wallet;
-// Types for bebopRate tool args and result
-export type GetAccountArgs = {
-  network: string;
-};
 
-export type GetAccountResult = string;
-
-const GetAccountUI = makeAssistantToolUI<GetAccountArgs, GetAccountResult>({
+const GetAccountUI = makeAssistantToolUI<GetAccountParams, GetAccountResult>({
   toolName: 'getAccount',
   render: ({ status, result, args, isError, toolName }) => {
     switch (status.type) {
@@ -22,7 +17,7 @@ const GetAccountUI = makeAssistantToolUI<GetAccountArgs, GetAccountResult>({
               title={`An error occurred with ${toolName}`}
               leftIcon={<Icon className="w-4 h-4 text-red-500" />}
             >
-              {result}
+              {JSON.stringify(result)}
             </CollapsableDetails>
           );
         }

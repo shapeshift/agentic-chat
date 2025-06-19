@@ -14,41 +14,16 @@ import { Input } from '../ui/input';
 import { AlertCircle, ArrowRightLeft } from 'lucide-react';
 import { TextShimmer } from '../TextShimmer';
 import { Button } from '../ui/button';
-import { AssetId } from '@agentic-chat/caip';
 import { useAssetsStore } from '../../stores/assets';
-
-// Types for bebopRate tool args and result
-export type BebopRateArgs = {
-  chain: string;
-  fromAsset: {
-    address: string;
-    decimals: number;
-    symbol?: string;
-  };
-  toAsset: {
-    address: string;
-    decimals: number;
-    symbol: string;
-  };
-  sellAmountCryptoPrecision: string;
-  fromAddress: string;
-};
-
-export type BebopRateResult = {
-  sellAmountCryptoPrecision: string;
-  buyAmountCryptoPrecision: string;
-  sellAssetId: AssetId;
-  buyAssetId: AssetId;
-  approvalTarget: string;
-};
+import { BebopRateParams, BebopRateResult } from '../../tools/bebopRate';
 
 const BebopUiContent: ToolCallContentPartComponent<
-  BebopRateArgs,
+  BebopRateParams,
   BebopRateResult
 > = ({ status, result, args, isError }) => {
-  const assetsStore = useAssetsStore()
-  const sellAsset = assetsStore.assetsById[result?.sellAssetId ?? '']
-  const buyAsset = assetsStore.assetsById[result?.buyAssetId ?? '']
+  const assetsStore = useAssetsStore();
+  const sellAsset = assetsStore.assetsById[result?.sellAssetId ?? ''];
+  const buyAsset = assetsStore.assetsById[result?.buyAssetId ?? ''];
 
   switch (status.type) {
     case 'running':
@@ -112,7 +87,7 @@ const BebopUiContent: ToolCallContentPartComponent<
       );
   }
 };
-const BebopQuoteUI = makeAssistantToolUI<BebopRateArgs, BebopRateResult>({
+const BebopQuoteUI = makeAssistantToolUI<BebopRateParams, BebopRateResult>({
   toolName: 'bebopRate',
   render: BebopUiContent,
 });
