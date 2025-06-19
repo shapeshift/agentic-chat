@@ -1,10 +1,4 @@
-import {
-  Chain,
-  extractChain,
-  getAddress,
-  Hex,
-  WalletClient,
-} from 'viem';
+import { Chain, extractChain, getAddress, Hex, WalletClient } from 'viem';
 import { networks } from '../lib/appkit';
 import { getPublicClient } from '@wagmi/core';
 import { wagmiConfig } from '../lib/wagmi-config';

@@ -21,6 +21,19 @@ const GetAllowanceContent: ToolCallContentPartComponent<
   const assetsStore = useAssetsStore();
   const asset = assetsStore.assetsById[args.assetId];
   switch (status.type) {
+    case 'running':
+    case 'requires-action':
+    case 'incomplete': {
+      if (!(args.assetId && args.spender)) {
+        return <TextShimmer>Fetching allowance</TextShimmer>;
+      }
+
+      return (
+        <TextShimmer>
+          Fetching allowance for {asset?.symbol ?? ''}...
+        </TextShimmer>
+      );
+    }
     case 'complete':
       if (isError) {
         return (
@@ -39,10 +52,6 @@ const GetAllowanceContent: ToolCallContentPartComponent<
         >
           <pre>{result}</pre>
         </CollapsableDetails>
-      );
-    default:
-      return (
-        <TextShimmer>Fetching allowance for {asset.symbol}...</TextShimmer>
       );
   }
 };

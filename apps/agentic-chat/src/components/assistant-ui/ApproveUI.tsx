@@ -22,6 +22,18 @@ const ApproveUiContent: ToolCallContentPartComponent<
   const asset = assetsStore.assetsById[args.assetId];
 
   switch (status.type) {
+    case 'running':
+    case 'requires-action':
+    case 'incomplete': {
+      if (!(args.assetId && asset))
+        return <TextShimmer>Approving token</TextShimmer>;
+
+      return (
+        <TextShimmer>
+          Approving {args.amountCryptoPrecision} of {asset.symbol}...
+        </TextShimmer>
+      );
+    }
     case 'complete':
       if (isError) {
         return (
@@ -40,12 +52,6 @@ const ApproveUiContent: ToolCallContentPartComponent<
             Approval transaction sent: {result}
           </p>
         </div>
-      );
-    default:
-      return (
-        <TextShimmer>
-          Approving {args.amountCryptoPrecision} of {asset.symbol}...
-        </TextShimmer>
       );
   }
 };

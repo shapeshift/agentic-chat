@@ -1,4 +1,4 @@
-import {  BebopQuote, BebopResponse } from '@agentic-chat/types';
+import { BebopQuote, BebopResponse } from '@agentic-chat/types';
 import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 import {
   arbitrumChainId,

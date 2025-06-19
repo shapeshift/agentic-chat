@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { Asset } from '@agentic-chat/types';
+import { Asset, PartialRecord } from '@agentic-chat/types';
 import { AssetId } from '@agentic-chat/caip';
 
 type AssetsState = {
   ids: AssetId[];
-  assetsById: Record<AssetId, Asset>;
+  assetsById: PartialRecord<AssetId, Asset>;
 };
 
 type AssetsActions = {

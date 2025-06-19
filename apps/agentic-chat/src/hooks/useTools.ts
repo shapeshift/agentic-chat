@@ -116,7 +116,6 @@ const useTools = () => {
     description: 'Sends a transaction to the blockchain',
     parameters: sendTransactionParams,
     execute: async ({ to, valueCryptoPrecision, data, chainId }) => {
-
       return sendTransaction({
         walletClient,
         to: getAddress(to),

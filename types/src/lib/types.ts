@@ -89,3 +89,5 @@ export type Asset = {
   name: string;
   precision: number;
 };
+
+export type PartialRecord<K extends PropertyKey, V> = Partial<Record<K, V>>;

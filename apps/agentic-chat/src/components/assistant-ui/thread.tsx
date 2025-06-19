@@ -106,6 +106,26 @@ const ThreadWelcomeSuggestions: FC = () => {
           What is my USDC balance on Arbitrum?
         </span>
       </ThreadPrimitive.Suggestion>
+      <ThreadPrimitive.Suggestion
+        className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
+        prompt="Swap half my USDC on ARB to FOX"
+        method="replace"
+        autoSend
+      >
+        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
+          Swap half my USDC on ARB to FOX
+        </span>
+      </ThreadPrimitive.Suggestion>
+      <ThreadPrimitive.Suggestion
+        className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
+        prompt="Gib me some info about FOX on Arb"
+        method="replace"
+        autoSend
+      >
+        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
+          Gib me some info about FOX on Arb
+        </span>
+      </ThreadPrimitive.Suggestion>
     </div>
   );
 };

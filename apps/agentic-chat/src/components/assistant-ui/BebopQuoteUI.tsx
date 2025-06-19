@@ -22,19 +22,24 @@ const BebopUiContent: ToolCallContentPartComponent<
   BebopRateResult
 > = ({ status, result, args, isError }) => {
   const assetsStore = useAssetsStore();
-  const sellAsset = assetsStore.assetsById[result?.sellAssetId ?? ''];
-  const buyAsset = assetsStore.assetsById[result?.buyAssetId ?? ''];
+  const sellAsset = assetsStore.assetsById[args.sellAssetId];
+  const buyAsset = assetsStore.assetsById[args.buyAssetId];
 
   switch (status.type) {
     case 'running':
     case 'requires-action':
-    case 'incomplete':
+    case 'incomplete': {
+      if (!(args.sellAmountCryptoPrecision && args.buyAssetId)) {
+        return <TextShimmer>Getting quote</TextShimmer>;
+      }
+
       return (
         <TextShimmer>
           Getting quote for {args.sellAmountCryptoPrecision}{' '}
-          {args.fromAsset?.symbol ?? ''} → {args.toAsset?.symbol ?? ''}
+          {sellAsset?.symbol ?? ''} → {buyAsset?.symbol ?? ''}
         </TextShimmer>
       );
+    }
     case 'complete':
       if (isError || !result || typeof result === 'string') {
         return (
@@ -62,7 +67,7 @@ const BebopUiContent: ToolCallContentPartComponent<
                   readOnly
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                  <span>{sellAsset.symbol}</span>
+                  <span>{sellAsset?.symbol ?? ''}</span>
                 </div>
               </div>
             </div>
@@ -75,7 +80,7 @@ const BebopUiContent: ToolCallContentPartComponent<
                   readOnly
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                  <span>{buyAsset.symbol}</span>
+                  <span>{buyAsset?.symbol ?? ''}</span>
                 </div>
               </div>
             </div>

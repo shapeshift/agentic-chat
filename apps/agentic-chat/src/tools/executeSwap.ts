@@ -1,3 +1,4 @@
+import { fromBaseUnit } from '@agentic-chat/utils';
 import { getAddress, Hash } from 'viem';
 import { sendTransaction } from './sendTransaction';
 import { WalletClient } from 'viem';
@@ -22,10 +23,12 @@ export const executeSwap = async ({
   const { chainId, tx } = bebopQuote;
   const { to, value, data } = tx;
 
+  const valueCryptoPrecision = fromBaseUnit(value, 18); // Assuming 18 decimals for native token
+
   return sendTransaction({
     walletClient,
     to: getAddress(to),
-    value: value,
+    valueCryptoPrecision,
     data,
     chainId,
   });
