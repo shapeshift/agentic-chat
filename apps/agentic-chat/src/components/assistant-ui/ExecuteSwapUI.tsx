@@ -15,11 +15,11 @@ const ExecuteSwapUI = makeAssistantToolUI<ExecuteSwapArgs, ExecuteSwapResult>({
   toolName: 'executeSwap',
   render: ({ status, result, isError, toolName }) => {
     switch (status.type) {
-    case 'running':
-    case 'requires-action':
-    case 'incomplete': {
+      case 'running':
+      case 'requires-action':
+      case 'incomplete': {
         return <TextShimmer>Executing swap...</TextShimmer>;
-    }
+      }
       case 'complete':
         if (isError) {
           return (
