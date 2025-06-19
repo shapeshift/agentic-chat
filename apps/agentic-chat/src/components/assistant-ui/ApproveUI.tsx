@@ -31,7 +31,7 @@ const ApproveUiContent: React.FC<ApproveUiContentProps> = ({
     case 'running':
     case 'requires-action':
     case 'incomplete': {
-      if (!(args.assetId && asset))
+      if (!(args.amountCryptoPrecision && asset))
         return <TextShimmer>Approving token</TextShimmer>;
 
       return (
