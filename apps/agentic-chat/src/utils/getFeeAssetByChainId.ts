@@ -1,8 +1,6 @@
 import {
   arbitrumAssetId,
   arbitrumChainId,
-  arbitrumNovaAssetId,
-  arbitrumNovaChainId,
   avalancheAssetId,
   avalancheChainId,
   baseAssetId,
