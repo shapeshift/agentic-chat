@@ -24,85 +24,11 @@ import {
 } from '@shapeshiftoss/caip';
 import type { AssetId } from '@shapeshiftoss/caip';
 import { Address, zeroAddress } from 'viem';
-import { AssetsStore } from '../stores/assets';
+import { AssetsStore } from '../../stores/assets';
 import z from 'zod';
-import { Asset } from '../types/asset';
-import { Quote } from '../types/quote';
-
-type RelayFetchQuoteParams = {
-  user: string;
-  originChainId: number;
-  destinationChainId: number;
-  originCurrency: string;
-  destinationCurrency: string;
-  tradeType: 'EXACT_INPUT' | 'EXACT_OUTPUT' | 'EXPECTED_OUTPUT';
-  recipient?: string;
-  amount?: string;
-  referrer?: string;
-  refundOnOrigin?: boolean;
-  refundTo?: string;
-  slippageTolerance?: string;
-  appFees?: any[]; // TODO(gomes)
-};
-
-type RelayToken = {
-  chainId: number;
-  address: string;
-  symbol: string;
-  name: string;
-  decimals: number;
-};
-
-type RelayCurrencyData = {
-  currency: RelayToken;
-  amount: string;
-  amountFormatted: string;
-  amountUsd: string;
-  minimumAmount: string;
-};
-
-type RelayFees = {
-  gas: RelayCurrencyData;
-  relayer: RelayCurrencyData;
-  app: RelayCurrencyData;
-};
-
-type QuoteDetails = {
-  currencyOut: RelayCurrencyData;
-  rate: string;
-  slippageTolerance: {
-    origin: {
-      percent: string;
-    };
-    destination: {
-      percent: string;
-    };
-  };
-  timeEstimate: number;
-};
-
-type RelayQuoteEvmItemData = {
-  to?: string;
-  data?: string;
-  value?: string;
-  gas?: string;
-};
-
-export type RelayQuoteItem = {
-  data?: RelayQuoteEvmItemData;
-};
-
-type RelayQuoteStep = {
-  id: string;
-  requestId: string;
-  items?: RelayQuoteItem[];
-};
-
-type RelayQuote = {
-  fees: RelayFees;
-  details: QuoteDetails;
-  steps: RelayQuoteStep[];
-};
+import { Asset } from '../../types/asset';
+import { Quote } from '../../types/quote';
+import { RelayFetchQuoteParams, RelayQuote } from './types';
 
 export const relayRateParams = z.object({
   sellAssetId: z.string().describe('The sell AssetID to fetch rate for'),
@@ -181,12 +107,6 @@ export const getRelayRate = async ({
     sellAsset.precision
   );
 
-  // const buyTokenAddress = getAddress(
-  // buyAsset.assetId === getFeeAssetByChainId(chainId)
-  // ? BEBOP_ETH_MARKER
-  // : fromAssetId(buyAsset.assetId).assetReference
-  // );
-
   const url = `https://api.relay.link/quote`;
   const params: RelayFetchQuoteParams = {
     user: fromAddress,
@@ -200,8 +120,8 @@ export const getRelayRate = async ({
     tradeType: 'EXACT_INPUT',
     amount: sellAmountCryptoBaseUnit,
     slippageTolerance: undefined,
-    // TODO(gomes): affiliate
-    appFees: undefined,
+    // TODO(gomes): affiliate, none for the time being for devving
+    appFees: [],
   };
 
   const { data } = await axios.post<RelayQuote>(url, params);
@@ -221,19 +141,22 @@ export const getRelayRate = async ({
   const swapStep = swapSteps[0];
   const txData = swapStep.items?.[0]?.data;
 
-  if (!(txData)) throw new Error('No transaction data found in Relay quote');
+  if (!txData) throw new Error('No transaction data found in Relay quote');
   const { to, data: calldata, value } = txData;
   if (!to) throw new Error('No "to" address found in Relay quote');
   if (!value) throw new Error('No "value" found in Relay quote');
   if (!calldata) throw new Error('No "data" found in Relay quote');
+
+  const id = uuid();
 
   const content = {
     sellAmountCryptoPrecision,
     buyAmountCryptoPrecision,
     sellAssetId,
     buyAssetId,
-    approvalTarget: maybeApprovalStep?.items?.[0]?.data?.to,
-    id: uuid(),
+    approvalTarget:
+      swapStep && maybeApprovalStep ? swapStep.items?.[0]?.data?.to : undefined,
+    id,
   };
 
   setQuote({
@@ -245,7 +168,7 @@ export const getRelayRate = async ({
       from: fromAddress,
       chainId: Number(networkId),
     },
-    id: uuid(),
+    id,
   });
 
   return content;
