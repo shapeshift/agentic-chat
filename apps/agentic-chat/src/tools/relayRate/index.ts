@@ -47,7 +47,7 @@ export type RelayRateResult = {
   approvalTarget: string | undefined;
 };
 
-export const isNativeEvmAsset = (assetId: AssetId): boolean => {
+const isNativeEvmAsset = (assetId: AssetId): boolean => {
   const { chainId } = fromAssetId(assetId);
   switch (chainId) {
     case ethChainId:
@@ -71,7 +71,7 @@ export const isNativeEvmAsset = (assetId: AssetId): boolean => {
   }
 };
 
-export const getRelayAssetAddress = (asset: Asset): Address => {
+const getRelayAssetAddress = (asset: Asset): Address => {
   if (isNativeEvmAsset(asset.assetId)) return zeroAddress;
   const { assetReference } = fromAssetId(asset.assetId);
 
