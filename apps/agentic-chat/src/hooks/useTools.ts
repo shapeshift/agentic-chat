@@ -1,8 +1,7 @@
 import { useAccount, useWalletClient } from 'wagmi';
 import { getAddress, Hex } from 'viem';
 import { useAssistantTool } from '@assistant-ui/react';
-import { z } from 'zod';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { searchTokens, searchTokensParams } from '../tools/searchTokens';
 import { getAllowance, getAllowanceParams } from '../tools/getAllowance';
 import { approve, approveParamsSchema } from '../tools/approve';
@@ -16,13 +15,17 @@ import { useAssetsStore } from '../stores/assets';
 import { usePortfolioStore } from '../stores/portfolio';
 import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain';
 import { executeSwap, executeSwapParams } from '../tools/executeSwap';
-import { getRelayRate, relayRateParams } from '../tools/relayRate';
+import { getRelayRate, relayRateParams } from '../tools/relayRate/index';
 import { Quote } from '../types/quote';
 
 const useTools = () => {
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
+
+  const setQuote = useCallback((quote: Quote) => {
+    setQuotes((prev) => ({ ...prev, [quote.id]: quote }));
+  }, []);
 
   const assetsStore = useAssetsStore();
   const portfolioStore = usePortfolioStore();
@@ -94,8 +97,7 @@ const useTools = () => {
         buyAssetId,
         sellAmountCryptoPrecision,
         fromAddress: getAddress(account?.address ?? ''),
-        setQuote: (quote) =>
-          setQuotes((prev) => ({ ...prev, [quote.id]: quote })),
+        setQuote,
         assetsStore,
       });
     },
@@ -111,8 +113,7 @@ const useTools = () => {
         buyAssetId,
         sellAmountCryptoPrecision,
         fromAddress: getAddress(account?.address ?? ''),
-        setQuote: (quote) =>
-          setQuotes((prev) => ({ ...prev, [quote.id]: quote })),
+        setQuote,
         assetsStore,
       });
     },
