@@ -16,6 +16,7 @@ import GetAllowanceUI from '../../components/assistant-ui/GetAllowanceUI';
 import SearchTokensUI from '../../components/assistant-ui/SearchTokensUI';
 import ExecuteSwapUI from '../../components/assistant-ui/ExecuteSwapUI';
 import SendTransactionUI from '../../components/assistant-ui/SendTransactionUI';
+import RelayQuoteUI from '@/components/assistant-ui/RelayQuoteUI';
 
 const isSidebarLeftEnabled =
   import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true';
@@ -39,6 +40,7 @@ export const Dashboard = () => {
         </header>
         <div className="overflow-hidden h-full">
           <BebopQuoteUI />
+          <RelayQuoteUI />
           <SwitchEvmChainUI />
           <GetAccountUI />
           <ApproveUI />

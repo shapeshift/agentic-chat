@@ -46,9 +46,10 @@ export const shapeshiftAgent = new Agent({
         You do NOT hallucinate assets.
 
         1. Quote are fetched using the bebopRate and relayRate tools running in parallel.
-        2. You check for allowance using the allowance() tool after getting a quote *for tokens sell assets only, not native assets*
-        3. If they don't have enough allowance, you approve it with the approve() tool.
-        4. After approval (or if allowance was sufficient/not required), you execute the swap using the executeSwap tool.
+        2. The user either chooses the quote they want to execute, or you choose the best one for them based on best output amount
+        3. You check for allowance for this specific swapper using the allowance() tool (using the allowanceTarget) from the relevant quote after getting a quote. Note, allowance/approve step is for tokens only, not native assets.
+        4. If they don't have enough allowance, you approve it with the approve() tool.
+        5. After approval (or if allowance was sufficient/not required), you execute the swap using the executeSwap tool.
 
         - NOTE: native assets use the following (either as fromAsset or toAsset):
           {name: 'ETH', symbol: 'ETH', address: '', decimals: 18}

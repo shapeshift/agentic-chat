@@ -123,7 +123,6 @@ const useTools = () => {
     description: 'Executes the swap previously requested using bebopRate tool.',
     parameters: executeSwapParams,
     execute: async ({ quoteId }) => {
-      console.log({quotes, quoteId})
       const quote = quotes[quoteId];
 
       if (!quote) return;
