@@ -15,6 +15,7 @@ import { Address, getAddress } from 'viem';
 import { AssetsStore } from '../stores/assets';
 import z from 'zod';
 import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId';
+import { Quote } from '../types/quote';
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
@@ -40,11 +41,11 @@ export const getBebopRate = async ({
   buyAssetId,
   sellAmountCryptoPrecision,
   fromAddress,
-  setBebopQuote,
+  setQuote,
   assetsStore,
 }: BebopRateParams & {
   fromAddress: Address;
-  setBebopQuote: (bebopQuote: BebopQuote) => void;
+  setQuote: (quote: Quote | null) => void;
   assetsStore: AssetsStore;
 }): Promise<BebopRateResult> => {
   const sellAsset = assetsStore.assetsById[sellAssetId];
@@ -121,8 +122,6 @@ export const getBebopRate = async ({
 
   const quote = data.routes[0].quote;
 
-  setBebopQuote(quote);
-
   const buyAmountCryptoBaseUnit =
     quote.buyTokens[buyTokenAddress].amount.toString();
   const buyAmountCryptoPrecision = fromBaseUnit(
@@ -137,6 +136,8 @@ export const getBebopRate = async ({
     buyAssetId,
     approvalTarget: quote.approvalTarget,
   };
+
+  setQuote({ ...content, tx: quote.tx });
 
   return content;
 };

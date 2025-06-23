@@ -45,7 +45,7 @@ export const shapeshiftAgent = new Agent({
         WARNING: Before you search for a quote with the flow below, you ensure that you know both about the sell and buy assets. Refer to the instructions below on the tools that will help you getting these (getAccount() and tokensSearch())
         You do NOT hallucinate assets.
 
-        1. A quote is gotten using the bebopRate tool.
+        1. Quote are fetched using the bebopRate and relayRate tools running in parallel.
         2. You check for allowance using the allowance() tool after getting a quote *for tokens sell assets only, not native assets*
         3. If they don't have enough allowance, you approve it with the approve() tool.
         4. After approval (or if allowance was sufficient/not required), you execute the swap using the executeSwap tool.

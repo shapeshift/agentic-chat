@@ -1,0 +1,233 @@
+import axios from 'axios';
+import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
+import {
+  arbitrumAssetId,
+  arbitrumChainId,
+  avalancheAssetId,
+  avalancheChainId,
+  baseAssetId,
+  baseChainId,
+  bscAssetId,
+  bscChainId,
+  ethAssetId,
+  ethChainId,
+  fromAssetId,
+  gnosisAssetId,
+  gnosisChainId,
+  optimismAssetId,
+  isAssetReference,
+  optimismChainId,
+  polygonAssetId,
+  polygonChainId,
+  fromChainId,
+} from '@shapeshiftoss/caip';
+import type { AssetId } from '@shapeshiftoss/caip';
+import { Address, zeroAddress } from 'viem';
+import { AssetsStore } from '../stores/assets';
+import z from 'zod';
+import { Asset } from '../types/asset';
+
+type RelayFetchQuoteParams = {
+  user: string;
+  originChainId: number;
+  destinationChainId: number;
+  originCurrency: string;
+  destinationCurrency: string;
+  tradeType: 'EXACT_INPUT' | 'EXACT_OUTPUT' | 'EXPECTED_OUTPUT';
+  recipient?: string;
+  amount?: string;
+  referrer?: string;
+  refundOnOrigin?: boolean;
+  refundTo?: string;
+  slippageTolerance?: string;
+  appFees?: any[]; // TODO(gomes)
+};
+
+type RelayToken = {
+  chainId: number;
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+};
+
+type RelayCurrencyData = {
+  currency: RelayToken;
+  amount: string;
+  amountFormatted: string;
+  amountUsd: string;
+  minimumAmount: string;
+};
+
+type RelayFees = {
+  gas: RelayCurrencyData;
+  relayer: RelayCurrencyData;
+  app: RelayCurrencyData;
+};
+
+type QuoteDetails = {
+  currencyOut: RelayCurrencyData;
+  rate: string;
+  slippageTolerance: {
+    origin: {
+      percent: string;
+    };
+    destination: {
+      percent: string;
+    };
+  };
+  timeEstimate: number;
+};
+
+type RelayQuoteEvmItemData = {
+  to?: string;
+  data?: string;
+  value?: string;
+  gas?: string;
+};
+
+export type RelayQuoteItem = {
+  data?: RelayQuoteEvmItemData;
+};
+
+type RelayQuoteStep = {
+  id: string;
+  requestId: string;
+  items?: RelayQuoteItem[];
+};
+
+type RelayQuote = {
+  fees: RelayFees;
+  details: QuoteDetails;
+  steps: RelayQuoteStep[];
+};
+
+export const relayRateParams = z.object({
+  sellAssetId: z.string().describe('The sell AssetID to fetch rate for'),
+  buyAssetId: z.string().describe('The buy AssetID to fetch rate for'),
+  sellAmountCryptoPrecision: z
+    .string()
+    .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
+});
+
+export type RelayRateParams = z.infer<typeof relayRateParams>;
+export type RelayRateResult = {
+  sellAmountCryptoPrecision: string;
+  buyAmountCryptoPrecision: string;
+  sellAssetId: AssetId;
+  buyAssetId: AssetId;
+  approvalTarget: string | undefined;
+};
+
+export const isNativeEvmAsset = (assetId: AssetId): boolean => {
+  const { chainId } = fromAssetId(assetId);
+  switch (chainId) {
+    case ethChainId:
+      return assetId === ethAssetId;
+    case avalancheChainId:
+      return assetId === avalancheAssetId;
+    case optimismChainId:
+      return assetId === optimismAssetId;
+    case bscChainId:
+      return assetId === bscAssetId;
+    case polygonChainId:
+      return assetId === polygonAssetId;
+    case gnosisChainId:
+      return assetId === gnosisAssetId;
+    case arbitrumChainId:
+      return assetId === arbitrumAssetId;
+    case baseChainId:
+      return assetId === baseAssetId;
+    default:
+      return false;
+  }
+};
+
+export const getRelayAssetAddress = (asset: Asset): Address => {
+  if (isNativeEvmAsset(asset.assetId)) return zeroAddress;
+  const { assetReference } = fromAssetId(asset.assetId);
+
+  return isAssetReference(assetReference)
+    ? zeroAddress
+    : (assetReference as Address);
+};
+
+export const getRelayRate = async ({
+  sellAssetId,
+  buyAssetId,
+  sellAmountCryptoPrecision,
+  fromAddress,
+  // setBebopQuote,
+  assetsStore,
+}: RelayRateParams & {
+  fromAddress: Address;
+  // setBebopQuote: (bebopQuote: BebopQuote) => void;
+  assetsStore: AssetsStore;
+}): Promise<RelayRateResult> => {
+  const sellAsset = assetsStore.assetsById[sellAssetId];
+  const buyAsset = assetsStore.assetsById[buyAssetId];
+
+  if (!(sellAsset && buyAsset)) {
+    throw new Error('AssetIds not found');
+  }
+
+  const chainId = fromAssetId(sellAssetId).chainId;
+  const networkId = fromChainId(chainId).chainReference;
+
+  const sellAmountCryptoBaseUnit = toBaseUnit(
+    sellAmountCryptoPrecision,
+    sellAsset.precision
+  );
+
+  // const buyTokenAddress = getAddress(
+  // buyAsset.assetId === getFeeAssetByChainId(chainId)
+  // ? BEBOP_ETH_MARKER
+  // : fromAssetId(buyAsset.assetId).assetReference
+  // );
+
+  const url = `https://api.relay.link/quote`;
+  const params: RelayFetchQuoteParams = {
+    user: fromAddress,
+    recipient: fromAddress,
+    refundTo: fromAddress,
+    refundOnOrigin: true,
+    originChainId: Number(networkId),
+    originCurrency: getRelayAssetAddress(sellAsset),
+    destinationCurrency: getRelayAssetAddress(buyAsset),
+    destinationChainId: Number(networkId),
+    tradeType: 'EXACT_INPUT',
+    amount: sellAmountCryptoBaseUnit,
+    slippageTolerance: undefined,
+    // TODO(gomes): affiliate
+    appFees: undefined,
+  };
+
+  const { data } = await axios.post<RelayQuote>(url, params);
+
+  const buyAmountCryptoBaseUnit = data.details.currencyOut.amount;
+  const buyAmountCryptoPrecision = fromBaseUnit(
+    buyAmountCryptoBaseUnit,
+    buyAsset.precision
+  );
+
+  const maybeApprovalStep = data.steps.find((step) => step.id === 'approve');
+  const swapSteps = data.steps.filter((step) => step.id !== 'approve');
+
+  if (swapSteps.length > 1)
+    throw new Error('Multi-hop not supported for Relay');
+
+  const swapStep = swapSteps[0];
+  const txData = swapStep.items?.[0]?.data;
+
+  console.log({ txData });
+
+  const content = {
+    sellAmountCryptoPrecision,
+    buyAmountCryptoPrecision,
+    sellAssetId,
+    buyAssetId,
+    approvalTarget: maybeApprovalStep?.items?.[0]?.data?.to,
+  };
+
+  return content;
+};

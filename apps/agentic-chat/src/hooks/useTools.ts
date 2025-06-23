@@ -1,6 +1,5 @@
 import { useAccount, useWalletClient } from 'wagmi';
 import { getAddress, Hex } from 'viem';
-import { BebopQuote } from '@agentic-chat/types';
 import { useAssistantTool } from '@assistant-ui/react';
 import { z } from 'zod';
 import { useState } from 'react';
@@ -17,11 +16,13 @@ import { useAssetsStore } from '../stores/assets';
 import { usePortfolioStore } from '../stores/portfolio';
 import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain';
 import { executeSwap } from '../tools/executeSwap';
+import { getRelayRate } from '../tools/relayRate';
+import { Quote } from '../types/quote';
 
 const useTools = () => {
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
-  const [bebopQuote, setBebopQuote] = useState<BebopQuote | null>(null);
+  const [quote, setQuote] = useState<Quote | null>(null);
 
   const assetsStore = useAssetsStore();
   const portfolioStore = usePortfolioStore();
@@ -93,7 +94,23 @@ const useTools = () => {
         buyAssetId,
         sellAmountCryptoPrecision,
         fromAddress: getAddress(account?.address ?? ''),
-        setBebopQuote,
+        setQuote,
+        assetsStore,
+      });
+    },
+  });
+
+  useAssistantTool({
+    toolName: 'relayRate',
+    description: 'Fetches a swap rate from Relay and displays it to the user',
+    parameters: bebopRateParams,
+    execute: async ({ sellAssetId, buyAssetId, sellAmountCryptoPrecision }) => {
+      return getRelayRate({
+        sellAssetId,
+        buyAssetId,
+        sellAmountCryptoPrecision,
+        fromAddress: getAddress(account?.address ?? ''),
+        // setBebopQuote,
         assetsStore,
       });
     },
@@ -104,9 +121,11 @@ const useTools = () => {
     description: 'Executes the swap previously requested using bebopRate tool.',
     parameters: z.object({}),
     execute: async () => {
+      if (!quote) return
+
       return executeSwap({
         walletClient,
-        bebopQuote,
+        ...quote,
       });
     },
   });
