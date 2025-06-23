@@ -12,7 +12,7 @@ import {
   polygonChainId,
 } from '@shapeshiftoss/caip';
 import type { AssetId, ChainId } from '@shapeshiftoss/caip';
-import { Address, getAddress } from 'viem';
+import { Address, getAddress, Hex, hexToBigInt, hexToString } from 'viem';
 import { AssetsStore } from '../stores/assets';
 import z from 'zod';
 import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId';
@@ -139,7 +139,7 @@ export const getBebopRate = async ({
   };
 
   // Mutate value to be a BN string instead of hexlified string
-  quote.tx.value = quote.tx.value.toString();
+  quote.tx.value = hexToBigInt(quote.tx.value as Hex).toString();
 
   setQuote({ ...content, tx: quote.tx, id: uuid() });
 
