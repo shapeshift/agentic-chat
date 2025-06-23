@@ -40,7 +40,7 @@ export type BebopTxData = {
   chainId: number;
   from: Address;
   to: Address;
-  value: Hex;
+  value: string;
   data: Hex;
   gas?: number | null;
   gasPrice?: number | null;

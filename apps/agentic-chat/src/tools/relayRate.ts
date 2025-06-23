@@ -1,3 +1,4 @@
+import { v4 as uuid } from 'uuid';
 import axios from 'axios';
 import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 import {
@@ -26,6 +27,7 @@ import { Address, zeroAddress } from 'viem';
 import { AssetsStore } from '../stores/assets';
 import z from 'zod';
 import { Asset } from '../types/asset';
+import { Quote } from '../types/quote';
 
 type RelayFetchQuoteParams = {
   user: string;
@@ -157,11 +159,11 @@ export const getRelayRate = async ({
   buyAssetId,
   sellAmountCryptoPrecision,
   fromAddress,
-  // setBebopQuote,
+  setQuote,
   assetsStore,
 }: RelayRateParams & {
   fromAddress: Address;
-  // setBebopQuote: (bebopQuote: BebopQuote) => void;
+  setQuote: (quote: Quote) => void;
   assetsStore: AssetsStore;
 }): Promise<RelayRateResult> => {
   const sellAsset = assetsStore.assetsById[sellAssetId];
@@ -219,7 +221,11 @@ export const getRelayRate = async ({
   const swapStep = swapSteps[0];
   const txData = swapStep.items?.[0]?.data;
 
-  console.log({ txData });
+  if (!(txData)) throw new Error('No transaction data found in Relay quote');
+  const { to, data: calldata, value } = txData;
+  if (!to) throw new Error('No "to" address found in Relay quote');
+  if (!value) throw new Error('No "value" found in Relay quote');
+  if (!calldata) throw new Error('No "data" found in Relay quote');
 
   const content = {
     sellAmountCryptoPrecision,
@@ -227,7 +233,20 @@ export const getRelayRate = async ({
     sellAssetId,
     buyAssetId,
     approvalTarget: maybeApprovalStep?.items?.[0]?.data?.to,
+    id: uuid(),
   };
+
+  setQuote({
+    ...content,
+    tx: {
+      to,
+      value,
+      data: calldata,
+      from: fromAddress,
+      chainId: Number(networkId),
+    },
+    id: uuid(),
+  });
 
   return content;
 };

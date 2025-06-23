@@ -1,21 +1,21 @@
-import { AssetId } from "@shapeshiftoss/caip"
-import { Hex } from "viem";
+import { AssetId } from '@shapeshiftoss/caip';
 
 export type TxData = {
-  from: string
-  to: string
+  from: string;
+  to: string;
   chainId: number;
-  value: Hex
-  data: Hex
+  value: string;
+  data: string;
   gas?: number | null;
   gasPrice?: number | null;
-}
+};
 
 export type Quote = {
-    sellAmountCryptoPrecision: string
-    buyAmountCryptoPrecision: string
-    sellAssetId: AssetId
-    buyAssetId: AssetId
-    approvalTarget: string | undefined,
-    tx: TxData
-}
+  sellAmountCryptoPrecision: string;
+  buyAmountCryptoPrecision: string;
+  sellAssetId: AssetId;
+  buyAssetId: AssetId;
+  approvalTarget: string | undefined;
+  tx: TxData;
+  id: string;
+};

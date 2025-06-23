@@ -1,4 +1,5 @@
-import { BebopQuote, BebopResponse } from '@agentic-chat/types';
+import { v4 as uuid } from 'uuid';
+import { BebopResponse } from '@agentic-chat/types';
 import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 import {
   arbitrumChainId,
@@ -45,7 +46,7 @@ export const getBebopRate = async ({
   assetsStore,
 }: BebopRateParams & {
   fromAddress: Address;
-  setQuote: (quote: Quote | null) => void;
+  setQuote: (quote: Quote) => void;
   assetsStore: AssetsStore;
 }): Promise<BebopRateResult> => {
   const sellAsset = assetsStore.assetsById[sellAssetId];
@@ -137,7 +138,10 @@ export const getBebopRate = async ({
     approvalTarget: quote.approvalTarget,
   };
 
-  setQuote({ ...content, tx: quote.tx });
+  // Mutate value to be a BN string instead of hexlified string
+  quote.tx.value = quote.tx.value.toString();
+
+  setQuote({ ...content, tx: quote.tx, id: uuid() });
 
   return content;
 };

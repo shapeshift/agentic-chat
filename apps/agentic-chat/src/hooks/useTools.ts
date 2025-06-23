@@ -15,14 +15,14 @@ import { bebopRateParams, getBebopRate } from '../tools/bebopRate';
 import { useAssetsStore } from '../stores/assets';
 import { usePortfolioStore } from '../stores/portfolio';
 import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain';
-import { executeSwap } from '../tools/executeSwap';
+import { executeSwap, executeSwapParams } from '../tools/executeSwap';
 import { getRelayRate, relayRateParams } from '../tools/relayRate';
 import { Quote } from '../types/quote';
 
 const useTools = () => {
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
-  const [quote, setQuote] = useState<Quote | null>(null);
+  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
 
   const assetsStore = useAssetsStore();
   const portfolioStore = usePortfolioStore();
@@ -94,7 +94,8 @@ const useTools = () => {
         buyAssetId,
         sellAmountCryptoPrecision,
         fromAddress: getAddress(account?.address ?? ''),
-        setQuote,
+        setQuote: (quote) =>
+          setQuotes((prev) => ({ ...prev, [quote.id]: quote })),
         assetsStore,
       });
     },
@@ -110,7 +111,8 @@ const useTools = () => {
         buyAssetId,
         sellAmountCryptoPrecision,
         fromAddress: getAddress(account?.address ?? ''),
-        // setBebopQuote,
+        setQuote: (quote) =>
+          setQuotes((prev) => ({ ...prev, [quote.id]: quote })),
         assetsStore,
       });
     },
@@ -119,9 +121,12 @@ const useTools = () => {
   useAssistantTool({
     toolName: 'executeSwap',
     description: 'Executes the swap previously requested using bebopRate tool.',
-    parameters: z.object({}),
-    execute: async () => {
-      if (!quote) return
+    parameters: executeSwapParams,
+    execute: async ({ quoteId }) => {
+      console.log({quotes, quoteId})
+      const quote = quotes[quoteId];
+
+      if (!quote) return;
 
       return executeSwap({
         walletClient,

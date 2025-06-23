@@ -5,14 +5,17 @@ import { WalletClient } from 'viem';
 import z from 'zod';
 import { Quote } from '../types/quote';
 
-export const bebopQuoteParams = z.object({});
-export type BebopQuoteParams = z.infer<typeof bebopQuoteParams>;
+export const executeSwapParams = z.object({
+  quoteId: z.string().describe('The quote ID to execute'),
+});
+
+export type ExecuteSwapParams = z.infer<typeof executeSwapParams>;
 export type ExecuteSwapResult = Hash;
 
 export const executeSwap = async ({
   walletClient,
   tx,
-}: BebopQuoteParams & {
+}: {
   walletClient: WalletClient | undefined;
 } & Quote): Promise<ExecuteSwapResult> => {
   const { chainId, to, value, data } = tx;
