@@ -16,7 +16,7 @@ import { useAssetsStore } from '../stores/assets';
 import { usePortfolioStore } from '../stores/portfolio';
 import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain';
 import { executeSwap } from '../tools/executeSwap';
-import { getRelayRate } from '../tools/relayRate';
+import { getRelayRate, relayRateParams } from '../tools/relayRate';
 import { Quote } from '../types/quote';
 
 const useTools = () => {
@@ -103,7 +103,7 @@ const useTools = () => {
   useAssistantTool({
     toolName: 'relayRate',
     description: 'Fetches a swap rate from Relay and displays it to the user',
-    parameters: bebopRateParams,
+    parameters: relayRateParams,
     execute: async ({ sellAssetId, buyAssetId, sellAmountCryptoPrecision }) => {
       return getRelayRate({
         sellAssetId,
