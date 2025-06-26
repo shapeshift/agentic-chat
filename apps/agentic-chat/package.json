@@ -5,14 +5,12 @@
   "type": "module",
   "scripts": {
     "clean": "rm -rf dist node_modules",
-    "build": "yarn run -T vite build",
-    "dev": "yarn run -T vite",
-    "preview": "yarn build && yarn run -T vite preview",
+    "build": "yarn vite build",
+    "dev": "yarn vite",
+    "preview": "yarn build && yarn vite preview",
     "type-check": "yarn run -T tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/provider-utils": "^2.2.8",
-    "@ai-sdk/ui-utils": "^1.2.11",
     "@assistant-ui/react": "^0.10.24",
     "@assistant-ui/react-ai-sdk": "^0.10.14",
     "@assistant-ui/react-markdown": "^0.10.4",
@@ -30,12 +28,10 @@
     "@reown/appkit-adapter-wagmi": "^1.0.0",
     "@tanstack/react-query": "^5.75.5",
     "@wagmi/core": "^2.17.2",
-    "autoprefixer": "10.4.13",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.488.0",
-    "postcss": "*",
     "qs": "^6.14.0",
     "react": "19.1.0",
     "react-day-picker": "9.7.0",
@@ -48,6 +44,8 @@
     "zod": "*"
   },
   "devDependencies": {
+    "@ai-sdk/provider-utils": "^2.2.8",
+    "@ai-sdk/ui-utils": "^1.2.11",
     "@tailwindcss/postcss": "^4.1.4",
     "@tailwindcss/vite": "^4.1.11",
     "@testing-library/dom": "^10.4.0",
@@ -55,8 +53,11 @@
     "@types/qs": "^6",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
+    "@vitejs/plugin-react": "^4.5.2",
+    "autoprefixer": "10.4.13",
+    "postcss": "*",
     "tailwindcss": "^4.1.4",
     "tw-animate-css": "^1.2.5",
-    "vite": "*"
+    "vite": "^6.3.5"
   }
 }
