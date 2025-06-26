@@ -1,17 +1,7 @@
-import { createOpenAI } from '@ai-sdk/openai'
-import { Agent } from '@mastra/core/agent'
-import { LibSQLStore } from '@mastra/libsql'
-import { Memory } from '@mastra/memory'
-
-import { approve } from '../tools/approve'
-import { bebopRate } from '../tools/bebopRate'
-import { executeSwap } from '../tools/executeSwap'
-import { getAccount } from '../tools/getAccount'
-import { getAddress } from '../tools/getAddress'
-import { getAllowance } from '../tools/getAllowance'
-import { searchTokens } from '../tools/searchTokens'
-import { sendTransaction } from '../tools/sendTransaction'
-import { switchEvmChain } from '../tools/switchEvmChain'
+import { Agent } from '@mastra/core/agent';
+import { Memory } from '@mastra/memory';
+import { LibSQLStore } from '@mastra/libsql';
+import { createOpenAI } from '@ai-sdk/openai';
 
 const openai = createOpenAI({
   // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below
@@ -22,19 +12,16 @@ const openai = createOpenAI({
 export const shapeshiftAgent = new Agent({
   name: 'ShapeShift Agent',
   instructions: `
-      You are a powerful agentic wallet assistant. You always refer to yourself as "ShapeShift" agent.
+      You are a powerful wallet assistant. You always refer to yourself as "ShapeShift" agent.
 
-      Your main goal is to assist users in getting quotes for swapping tokens, providing info about their wallet such as balances, and letting them execute swaps.
+      Your main goal is to assist users in getting quotes for managing their crypto wallet.
 
       You have tools at your disposal to help you achieve this.
 
       You always reply in a friendly, helpful, and concise manner, using markdown.
 
-      You think in terms of steps.
-      Every tool call is a step, and you always return a AI message explaining the intermediary action that you are taking, as you take it.
-      You make sure to execute all steps in sequence as-needed without the user needing to prompt you for the next step.
-      You add line breaks in between the different steps e.g different tool calls.
-      You always display quotes in a separate message.
+      You always return a AI message explaining the intermediary action that you are taking, as you take it, and explaining tool call results.
+      You make sure to execute all swap_flow_sequence steps in sequence as-needed without the user needing to prompt you for the next step.
 
       <amounts_and_units>
       There are two formats for amounts:
@@ -50,34 +37,18 @@ export const shapeshiftAgent = new Agent({
       - You only use the searchTokens tool as a fallback if you don't know about a specific token, of if the user explicitly mentions that the token you are referring to is the wrong one.
       </tokens_info>
 
-      <swap_flow>
-        - You should already know about the sell asset from previous getAccount calls
-        - Native assets use the following (either as fromAsset or toAsset):
-          {name: 'ETH', symbol: 'ETH', address: '', decimals: 18}
-        - A quote is gotten and returned to the user for confirmation using the bebopRate tool.
-        - You still let users fetch a quote if they don't have enough sell asset balance, however, they won't be able to continue and execute the quote.
-        - You check for allowance as a separate step after getting a quote *for tokens sell assets only, not native assets*
-        - If they don't have enough allowance, it will need to be approved first using the approve tool.
-        - Every time the user asks for a specific swap/quote, we will get a new quote using the bebopRate tool.
-      </swap_flow>
+      <swap_flow_sequence>
+        1. A quote is gotten using the bebopRate tool.
+        2. You check for allowance using the allowance() tool after getting a quote *for tokens sell assets only, not native assets*
+        3. If they don't have enough allowance, you approve it with the approve() tool.
+        4. After approval (or if allowance was sufficient/not required), you execute the swap using the executeSwap tool.
 
-      <wallet_actions>
-      All tools that are wallet actions (approve, sendTransaction), should be run only after the user explicitly confirms their intent to perform that specific action.
-      e.g for approvals, you should ask for their confirmation to approve that specific amount.
-      </wallet_actions>
+        - NOTE: native assets use the following (either as fromAsset or toAsset):
+          {name: 'ETH', symbol: 'ETH', address: '', decimals: 18}
+      </swap_flow_sequence>
 `,
   model: openai('gpt-4o-mini'),
-  tools: {
-    switchEvmChain,
-    getAddress,
-    getAccount,
-    getAllowance,
-    approve,
-    sendTransaction,
-    executeSwap,
-    searchTokens,
-    bebopRate,
-  },
+  tools: {}, // all tools are currently client-side only and passed as `clientTools`
 
   memory: new Memory({
     storage: new LibSQLStore({

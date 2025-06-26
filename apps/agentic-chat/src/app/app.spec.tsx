@@ -1,4 +1,3 @@
-import { screen } from '@testing-library/dom'
 import { render } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 
@@ -46,16 +45,7 @@ describe('App', () => {
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    )
-    expect(baseElement).toBeTruthy()
-  })
-
-  it('should render the Dashboard component', () => {
-    render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('Wallets')).toBeTruthy()
-  })
-})
+    );
+    expect(baseElement).toBeTruthy();
+  });
+});

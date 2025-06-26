@@ -1,32 +1,33 @@
-import type { ToolCall } from '@ai-sdk/provider-utils'
-import { fromBaseUnit } from '@shapeshiftoss/utils'
-import axios from 'axios'
-import type { UseAccountReturnType } from 'wagmi'
+import axios from 'axios';
+import { Account } from '../types/account';
+import { fromBaseUnit } from '@shapeshiftoss/utils';
+import { Address } from 'viem';
 
-import type { Account } from '../types/account'
-
-export const getAccount = async (account: UseAccountReturnType, toolCall: ToolCall<string, unknown>) => {
-  if (!account.address) {
-    throw new Error('No account connected')
+export const getAccount = async (
+  address: Address | undefined,
+  network: string
+) => {
+  if (!address) {
+    throw new Error('No account connected');
   }
 
-  const typedToolCall = toolCall as ToolCall<'getAccount', { network: string }>
+  const baseUrl = import.meta.env[
+    `VITE_UNCHAINED_${network.toUpperCase()}_HTTP_URL`
+  ];
 
-  const env = import.meta?.env ? import.meta.env : process.env
-
-  const baseUrl = env[`VITE_UNCHAINED_${typedToolCall.args.network.toUpperCase()}_HTTP_URL`]
-
-  const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${account.address}`)
+  const { data } = await axios.get<Account>(
+    `${baseUrl}/api/v1/account/${address}`
+  );
 
   const nativeBalance = fromBaseUnit(
     data.balance,
     18 // assume 18 decimals for all native EVM tokens
-  )
+  );
 
-  const tokensBalances = data.tokens.map(token => ({
+  const tokensBalances = data.tokens.map((token) => ({
     ...token,
     balance: fromBaseUnit(token.balance, token.decimals),
-  }))
+  }));
 
-  return { nativeBalance, tokensBalances }
-}
+  return { nativeBalance, tokensBalances };
+};
