@@ -13,7 +13,7 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar'
 
 type NavUserProps = {
-  user: {
+  user?: {
     name: string
     email: string
     avatar: string
@@ -22,6 +22,8 @@ type NavUserProps = {
 
 export const NavUser: React.FC<NavUserProps> = ({ user }) => {
   const { isMobile } = useSidebar()
+
+  if (!user) return null
 
   return (
     <SidebarMenu>

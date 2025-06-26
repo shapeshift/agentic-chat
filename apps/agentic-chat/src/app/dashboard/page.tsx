@@ -1,6 +1,12 @@
+import ApproveUI from '../../components/assistant-ui/ApproveUI'
 import BebopQuoteUI from '../../components/assistant-ui/BebopQuoteUI'
+import ExecuteSwapUI from '../../components/assistant-ui/ExecuteSwapUI'
+import GetAccountUI from '../../components/assistant-ui/GetAccountUI'
+import GetAllowanceUI from '../../components/assistant-ui/GetAllowanceUI'
+import SearchTokensUI from '../../components/assistant-ui/SearchTokensUI'
+import SendTransactionUI from '../../components/assistant-ui/SendTransactionUI'
+import SwitchEvmChainUI from '../../components/assistant-ui/SwitchEvmChainUI'
 import { Thread } from '../../components/assistant-ui/thread'
-import { ThreadList } from '../../components/assistant-ui/thread-list'
 import { ConnectWallet } from '../../components/connect-wallet'
 import { SidebarLeft } from '../../components/sidebar-left'
 import { SidebarRight } from '../../components/sidebar-right'
@@ -16,16 +22,22 @@ export const Dashboard = () => {
   return (
     <SidebarProvider>
       {isSidebarLeftEnabled && <SidebarLeft />}
-      <SidebarInset>
-        <header className="sticky top-0 flex flex-col gap-2 bg-background z-10 px-3 pt-3">
-          <div>
+      <SidebarInset className="h-screen">
+        <header className="top-0 flex gap-2 bg-background z-10 px-2 pt-2 items-center">
+          <div className="flex items-center gap-2">{isSidebarLeftEnabled && <SidebarTrigger />}</div>
+          <div className="ml-auto">
             <ConnectWallet />
           </div>
-          <div className="flex items-center gap-2">{isSidebarLeftEnabled && <SidebarTrigger />}</div>
         </header>
-        <div className="grid h-full grid-cols-[200px_1fr]">
+        <div className="overflow-hidden h-full">
           <BebopQuoteUI />
-          <ThreadList />
+          <SwitchEvmChainUI />
+          <GetAccountUI />
+          <ApproveUI />
+          <GetAllowanceUI />
+          <SearchTokensUI />
+          <ExecuteSwapUI />
+          <SendTransactionUI />
           <Thread />
         </div>
       </SidebarInset>
