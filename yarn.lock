@@ -105,36 +105,36 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@assistant-ui/react-ai-sdk@npm:^0.10.13":
-  version: 0.10.13
-  resolution: "@assistant-ui/react-ai-sdk@npm:0.10.13"
+"@assistant-ui/react-ai-sdk@npm:^0.10.14":
+  version: 0.10.14
+  resolution: "@assistant-ui/react-ai-sdk@npm:0.10.14"
   dependencies:
     "@ai-sdk/react": "npm:*"
     "@ai-sdk/ui-utils": "npm:*"
-    "@assistant-ui/react-edge": "npm:0.2.11"
+    "@assistant-ui/react-edge": "npm:0.2.12"
     "@radix-ui/react-use-callback-ref": "npm:^1.1.1"
     "@types/json-schema": "npm:^7.0.15"
-    zod: "npm:^3.25.28"
+    zod: "npm:^3.25.64"
     zustand: "npm:^5.0.5"
   peerDependencies:
-    "@assistant-ui/react": ^0.10.18
+    "@assistant-ui/react": ^0.10.24
     "@types/react": "*"
     react: ^18 || ^19 || ^19.0.0-rc
   peerDependenciesMeta:
     "@types/react":
       optional: true
-  checksum: 10/fa86a99dbb9f6001b8bcf70c7b9f444fcecc5b52920d59349d1424736cfd4b9ea428ab1542a7e9620d5a495dec2cafd74e3ad954c5658d9cfb83bd5d490d62e0
+  checksum: 10/6a2ed519e4a3254c72cce018a73496760202ce69ab753c949862dc7734bcf4cba1fcec98884a6a498380f24d196624b455690a046b7b8c6b8aac04b4117bfc69
   languageName: node
   linkType: hard
 
-"@assistant-ui/react-edge@npm:0.2.11":
-  version: 0.2.11
-  resolution: "@assistant-ui/react-edge@npm:0.2.11"
+"@assistant-ui/react-edge@npm:0.2.12":
+  version: 0.2.12
+  resolution: "@assistant-ui/react-edge@npm:0.2.12"
   dependencies:
     "@ai-sdk/provider": "npm:^1.1.3"
-    assistant-stream: "npm:^0.2.13"
+    assistant-stream: "npm:^0.2.17"
     json-schema: "npm:^0.4.0"
-    zod: "npm:^3.25.28"
+    zod: "npm:^3.25.64"
     zod-to-json-schema: "npm:^3.24.5"
   peerDependencies:
     "@assistant-ui/react": "*"
@@ -147,7 +147,7 @@ __metadata:
       optional: true
     "@types/react-dom":
       optional: true
-  checksum: 10/73ace85429de4766b870a1149687a57a4c9683521f299a24a31fa77075d3d1609fd7cfbcea298cb81e0b654fafb06d905860a345e8266c9f0e8b2ec43278ef6f
+  checksum: 10/dcf11729b6bef318194c40f3a032b365233b1e66cb74e04e93fe4b971cfe49bc20a612ee333dd0190ce598f3257702d4bd52faf054bad0a113926f8461fa18a8
   languageName: node
   linkType: hard
 
@@ -4558,7 +4558,7 @@ __metadata:
     "@ai-sdk/provider-utils": "npm:^2.2.8"
     "@ai-sdk/ui-utils": "npm:^1.2.11"
     "@assistant-ui/react": "npm:^0.10.24"
-    "@assistant-ui/react-ai-sdk": "npm:^0.10.13"
+    "@assistant-ui/react-ai-sdk": "npm:^0.10.14"
     "@assistant-ui/react-markdown": "npm:^0.10.4"
     "@radix-ui/react-avatar": "npm:^1.1.4"
     "@radix-ui/react-collapsible": "npm:^1.1.4"
@@ -4646,7 +4646,6 @@ __metadata:
     viem: "npm:^2.31.0"
     vite: "npm:^6.3.5"
     vitest: "npm:^3.2.3"
-    zod: "npm:^3.25.63"
   languageName: unknown
   linkType: soft
 
@@ -7170,17 +7169,6 @@ __metadata:
   dependencies:
     assistant-stream: "npm:^0.2.17"
   checksum: 10/c29e175b1f5ff753c775d8419189fba7945b16fd21de0bb80c49a7b2cdbdfc2e809e6377639f2c12b147e4b104f3670db258ff06b1987c09fd5bf25edb1eedcb
-  languageName: node
-  linkType: hard
-
-"assistant-stream@npm:^0.2.13":
-  version: 0.2.14
-  resolution: "assistant-stream@npm:0.2.14"
-  dependencies:
-    "@types/json-schema": "npm:^7.0.15"
-    nanoid: "npm:5.1.5"
-    secure-json-parse: "npm:^4.0.0"
-  checksum: 10/a5f898c9ffe0960f27d4c8ece14640d8d731f30a61d5d93c0cfda373ce1693a50774b9f9cca43859fe25c4673ffa23f1c8ca4546cc02e0947c023c39c6db7a92
   languageName: node
   linkType: hard
 
@@ -15407,14 +15395,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.24.2, zod@npm:^3.24.3, zod@npm:^3.25.28":
+"zod@npm:^3.24.2, zod@npm:^3.24.3":
   version: 3.25.51
   resolution: "zod@npm:3.25.51"
   checksum: 10/88172dae4c14194bba23c006ae63dd64b96a0e885d9bdb00f8495d1191a4bfd6ed545ab9c60de579b1979589d52253f1bbca6637813fb6890124784c877baf01
   languageName: node
   linkType: hard
 
-"zod@npm:^3.25.63, zod@npm:^3.25.64":
+"zod@npm:^3.25.64":
   version: 3.25.67
   resolution: "zod@npm:3.25.67"
   checksum: 10/0e35432dcca7f053e63f5dd491a87c78abe0d981817547252c3b6d05f0f58788695d1a69724759c6501dff3fd62929be24c9f314a3625179bee889150f7a61fa

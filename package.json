@@ -22,8 +22,7 @@
     "@shapeshiftoss/types": "workspace:^",
     "@shapeshiftoss/utils": "workspace:^",
     "bignumber.js": "^9.3.0",
-    "viem": "^2.31.0",
-    "zod": "^3.25.63"
+    "viem": "^2.31.0"
   },
   "devDependencies": {
     "@types/eslint-plugin-jsx-a11y": "^6.10.0",
