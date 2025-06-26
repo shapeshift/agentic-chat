@@ -1,7 +1,7 @@
-import { Agent } from '@mastra/core/agent';
-import { Memory } from '@mastra/memory';
-import { LibSQLStore } from '@mastra/libsql';
-import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai'
+import { Agent } from '@mastra/core/agent'
+import { LibSQLStore } from '@mastra/libsql'
+import { Memory } from '@mastra/memory'
 
 const openai = createOpenAI({
   // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below

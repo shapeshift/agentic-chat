@@ -1,39 +1,39 @@
-import { makeAssistantToolUI } from '@assistant-ui/react';
+import { makeAssistantToolUI } from '@assistant-ui/react'
 
 // Types for bebopRate tool args and result
 export type BebopRateArgs = {
-  chain: string;
+  chain: string
   fromAsset: {
-    address: string;
-    decimals: number;
-    symbol?: string;
-  };
+    address: string
+    decimals: number
+    symbol?: string
+  }
   toAsset: {
-    address: string;
-    decimals: number;
-    symbol: string;
-  };
-  sellAmountCryptoPrecision: string;
-  fromAddress: string;
-};
+    address: string
+    decimals: number
+    symbol: string
+  }
+  sellAmountCryptoPrecision: string
+  fromAddress: string
+}
 
 export type BebopRateResult = {
-  sellAmountCryptoPrecision: string;
-  buyAmountCryptoPrecision: string;
+  sellAmountCryptoPrecision: string
+  buyAmountCryptoPrecision: string
   sellAsset: {
-    symbol: string;
-  };
+    symbol: string
+  }
   buyAsset: {
-    symbol: string;
-  };
-  approvalTarget: string;
-};
+    symbol: string
+  }
+  approvalTarget: string
+}
 
 const BebopQuoteUI = makeAssistantToolUI<BebopRateArgs, BebopRateResult>({
   toolName: 'bebopRate',
   render: ({ result }) => {
-    if (typeof result === 'string') return null;
-    if (!result) return null;
+    if (typeof result === 'string') return null
+    if (!result) return null
     return (
       <div
         style={{
@@ -45,13 +45,9 @@ const BebopQuoteUI = makeAssistantToolUI<BebopRateArgs, BebopRateResult>({
           boxShadow: '0 2px 16px rgba(0,0,0,0.08)',
         }}
       >
-        <h2 style={{ textAlign: 'center', fontWeight: 700, marginBottom: 32 }}>
-          Confirm Trade
-        </h2>
+        <h2 style={{ textAlign: 'center', fontWeight: 700, marginBottom: 32 }}>Confirm Trade</h2>
         <div style={{ marginBottom: 24 }}>
-          <div style={{ color: '#888', fontWeight: 500, marginBottom: 8 }}>
-            Sell Amount
-          </div>
+          <div style={{ color: '#888', fontWeight: 500, marginBottom: 8 }}>Sell Amount</div>
           <div
             style={{
               background: '#f5f5f5',
@@ -65,15 +61,11 @@ const BebopQuoteUI = makeAssistantToolUI<BebopRateArgs, BebopRateResult>({
             }}
           >
             <span>{result.sellAmountCryptoPrecision}</span>
-            <span style={{ color: '#444', fontWeight: 600 }}>
-              {result.sellAsset.symbol}
-            </span>
+            <span style={{ color: '#444', fontWeight: 600 }}>{result.sellAsset.symbol}</span>
           </div>
         </div>
         <div>
-          <div style={{ color: '#888', fontWeight: 500, marginBottom: 8 }}>
-            Buy Amount
-          </div>
+          <div style={{ color: '#888', fontWeight: 500, marginBottom: 8 }}>Buy Amount</div>
           <div
             style={{
               background: '#f5f5f5',
@@ -89,8 +81,8 @@ const BebopQuoteUI = makeAssistantToolUI<BebopRateArgs, BebopRateResult>({
           </div>
         </div>
       </div>
-    );
+    )
   },
-});
+})
 
-export default BebopQuoteUI;
+export default BebopQuoteUI

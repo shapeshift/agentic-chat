@@ -1,7 +1,6 @@
 import typescript from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
 import prettierConfig from 'eslint-config-prettier'
-// @ts-expect-error - package doesn't provide types and has exports conflicts
 import importPlugin from 'eslint-plugin-import'
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y'
 import prettier from 'eslint-plugin-prettier'

@@ -45,7 +45,7 @@ describe('App', () => {
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    );
-    expect(baseElement).toBeTruthy();
-  });
-});
+    )
+    expect(baseElement).toBeTruthy()
+  })
+})

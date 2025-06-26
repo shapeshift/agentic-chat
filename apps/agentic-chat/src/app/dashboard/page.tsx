@@ -1,23 +1,17 @@
-import { Thread } from '../../components/assistant-ui/thread';
-import { SidebarLeft } from '../../components/sidebar-left';
-import { SidebarRight } from '../../components/sidebar-right';
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from '../../components/ui/sidebar';
-import { ThreadList } from '../../components/assistant-ui/thread-list';
-import BebopQuoteUI from '../../components/assistant-ui/BebopQuoteUI';
-import { ConnectWallet } from '../../components/connect-wallet';
-import useTools from '../../hooks/useTools';
+import BebopQuoteUI from '../../components/assistant-ui/BebopQuoteUI'
+import { Thread } from '../../components/assistant-ui/thread'
+import { ThreadList } from '../../components/assistant-ui/thread-list'
+import { ConnectWallet } from '../../components/connect-wallet'
+import { SidebarLeft } from '../../components/sidebar-left'
+import { SidebarRight } from '../../components/sidebar-right'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '../../components/ui/sidebar'
+import useTools from '../../hooks/useTools'
 
-const isSidebarLeftEnabled =
-  import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true';
-const isSidebarRightEnabled =
-  import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true';
+const isSidebarLeftEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true'
+const isSidebarRightEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_RIGHT === 'true'
 
 export const Dashboard = () => {
-  useTools();
+  useTools()
 
   return (
     <SidebarProvider>
@@ -27,9 +21,7 @@ export const Dashboard = () => {
           <div>
             <ConnectWallet />
           </div>
-          <div className="flex items-center gap-2">
-            {isSidebarLeftEnabled && <SidebarTrigger />}
-          </div>
+          <div className="flex items-center gap-2">{isSidebarLeftEnabled && <SidebarTrigger />}</div>
         </header>
         <div className="grid h-full grid-cols-[200px_1fr]">
           <BebopQuoteUI />
@@ -39,5 +31,5 @@ export const Dashboard = () => {
       </SidebarInset>
       {isSidebarRightEnabled && <SidebarRight />}
     </SidebarProvider>
-  );
-};
+  )
+}
