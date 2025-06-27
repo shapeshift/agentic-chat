@@ -1,6 +1,6 @@
 import { ArrowUpRight, Link, MoreHorizontal, StarOff, Trash2 } from 'lucide-react'
 
-import type { Wallet } from '../types/wallet'
+import type { Wallet } from '../types'
 
 import {
   DropdownMenuContent,

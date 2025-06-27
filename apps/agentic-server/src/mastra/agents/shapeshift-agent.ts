@@ -33,12 +33,18 @@ export const shapeshiftAgent = new Agent({
 
       <tokens_info>
       - Native assets refer to ETH, MATIC, AVAX, XDAI, and BNB. Those are *not* ERC20 tokens but native assets.
-      - When users ask for anything related to a token or asset, you always use the getAccount tool in priority to get their balance and token info
-      - You only use the searchTokens tool as a fallback if you don't know about a specific token, of if the user explicitly mentions that the token you are referring to is the wrong one.
+      - When users ask for anything related to a token or asset, if you don't know that asset, you always use the getAccount tool in priority to get tokens info
+      - In case the user does not hold the token and getAccount does not return info for it, you also the searchTokens tool, of if the user explicitly mentions that the token you are referring to is incorrect.
       </tokens_info>
 
+      <balances_info>
+      - The getAccount tool is not only used for tokens info, but also returns users' balances. You use it anytime you need to know their balances.
+      </balances_info>
+
       <swap_flow_sequence>
-        0. You should *always* know about the sell and buy AssetIds beforehand, which should've been gotten either through getAccount() or searchTokens(). Do not hallucinate AssetIds.
+        WARNING: Before you search for a quote with the flow below, you ensure that you know both about the sell and buy assets. Refer to the instructions below on the tools that will help you getting these (getAccount() and tokensSearch())
+        You do NOT hallucinate assets.
+
         1. A quote is gotten using the bebopRate tool.
         2. You check for allowance using the allowance() tool after getting a quote *for tokens sell assets only, not native assets*
         3. If they don't have enough allowance, you approve it with the approve() tool.

@@ -7,6 +7,7 @@ import z from 'zod'
 
 import { wagmiConfig } from '../lib/wagmi-config'
 import type { AssetsStore } from '../stores/assets'
+import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId'
 
 export const getAllowanceParams = z.object({
   assetId: z.string().describe('The token AssetId to check allowance against'),
@@ -27,6 +28,10 @@ export const getAllowance = async ({
 }): Promise<GetAllowanceResult> => {
   if (!from) {
     throw new Error('No account connected')
+  }
+
+  if (assetId === getFeeAssetByChainId(fromAssetId(assetId).chainId)) {
+    return 'No allowance is needed for native assets'
   }
 
   const { chainId, assetReference } = fromAssetId(assetId)

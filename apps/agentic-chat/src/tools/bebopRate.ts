@@ -2,20 +2,21 @@ import {
   arbitrumChainId,
   avalancheChainId,
   baseChainId,
-  binanceChainId,
+  bscChainId,
   ethChainId,
   fromAssetId,
   optimismChainId,
   polygonChainId,
 } from '@shapeshiftoss/caip'
 import type { AssetId, ChainId } from '@shapeshiftoss/caip'
-import type { BebopQuote, BebopResponse } from '@shapeshiftoss/types'
 import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
 import type { Address } from 'viem'
 import { getAddress } from 'viem'
 import z from 'zod'
 
 import type { AssetsStore } from '../stores/assets'
+import type { BebopQuote, BebopResponse } from '../types'
+import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId'
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 
@@ -61,7 +62,7 @@ export const getBebopRate = async ({
     [baseChainId]: 'base',
     [avalancheChainId]: 'avalanche',
     [optimismChainId]: 'optimism',
-    [binanceChainId]: 'bsc',
+    [bscChainId]: 'bsc',
   }
   const bebopNetwork = bebopChainsMap[chainId]
 
@@ -69,10 +70,12 @@ export const getBebopRate = async ({
 
   // Convert ETH symbol to Bebop's ETH marker address
   const sellTokenAddress = getAddress(
-    sellAsset.symbol.trim().toUpperCase() === 'ETH' ? BEBOP_ETH_MARKER : fromAssetId(sellAsset.assetId).assetReference
+    sellAsset.assetId === getFeeAssetByChainId(chainId)
+      ? BEBOP_ETH_MARKER
+      : fromAssetId(sellAsset.assetId).assetReference
   )
   const buyTokenAddress = getAddress(
-    buyAsset.symbol.trim().toUpperCase() === 'ETH' ? BEBOP_ETH_MARKER : fromAssetId(buyAsset.assetId).assetReference
+    buyAsset.assetId === getFeeAssetByChainId(chainId) ? BEBOP_ETH_MARKER : fromAssetId(buyAsset.assetId).assetReference
   )
 
   const env = import.meta?.env ? import.meta.env : process.env

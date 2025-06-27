@@ -1,6 +1,9 @@
 import type { AssetId } from '@shapeshiftoss/caip'
-import type { Asset, PartialRecord } from '@shapeshiftoss/types'
 import { create } from 'zustand'
+
+import type { Asset, PartialRecord } from '../types'
+
+import { initialAssets } from './constants'
 
 type AssetsState = {
   ids: AssetId[]
@@ -14,8 +17,8 @@ type AssetsActions = {
 export type AssetsStore = AssetsState & AssetsActions
 
 export const useAssetsStore = create<AssetsStore>(set => ({
-  ids: [],
-  assetsById: {},
+  ids: Object.keys(initialAssets),
+  assetsById: initialAssets,
   upsert: (assets: Asset[]) => {
     set(state => {
       const newAssetsById: PartialRecord<AssetId, Asset> = { ...state.assetsById }

@@ -6,6 +6,7 @@ import z from 'zod'
 
 import { networks } from '../lib/appkit'
 import type { AssetsStore } from '../stores/assets'
+import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId'
 
 export const approveParamsSchema = z.object({
   assetId: z.string().describe('The token AssetId to approve'),
@@ -37,6 +38,10 @@ export const approve = async ({
 
   const { chainId, assetReference } = fromAssetId(assetId)
   const { chainReference } = fromChainId(chainId)
+
+  if (assetId === getFeeAssetByChainId(chainId)) {
+    return 'No allowance is needed for native assets'
+  }
 
   const amountCryptoBaseUnit = toBaseUnit(amountCryptoPrecision, asset.precision)
 

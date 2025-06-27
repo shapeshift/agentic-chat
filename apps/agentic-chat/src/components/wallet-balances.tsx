@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 
-import type { Asset } from '../types/asset'
+import type { Asset } from '../types'
 
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible'
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem } from './ui/sidebar'

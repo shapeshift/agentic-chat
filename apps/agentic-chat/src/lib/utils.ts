@@ -2,7 +2,7 @@ import type { ChainId } from '@shapeshiftoss/caip'
 import {
   baseChainId,
   avalancheChainId,
-  binanceChainId,
+  bscChainId,
   arbitrumChainId,
   ethChainId,
   optimismChainId,
@@ -23,5 +23,5 @@ export const networkToChainIdMap: Record<string, ChainId> = {
   base: baseChainId,
   avalanche: avalancheChainId,
   optimism: optimismChainId,
-  bsc: binanceChainId,
+  bsc: bscChainId,
 }

@@ -1,11 +1,11 @@
-import { toAssetId } from '@shapeshiftoss/caip'
-import type { PortalsResponse, Asset } from '@shapeshiftoss/types'
+import { ASSET_NAMESPACE, toAssetId } from '@shapeshiftoss/caip'
 import axios from 'axios'
 import qs from 'qs'
 import z from 'zod'
 
 import { networkToChainIdMap } from '../lib/utils'
 import type { AssetsStore } from '../stores/assets'
+import type { PortalsResponse, Asset } from '../types'
 
 const env = import.meta?.env ? import.meta.env : process.env
 const PORTALS_BASE_URL = env.VITE_PORTALS_BASE_URL
@@ -55,7 +55,7 @@ export const searchTokens = async ({
 
       const assetId = toAssetId({
         chainId,
-        assetNamespace: 'erc20',
+        assetNamespace: ASSET_NAMESPACE.erc20,
         assetReference: token.address,
       })
 

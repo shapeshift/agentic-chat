@@ -1,9 +1,9 @@
 import type { ToolCallContentPartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { Asset } from '@shapeshiftoss/types'
 import { Search } from 'lucide-react'
 
 import type { SearchTokensParams, SearchTokensResult } from '../../tools/searchTokens'
+import type { Asset } from '../../types'
 import { TextShimmer } from '../TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
