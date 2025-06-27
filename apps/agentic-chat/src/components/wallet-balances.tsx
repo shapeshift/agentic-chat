@@ -1,5 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 
+import type { Asset } from '../types/asset'
+
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible'
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem } from './ui/sidebar'
 import { WalletAsset } from './wallet-asset'
@@ -42,8 +44,8 @@ export const WalletBalances = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               {data.balances.map(balance => (
-                <SidebarMenuItem key={balance.name}>
-                  <WalletAsset asset={balance} />
+                <SidebarMenuItem key={'42'}>
+                  <WalletAsset asset={balance as unknown as Asset} />
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

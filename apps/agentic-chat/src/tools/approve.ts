@@ -33,6 +33,8 @@ export const approve = async ({
     throw new Error('No account connected')
   }
 
+  if (!asset) throw new Error('Asset is required for precision lookup')
+
   const { chainId, assetReference } = fromAssetId(assetId)
   const { chainReference } = fromChainId(chainId)
 

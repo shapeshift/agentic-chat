@@ -16,13 +16,13 @@ export const WalletAsset: React.FC<{ asset: Asset }> = ({ asset }) => {
       <div className="grid flex-1 text-left text-sm leading-tight">
         <span className="truncate font-medium">{asset.name}</span>
         <div className="flex gap-1">
-          <span className="truncate text-xs">{asset.price}</span>
-          <span className="truncate text-xs text-destructive">({asset.change}%)</span>
+          <span className="truncate text-xs">0.42 USD</span>
+          <span className="truncate text-xs text-destructive">(10%)</span>
         </div>
       </div>
       <div className="flex flex-col items-end">
-        <span className="truncate text-xs">${asset.fiatAmount}</span>
-        <span className="truncate text-xs text-muted-foreground">{asset.balance}</span>
+        <span className="truncate text-xs">42</span>
+        <span className="truncate text-xs text-muted-foreground">42</span>
       </div>
     </SidebarMenuButton>
   )
