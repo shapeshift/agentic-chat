@@ -1,6 +1,3 @@
-import { v4 as uuid } from 'uuid';
-import { BebopResponse } from '@agentic-chat/types';
-import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 import {
   arbitrumChainId,
   avalancheChainId,
@@ -10,32 +7,36 @@ import {
   fromAssetId,
   optimismChainId,
   polygonChainId,
-} from '@shapeshiftoss/caip';
-import type { AssetId, ChainId } from '@shapeshiftoss/caip';
-import { Address, getAddress, Hex, hexToBigInt } from 'viem';
-import { AssetsStore } from '../stores/assets';
-import z from 'zod';
-import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId';
-import { Quote } from '../types/quote';
+} from '@shapeshiftoss/caip'
+import type { AssetId, ChainId } from '@shapeshiftoss/caip'
+import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
+import { v4 as uuid } from 'uuid'
+import type { Address } from 'viem'
+import { getAddress, hexToBigInt } from 'viem'
+import z from 'zod'
 
-const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+import type { AssetsStore } from '../stores/assets'
+import type { Quote } from '../types/quote'
+import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId'
+
+import type { BebopResponse } from '@/types'
+
+const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 
 export const bebopRateParams = z.object({
   sellAssetId: z.string().describe('The sell AssetID to fetch rate for'),
   buyAssetId: z.string().describe('The buy AssetID to fetch rate for'),
-  sellAmountCryptoPrecision: z
-    .string()
-    .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-});
+  sellAmountCryptoPrecision: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
+})
 
-export type BebopRateParams = z.infer<typeof bebopRateParams>;
+export type BebopRateParams = z.infer<typeof bebopRateParams>
 export type BebopRateResult = {
-  sellAmountCryptoPrecision: string;
-  buyAmountCryptoPrecision: string;
-  sellAssetId: AssetId;
-  buyAssetId: AssetId;
-  approvalTarget: string;
-};
+  sellAmountCryptoPrecision: string
+  buyAmountCryptoPrecision: string
+  sellAssetId: AssetId
+  buyAssetId: AssetId
+  approvalTarget: string
+}
 
 export const getBebopRate = async ({
   sellAssetId,
@@ -45,18 +46,18 @@ export const getBebopRate = async ({
   setQuote,
   assetsStore,
 }: BebopRateParams & {
-  fromAddress: Address;
-  setQuote: (quote: Quote) => void;
-  assetsStore: AssetsStore;
+  fromAddress: Address
+  setQuote: (quote: Quote) => void
+  assetsStore: AssetsStore
 }): Promise<BebopRateResult> => {
-  const sellAsset = assetsStore.assetsById[sellAssetId];
-  const buyAsset = assetsStore.assetsById[buyAssetId];
+  const sellAsset = assetsStore.assetsById[sellAssetId]
+  const buyAsset = assetsStore.assetsById[buyAssetId]
 
   if (!(sellAsset && buyAsset)) {
-    throw new Error('AssetIds not found');
+    throw new Error('AssetIds not found')
   }
 
-  const chainId = fromAssetId(sellAssetId).chainId;
+  const chainId = fromAssetId(sellAssetId).chainId
   const bebopChainsMap: Record<ChainId, string> = {
     [ethChainId]: 'ethereum',
     [polygonChainId]: 'polygon',
@@ -65,32 +66,27 @@ export const getBebopRate = async ({
     [avalancheChainId]: 'avalanche',
     [optimismChainId]: 'optimism',
     [bscChainId]: 'bsc',
-  };
-  const bebopNetwork = bebopChainsMap[chainId];
+  }
+  const bebopNetwork = bebopChainsMap[chainId]
 
-  const sellAmountCryptoBaseUnit = toBaseUnit(
-    sellAmountCryptoPrecision,
-    sellAsset.precision
-  );
+  const sellAmountCryptoBaseUnit = toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision)
 
   // Convert ETH symbol to Bebop's ETH marker address
   const sellTokenAddress = getAddress(
     sellAsset.assetId === getFeeAssetByChainId(chainId)
       ? BEBOP_ETH_MARKER
       : fromAssetId(sellAsset.assetId).assetReference
-  );
+  )
   const buyTokenAddress = getAddress(
-    buyAsset.assetId === getFeeAssetByChainId(chainId)
-      ? BEBOP_ETH_MARKER
-      : fromAssetId(buyAsset.assetId).assetReference
-  );
+    buyAsset.assetId === getFeeAssetByChainId(chainId) ? BEBOP_ETH_MARKER : fromAssetId(buyAsset.assetId).assetReference
+  )
 
-  const env = import.meta?.env ? import.meta.env : process.env;
+  const env = import.meta?.env ? import.meta.env : process.env
 
-  const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY || env.BEBOP_API_KEY;
+  const BEBOP_API_KEY = env.VITE_BEBOP_API_KEY || env.BEBOP_API_KEY
 
-  const url = `https://api.bebop.xyz/router/${bebopNetwork}/v1/quote`;
-  const takerAddress = fromAddress;
+  const url = `https://api.bebop.xyz/router/${bebopNetwork}/v1/quote`
+  const takerAddress = fromAddress
   const reqParams = new URLSearchParams({
     sell_tokens: sellTokenAddress,
     buy_tokens: buyTokenAddress,
@@ -100,35 +96,31 @@ export const getBebopRate = async ({
     skip_validation: 'true',
     gasless: 'false',
     source: 'shapeshift',
-  });
+  })
 
-  const fullUrl = `${url}?${reqParams.toString()}`;
+  const fullUrl = `${url}?${reqParams.toString()}`
   const response = await fetch(fullUrl, {
     method: 'GET',
     headers: {
       accept: 'application/json',
       'source-auth': BEBOP_API_KEY,
     },
-  });
+  })
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch Bebop rate: ${response.statusText}`);
+    throw new Error(`Failed to fetch Bebop rate: ${response.statusText}`)
   }
 
-  const data = (await response.json()) as BebopResponse;
+  const data = (await response.json()) as BebopResponse
 
   if (!data.routes?.[0]?.quote) {
-    throw new Error('No routes found in Bebop response');
+    throw new Error('No routes found in Bebop response')
   }
 
-  const quote = data.routes[0].quote;
+  const quote = data.routes[0].quote
 
-  const buyAmountCryptoBaseUnit =
-    quote.buyTokens[buyTokenAddress].amount.toString();
-  const buyAmountCryptoPrecision = fromBaseUnit(
-    buyAmountCryptoBaseUnit,
-    quote.buyTokens[buyTokenAddress].decimals
-  );
+  const buyAmountCryptoBaseUnit = quote.buyTokens[buyTokenAddress].amount.toString()
+  const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, quote.buyTokens[buyTokenAddress].decimals)
 
   const content = {
     sellAmountCryptoPrecision,
@@ -136,12 +128,15 @@ export const getBebopRate = async ({
     sellAssetId,
     buyAssetId,
     approvalTarget: quote.approvalTarget,
-  };
+  }
 
-  // Mutate value to be a BN string instead of hexlified string
-  quote.tx.value = hexToBigInt(quote.tx.value as Hex).toString();
+  // Make value a BN string instead of hexlified string
+  const tx = {
+    ...quote.tx,
+    value: hexToBigInt(quote.tx.value).toString(),
+  }
 
-  setQuote({ ...content, tx: quote.tx, id: uuid() });
+  setQuote({ ...content, tx, id: uuid() })
 
-  return content;
-};
+  return content
+}

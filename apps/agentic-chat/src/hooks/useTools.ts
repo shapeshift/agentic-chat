@@ -1,34 +1,33 @@
-import { useAccount, useWalletClient } from 'wagmi';
-import { getAddress, Hex } from 'viem';
-import { useAssistantTool } from '@assistant-ui/react';
-import { useCallback, useState } from 'react';
-import { searchTokens, searchTokensParams } from '../tools/searchTokens';
-import { getAllowance, getAllowanceParams } from '../tools/getAllowance';
-import { approve, approveParamsSchema } from '../tools/approve';
-import {
-  sendTransaction,
-  sendTransactionParams,
-} from '../tools/sendTransaction';
-import { getAccount, getAccountParams } from '../tools/getAccount';
-import { bebopRateParams, getBebopRate } from '../tools/bebopRate';
-import { useAssetsStore } from '../stores/assets';
-import { usePortfolioStore } from '../stores/portfolio';
-import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain';
-import { executeSwap, executeSwapParams } from '../tools/executeSwap';
-import { getRelayRate, relayRateParams } from '../tools/relayRate/index';
-import { Quote } from '../types/quote';
+import { useAssistantTool } from '@assistant-ui/react'
+import { useCallback, useState } from 'react'
+import { getAddress } from 'viem'
+import type { Hex } from 'viem'
+import { useAccount, useWalletClient } from 'wagmi'
+
+import { useAssetsStore } from '../stores/assets'
+import { usePortfolioStore } from '../stores/portfolio'
+import { approve, approveParamsSchema } from '../tools/approve'
+import { bebopRateParams, getBebopRate } from '../tools/bebopRate'
+import { executeSwap, executeSwapParams } from '../tools/executeSwap'
+import { getAccount, getAccountParams } from '../tools/getAccount'
+import { getAllowance, getAllowanceParams } from '../tools/getAllowance'
+import { getRelayRate, relayRateParams } from '../tools/relayRate/index'
+import { searchTokens, searchTokensParams } from '../tools/searchTokens'
+import { sendTransaction, sendTransactionParams } from '../tools/sendTransaction'
+import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain'
+import type { Quote } from '../types/quote'
 
 const useTools = () => {
-  const account = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
+  const account = useAccount()
+  const { data: walletClient } = useWalletClient()
+  const [quotes, setQuotes] = useState<Record<string, Quote>>({})
 
   const setQuote = useCallback((quote: Quote) => {
-    setQuotes((prev) => ({ ...prev, [quote.id]: quote }));
-  }, []);
+    setQuotes(prev => ({ ...prev, [quote.id]: quote }))
+  }, [])
 
-  const assetsStore = useAssetsStore();
-  const portfolioStore = usePortfolioStore();
+  const assetsStore = useAssetsStore()
+  const portfolioStore = usePortfolioStore()
 
   useAssistantTool({
     toolName: 'getAccount',
@@ -40,9 +39,9 @@ const useTools = () => {
         network,
         assetsStore,
         portfolioStore,
-      });
+      })
     },
-  });
+  })
 
   useAssistantTool({
     toolName: 'switchEvmChain',
@@ -52,40 +51,40 @@ const useTools = () => {
       return switchEvmChain({
         walletClient,
         chainId,
-      });
+      })
     },
-  });
+  })
 
   useAssistantTool({
     toolName: 'approve',
     description: 'Approves a token for spending by a specific address',
     parameters: approveParamsSchema,
-    execute: async (args) => {
-      return approve({ walletClient, assetsStore, ...args });
+    execute: async args => {
+      return approve({ walletClient, assetsStore, ...args })
     },
-  });
+  })
 
   useAssistantTool({
     toolName: 'getAllowance',
     description: 'Gets the allowance of a token for a specific spender',
     parameters: getAllowanceParams,
-    execute: async (args) => {
+    execute: async args => {
       return getAllowance({
         ...args,
         from: account.address,
         assetsStore,
-      });
+      })
     },
-  });
+  })
 
   useAssistantTool({
     toolName: 'searchTokens',
     description: 'Searches for tokens by name or symbol',
     parameters: searchTokensParams,
-    execute: async (args) => {
-      return searchTokens({ ...args, assetsStore });
+    execute: async args => {
+      return searchTokens({ ...args, assetsStore })
     },
-  });
+  })
 
   useAssistantTool({
     toolName: 'bebopRate',
@@ -99,9 +98,9 @@ const useTools = () => {
         fromAddress: getAddress(account?.address ?? ''),
         setQuote,
         assetsStore,
-      });
+      })
     },
-  });
+  })
 
   useAssistantTool({
     toolName: 'relayRate',
@@ -115,25 +114,25 @@ const useTools = () => {
         fromAddress: getAddress(account?.address ?? ''),
         setQuote,
         assetsStore,
-      });
+      })
     },
-  });
+  })
 
   useAssistantTool({
     toolName: 'executeSwap',
     description: 'Executes the swap previously requested using bebopRate tool.',
     parameters: executeSwapParams,
     execute: async ({ quoteId }) => {
-      const quote = quotes[quoteId];
+      const quote = quotes[quoteId]
 
-      if (!quote) return;
+      if (!quote) return
 
       return executeSwap({
         walletClient,
         ...quote,
-      });
+      })
     },
-  });
+  })
 
   useAssistantTool({
     toolName: 'sendTransaction',
@@ -146,11 +145,11 @@ const useTools = () => {
         valueCryptoPrecision,
         data: data as Hex,
         chainId,
-      });
+      })
     },
-  });
+  })
 
-  return null;
-};
+  return null
+}
 
-export default useTools;
+export default useTools

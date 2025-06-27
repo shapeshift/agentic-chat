@@ -1,7 +1,8 @@
-import { Mastra } from '@mastra/core/mastra';
-import { PinoLogger } from '@mastra/loggers';
-import { LibSQLStore } from '@mastra/libsql';
-import { shapeshiftAgent } from './agents/shapeshift-agent';
+import { Mastra } from '@mastra/core/mastra'
+import { LibSQLStore } from '@mastra/libsql'
+import { PinoLogger } from '@mastra/loggers'
+
+import { shapeshiftAgent } from './agents/shapeshift-agent'
 
 export const mastra = new Mastra({
   agents: { shapeshiftAgent },
@@ -13,4 +14,4 @@ export const mastra = new Mastra({
     name: 'Mastra',
     level: 'info',
   }),
-});
+})

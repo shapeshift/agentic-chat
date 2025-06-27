@@ -4,43 +4,43 @@ export interface TokenBalance {
    * @type {string}
    * @memberof TokenBalance
    */
-  contract: string;
+  contract: string
   /**
    *
    * @type {number}
    * @memberof TokenBalance
    */
-  decimals: number;
+  decimals: number
   /**
    *
    * @type {string}
    * @memberof TokenBalance
    */
-  name: string;
+  name: string
   /**
    *
    * @type {string}
    * @memberof TokenBalance
    */
-  symbol: string;
+  symbol: string
   /**
    *
    * @type {string}
    * @memberof TokenBalance
    */
-  type: string;
+  type: string
   /**
    * nft or multi token id
    * @type {string}
    * @memberof TokenBalance
    */
-  id?: string;
+  id?: string
   /**
    *
    * @type {string}
    * @memberof TokenBalance
    */
-  balance: string;
+  balance: string
 }
 
 export interface Account {
@@ -49,29 +49,29 @@ export interface Account {
    * @type {string}
    * @memberof Account
    */
-  balance: string;
+  balance: string
   /**
    *
    * @type {string}
    * @memberof Account
    */
-  unconfirmedBalance: string;
+  unconfirmedBalance: string
   /**
    *
    * @type {string}
    * @memberof Account
    */
-  pubkey: string;
+  pubkey: string
   /**
    *
    * @type {number}
    * @memberof Account
    */
-  nonce: number;
+  nonce: number
   /**
    *
    * @type {Array<TokenBalance>}
    * @memberof Account
    */
-  tokens: Array<TokenBalance>;
+  tokens: Array<TokenBalance>
 }

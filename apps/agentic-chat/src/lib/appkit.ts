@@ -1,14 +1,5 @@
-import {
-  AppKitNetwork,
-  gnosis,
-  arbitrum,
-  mainnet,
-  polygon,
-  optimism,
-  base,
-  avalanche,
-  bsc,
-} from '@reown/appkit/networks';
+import type { AppKitNetwork } from '@reown/appkit/networks'
+import { gnosis, arbitrum, mainnet, polygon, optimism, base, avalanche, bsc } from '@reown/appkit/networks'
 
 export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [
   mainnet,
@@ -19,4 +10,4 @@ export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [
   avalanche,
   bsc,
   gnosis,
-];
+]

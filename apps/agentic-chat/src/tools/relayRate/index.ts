@@ -1,6 +1,3 @@
-import { v4 as uuid } from 'uuid';
-import axios from 'axios';
-import { fromBaseUnit, toBaseUnit } from '@agentic-chat/utils';
 import {
   arbitrumAssetId,
   arbitrumChainId,
@@ -21,64 +18,66 @@ import {
   polygonAssetId,
   polygonChainId,
   fromChainId,
-} from '@shapeshiftoss/caip';
-import type { AssetId } from '@shapeshiftoss/caip';
-import { Address, zeroAddress } from 'viem';
-import { AssetsStore } from '../../stores/assets';
-import z from 'zod';
-import { Asset } from '../../types/asset';
-import { Quote } from '../../types/quote';
-import { RelayFetchQuoteParams, RelayQuote } from './types';
+} from '@shapeshiftoss/caip'
+import type { AssetId } from '@shapeshiftoss/caip'
+import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
+import axios from 'axios'
+import { v4 as uuid } from 'uuid'
+import type { Address } from 'viem'
+import { zeroAddress } from 'viem'
+import z from 'zod'
+
+import type { AssetsStore } from '../../stores/assets'
+import type { Asset } from '../../types/asset'
+import type { Quote } from '../../types/quote'
+
+import type { RelayFetchQuoteParams, RelayQuote } from './types'
 
 export const relayRateParams = z.object({
   sellAssetId: z.string().describe('The sell AssetID to fetch rate for'),
   buyAssetId: z.string().describe('The buy AssetID to fetch rate for'),
-  sellAmountCryptoPrecision: z
-    .string()
-    .describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-});
+  sellAmountCryptoPrecision: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
+})
 
-export type RelayRateParams = z.infer<typeof relayRateParams>;
+export type RelayRateParams = z.infer<typeof relayRateParams>
 export type RelayRateResult = {
-  sellAmountCryptoPrecision: string;
-  buyAmountCryptoPrecision: string;
-  sellAssetId: AssetId;
-  buyAssetId: AssetId;
-  approvalTarget: string | undefined;
-};
+  sellAmountCryptoPrecision: string
+  buyAmountCryptoPrecision: string
+  sellAssetId: AssetId
+  buyAssetId: AssetId
+  approvalTarget: string | undefined
+}
 
 const isNativeEvmAsset = (assetId: AssetId): boolean => {
-  const { chainId } = fromAssetId(assetId);
+  const { chainId } = fromAssetId(assetId)
   switch (chainId) {
     case ethChainId:
-      return assetId === ethAssetId;
+      return assetId === ethAssetId
     case avalancheChainId:
-      return assetId === avalancheAssetId;
+      return assetId === avalancheAssetId
     case optimismChainId:
-      return assetId === optimismAssetId;
+      return assetId === optimismAssetId
     case bscChainId:
-      return assetId === bscAssetId;
+      return assetId === bscAssetId
     case polygonChainId:
-      return assetId === polygonAssetId;
+      return assetId === polygonAssetId
     case gnosisChainId:
-      return assetId === gnosisAssetId;
+      return assetId === gnosisAssetId
     case arbitrumChainId:
-      return assetId === arbitrumAssetId;
+      return assetId === arbitrumAssetId
     case baseChainId:
-      return assetId === baseAssetId;
+      return assetId === baseAssetId
     default:
-      return false;
+      return false
   }
-};
+}
 
 const getRelayAssetAddress = (asset: Asset): Address => {
-  if (isNativeEvmAsset(asset.assetId)) return zeroAddress;
-  const { assetReference } = fromAssetId(asset.assetId);
+  if (isNativeEvmAsset(asset.assetId)) return zeroAddress
+  const { assetReference } = fromAssetId(asset.assetId)
 
-  return isAssetReference(assetReference)
-    ? zeroAddress
-    : (assetReference as Address);
-};
+  return isAssetReference(assetReference) ? zeroAddress : (assetReference as Address)
+}
 
 export const getRelayRate = async ({
   sellAssetId,
@@ -88,26 +87,23 @@ export const getRelayRate = async ({
   setQuote,
   assetsStore,
 }: RelayRateParams & {
-  fromAddress: Address;
-  setQuote: (quote: Quote) => void;
-  assetsStore: AssetsStore;
+  fromAddress: Address
+  setQuote: (quote: Quote) => void
+  assetsStore: AssetsStore
 }): Promise<RelayRateResult> => {
-  const sellAsset = assetsStore.assetsById[sellAssetId];
-  const buyAsset = assetsStore.assetsById[buyAssetId];
+  const sellAsset = assetsStore.assetsById[sellAssetId]
+  const buyAsset = assetsStore.assetsById[buyAssetId]
 
   if (!(sellAsset && buyAsset)) {
-    throw new Error('AssetIds not found');
+    throw new Error('AssetIds not found')
   }
 
-  const chainId = fromAssetId(sellAssetId).chainId;
-  const networkId = fromChainId(chainId).chainReference;
+  const chainId = fromAssetId(sellAssetId).chainId
+  const networkId = fromChainId(chainId).chainReference
 
-  const sellAmountCryptoBaseUnit = toBaseUnit(
-    sellAmountCryptoPrecision,
-    sellAsset.precision
-  );
+  const sellAmountCryptoBaseUnit = toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision)
 
-  const url = `https://api.relay.link/quote`;
+  const url = `https://api.relay.link/quote`
   const params: RelayFetchQuoteParams = {
     user: fromAddress,
     recipient: fromAddress,
@@ -122,42 +118,37 @@ export const getRelayRate = async ({
     slippageTolerance: undefined,
     // TODO(gomes): affiliate, none for the time being for devving
     appFees: [],
-  };
+  }
 
-  const { data } = await axios.post<RelayQuote>(url, params);
+  const { data } = await axios.post<RelayQuote>(url, params)
 
-  const buyAmountCryptoBaseUnit = data.details.currencyOut.amount;
-  const buyAmountCryptoPrecision = fromBaseUnit(
-    buyAmountCryptoBaseUnit,
-    buyAsset.precision
-  );
+  const buyAmountCryptoBaseUnit = data.details.currencyOut.amount
+  const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, buyAsset.precision)
 
-  const maybeApprovalStep = data.steps.find((step) => step.id === 'approve');
-  const swapSteps = data.steps.filter((step) => step.id !== 'approve');
+  const maybeApprovalStep = data.steps.find(step => step.id === 'approve')
+  const swapSteps = data.steps.filter(step => step.id !== 'approve')
 
-  if (swapSteps.length > 1)
-    throw new Error('Multi-hop not supported for Relay');
+  if (swapSteps.length > 1) throw new Error('Multi-hop not supported for Relay')
 
-  const swapStep = swapSteps[0];
-  const txData = swapStep.items?.[0]?.data;
+  const swapStep = swapSteps[0]
+  const txData = swapStep.items?.[0]?.data
 
-  if (!txData) throw new Error('No transaction data found in Relay quote');
-  const { to, data: calldata, value } = txData;
-  if (!to) throw new Error('No "to" address found in Relay quote');
-  if (!value) throw new Error('No "value" found in Relay quote');
-  if (!calldata) throw new Error('No "data" found in Relay quote');
+  if (!txData) throw new Error('No transaction data found in Relay quote')
+  const { to, data: calldata, value } = txData
+  if (!to) throw new Error('No "to" address found in Relay quote')
+  if (!value) throw new Error('No "value" found in Relay quote')
+  if (!calldata) throw new Error('No "data" found in Relay quote')
 
-  const id = uuid();
+  const id = uuid()
 
   const content = {
     sellAmountCryptoPrecision,
     buyAmountCryptoPrecision,
     sellAssetId,
     buyAssetId,
-    approvalTarget:
-      swapStep && maybeApprovalStep ? swapStep.items?.[0]?.data?.to : undefined,
+    approvalTarget: swapStep && maybeApprovalStep ? swapStep.items?.[0]?.data?.to : undefined,
     id,
-  };
+  }
 
   setQuote({
     ...content,
@@ -169,7 +160,7 @@ export const getRelayRate = async ({
       chainId: Number(networkId),
     },
     id,
-  });
+  })
 
-  return content;
-};
+  return content
+}

@@ -1,26 +1,28 @@
-import { fromBaseUnit } from '@agentic-chat/utils';
-import { getAddress, Hash } from 'viem';
-import { sendTransaction } from './sendTransaction';
-import { WalletClient } from 'viem';
-import z from 'zod';
-import { Quote } from '../types/quote';
+import { fromBaseUnit } from '@shapeshiftoss/utils'
+import type { Hash, WalletClient } from 'viem'
+import { getAddress } from 'viem'
+import z from 'zod'
+
+import type { Quote } from '../types/quote'
+
+import { sendTransaction } from './sendTransaction'
 
 export const executeSwapParams = z.object({
   quoteId: z.string().describe('The quote ID to execute'),
-});
+})
 
-export type ExecuteSwapParams = z.infer<typeof executeSwapParams>;
-export type ExecuteSwapResult = Hash;
+export type ExecuteSwapParams = z.infer<typeof executeSwapParams>
+export type ExecuteSwapResult = Hash
 
 export const executeSwap = async ({
   walletClient,
   tx,
 }: {
-  walletClient: WalletClient | undefined;
+  walletClient: WalletClient | undefined
 } & Quote): Promise<ExecuteSwapResult> => {
-  const { chainId, to, value, data } = tx;
+  const { chainId, to, value, data } = tx
 
-  const valueCryptoPrecision = fromBaseUnit(value, 18); // Assuming 18 decimals for native token
+  const valueCryptoPrecision = fromBaseUnit(value, 18) // Assuming 18 decimals for native token
 
   return sendTransaction({
     walletClient,
@@ -28,5 +30,5 @@ export const executeSwap = async ({
     valueCryptoPrecision,
     data,
     chainId,
-  });
-};
+  })
+}

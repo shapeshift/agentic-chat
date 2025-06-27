@@ -1,3 +1,5 @@
-import type { UIMessage } from '@ai-sdk/ui-utils';
+import type { UIMessage } from '@ai-sdk/ui-utils'
 
-export type MessageList = UIMessage[];
+export type Message = UIMessage
+
+export type MessageList = Message[]
