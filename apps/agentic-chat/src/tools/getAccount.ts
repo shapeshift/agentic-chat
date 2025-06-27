@@ -1,10 +1,35 @@
+import type { AssetId } from '@shapeshiftoss/caip'
+import { toAssetId, arbitrumChainId, arbitrumAssetId } from '@shapeshiftoss/caip'
 import { fromBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import type { Address } from 'viem'
+import z from 'zod'
 
+import type { AssetsStore } from '../stores/assets'
+import type { PortfolioStore } from '../stores/portfolio'
 import type { Account } from '../types/account'
+import type { Asset } from '../types/asset'
 
-export const getAccount = async (address: Address | undefined, network: string) => {
+export const getAccountParams = z.object({
+  network: z.string().describe('The network to get account info for (e.g., ethereum, bitcoin)'),
+})
+
+export type GetAccountParams = z.infer<typeof getAccountParams>
+export type GetAccountResult = {
+  assets: Asset[]
+  portfolio: Record<AssetId, string>
+}
+
+export const getAccount = async ({
+  address,
+  network,
+  assetsStore,
+  portfolioStore,
+}: GetAccountParams & {
+  address: Address | undefined
+  assetsStore: AssetsStore
+  portfolioStore: PortfolioStore
+}): Promise<GetAccountResult> => {
   if (!address) {
     throw new Error('No account connected')
   }
@@ -13,15 +38,56 @@ export const getAccount = async (address: Address | undefined, network: string) 
 
   const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${address}`)
 
-  const nativeBalance = fromBaseUnit(
+  const assets = data.tokens.map<Asset>(token => ({
+    assetId: toAssetId({
+      // TODO(gomes): programmatic
+      chainId: arbitrumChainId,
+      assetNamespace: 'erc20',
+      assetReference: token.contract,
+    }),
+    // TODO(gomes): programmatic
+    chainId: arbitrumChainId,
+    symbol: token.symbol,
+    name: token.name,
+    precision: token.decimals,
+    icon: undefined, // no icon available from unchained
+  }))
+
+  assets.push({
+    assetId: arbitrumAssetId,
+    chainId: arbitrumChainId,
+    symbol: 'ETH',
+    name: 'Ethereum on Arbitrum',
+    precision: 18,
+    icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/ethereum/info/logo.png',
+  })
+
+  assetsStore.upsert(assets)
+
+  const portfolio = data.tokens.reduce<Record<AssetId, string>>((acc, token) => {
+    // TODO(gomes): programmatic
+    const assetId = toAssetId({
+      chainId: arbitrumChainId,
+      assetNamespace: 'erc20',
+      assetReference: token.contract,
+    })
+    acc[assetId] = fromBaseUnit(token.balance, token.decimals)
+    return acc
+  }, {})
+
+  // Process balances
+  const nativeBalanceCryptoPrecision = fromBaseUnit(
     data.balance,
     18 // assume 18 decimals for all native EVM tokens
   )
 
-  const tokensBalances = data.tokens.map(token => ({
-    ...token,
-    balance: fromBaseUnit(token.balance, token.decimals),
-  }))
+  // TODO(gomes): programmatic
+  portfolio[arbitrumAssetId] = nativeBalanceCryptoPrecision
 
-  return { nativeBalance, tokensBalances }
+  portfolioStore.upsert(portfolio)
+
+  return {
+    assets,
+    portfolio,
+  }
 }

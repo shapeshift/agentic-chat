@@ -1,12 +1,13 @@
 import type { Address, Hex } from 'viem'
 
 export type PortalsToken = {
+  network: string
   address: string
   symbol: string
   name: string
   decimals: number
   chainId: number
-  logoURI: string
+  image: string
   volumeUsd7d: number
   priceUsd: number
 }
@@ -87,3 +88,5 @@ export type Asset = {
   name: string
   precision: number
 }
+
+export type PartialRecord<K extends PropertyKey, V> = Partial<Record<K, V>>

@@ -1,8 +1,10 @@
+import type { AssetId, ChainId } from '@shapeshiftoss/caip'
+
 export type Asset = {
+  assetId: AssetId
+  chainId: ChainId
+  symbol: string
   name: string
-  icon: string
-  balance: number
-  price: number
-  change: number
-  fiatAmount: number
+  precision: number
+  icon: string | undefined
 }

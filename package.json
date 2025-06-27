@@ -13,7 +13,7 @@
     "dev:apps": "npx concurrently \"yarn workspace @shapeshiftoss/agentic-server dev\" \"yarn workspace @shapeshiftoss/agentic-chat dev\"",
     "dev:packages": "yarn workspaces foreach --all --include 'packages/*' --parallel run dev",
     "test": "yarn vitest",
-    "lint": "yarn eslint . --cache",
+    "lint": "yarn eslint .",
     "lint:fix": "yarn lint --fix",
     "type-check": "yarn workspaces foreach --all --parallel run type-check"
   },

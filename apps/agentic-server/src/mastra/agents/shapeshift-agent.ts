@@ -38,6 +38,7 @@ export const shapeshiftAgent = new Agent({
       </tokens_info>
 
       <swap_flow_sequence>
+        0. You should *always* know about the sell and buy AssetIds beforehand, which should've been gotten either through getAccount() or searchTokens(). Do not hallucinate AssetIds.
         1. A quote is gotten using the bebopRate tool.
         2. You check for allowance using the allowance() tool after getting a quote *for tokens sell assets only, not native assets*
         3. If they don't have enough allowance, you approve it with the approve() tool.
