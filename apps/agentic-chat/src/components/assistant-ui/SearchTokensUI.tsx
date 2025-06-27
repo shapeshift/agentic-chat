@@ -1,42 +1,28 @@
-import {
-  makeAssistantToolUI,
-  ToolCallContentPartProps,
-} from '@assistant-ui/react';
-import { Search } from 'lucide-react';
-import { TextShimmer } from '../TextShimmer';
-import { CollapsableDetails } from './CollapsableDetails';
-import { Asset } from '@agentic-chat/types';
-import {
-  SearchTokensParams,
-  SearchTokensResult,
-} from '../../tools/searchTokens';
+import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import type { Asset } from '@shapeshiftoss/types'
+import { Search } from 'lucide-react'
 
-const Icon = Search;
+import type { SearchTokensParams, SearchTokensResult } from '../../tools/searchTokens'
+import { TextShimmer } from '../TextShimmer'
 
-type SearchTokensContentProps = Omit<
-  ToolCallContentPartProps<SearchTokensParams, SearchTokensResult>,
-  'args'
-> & {
-  args: Partial<SearchTokensParams>;
-};
+import { CollapsableDetails } from './CollapsableDetails'
 
-export const SearchTokensContent: React.FC<SearchTokensContentProps> = ({
-  args,
-  status,
-  result,
-  isError,
-}) => {
+const Icon = Search
+
+type SearchTokensContentProps = Omit<ToolCallContentPartProps<SearchTokensParams, SearchTokensResult>, 'args'> & {
+  args: Partial<SearchTokensParams>
+}
+
+export const SearchTokensContent: React.FC<SearchTokensContentProps> = ({ args, status, result, isError }) => {
   switch (status.type) {
     case 'complete':
       if (isError || !result) {
         return (
-          <CollapsableDetails
-            title="No tokens found"
-            leftIcon={<Icon className="w-4 h-4 text-red-500" />}
-          >
+          <CollapsableDetails title="No tokens found" leftIcon={<Icon className="w-4 h-4 text-red-500" />}>
             {result ? result.total : 'No tokens found'}
           </CollapsableDetails>
-        );
+        )
       }
 
       return (
@@ -48,27 +34,20 @@ export const SearchTokensContent: React.FC<SearchTokensContentProps> = ({
             {result.assets.map((asset: Asset) => (
               <li key={asset.assetId} className="flex items-center gap-2">
                 <span className="font-mono text-sm">{asset.symbol}</span>
-                <span className="text-muted-foreground text-xs truncate">
-                  {asset.assetId}
-                </span>
+                <span className="text-muted-foreground text-xs truncate">{asset.assetId}</span>
               </li>
             ))}
           </ul>
         </CollapsableDetails>
-      );
+      )
     default:
-      return (
-        <TextShimmer>Searching tokens for "{args.searchTerm}"...</TextShimmer>
-      );
+      return <TextShimmer>Searching tokens for "{args.searchTerm}"...</TextShimmer>
   }
-};
+}
 
-const SearchTokensUI = makeAssistantToolUI<
-  SearchTokensParams,
-  SearchTokensResult
->({
+const SearchTokensUI = makeAssistantToolUI<SearchTokensParams, SearchTokensResult>({
   toolName: 'searchTokens',
   render: SearchTokensContent,
-});
+})
 
-export default SearchTokensUI;
+export default SearchTokensUI

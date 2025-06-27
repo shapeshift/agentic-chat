@@ -1,29 +1,24 @@
-import axios from 'axios';
-import { Account } from '../types/account';
-import { Address } from 'viem';
-import { fromBaseUnit } from '@agentic-chat/utils';
-import {
-  toAssetId,
-  arbitrumChainId,
-  AssetId,
-  arbitrumAssetId,
-} from '@agentic-chat/caip';
-import { AssetsStore } from '../stores/assets';
-import { PortfolioStore } from '../stores/portfolio';
-import { Asset } from '../types/asset';
-import z from 'zod';
+import type { AssetId } from '@shapeshiftoss/caip'
+import { toAssetId, arbitrumChainId, arbitrumAssetId } from '@shapeshiftoss/caip'
+import { fromBaseUnit } from '@shapeshiftoss/utils'
+import axios from 'axios'
+import type { Address } from 'viem'
+import z from 'zod'
+
+import type { AssetsStore } from '../stores/assets'
+import type { PortfolioStore } from '../stores/portfolio'
+import type { Account } from '../types/account'
+import type { Asset } from '../types/asset'
 
 export const getAccountParams = z.object({
-  network: z
-    .string()
-    .describe('The network to get account info for (e.g., ethereum, bitcoin)'),
-});
+  network: z.string().describe('The network to get account info for (e.g., ethereum, bitcoin)'),
+})
 
-export type GetAccountParams = z.infer<typeof getAccountParams>;
+export type GetAccountParams = z.infer<typeof getAccountParams>
 export type GetAccountResult = {
-  assets: Asset[];
-  portfolio: Record<AssetId, string>;
-};
+  assets: Asset[]
+  portfolio: Record<AssetId, string>
+}
 
 export const getAccount = async ({
   address,
@@ -31,23 +26,19 @@ export const getAccount = async ({
   assetsStore,
   portfolioStore,
 }: GetAccountParams & {
-  address: Address | undefined;
-  assetsStore: AssetsStore;
-  portfolioStore: PortfolioStore;
+  address: Address | undefined
+  assetsStore: AssetsStore
+  portfolioStore: PortfolioStore
 }): Promise<GetAccountResult> => {
   if (!address) {
-    throw new Error('No account connected');
+    throw new Error('No account connected')
   }
 
-  const baseUrl = import.meta.env[
-    `VITE_UNCHAINED_${network.toUpperCase()}_HTTP_URL`
-  ];
+  const baseUrl = import.meta.env[`VITE_UNCHAINED_${network.toUpperCase()}_HTTP_URL`]
 
-  const { data } = await axios.get<Account>(
-    `${baseUrl}/api/v1/account/${address}`
-  );
+  const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${address}`)
 
-  const assets = data.tokens.map<Asset>((token) => ({
+  const assets = data.tokens.map<Asset>(token => ({
     assetId: toAssetId({
       // TODO(gomes): programmatic
       chainId: arbitrumChainId,
@@ -60,7 +51,7 @@ export const getAccount = async ({
     name: token.name,
     precision: token.decimals,
     icon: undefined, // no icon available from unchained
-  }));
+  }))
 
   assets.push({
     assetId: arbitrumAssetId,
@@ -69,37 +60,34 @@ export const getAccount = async ({
     name: 'Ethereum on Arbitrum',
     precision: 18,
     icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/ethereum/info/logo.png',
-  });
+  })
 
-  assetsStore.upsert(assets);
+  assetsStore.upsert(assets)
 
-  const portfolio = data.tokens.reduce<Record<AssetId, string>>(
-    (acc, token) => {
-      // TODO(gomes): programmatic
-      const assetId = toAssetId({
-        chainId: arbitrumChainId,
-        assetNamespace: 'erc20',
-        assetReference: token.contract,
-      });
-      acc[assetId] = fromBaseUnit(token.balance, token.decimals);
-      return acc;
-    },
-    {}
-  );
+  const portfolio = data.tokens.reduce<Record<AssetId, string>>((acc, token) => {
+    // TODO(gomes): programmatic
+    const assetId = toAssetId({
+      chainId: arbitrumChainId,
+      assetNamespace: 'erc20',
+      assetReference: token.contract,
+    })
+    acc[assetId] = fromBaseUnit(token.balance, token.decimals)
+    return acc
+  }, {})
 
   // Process balances
   const nativeBalanceCryptoPrecision = fromBaseUnit(
     data.balance,
     18 // assume 18 decimals for all native EVM tokens
-  );
+  )
 
   // TODO(gomes): programmatic
-  portfolio[arbitrumAssetId] = nativeBalanceCryptoPrecision;
+  portfolio[arbitrumAssetId] = nativeBalanceCryptoPrecision
 
-  portfolioStore.upsert(portfolio);
+  portfolioStore.upsert(portfolio)
 
   return {
     assets,
     portfolio,
-  };
-};
+  }
+}

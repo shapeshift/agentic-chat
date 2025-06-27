@@ -1,18 +1,19 @@
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-  Sparkles,
-} from "lucide-react"
+import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from 'lucide-react'
 
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar'
 
 type NavUserProps = {
-  user: {
+  user?: {
     name: string
     email: string
     avatar: string
@@ -21,6 +22,8 @@ type NavUserProps = {
 
 export const NavUser: React.FC<NavUserProps> = ({ user }) => {
   const { isMobile } = useSidebar()
+
+  if (!user) return null
 
   return (
     <SidebarMenu>
@@ -44,7 +47,7 @@ export const NavUser: React.FC<NavUserProps> = ({ user }) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? 'bottom' : 'right'}
             align="start"
             sideOffset={4}
           >

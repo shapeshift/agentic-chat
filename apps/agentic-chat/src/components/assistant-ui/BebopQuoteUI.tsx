@@ -1,53 +1,37 @@
-import {
-  makeAssistantToolUI,
-  ToolCallContentPartProps,
-} from '@assistant-ui/react';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '../ui/card';
-import { Label } from '../ui/label';
-import { Input } from '../ui/input';
-import { AlertCircle, ArrowRightLeft } from 'lucide-react';
-import { TextShimmer } from '../TextShimmer';
-import { Button } from '../ui/button';
-import { useAssetsStore } from '../../stores/assets';
-import { BebopRateParams, BebopRateResult } from '../../tools/bebopRate';
+import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import { AlertCircle, ArrowRightLeft } from 'lucide-react'
 
-type BebopUiContentProps = Omit<
-  ToolCallContentPartProps<BebopRateParams, BebopRateResult>,
-  'args'
-> & {
-  args: Partial<BebopRateParams>;
-};
+import { useAssetsStore } from '../../stores/assets'
+import type { BebopRateParams, BebopRateResult } from '../../tools/bebopRate'
+import { TextShimmer } from '../TextShimmer'
+import { Button } from '../ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
 
-const BebopUiContent: React.FC<BebopUiContentProps> = ({
-  status,
-  result,
-  args,
-  isError,
-}) => {
-  const assetsStore = useAssetsStore();
-  const sellAsset = assetsStore.assetsById[args.sellAssetId ?? ''];
-  const buyAsset = assetsStore.assetsById[args.buyAssetId ?? ''];
+type BebopUiContentProps = Omit<ToolCallContentPartProps<BebopRateParams, BebopRateResult>, 'args'> & {
+  args: Partial<BebopRateParams>
+}
+
+const BebopUiContent: React.FC<BebopUiContentProps> = ({ status, result, args, isError }) => {
+  const assetsStore = useAssetsStore()
+  const sellAsset = assetsStore.assetsById[args.sellAssetId ?? '']
+  const buyAsset = assetsStore.assetsById[args.buyAssetId ?? '']
 
   switch (status.type) {
     case 'running':
     case 'requires-action':
     case 'incomplete': {
       if (!(args.sellAmountCryptoPrecision && buyAsset && sellAsset)) {
-        return <TextShimmer>Getting quote</TextShimmer>;
+        return <TextShimmer>Getting quote</TextShimmer>
       }
 
       return (
         <TextShimmer>
-          Getting quote for {args.sellAmountCryptoPrecision} {sellAsset.symbol}{' '}
-          → {buyAsset.symbol}
+          Getting quote for {args.sellAmountCryptoPrecision} {sellAsset.symbol} → {buyAsset.symbol}
         </TextShimmer>
-      );
+      )
     }
     case 'complete':
       if (isError || !result || typeof result === 'string') {
@@ -56,25 +40,20 @@ const BebopUiContent: React.FC<BebopUiContentProps> = ({
             <AlertCircle className="w-4 h-4 text-red-500" />
             <p className="text-muted-foreground">Failed to fetch quote</p>
           </div>
-        );
+        )
       }
       return (
         <Card className="mt-4">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />{' '}
-              Confirm Swap
+              <ArrowRightLeft className="w-4 h-4 text-muted-foreground" /> Confirm Swap
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-3">
               <Label>Sell Amount</Label>
               <div className="relative">
-                <Input
-                  className="md:text-lg p-6"
-                  value={result.sellAmountCryptoPrecision}
-                  readOnly
-                />
+                <Input className="md:text-lg p-6" value={result.sellAmountCryptoPrecision} readOnly />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                   <span>{sellAsset?.symbol ?? ''}</span>
                 </div>
@@ -83,11 +62,7 @@ const BebopUiContent: React.FC<BebopUiContentProps> = ({
             <div className="grid gap-3 mt-4">
               <Label>Buy Amount</Label>
               <div className="relative">
-                <Input
-                  className="md:text-lg p-6"
-                  value={result.buyAmountCryptoPrecision}
-                  readOnly
-                />
+                <Input className="md:text-lg p-6" value={result.buyAmountCryptoPrecision} readOnly />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                   <span>{buyAsset?.symbol ?? ''}</span>
                 </div>
@@ -98,12 +73,12 @@ const BebopUiContent: React.FC<BebopUiContentProps> = ({
             <Button>Confirm Swap</Button>
           </CardFooter>
         </Card>
-      );
+      )
   }
-};
+}
 const BebopQuoteUI = makeAssistantToolUI<BebopRateParams, BebopRateResult>({
   toolName: 'bebopRate',
   render: BebopUiContent,
-});
+})
 
-export default BebopQuoteUI;
+export default BebopQuoteUI

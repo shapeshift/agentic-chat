@@ -1,21 +1,21 @@
-import {
-  makeAssistantToolUI,
-  ToolCallContentPartProps,
-} from '@assistant-ui/react';
-import { Send } from 'lucide-react';
-import { TextShimmer } from '../TextShimmer';
-import { CollapsableDetails } from './CollapsableDetails';
-import { SendTransactionParams } from '../../tools/sendTransaction';
+import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import { Send } from 'lucide-react'
 
-const Icon = Send;
-export type SendTransactionResult = string; // tx hash
+import type { SendTransactionParams } from '../../tools/sendTransaction'
+import { TextShimmer } from '../TextShimmer'
+
+import { CollapsableDetails } from './CollapsableDetails'
+
+const Icon = Send
+export type SendTransactionResult = string // tx hash
 
 type SendTransactionContentProps = Omit<
   ToolCallContentPartProps<SendTransactionParams, SendTransactionResult>,
   'args'
 > & {
-  args: Partial<SendTransactionParams>;
-};
+  args: Partial<SendTransactionParams>
+}
 
 export const SendTransactionContent: React.FC<SendTransactionContentProps> = ({
   status,
@@ -28,9 +28,9 @@ export const SendTransactionContent: React.FC<SendTransactionContentProps> = ({
     case 'running':
     case 'requires-action':
     case 'incomplete': {
-      if (!args.to) return <TextShimmer>Sending transaction</TextShimmer>;
+      if (!args.to) return <TextShimmer>Sending transaction</TextShimmer>
 
-      return <TextShimmer>Sending transaction to {args.to}...</TextShimmer>;
+      return <TextShimmer>Sending transaction to {args.to}...</TextShimmer>
     }
 
     case 'complete':
@@ -42,23 +42,20 @@ export const SendTransactionContent: React.FC<SendTransactionContentProps> = ({
           >
             {result}
           </CollapsableDetails>
-        );
+        )
       }
       return (
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-green-500" />
           <p className="text-muted-foreground">Transaction sent: {result}</p>
         </div>
-      );
+      )
   }
-};
+}
 
-const SendTransactionUI = makeAssistantToolUI<
-  SendTransactionParams,
-  SendTransactionResult
->({
+const SendTransactionUI = makeAssistantToolUI<SendTransactionParams, SendTransactionResult>({
   toolName: 'sendTransaction',
   render: SendTransactionContent,
-});
+})
 
-export default SendTransactionUI;
+export default SendTransactionUI

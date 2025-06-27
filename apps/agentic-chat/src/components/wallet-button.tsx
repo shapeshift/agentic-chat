@@ -1,8 +1,15 @@
-import { Wallet } from '../types/wallet';
-import { DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { DropdownMenu } from './ui/dropdown-menu';
-import { SidebarMenuAction, SidebarMenuButton, useSidebar } from "./ui/sidebar";
-import { ArrowUpRight, Link, MoreHorizontal, StarOff, Trash2 } from "lucide-react";
+import { ArrowUpRight, Link, MoreHorizontal, StarOff, Trash2 } from 'lucide-react'
+
+import type { Wallet } from '../types/wallet'
+
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenu,
+} from './ui/dropdown-menu'
+import { SidebarMenuAction, SidebarMenuButton, useSidebar } from './ui/sidebar'
 
 export const WalletButton: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
   const { isMobile } = useSidebar()
@@ -24,8 +31,8 @@ export const WalletButton: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className="w-56 rounded-lg"
-          side={isMobile ? "bottom" : "right"}
-          align={isMobile ? "end" : "start"}
+          side={isMobile ? 'bottom' : 'right'}
+          align={isMobile ? 'end' : 'start'}
         >
           <DropdownMenuItem>
             <StarOff className="text-muted-foreground" />
@@ -47,6 +54,6 @@ export const WalletButton: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-  </SidebarMenuButton>
+    </SidebarMenuButton>
   )
 }

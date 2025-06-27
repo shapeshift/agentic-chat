@@ -1,45 +1,29 @@
-import {
-  makeAssistantToolUI,
-  ToolCallContentPartProps,
-} from '@assistant-ui/react';
-import { AlertCircle, CheckCircle } from 'lucide-react';
-import { TextShimmer } from '../TextShimmer';
-import { CollapsableDetails } from './CollapsableDetails';
-import {
-  GetAllowanceParams,
-  GetAllowanceResult,
-} from '../../tools/getAllowance';
-import { useAssetsStore } from '../../stores/assets';
+import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import { AlertCircle, CheckCircle } from 'lucide-react'
 
-type GetAllowanceContentProps = Omit<
-  ToolCallContentPartProps<GetAllowanceParams, GetAllowanceResult>,
-  'args'
-> & {
-  args: Partial<GetAllowanceParams>;
-};
+import { useAssetsStore } from '../../stores/assets'
+import type { GetAllowanceParams, GetAllowanceResult } from '../../tools/getAllowance'
+import { TextShimmer } from '../TextShimmer'
 
-const GetAllowanceContent: React.FC<GetAllowanceContentProps> = ({
-  status,
-  result,
-  args,
-  isError,
-  toolName,
-}) => {
-  const assetsStore = useAssetsStore();
-  const asset = assetsStore.assetsById[args.assetId ?? ''];
+import { CollapsableDetails } from './CollapsableDetails'
+
+type GetAllowanceContentProps = Omit<ToolCallContentPartProps<GetAllowanceParams, GetAllowanceResult>, 'args'> & {
+  args: Partial<GetAllowanceParams>
+}
+
+const GetAllowanceContent: React.FC<GetAllowanceContentProps> = ({ status, result, args, isError, toolName }) => {
+  const assetsStore = useAssetsStore()
+  const asset = assetsStore.assetsById[args.assetId ?? '']
   switch (status.type) {
     case 'running':
     case 'requires-action':
     case 'incomplete': {
       if (!asset) {
-        return <TextShimmer>Fetching allowance</TextShimmer>;
+        return <TextShimmer>Fetching allowance</TextShimmer>
       }
 
-      return (
-        <TextShimmer>
-          Fetching allowance for {asset.symbol ?? ''}...
-        </TextShimmer>
-      );
+      return <TextShimmer>Fetching allowance for {asset.symbol ?? ''}...</TextShimmer>
     }
     case 'complete':
       if (isError) {
@@ -50,24 +34,18 @@ const GetAllowanceContent: React.FC<GetAllowanceContentProps> = ({
           >
             {result}
           </CollapsableDetails>
-        );
+        )
       }
       return (
-        <CollapsableDetails
-          title="Token allowance"
-          leftIcon={<CheckCircle className="w-4 h-4 text-primary" />}
-        >
+        <CollapsableDetails title="Token allowance" leftIcon={<CheckCircle className="w-4 h-4 text-primary" />}>
           <pre>{result}</pre>
         </CollapsableDetails>
-      );
+      )
   }
-};
-const GetAllowanceUI = makeAssistantToolUI<
-  GetAllowanceParams,
-  GetAllowanceResult
->({
+}
+const GetAllowanceUI = makeAssistantToolUI<GetAllowanceParams, GetAllowanceResult>({
   toolName: 'getAllowance',
   render: GetAllowanceContent,
-});
+})
 
-export default GetAllowanceUI;
+export default GetAllowanceUI

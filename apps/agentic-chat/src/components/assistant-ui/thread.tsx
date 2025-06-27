@@ -5,8 +5,7 @@ import {
   ErrorPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
-} from '@assistant-ui/react';
-import type { FC } from 'react';
+} from '@assistant-ui/react'
 import {
   ArrowDownIcon,
   CheckIcon,
@@ -16,13 +15,15 @@ import {
   PencilIcon,
   RefreshCwIcon,
   SendHorizontalIcon,
-} from 'lucide-react';
-import { cn } from '../../lib/utils';
+} from 'lucide-react'
+import type { FC } from 'react'
 
-import { Button } from '../ui/button';
-import { MarkdownText } from './markdown-text';
-import { TooltipIconButton } from './tooltip-icon-button';
-import { ToolFallback } from './tool-fallback';
+import { cn } from '../../lib/utils'
+import { Button } from '../ui/button'
+
+import { MarkdownText } from './markdown-text'
+import { ToolFallback } from './tool-fallback'
+import { TooltipIconButton } from './tooltip-icon-button'
 
 export const Thread: FC = () => {
   return (
@@ -53,8 +54,8 @@ export const Thread: FC = () => {
         </div>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
-  );
-};
+  )
+}
 
 const ThreadScrollToBottom: FC = () => {
   return (
@@ -67,8 +68,8 @@ const ThreadScrollToBottom: FC = () => {
         <ArrowDownIcon />
       </TooltipIconButton>
     </ThreadPrimitive.ScrollToBottom>
-  );
-};
+  )
+}
 
 const ThreadWelcome: FC = () => {
   return (
@@ -80,8 +81,8 @@ const ThreadWelcome: FC = () => {
         <ThreadWelcomeSuggestions />
       </div>
     </ThreadPrimitive.Empty>
-  );
-};
+  )
+}
 
 const ThreadWelcomeSuggestions: FC = () => {
   return (
@@ -92,9 +93,7 @@ const ThreadWelcomeSuggestions: FC = () => {
         method="replace"
         autoSend
       >
-        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          Swap half my ETH on Arbitrum to USDC
-        </span>
+        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">Swap half my ETH on Arbitrum to USDC</span>
       </ThreadPrimitive.Suggestion>
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
@@ -102,9 +101,7 @@ const ThreadWelcomeSuggestions: FC = () => {
         method="replace"
         autoSend
       >
-        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          What is my USDC balance on Arbitrum?
-        </span>
+        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">What is my USDC balance on Arbitrum?</span>
       </ThreadPrimitive.Suggestion>
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
@@ -112,9 +109,7 @@ const ThreadWelcomeSuggestions: FC = () => {
         method="replace"
         autoSend
       >
-        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          Swap half my USDC on ARB to FOX
-        </span>
+        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">Swap half my USDC on ARB to FOX</span>
       </ThreadPrimitive.Suggestion>
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
@@ -122,13 +117,11 @@ const ThreadWelcomeSuggestions: FC = () => {
         method="replace"
         autoSend
       >
-        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          Gib me some info about FOX on Arb
-        </span>
+        <span className="line-clamp-2 text-ellipsis text-sm font-semibold">Gib me some info about FOX on Arb</span>
       </ThreadPrimitive.Suggestion>
     </div>
-  );
-};
+  )
+}
 
 const Composer: FC = () => {
   return (
@@ -141,19 +134,15 @@ const Composer: FC = () => {
       />
       <ComposerAction />
     </ComposerPrimitive.Root>
-  );
-};
+  )
+}
 
 const ComposerAction: FC = () => {
   return (
     <>
       <ThreadPrimitive.If running={false}>
         <ComposerPrimitive.Send asChild>
-          <TooltipIconButton
-            tooltip="Send"
-            variant="default"
-            className="my-2.5 size-8 p-2 transition-opacity ease-in"
-          >
+          <TooltipIconButton tooltip="Send" variant="default" className="my-2.5 size-8 p-2 transition-opacity ease-in">
             <SendHorizontalIcon />
           </TooltipIconButton>
         </ComposerPrimitive.Send>
@@ -170,8 +159,8 @@ const ComposerAction: FC = () => {
         </ComposerPrimitive.Cancel>
       </ThreadPrimitive.If>
     </>
-  );
-};
+  )
+}
 
 const UserMessage: FC = () => {
   return (
@@ -184,8 +173,8 @@ const UserMessage: FC = () => {
 
       <BranchPicker className="col-span-full col-start-1 row-start-3 -mr-1 justify-end" />
     </MessagePrimitive.Root>
-  );
-};
+  )
+}
 
 const UserActionBar: FC = () => {
   return (
@@ -200,8 +189,8 @@ const UserActionBar: FC = () => {
         </TooltipIconButton>
       </ActionBarPrimitive.Edit>
     </ActionBarPrimitive.Root>
-  );
-};
+  )
+}
 
 const EditComposer: FC = () => {
   return (
@@ -217,16 +206,14 @@ const EditComposer: FC = () => {
         </ComposerPrimitive.Send>
       </div>
     </ComposerPrimitive.Root>
-  );
-};
+  )
+}
 
 const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root className="grid grid-cols-[auto_auto_1fr] grid-rows-[auto_1fr] relative w-full max-w-[var(--thread-max-width)] py-4">
       <div className="text-foreground max-w-[calc(var(--thread-max-width)*0.8)] break-words leading-7 col-span-2 col-start-2 row-start-1 my-1.5">
-        <MessagePrimitive.Content
-          components={{ Text: MarkdownText, tools: { Fallback: ToolFallback } }}
-        />
+        <MessagePrimitive.Content components={{ Text: MarkdownText, tools: { Fallback: ToolFallback } }} />
         <MessageError />
       </div>
 
@@ -234,8 +221,8 @@ const AssistantMessage: FC = () => {
 
       <BranchPicker className="col-start-2 row-start-2 -ml-2 mr-2" />
     </MessagePrimitive.Root>
-  );
-};
+  )
+}
 
 const MessageError: FC = () => {
   return (
@@ -244,8 +231,8 @@ const MessageError: FC = () => {
         <ErrorPrimitive.Message className="line-clamp-2" />
       </ErrorPrimitive.Root>
     </MessagePrimitive.Error>
-  );
-};
+  )
+}
 
 const AssistantActionBar: FC = () => {
   return (
@@ -271,20 +258,14 @@ const AssistantActionBar: FC = () => {
         </TooltipIconButton>
       </ActionBarPrimitive.Reload>
     </ActionBarPrimitive.Root>
-  );
-};
+  )
+}
 
-const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
-  className,
-  ...rest
-}) => {
+const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({ className, ...rest }) => {
   return (
     <BranchPickerPrimitive.Root
       hideWhenSingleBranch
-      className={cn(
-        'text-muted-foreground inline-flex items-center text-xs',
-        className
-      )}
+      className={cn('text-muted-foreground inline-flex items-center text-xs', className)}
       {...rest}
     >
       <BranchPickerPrimitive.Previous asChild>
@@ -301,19 +282,13 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
         </TooltipIconButton>
       </BranchPickerPrimitive.Next>
     </BranchPickerPrimitive.Root>
-  );
-};
+  )
+}
 
 const CircleStopIcon = () => {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      width="16"
-      height="16"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
       <rect width="10" height="10" x="3" y="3" rx="2" />
     </svg>
-  );
-};
+  )
+}

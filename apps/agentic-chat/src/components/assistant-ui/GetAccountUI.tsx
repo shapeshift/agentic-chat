@@ -1,35 +1,26 @@
-import {
-  makeAssistantToolUI,
-  ToolCallContentPartProps,
-} from '@assistant-ui/react';
-import { Wallet } from 'lucide-react';
-import { CollapsableDetails } from './CollapsableDetails';
-import { TextShimmer } from '../TextShimmer';
-import { GetAccountParams, GetAccountResult } from '../../tools/getAccount';
+import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import { Wallet } from 'lucide-react'
 
-const Icon = Wallet;
+import type { GetAccountParams, GetAccountResult } from '../../tools/getAccount'
+import { TextShimmer } from '../TextShimmer'
 
-type GetAccountUiContentProps = Omit<
-  ToolCallContentPartProps<GetAccountParams, GetAccountResult>,
-  'args'
-> & {
-  args: Partial<GetAccountParams>;
-};
+import { CollapsableDetails } from './CollapsableDetails'
 
-const GetAccountUiContent: React.FC<GetAccountUiContentProps> = ({
-  status,
-  result,
-  args,
-  isError,
-  toolName,
-}) => {
+const Icon = Wallet
+
+type GetAccountUiContentProps = Omit<ToolCallContentPartProps<GetAccountParams, GetAccountResult>, 'args'> & {
+  args: Partial<GetAccountParams>
+}
+
+const GetAccountUiContent: React.FC<GetAccountUiContentProps> = ({ status, result, args, isError, toolName }) => {
   switch (status.type) {
     case 'running':
     case 'requires-action':
     case 'incomplete': {
-      if (!args.network) return <TextShimmer>Getting account</TextShimmer>;
+      if (!args.network) return <TextShimmer>Getting account</TextShimmer>
 
-      return <TextShimmer>Getting account for {args.network}...</TextShimmer>;
+      return <TextShimmer>Getting account for {args.network}...</TextShimmer>
     }
     case 'complete':
       if (isError) {
@@ -40,22 +31,19 @@ const GetAccountUiContent: React.FC<GetAccountUiContentProps> = ({
           >
             {JSON.stringify(result)}
           </CollapsableDetails>
-        );
+        )
       }
       return (
-        <CollapsableDetails
-          title="Account details"
-          leftIcon={<Icon className="w-4 h-4 text-green-500" />}
-        >
+        <CollapsableDetails title="Account details" leftIcon={<Icon className="w-4 h-4 text-green-500" />}>
           <pre>{JSON.stringify(result, null, 2)}</pre>
         </CollapsableDetails>
-      );
+      )
   }
-};
+}
 
 const GetAccountUI = makeAssistantToolUI<GetAccountParams, GetAccountResult>({
   toolName: 'getAccount',
   render: GetAccountUiContent,
-});
+})
 
-export default GetAccountUI;
+export default GetAccountUI
