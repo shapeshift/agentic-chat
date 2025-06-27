@@ -1,26 +1,30 @@
 import { useAssistantTool } from '@assistant-ui/react'
-import { useState } from 'react'
-import type { Hex } from 'viem'
+import { useCallback, useState } from 'react'
 import { getAddress } from 'viem'
+import type { Hex } from 'viem'
 import { useAccount, useWalletClient } from 'wagmi'
 
-import { executeSwapParams } from '../components/assistant-ui/ExecuteSwapUI'
 import { useAssetsStore } from '../stores/assets'
 import { usePortfolioStore } from '../stores/portfolio'
 import { approve, approveParamsSchema } from '../tools/approve'
 import { bebopRateParams, getBebopRate } from '../tools/bebopRate'
-import { executeSwap } from '../tools/executeSwap'
+import { executeSwap, executeSwapParams } from '../tools/executeSwap'
 import { getAccount, getAccountParams } from '../tools/getAccount'
 import { getAllowance, getAllowanceParams } from '../tools/getAllowance'
+import { getRelayRate, relayRateParams } from '../tools/relayRate/index'
 import { searchTokens, searchTokensParams } from '../tools/searchTokens'
 import { sendTransaction, sendTransactionParams } from '../tools/sendTransaction'
 import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain'
-import type { BebopQuote } from '../types'
+import type { Quote } from '../types/quote'
 
 const useTools = () => {
   const account = useAccount()
   const { data: walletClient } = useWalletClient()
-  const [bebopQuote, setBebopQuote] = useState<BebopQuote | null>(null)
+  const [quotes, setQuotes] = useState<Record<string, Quote>>({})
+
+  const setQuote = useCallback((quote: Quote) => {
+    setQuotes(prev => ({ ...prev, [quote.id]: quote }))
+  }, [])
 
   const assetsStore = useAssetsStore()
   const portfolioStore = usePortfolioStore()
@@ -92,7 +96,23 @@ const useTools = () => {
         buyAssetId,
         sellAmountCryptoPrecision,
         fromAddress: getAddress(account?.address ?? ''),
-        setBebopQuote,
+        setQuote,
+        assetsStore,
+      })
+    },
+  })
+
+  useAssistantTool({
+    toolName: 'relayRate',
+    description: 'Fetches a swap rate from Relay and displays it to the user',
+    parameters: relayRateParams,
+    execute: async ({ sellAssetId, buyAssetId, sellAmountCryptoPrecision }) => {
+      return getRelayRate({
+        sellAssetId,
+        buyAssetId,
+        sellAmountCryptoPrecision,
+        fromAddress: getAddress(account?.address ?? ''),
+        setQuote,
         assetsStore,
       })
     },
@@ -102,10 +122,14 @@ const useTools = () => {
     toolName: 'executeSwap',
     description: 'Executes the swap previously requested using bebopRate tool.',
     parameters: executeSwapParams,
-    execute: async () => {
+    execute: async ({ quoteId }) => {
+      const quote = quotes[quoteId]
+
+      if (!quote) return
+
       return executeSwap({
         walletClient,
-        bebopQuote,
+        ...quote,
       })
     },
   })

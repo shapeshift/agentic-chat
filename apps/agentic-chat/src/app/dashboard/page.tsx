@@ -3,6 +3,7 @@ import BebopQuoteUI from '../../components/assistant-ui/BebopQuoteUI'
 import ExecuteSwapUI from '../../components/assistant-ui/ExecuteSwapUI'
 import GetAccountUI from '../../components/assistant-ui/GetAccountUI'
 import GetAllowanceUI from '../../components/assistant-ui/GetAllowanceUI'
+import RelayQuoteUI from '../../components/assistant-ui/RelayQuoteUI'
 import SearchTokensUI from '../../components/assistant-ui/SearchTokensUI'
 import SendTransactionUI from '../../components/assistant-ui/SendTransactionUI'
 import SwitchEvmChainUI from '../../components/assistant-ui/SwitchEvmChainUI'
@@ -31,6 +32,7 @@ export const Dashboard = () => {
         </header>
         <div className="overflow-hidden h-full">
           <BebopQuoteUI />
+          <RelayQuoteUI />
           <SwitchEvmChainUI />
           <GetAccountUI />
           <ApproveUI />

@@ -3,9 +3,7 @@
 import * as React from 'react'
 
 import { ThreadList } from './assistant-ui/thread-list'
-import { NavUser } from './nav-user'
-import { NavWallets } from './nav-wallets'
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from './ui/sidebar'
+import { Sidebar, SidebarContent, SidebarHeader, SidebarRail } from './ui/sidebar'
 
 export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }) => {
   return (
@@ -17,12 +15,12 @@ export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ..
       </SidebarHeader>
       <SidebarContent className="px-2 pt-2">
         <ThreadList />
-        <NavWallets wallets={[]} />
+        {/* <NavWallets wallets={data.wallets} /> */}
       </SidebarContent>
       <SidebarRail />
-      <SidebarFooter>
-        <NavUser user={undefined} />
-      </SidebarFooter>
+      {/* <SidebarFooter>
+        <NavUser user={data.user} />
+      </SidebarFooter> */}
     </Sidebar>
   )
 }

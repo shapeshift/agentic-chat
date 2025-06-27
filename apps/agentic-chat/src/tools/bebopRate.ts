@@ -10,13 +10,16 @@ import {
 } from '@shapeshiftoss/caip'
 import type { AssetId, ChainId } from '@shapeshiftoss/caip'
 import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
+import { v4 as uuid } from 'uuid'
 import type { Address } from 'viem'
-import { getAddress } from 'viem'
+import { getAddress, hexToBigInt } from 'viem'
 import z from 'zod'
 
 import type { AssetsStore } from '../stores/assets'
-import type { BebopQuote, BebopResponse } from '../types'
+import type { Quote } from '../types/quote'
 import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId'
+
+import type { BebopResponse } from '@/types'
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 
@@ -40,11 +43,11 @@ export const getBebopRate = async ({
   buyAssetId,
   sellAmountCryptoPrecision,
   fromAddress,
-  setBebopQuote,
+  setQuote,
   assetsStore,
 }: BebopRateParams & {
   fromAddress: Address
-  setBebopQuote: (bebopQuote: BebopQuote) => void
+  setQuote: (quote: Quote) => void
   assetsStore: AssetsStore
 }): Promise<BebopRateResult> => {
   const sellAsset = assetsStore.assetsById[sellAssetId]
@@ -116,8 +119,6 @@ export const getBebopRate = async ({
 
   const quote = data.routes[0].quote
 
-  setBebopQuote(quote)
-
   const buyAmountCryptoBaseUnit = quote.buyTokens[buyTokenAddress].amount.toString()
   const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, quote.buyTokens[buyTokenAddress].decimals)
 
@@ -128,6 +129,14 @@ export const getBebopRate = async ({
     buyAssetId,
     approvalTarget: quote.approvalTarget,
   }
+
+  // Make value a BN string instead of hexlified string
+  const tx = {
+    ...quote.tx,
+    value: hexToBigInt(quote.tx.value).toString(),
+  }
+
+  setQuote({ ...content, tx, id: uuid() })
 
   return content
 }
