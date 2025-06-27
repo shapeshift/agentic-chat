@@ -1,17 +1,27 @@
-import { makeAssistantToolUI } from '@assistant-ui/react';
-import { ArrowRightLeft } from 'lucide-react';
-import { TextShimmer } from '../TextShimmer';
-import { CollapsableDetails } from './CollapsableDetails';
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import { ArrowRightLeft } from 'lucide-react'
+import z from 'zod'
 
-export type ExecuteSwapArgs = Record<string, never>; // no args
-export type ExecuteSwapResult = string; // tx hash
+import { TextShimmer } from '../TextShimmer'
 
-const Icon = ArrowRightLeft;
+import { CollapsableDetails } from './CollapsableDetails'
+
+export const executeSwapParams = z.object({}).strict()
+
+export type ExecuteSwapArgs = z.infer<typeof executeSwapParams>
+export type ExecuteSwapResult = string // tx hash
+
+const Icon = ArrowRightLeft
 
 const ExecuteSwapUI = makeAssistantToolUI<ExecuteSwapArgs, ExecuteSwapResult>({
   toolName: 'executeSwap',
   render: ({ status, result, isError, toolName }) => {
     switch (status.type) {
+      case 'running':
+      case 'requires-action':
+      case 'incomplete': {
+        return <TextShimmer>Executing swap...</TextShimmer>
+      }
       case 'complete':
         if (isError) {
           return (
@@ -21,20 +31,16 @@ const ExecuteSwapUI = makeAssistantToolUI<ExecuteSwapArgs, ExecuteSwapResult>({
             >
               {result}
             </CollapsableDetails>
-          );
+          )
         }
         return (
           <div className="flex items-center gap-2">
             <Icon className="w-4 h-4 text-green-500" />
-            <p className="text-muted-foreground">
-              Swap transaction sent: {result}
-            </p>
+            <p className="text-muted-foreground">Swap transaction sent: {result}</p>
           </div>
-        );
-      default:
-        return <TextShimmer>Executing swap...</TextShimmer>;
+        )
     }
   },
-});
+})
 
-export default ExecuteSwapUI;
+export default ExecuteSwapUI

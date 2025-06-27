@@ -1,7 +1,10 @@
-import { Asset as FullAsset } from '@shapeshiftoss/types';
+import type { AssetId, ChainId } from '@shapeshiftoss/caip'
 
-// Minimal Asset type definition not to make things more complicated than they need to be for this repo
-export type Asset = Pick<
-  FullAsset,
-  'assetId' | 'chainId' | 'symbol' | 'name' | 'precision' | 'icon'
->;
+export type Asset = {
+  assetId: AssetId
+  chainId: ChainId
+  symbol: string
+  name: string
+  precision: number
+  icon: string | undefined
+}
