@@ -1,4 +1,4 @@
-import { ASSET_NAMESPACE, bscChainId, toAssetId } from '@shapeshiftoss/caip'
+import { ASSET_NAMESPACE, toAssetId } from '@shapeshiftoss/caip'
 import axios from 'axios'
 import qs from 'qs'
 import z from 'zod'
@@ -55,7 +55,7 @@ export const searchTokens = async ({
 
       const assetId = toAssetId({
         chainId,
-        assetNamespace: chainId === bscChainId ? ASSET_NAMESPACE.bep20 : ASSET_NAMESPACE.erc20,
+        assetNamespace: ASSET_NAMESPACE.erc20,
         assetReference: token.address,
       })
 

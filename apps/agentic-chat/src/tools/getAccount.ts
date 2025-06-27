@@ -1,5 +1,5 @@
 import type { AssetId } from '@shapeshiftoss/caip'
-import { toAssetId, bscChainId, ASSET_NAMESPACE } from '@shapeshiftoss/caip'
+import { toAssetId, ASSET_NAMESPACE } from '@shapeshiftoss/caip'
 import { fromBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import type { Address } from 'viem'
@@ -50,7 +50,7 @@ export const getAccount = async ({
   const assets = data.tokens.map<Asset>(token => ({
     assetId: toAssetId({
       chainId: chainId,
-      assetNamespace: chainId === bscChainId ? ASSET_NAMESPACE.bep20 : ASSET_NAMESPACE.erc20,
+      assetNamespace: ASSET_NAMESPACE.erc20,
       assetReference: token.contract,
     }),
     chainId: chainId,
@@ -75,7 +75,7 @@ export const getAccount = async ({
   const portfolio = data.tokens.reduce<Record<AssetId, string>>((acc, token) => {
     const assetId = toAssetId({
       chainId: chainId,
-      assetNamespace: chainId === bscChainId ? ASSET_NAMESPACE.bep20 : ASSET_NAMESPACE.erc20,
+      assetNamespace: ASSET_NAMESPACE.erc20,
       assetReference: token.contract,
     })
     acc[assetId] = fromBaseUnit(token.balance, token.decimals)
