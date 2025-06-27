@@ -8,8 +8,7 @@ import z from 'zod'
 import { networkToChainIdMap } from '../lib/utils'
 import type { AssetsStore } from '../stores/assets'
 import type { PortfolioStore } from '../stores/portfolio'
-import type { Account } from '../types/account'
-import type { Asset } from '../types/asset'
+import type { Account, Asset } from '../types'
 import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId'
 
 export const getAccountParams = z.object({

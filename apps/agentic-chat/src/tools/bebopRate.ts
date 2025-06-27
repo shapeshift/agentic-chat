@@ -9,13 +9,13 @@ import {
   polygonChainId,
 } from '@shapeshiftoss/caip'
 import type { AssetId, ChainId } from '@shapeshiftoss/caip'
-import type { BebopQuote, BebopResponse } from '@shapeshiftoss/types'
 import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
 import type { Address } from 'viem'
 import { getAddress } from 'viem'
 import z from 'zod'
 
 import type { AssetsStore } from '../stores/assets'
+import type { BebopQuote, BebopResponse } from '../types'
 import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId'
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'

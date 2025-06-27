@@ -1,4 +1,4 @@
-import type { Transaction } from '../types/transaction'
+import type { Transaction } from '../types'
 
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { SidebarMenuButton } from './ui/sidebar'

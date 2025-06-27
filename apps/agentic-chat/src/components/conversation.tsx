@@ -1,6 +1,6 @@
 import { ArrowUpRight, Trash2, Link, StarOff, MoreHorizontal } from 'lucide-react'
 
-import type { Conversation } from '../types/conversation'
+import type { Conversation } from '../types'
 
 import {
   DropdownMenuItem,

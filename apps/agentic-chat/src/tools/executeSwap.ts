@@ -1,8 +1,9 @@
-import type { BebopQuote } from '@shapeshiftoss/types'
 import { fromBaseUnit } from '@shapeshiftoss/utils'
 import type { Hash, WalletClient } from 'viem'
 import { getAddress } from 'viem'
 import z from 'zod'
+
+import type { BebopQuote } from '../types'
 
 import { sendTransaction } from './sendTransaction'
 

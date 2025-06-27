@@ -1,11 +1,11 @@
 import { ASSET_NAMESPACE, bscChainId, toAssetId } from '@shapeshiftoss/caip'
-import type { PortalsResponse, Asset } from '@shapeshiftoss/types'
 import axios from 'axios'
 import qs from 'qs'
 import z from 'zod'
 
 import { networkToChainIdMap } from '../lib/utils'
 import type { AssetsStore } from '../stores/assets'
+import type { PortalsResponse, Asset } from '../types'
 
 const env = import.meta?.env ? import.meta.env : process.env
 const PORTALS_BASE_URL = env.VITE_PORTALS_BASE_URL

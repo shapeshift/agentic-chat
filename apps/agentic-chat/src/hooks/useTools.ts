@@ -1,5 +1,4 @@
 import { useAssistantTool } from '@assistant-ui/react'
-import type { BebopQuote } from '@shapeshiftoss/types'
 import { useState } from 'react'
 import type { Hex } from 'viem'
 import { getAddress } from 'viem'
@@ -16,6 +15,7 @@ import { getAllowance, getAllowanceParams } from '../tools/getAllowance'
 import { searchTokens, searchTokensParams } from '../tools/searchTokens'
 import { sendTransaction, sendTransactionParams } from '../tools/sendTransaction'
 import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain'
+import type { BebopQuote } from '../types'
 
 const useTools = () => {
   const account = useAccount()
