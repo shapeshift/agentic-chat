@@ -1,15 +1,17 @@
-import { makeAssistantToolUI } from '@assistant-ui/react';
-import { Wallet } from 'lucide-react';
-import { CollapsableDetails } from './CollapsableDetails';
-import { TextShimmer } from '../TextShimmer';
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import { Wallet } from 'lucide-react'
 
-const Icon = Wallet;
+import { TextShimmer } from '../TextShimmer'
+
+import { CollapsableDetails } from './CollapsableDetails'
+
+const Icon = Wallet
 // Types for bebopRate tool args and result
 export type GetAccountArgs = {
-  network: string;
-};
+  network: string
+}
 
-export type GetAccountResult = string;
+export type GetAccountResult = string
 
 const GetAccountUI = makeAssistantToolUI<GetAccountArgs, GetAccountResult>({
   toolName: 'getAccount',
@@ -24,20 +26,17 @@ const GetAccountUI = makeAssistantToolUI<GetAccountArgs, GetAccountResult>({
             >
               {result}
             </CollapsableDetails>
-          );
+          )
         }
         return (
-          <CollapsableDetails
-            title="Account details"
-            leftIcon={<Icon className="w-4 h-4 text-green-500" />}
-          >
+          <CollapsableDetails title="Account details" leftIcon={<Icon className="w-4 h-4 text-green-500" />}>
             <pre>{JSON.stringify(result, null, 2)}</pre>
           </CollapsableDetails>
-        );
+        )
       default:
-        return <TextShimmer>Getting account for {args.network}...</TextShimmer>;
+        return <TextShimmer>Getting account for {args.network}...</TextShimmer>
     }
   },
-});
+})
 
-export default GetAccountUI;
+export default GetAccountUI

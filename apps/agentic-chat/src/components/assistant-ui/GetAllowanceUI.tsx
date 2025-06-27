@@ -1,21 +1,20 @@
-import { makeAssistantToolUI } from '@assistant-ui/react';
-import { AlertCircle, CheckCircle } from 'lucide-react';
-import { TextShimmer } from '../TextShimmer';
-import { CollapsableDetails } from './CollapsableDetails';
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import { AlertCircle, CheckCircle } from 'lucide-react'
+
+import { TextShimmer } from '../TextShimmer'
+
+import { CollapsableDetails } from './CollapsableDetails'
 
 export type GetAllowanceArgs = {
-  token: string;
-  decimals: number;
-  spender: string;
-  chainId: number;
-};
+  token: string
+  decimals: number
+  spender: string
+  chainId: number
+}
 
-export type GetAllowanceResult = string; // allowance in human units
+export type GetAllowanceResult = string // allowance in human units
 
-const GetAllowanceUI = makeAssistantToolUI<
-  GetAllowanceArgs,
-  GetAllowanceResult
->({
+const GetAllowanceUI = makeAssistantToolUI<GetAllowanceArgs, GetAllowanceResult>({
   toolName: 'getAllowance',
   render: ({ status, result, args, isError, toolName }) => {
     switch (status.type) {
@@ -28,22 +27,17 @@ const GetAllowanceUI = makeAssistantToolUI<
             >
               {result}
             </CollapsableDetails>
-          );
+          )
         }
         return (
-          <CollapsableDetails
-            title="Token allowance"
-            leftIcon={<CheckCircle className="w-4 h-4 text-primary" />}
-          >
+          <CollapsableDetails title="Token allowance" leftIcon={<CheckCircle className="w-4 h-4 text-primary" />}>
             <pre>{result}</pre>
           </CollapsableDetails>
-        );
+        )
       default:
-        return (
-          <TextShimmer>Fetching allowance for {args.token}...</TextShimmer>
-        );
+        return <TextShimmer>Fetching allowance for {args.token}...</TextShimmer>
     }
   },
-});
+})
 
-export default GetAllowanceUI;
+export default GetAllowanceUI

@@ -1,35 +1,31 @@
-import { makeAssistantToolUI } from '@assistant-ui/react';
-import { Search } from 'lucide-react';
-import { TextShimmer } from '../TextShimmer';
-import { CollapsableDetails } from './CollapsableDetails';
-import { TokenSearchResult, PortalsToken } from '@agentic-chat/types';
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import type { TokenSearchResult, PortalsToken } from '@shapeshiftoss/types'
+import { Search } from 'lucide-react'
+
+import { TextShimmer } from '../TextShimmer'
+
+import { CollapsableDetails } from './CollapsableDetails'
 
 export type SearchTokensArgs = {
-  searchTerm: string;
-  network?: string;
-};
+  searchTerm: string
+  network?: string
+}
 
-export type SearchTokensResult = TokenSearchResult;
+export type SearchTokensResult = TokenSearchResult
 
-const Icon = Search;
+const Icon = Search
 
-const SearchTokensUI = makeAssistantToolUI<
-  SearchTokensArgs,
-  SearchTokensResult
->({
+const SearchTokensUI = makeAssistantToolUI<SearchTokensArgs, SearchTokensResult>({
   toolName: 'searchTokens',
   render: ({ status, result, args, isError }) => {
     switch (status.type) {
       case 'complete':
         if (isError || !result) {
           return (
-            <CollapsableDetails
-              title="No tokens found"
-              leftIcon={<Icon className="w-4 h-4 text-red-500" />}
-            >
+            <CollapsableDetails title="No tokens found" leftIcon={<Icon className="w-4 h-4 text-red-500" />}>
               {result ? result.total : 'No tokens found'}
             </CollapsableDetails>
-          );
+          )
         }
 
         return (
@@ -41,20 +37,16 @@ const SearchTokensUI = makeAssistantToolUI<
               {result.tokens.map((token: PortalsToken) => (
                 <li key={token.address} className="flex items-center gap-2">
                   <span className="font-mono text-sm">{token.symbol}</span>
-                  <span className="text-muted-foreground text-xs truncate">
-                    {token.address}
-                  </span>
+                  <span className="text-muted-foreground text-xs truncate">{token.address}</span>
                 </li>
               ))}
             </ul>
           </CollapsableDetails>
-        );
+        )
       default:
-        return (
-          <TextShimmer>Searching tokens for "{args.searchTerm}"...</TextShimmer>
-        );
+        return <TextShimmer>Searching tokens for "{args.searchTerm}"...</TextShimmer>
     }
   },
-});
+})
 
-export default SearchTokensUI;
+export default SearchTokensUI
