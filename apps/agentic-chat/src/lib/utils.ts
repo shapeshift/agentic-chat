@@ -1,18 +1,19 @@
+import type { ChainId } from '@shapeshiftoss/caip'
 import {
   baseChainId,
   avalancheChainId,
   binanceChainId,
-  ChainId,
   arbitrumChainId,
   ethChainId,
   optimismChainId,
   polygonChainId,
-} from '@shapeshiftoss/caip';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+} from '@shapeshiftoss/caip'
+import { clsx } from 'clsx'
+import type { ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs))
 }
 
 export const networkToChainIdMap: Record<string, ChainId> = {
@@ -23,4 +24,4 @@ export const networkToChainIdMap: Record<string, ChainId> = {
   avalanche: avalancheChainId,
   optimism: optimismChainId,
   bsc: binanceChainId,
-};
+}

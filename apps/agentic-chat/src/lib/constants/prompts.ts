@@ -1,12 +1,11 @@
 export interface ExamplePrompt {
-  template: string;
-  sampleVariables: Record<string, string>;
+  template: string
+  sampleVariables: Record<string, string>
 }
 
 export const EXAMPLE_PROMPTS: ExamplePrompt[] = [
   {
-    template:
-      'Swap {amountCryptoPrecision} {sellAssetSymbol} to {buyAssetSymbol} on {evmNetworkName}',
+    template: 'Swap {amountCryptoPrecision} {sellAssetSymbol} to {buyAssetSymbol} on {evmNetworkName}',
     sampleVariables: {
       amountCryptoPrecision: '0.01',
       sellAssetSymbol: 'USDC',
@@ -15,8 +14,7 @@ export const EXAMPLE_PROMPTS: ExamplePrompt[] = [
     },
   },
   {
-    template:
-      'Swap {sellAmountUsd} of {sellAssetSymbol} to {buyAssetSymbol} on {evmNetworkName}',
+    template: 'Swap {sellAmountUsd} of {sellAssetSymbol} to {buyAssetSymbol} on {evmNetworkName}',
     sampleVariables: {
       sellAmountUsd: '1$',
       sellAssetSymbol: 'ETH',
@@ -35,4 +33,4 @@ export const EXAMPLE_PROMPTS: ExamplePrompt[] = [
       evmNetworks: 'all',
     },
   },
-];
+]

@@ -1,22 +1,15 @@
-import { ChevronDown } from 'lucide-react';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '../ui/collapsible';
-import { Card, CardContent } from '../ui/card';
+import { ChevronDown } from 'lucide-react'
+
+import { Card, CardContent } from '../ui/card'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 
 type CollapsableDetailsProps = {
-  children: React.ReactNode;
-  leftIcon?: React.ReactNode;
-  title: string | React.ReactNode;
-};
+  children: React.ReactNode
+  leftIcon?: React.ReactNode
+  title: string | React.ReactNode
+}
 
-export const CollapsableDetails = ({
-  children,
-  title,
-  leftIcon,
-}: CollapsableDetailsProps) => {
+export const CollapsableDetails = ({ children, title, leftIcon }: CollapsableDetailsProps) => {
   return (
     <div className="flex flex-col gap-2 w-full">
       <Collapsible>
@@ -35,5 +28,5 @@ export const CollapsableDetails = ({
         </CollapsibleContent>
       </Collapsible>
     </div>
-  );
-};
+  )
+}
