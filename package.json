@@ -18,15 +18,17 @@
     "type-check": "yarn workspaces foreach --all --parallel run type-check"
   },
   "dependencies": {
-    "@shapeshiftoss/caip": "workspace:^",
+    "@shapeshiftoss/caip": "^8.16.0",
     "@shapeshiftoss/types": "workspace:^",
     "@shapeshiftoss/utils": "workspace:^",
     "bignumber.js": "^9.3.0",
+    "lodash": "^4.17.21",
     "viem": "^2.31.0",
     "zod": "^3.25.67"
   },
   "devDependencies": {
     "@types/eslint-plugin-jsx-a11y": "^6.10.0",
+    "@types/lodash": "^4",
     "@types/node": "^24.0.1",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",

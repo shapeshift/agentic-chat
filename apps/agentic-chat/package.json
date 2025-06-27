@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "clean": "rm -rf dist node_modules",
-    "build": "yarn vite build",
-    "dev": "yarn vite",
-    "preview": "yarn build && yarn vite preview",
+    "build": "NODE_NO_WARNINGS=1 yarn vite build",
+    "dev": "NODE_NO_WARNINGS=1 yarn vite",
+    "preview": "yarn build && NODE_NO_WARNINGS=1 yarn vite preview",
     "type-check": "yarn run -T tsc --noEmit"
   },
   "dependencies": {
@@ -41,10 +41,10 @@
     "tailwind-merge": "^3.2.0",
     "viem": "*",
     "wagmi": "^2.15.6",
-    "zod": "*"
+    "zod": "*",
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
-    "@ai-sdk/provider-utils": "^2.2.8",
     "@ai-sdk/ui-utils": "^1.2.11",
     "@tailwindcss/postcss": "^4.1.4",
     "@tailwindcss/vite": "^4.1.11",
