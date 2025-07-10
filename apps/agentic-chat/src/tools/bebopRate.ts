@@ -16,10 +16,8 @@ import { getAddress, hexToBigInt } from 'viem'
 import z from 'zod'
 
 import type { AssetsStore } from '../stores/assets'
-import type { Quote } from '../types/quote'
+import type { Quote, BebopResponse } from '../types'
 import { getFeeAssetByChainId } from '../utils/getFeeAssetByChainId'
-
-import type { BebopResponse } from '@/types'
 
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 

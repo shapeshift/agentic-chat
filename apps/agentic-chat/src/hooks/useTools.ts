@@ -15,12 +15,12 @@ import { getRelayRate, relayRateParams } from '../tools/relayRate/index'
 import { searchTokens, searchTokensParams } from '../tools/searchTokens'
 import { sendTransaction, sendTransactionParams } from '../tools/sendTransaction'
 import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain'
-import type { Quote } from '../types/quote'
+import type { Quote, Quotes } from '../types'
 
 const useTools = () => {
   const account = useAccount()
   const { data: walletClient } = useWalletClient()
-  const [quotes, setQuotes] = useState<Record<string, Quote>>({})
+  const [quotes, setQuotes] = useState<Quotes>({})
 
   const setQuote = useCallback((quote: Quote) => {
     setQuotes(prev => ({ ...prev, [quote.id]: quote }))

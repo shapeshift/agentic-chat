@@ -1,6 +1,6 @@
 import type { AssetId } from '@shapeshiftoss/caip'
 
-export type TxData = {
+type TxData = {
   from: string
   to: string
   chainId: number
@@ -19,3 +19,5 @@ export type Quote = {
   tx: TxData
   id: string
 }
+
+export type Quotes = Record<string, Quote>
