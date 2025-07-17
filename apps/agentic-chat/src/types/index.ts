@@ -4,6 +4,7 @@ export * from './bebop'
 export * from './conversation'
 export * from './message'
 export * from './portals'
+export * from './quote'
 export * from './transaction'
 export * from './wallet'
 

@@ -3,7 +3,7 @@ import type { Hash, WalletClient } from 'viem'
 import { getAddress } from 'viem'
 import z from 'zod'
 
-import type { Quote } from '../types/quote'
+import type { Quote } from '../types'
 
 import { sendTransaction } from './sendTransaction'
 

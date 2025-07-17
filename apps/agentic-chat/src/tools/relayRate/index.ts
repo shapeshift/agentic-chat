@@ -28,8 +28,7 @@ import { zeroAddress } from 'viem'
 import z from 'zod'
 
 import type { AssetsStore } from '../../stores/assets'
-import type { Asset } from '../../types/asset'
-import type { Quote } from '../../types/quote'
+import type { Asset, Quote } from '../../types'
 
 import type { RelayFetchQuoteParams, RelayQuote } from './types'
 
