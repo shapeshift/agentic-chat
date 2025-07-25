@@ -1,3 +1,5 @@
+import QuoteUi from '@/components/assistant-ui/QuoteUi'
+
 import ApproveUI from '../../components/assistant-ui/ApproveUI'
 import BebopQuoteUI from '../../components/assistant-ui/BebopQuoteUI'
 import ExecuteSwapUI from '../../components/assistant-ui/ExecuteSwapUI'
@@ -12,14 +14,11 @@ import { ConnectWallet } from '../../components/connect-wallet'
 import { SidebarLeft } from '../../components/sidebar-left'
 import { SidebarRight } from '../../components/sidebar-right'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '../../components/ui/sidebar'
-import useTools from '../../hooks/useTools'
 
 const isSidebarLeftEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true'
 const isSidebarRightEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_RIGHT === 'true'
 
 export const Dashboard = () => {
-  useTools()
-
   return (
     <SidebarProvider>
       {isSidebarLeftEnabled && <SidebarLeft />}
@@ -37,6 +36,7 @@ export const Dashboard = () => {
           <GetAccountUI />
           <ApproveUI />
           <GetAllowanceUI />
+          <QuoteUi />
           <SearchTokensUI />
           <ExecuteSwapUI />
           <SendTransactionUI />

@@ -12,13 +12,18 @@ app.use(express.json())
 app.use(cors())
 
 app.post('/', async (req: Request, res: Response) => {
-  const { messages, tools } = req.body
+  const { messages, userContext } = req.body
 
   const agent = mastra.getAgent('shapeshiftAgent')
 
   const result = await agent.stream(messages as Messages, {
-    clientTools: tools,
-    maxSteps: 10,
+    context: [
+      {
+        role: 'user',
+        content: JSON.stringify(userContext),
+      },
+    ],
+    maxSteps: 100,
   })
 
   result.pipeDataStreamToResponse(res)

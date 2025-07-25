@@ -19,6 +19,9 @@
     "baseUrl": ".",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "paths": {
+      "@/*": ["apps/agentic-chat/src/*"]
+    },
 
     /* Interop Constraints */
     "allowSyntheticDefaultImports": true,
@@ -40,6 +43,7 @@
   ],
   "exclude": ["dist", "node_modules"],
   "references": [
+    { "path": "./packages/types" },
     { "path": "./packages/utils" }
   ]
 }
