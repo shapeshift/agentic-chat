@@ -11,6 +11,8 @@
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "references": [
+    { "path": "../../packages/mastra" },
+    { "path": "../../packages/types" },
     { "path": "../../packages/utils" }
   ]
 }

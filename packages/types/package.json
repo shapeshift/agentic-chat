@@ -9,7 +9,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "rm -rf dist && yarn run -T tsc --build",
-    "dev": "rm -rf dist && yarn run -T tsc --build --watch",
+    "dev": "yarn run -T tsc --build --watch",
     "type-check": "yarn run -T tsc --noEmit"
   }
 }

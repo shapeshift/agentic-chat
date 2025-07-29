@@ -5,7 +5,8 @@ import { Memory } from '@mastra/memory'
 
 import { getAccountTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
-import { swapWorkflow } from '../workflows/swap'
+import { searchTokensTool } from '../tools/searchTokens'
+import { swapWorkflow } from '../workflows'
 
 const openai = createOpenAI({
   // change me to VITE_VENICE_API_KEY if you want to use venice, and uncomment the below, then instantiate openai() with the model you want in `model` below
@@ -101,11 +102,12 @@ export const shapeshiftAgent = new Agent({
     Remember: You're the bridge between complex crypto infrastructure and simple user experience.
 `,
   model: openai('gpt-4o-mini'),
-  workflows: { swapWorkflow },
   tools: {
     getAccount: getAccountTool,
     getAllowance: getAllowanceTool,
+    searchTokens: searchTokensTool,
   },
+  workflows: { swapWorkflow },
   memory: new Memory({
     storage: new LibSQLStore({
       url: 'file:../mastra.db', // path is relative to the .mastra/output directory

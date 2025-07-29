@@ -7,6 +7,7 @@ import { getBebopRateStep } from '../tools/bebopRate'
 import { getAccountInput, getAccountStep } from '../tools/getAccount'
 import { getAllowanceStep } from '../tools/getAllowance'
 import { getRelayRateStep } from '../tools/relayRate'
+import { swapStep } from '../tools/swap'
 
 export const swapWorkflowInput = z.object({
   address: z.string().describe('The address to get account details for'),
@@ -15,6 +16,8 @@ export const swapWorkflowInput = z.object({
   sellAsset: asset.describe('The sell asset details'),
   sellAmountCryptoPrecision: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
 })
+
+export type SwapWorkflowInput = z.infer<typeof swapWorkflowInput>
 
 export const workflowInputStep = createStep({
   id: 'workflowInputStep',
@@ -43,6 +46,8 @@ export const getBestRateStep = createStep({
       experimental_output: getRateOutput,
     })
 
+    if (!object) throw new Error('Failed to find the best rate')
+
     return object
   },
 })
@@ -55,7 +60,15 @@ const swapWorkflow = createWorkflow({
   outputSchema: z.object({
     output: z.string(),
   }),
-  steps: [workflowInputStep, getAccountStep, getBebopRateStep, getRelayRateStep],
+  steps: [
+    workflowInputStep,
+    getAccountStep,
+    getBebopRateStep,
+    getRelayRateStep,
+    getAllowanceStep,
+    approveStep,
+    swapStep,
+  ],
 })
   // leverage agent call to fetch any account details and massage data as needed for the following step?
   // easier support for cross chain account info (add account details to context?)
@@ -66,32 +79,13 @@ const swapWorkflow = createWorkflow({
   // example of leveraging the agent intra-step to perform some prompt action and return data conforming to a specific output schema
   .then(getBestRateStep)
   .then(getAllowanceStep)
-  //.then({
-  //  id: 'getAllowance',
-  //  inputSchema: getRateOutput,
-  //  outputSchema: getAllowanceOutput,
-  //  execute: async ctx => {
-  //    const { inputData, mastra } = ctx
-  //    const { address } = ctx.getInitData<typeof swapWorkflowInput>()
-
-  //    const prompt = `Check the allowance set by the user address: ${address} for the following quote: ${JSON.stringify(inputData, null, 2)}`
-
-  //    const agent = mastra.getAgent('shapeshiftAgent')
-  //    if (!agent) throw new Error('ShapeShift Agent not found')
-
-  //    console.log('allowance', { prompt })
-  //    const { object } = await agent.generate([{ role: 'user', content: prompt }], {
-  //      experimental_output: getAllowanceOutput,
-  //    })
-  //    console.log('allowance', { object })
-
-  //    return object
-  //  },
-  //})
   // branching logic to perform pre swap checks (allowance, balance?, etc.)
   .branch([[({ inputData }) => Promise.resolve(inputData.isApprovalRequired), approveStep]])
+  .then(swapStep)
 // execute step (build + broadcast)
 
 swapWorkflow.commit()
+
+export type SwapWorkflowResult = Awaited<ReturnType<ReturnType<typeof swapWorkflow.createRun>['start']>>
 
 export { swapWorkflow }

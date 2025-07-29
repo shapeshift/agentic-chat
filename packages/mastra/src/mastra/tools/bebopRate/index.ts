@@ -41,11 +41,11 @@ export const getBebopRateStep = createStep({
   inputSchema: getAccountOutput,
   outputSchema: getRateOutput,
   execute: async ctx => {
+    console.log('getBebopRateStep')
     const { address, buyAsset, sellAsset, sellAmountCryptoPrecision } = ctx.getInitData<typeof swapWorkflowInput>()
 
     try {
       const rate = await getBebopRate({ address, buyAsset, sellAsset, sellAmountCryptoPrecision })
-      console.log('getBebopRate:', { rate })
       return rate
     } catch (err) {
       console.error(`failed to getBebopRate:`, err)
@@ -90,8 +90,6 @@ const getBebopRate = async ({
 
   const buyAmountCryptoBaseUnit = quote.buyTokens[buyTokenAddress].amount.toString()
   const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, quote.buyTokens[buyTokenAddress].decimals)
-
-  console.log({ quote })
 
   return {
     approvalTarget: quote.approvalTarget,

@@ -17,11 +17,11 @@ export const getRelayRateStep = createStep({
   inputSchema: getAccountOutput,
   outputSchema: getRateOutput,
   execute: async ctx => {
+    console.log('getRelayRateStep')
     const { address, buyAsset, sellAsset, sellAmountCryptoPrecision } = ctx.getInitData()
 
     try {
       const rate = await getRelayRate({ address, buyAsset, sellAsset, sellAmountCryptoPrecision })
-      console.log('getRelayRate:', { rate })
       return rate
     } catch (err) {
       console.error(`failed to getRelayRate:`, err)

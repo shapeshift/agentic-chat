@@ -24,6 +24,7 @@ export const getAccountTool = createTool({
   inputSchema: getAccountInput,
   outputSchema: getAccountOutput,
   execute: async ({ context }) => {
+    console.log('getAccountTool')
     return getAccount(context)
   },
 })
@@ -34,6 +35,7 @@ export const getAccountStep = createStep({
   inputSchema: getAccountInput,
   outputSchema: getAccountOutput,
   execute: async ({ inputData }) => {
+    console.log('getAccountStep')
     return getAccount(inputData)
   },
 })

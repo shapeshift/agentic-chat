@@ -47,7 +47,7 @@ vitest.config.*.timestamp*
 test-output
 .env
 .eslintcache
-apps/mastra.db*
+mastra.db*
 
 # System Files
 .DS_Store

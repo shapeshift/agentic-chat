@@ -30,7 +30,7 @@ export const getAllowanceStep = createStep({
   execute: ({ inputData, ...ctx }) => {
     const { approvalTarget, sellAsset, sellAmountCryptoPrecision } = inputData
     const { address } = ctx.getInitData<typeof swapWorkflowInput>()
-    console.log('getAllowanceStep', inputData)
+    console.log('getAllowanceStep')
 
     return getAllowance({
       amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
@@ -47,7 +47,7 @@ export const getAllowanceTool = createTool({
   inputSchema: getAllowanceInput,
   outputSchema: getAllowanceOutput,
   execute: ({ context }) => {
-    console.log('getAllowanceTool', context)
+    console.log('getAllowanceTool')
     return getAllowance(context)
   },
 })
