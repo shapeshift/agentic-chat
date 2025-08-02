@@ -2,7 +2,8 @@
   "name": "@shapeshiftoss/agentic-server",
   "version": "1.0.0",
   "private": true,
-  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist .mastra",
     "build": "npx concurrently  \"yarn build:tsc\" \"yarn build:mastra\"",

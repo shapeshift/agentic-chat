@@ -6,12 +6,12 @@ import { Wallet } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useWalletClient } from 'wagmi'
 
+import { sendTransaction } from '@/utils/sendTransaction'
+
 import { TextShimmer } from '../TextShimmer'
 import { Button } from '../ui/button'
 
 import { CollapsableDetails } from './CollapsableDetails'
-
-import { sendTransaction } from '@/utils/sendTransaction'
 
 const mastraClient = new MastraClient({
   baseUrl: 'http://localhost:4111',
@@ -35,7 +35,7 @@ const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
   const approve = useCallback(async () => {
     if (hasApproved) return
     if (!walletClient) return
-    if (!approveStep.suspendPayload) return
+    if (!approveStep?.suspendPayload) return
 
     const { runId, ...unsignedTx } = approveStep.suspendPayload
 
@@ -57,7 +57,7 @@ const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
   const swap = useCallback(async () => {
     if (hasSwapped) return
     if (!walletClient) return
-    if (!swapStep.suspendPayload) return
+    if (!swapStep?.suspendPayload) return
 
     const { runId, ...unsignedTx } = swapStep.suspendPayload
 

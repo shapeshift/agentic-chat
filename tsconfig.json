@@ -43,7 +43,7 @@
   ],
   "exclude": ["dist", "node_modules"],
   "references": [
-    { "path": "../apps/agentic-server" },
+    { "path": "./apps/agentic-server" },
     { "path": "./packages/types" },
     { "path": "./packages/utils" }
   ]
