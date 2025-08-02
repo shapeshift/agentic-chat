@@ -1,9 +1,12 @@
-import { Mastra } from '@mastra/core/mastra'
+import { Mastra } from '@mastra/core'
 import { LibSQLStore } from '@mastra/libsql'
 import { PinoLogger } from '@mastra/loggers'
 
 import { shapeshiftAgent } from './agents/shapeshift-agent'
 import { swapWorkflow } from './workflows/swap'
+
+export * from './agents'
+export * from './workflows'
 
 export const mastra = new Mastra({
   agents: { shapeshiftAgent },

@@ -1,4 +1,4 @@
-import { createStep } from '@mastra/core/workflows'
+import { createStep } from '@mastra/core'
 import { unsignedTx } from '@shapeshiftoss/types'
 import z from 'zod'
 

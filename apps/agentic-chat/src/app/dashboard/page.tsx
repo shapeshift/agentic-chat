@@ -1,5 +1,3 @@
-import QuoteUi from '@/components/assistant-ui/QuoteUi'
-
 import ApproveUI from '../../components/assistant-ui/ApproveUI'
 import BebopQuoteUI from '../../components/assistant-ui/BebopQuoteUI'
 import ExecuteSwapUI from '../../components/assistant-ui/ExecuteSwapUI'
@@ -8,6 +6,7 @@ import GetAllowanceUI from '../../components/assistant-ui/GetAllowanceUI'
 import RelayQuoteUI from '../../components/assistant-ui/RelayQuoteUI'
 import SearchTokensUI from '../../components/assistant-ui/SearchTokensUI'
 import SendTransactionUI from '../../components/assistant-ui/SendTransactionUI'
+import SwapWorkflowUI from '../../components/assistant-ui/SwapWorkflowUI'
 import SwitchEvmChainUI from '../../components/assistant-ui/SwitchEvmChainUI'
 import { Thread } from '../../components/assistant-ui/thread'
 import { ConnectWallet } from '../../components/connect-wallet'
@@ -36,10 +35,10 @@ export const Dashboard = () => {
           <GetAccountUI />
           <ApproveUI />
           <GetAllowanceUI />
-          <QuoteUi />
           <SearchTokensUI />
           <ExecuteSwapUI />
           <SendTransactionUI />
+          <SwapWorkflowUI />
           <Thread />
         </div>
       </SidebarInset>

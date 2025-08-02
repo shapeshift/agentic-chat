@@ -48,6 +48,7 @@ test-output
 .env
 .eslintcache
 mastra.db*
+.mastra
 
 # System Files
 .DS_Store

@@ -11,7 +11,7 @@
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "references": [
-    { "path": "../../packages/mastra" },
+    { "path": "../agentic-server" },
     { "path": "../../packages/types" },
     { "path": "../../packages/utils" }
   ]

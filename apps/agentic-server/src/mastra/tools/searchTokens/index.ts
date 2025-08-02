@@ -50,7 +50,6 @@ export const searchTokensTool = createTool({
   inputSchema: searchTokensInput,
   outputSchema: searchTokensOutput,
   execute: async ({ context }) => {
-    console.log('searchTokensTool')
     return searchTokens(context)
   },
 })

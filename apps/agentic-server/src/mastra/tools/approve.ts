@@ -34,7 +34,7 @@ export const approveStep = createStep({
         args: [getAddress(approvalTarget), BigInt(toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision))],
       })
 
-      if (!resumeData) {
+      if (!resumeData?.txHash) {
         await suspend({
           chainId: sellAsset.chainId,
           data,
@@ -49,7 +49,7 @@ export const approveStep = createStep({
 
       return { txHash: resumeData.txHash }
     } catch (err) {
-      console.error('Error approving token:', err)
+      console.error('Error during approve:', err)
       throw err
     }
   },

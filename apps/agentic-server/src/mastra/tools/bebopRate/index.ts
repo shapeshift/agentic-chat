@@ -1,4 +1,4 @@
-import { createStep } from '@mastra/core/workflows'
+import { createStep } from '@mastra/core'
 import type { ChainId } from '@shapeshiftoss/caip'
 import {
   ethChainId,
@@ -41,7 +41,6 @@ export const getBebopRateStep = createStep({
   inputSchema: getAccountOutput,
   outputSchema: getRateOutput,
   execute: async ctx => {
-    console.log('getBebopRateStep')
     const { address, buyAsset, sellAsset, sellAmountCryptoPrecision } = ctx.getInitData<typeof swapWorkflowInput>()
 
     try {

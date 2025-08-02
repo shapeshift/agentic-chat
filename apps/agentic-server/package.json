@@ -1,13 +1,25 @@
 {
   "name": "@shapeshiftoss/agentic-server",
   "version": "1.0.0",
+  "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "yarn run -T tsx --env-file ../../.env --watch src/index.ts",
-    "start": "yarn run -T tsx --env-file ../../.env src/index.ts",
+    "clean": "rm -rf dist .mastra",
+    "build": "npx concurrently  \"yarn build:tsc\" \"yarn build:mastra\"",
+    "build:tsc": "rm -rf dist && yarn run -T tsc --build",
+    "build:mastra": "yarn mastra build",
+    "dev": "npx concurrently  \"yarn dev:tsc\" \"yarn dev:mastra\"",
+    "dev:tsc": "yarn run -T tsc --build --watch --preserveWatchOutput",
+    "dev:mastra": "NODE_OPTIONS=\"--import tsx/esm\" yarn mastra dev --env ../../.env",
+    "start": "yarn mastra start -env ../../.env",
     "type-check": "yarn run -T tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^1.3.22",
+    "@mastra/core": "^0.12.1",
+    "@mastra/libsql": "^0.12.0",
+    "@mastra/loggers": "^0.10.5",
+    "@mastra/memory": "^0.12.0",
     "cors": "^2.8.5",
     "express": "^5.1.0"
   },
@@ -15,6 +27,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.2",
     "ai": "^4.3.16",
+    "mastra": "^0.10.18",
     "react": "*",
     "zod": "*"
   }

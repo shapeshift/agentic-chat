@@ -43,7 +43,7 @@
   ],
   "exclude": ["dist", "node_modules"],
   "references": [
-    { "path": "./packages/mastra" },
+    { "path": "../apps/agentic-server" },
     { "path": "./packages/types" },
     { "path": "./packages/utils" }
   ]

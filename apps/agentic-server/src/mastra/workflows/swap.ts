@@ -1,5 +1,5 @@
-import { createStep, createWorkflow } from '@mastra/core/workflows'
-import { asset, getRateOutput } from '@shapeshiftoss/types'
+import { createStep, createWorkflow } from '@mastra/core'
+import { asset, GetRateOutput, getRateOutput } from '@shapeshiftoss/types'
 import { z } from 'zod'
 
 import { approveStep } from '../tools/approve'
@@ -37,14 +37,22 @@ export const getBestRateStep = createStep({
   }),
   outputSchema: getRateOutput,
   execute: async ({ inputData, mastra }) => {
+    const bestRate = Object.values(inputData).reduce((best, current) =>
+      Number(current.buyAmountCryptoPrecision) > Number(best.buyAmountCryptoPrecision) ? current : best
+    )
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return Promise.resolve(bestRate as any)
     const prompt = `Return the best rate from the following options: ${JSON.stringify(inputData, null, 2)}`
 
     const agent = mastra.getAgent('shapeshiftAgent')
     if (!agent) throw new Error('ShapeShift Agent not found')
 
+    console.time('getBestRate')
     const { object } = await agent.generate([{ role: 'user', content: prompt }], {
       experimental_output: getRateOutput,
     })
+    console.timeEnd('getBestRate')
 
     if (!object) throw new Error('Failed to find the best rate')
 
@@ -80,7 +88,8 @@ const swapWorkflow = createWorkflow({
   .then(getBestRateStep)
   .then(getAllowanceStep)
   // branching logic to perform pre swap checks (allowance, balance?, etc.)
-  .branch([[({ inputData }) => Promise.resolve(inputData.isApprovalRequired), approveStep]])
+  //.branch([[({ inputData }) => Promise.resolve(inputData.isApprovalRequired), approveStep]])
+  .branch([[({ inputData }) => Promise.resolve(inputData && true), approveStep]])
   .then(swapStep)
 // execute step (build + broadcast)
 

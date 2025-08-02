@@ -1,5 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai'
-import { Agent } from '@mastra/core/agent'
+import { Agent } from '@mastra/core'
 import { LibSQLStore } from '@mastra/libsql'
 import { Memory } from '@mastra/memory'
 
