@@ -23,14 +23,14 @@ export const swapStep = createStep({
     const { unsignedTx } = getStepResult(getBestRateStep)
 
     try {
-      if (!resumeData) {
+      if (!resumeData?.txHash) {
         await suspend({ ...unsignedTx, runId })
         return { txHash: '' }
       }
 
       return { txHash: resumeData.txHash }
     } catch (err) {
-      console.error('Error approving token:', err)
+      console.error('Error during swap:', err)
       throw err
     }
   },
