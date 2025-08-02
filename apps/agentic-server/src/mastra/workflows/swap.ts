@@ -1,5 +1,5 @@
 import { createStep, createWorkflow } from '@mastra/core'
-import { asset, GetRateOutput, getRateOutput } from '@shapeshiftoss/types'
+import { asset, getRateOutput } from '@shapeshiftoss/types'
 import { z } from 'zod'
 
 import { approveStep } from '../tools/approve'
@@ -29,6 +29,7 @@ export const workflowInputStep = createStep({
   },
 })
 
+// Example of leveraging an agent within a workflow step.
 export const getBestRateStep = createStep({
   id: 'getBestRate',
   inputSchema: z.object({
@@ -37,22 +38,14 @@ export const getBestRateStep = createStep({
   }),
   outputSchema: getRateOutput,
   execute: async ({ inputData, mastra }) => {
-    const bestRate = Object.values(inputData).reduce((best, current) =>
-      Number(current.buyAmountCryptoPrecision) > Number(best.buyAmountCryptoPrecision) ? current : best
-    )
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return Promise.resolve(bestRate as any)
     const prompt = `Return the best rate from the following options: ${JSON.stringify(inputData, null, 2)}`
 
     const agent = mastra.getAgent('shapeshiftAgent')
     if (!agent) throw new Error('ShapeShift Agent not found')
 
-    console.time('getBestRate')
     const { object } = await agent.generate([{ role: 'user', content: prompt }], {
       experimental_output: getRateOutput,
     })
-    console.timeEnd('getBestRate')
 
     if (!object) throw new Error('Failed to find the best rate')
 
@@ -78,22 +71,21 @@ const swapWorkflow = createWorkflow({
     swapStep,
   ],
 })
-  // leverage agent call to fetch any account details and massage data as needed for the following step?
-  // easier support for cross chain account info (add account details to context?)
+  // The agent currently leverages available tools along with user input to provide the required swapWorkflowInput payload as defined by the workflowInputStep.
   .then(workflowInputStep)
+  // After we are provided with the desired workflow input, fetch the account details for the user context address.
   .then(getAccountStep)
-  // parallel execution to fetch all rates we support
+  // Fetch all supported swap rates
   .parallel([getBebopRateStep, getRelayRateStep])
-  // example of leveraging the agent intra-step to perform some prompt action and return data conforming to a specific output schema
+  // Determine the best rate for the user
   .then(getBestRateStep)
+  // Check allowance for swap
   .then(getAllowanceStep)
-  // branching logic to perform pre swap checks (allowance, balance?, etc.)
-  //.branch([[({ inputData }) => Promise.resolve(inputData.isApprovalRequired), approveStep]])
-  .branch([[({ inputData }) => Promise.resolve(inputData && true), approveStep]])
+  // Conditional checks before swap can be completed (ex. approvals, balances, etc.)
+  .branch([[({ inputData }) => Promise.resolve(inputData.isApprovalRequired), approveStep]])
+  // Complete the swap
   .then(swapStep)
-// execute step (build + broadcast)
-
-swapWorkflow.commit()
+  .commit()
 
 export type SwapWorkflowResult = Awaited<ReturnType<ReturnType<typeof swapWorkflow.createRun>['start']>>
 
