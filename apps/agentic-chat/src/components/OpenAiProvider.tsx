@@ -14,7 +14,7 @@ export function OpenAiProvider({
   const account = useAccount()
 
   const runtime = useChatRuntime({
-    api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/${agentId}/stream`,
+    api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/agents/${agentId}/stream`,
     body: {
       runId: agentId,
       resourceId: agentId,
