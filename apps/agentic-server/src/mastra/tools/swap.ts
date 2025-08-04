@@ -2,9 +2,8 @@ import { createStep } from '@mastra/core'
 import { unsignedTx } from '@shapeshiftoss/types'
 import z from 'zod'
 
-import { getBestRateStep } from '../workflows/swap'
-
 import { approveOutput } from './approve'
+import { getBestRateStep } from './getBestRate'
 
 export const swapOutput = z.object({
   txHash: z.string().describe('The swap transaction hash'),

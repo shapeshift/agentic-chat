@@ -100,3 +100,17 @@ export const getFeeAssetByChainId = (chainId: ChainId): string | undefined => {
       return undefined
   }
 }
+
+export const networkToChainIdMap: Record<string, ChainId> = {
+  ethereum: ethChainId,
+  polygon: polygonChainId,
+  arbitrum: arbitrumChainId,
+  base: baseChainId,
+  avalanche: avalancheChainId,
+  optimism: optimismChainId,
+  bsc: bscChainId,
+}
+
+export const chainIdToNetwork: Record<ChainId, string> = Object.fromEntries(
+  Object.entries(networkToChainIdMap).map(([network, chainId]) => [chainId, network])
+)

@@ -1,4 +1,4 @@
-import type { Asset } from '../types'
+import type { Asset } from '@shapeshiftoss/types'
 
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { SidebarMenuButton } from './ui/sidebar'

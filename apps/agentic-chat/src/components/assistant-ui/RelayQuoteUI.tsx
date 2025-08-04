@@ -1,14 +1,30 @@
 import type { ToolCallContentPartComponent } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
+import type { AssetId } from '@shapeshiftoss/caip'
 import { AlertCircle, ArrowRightLeft } from 'lucide-react'
+import z from 'zod'
 
 import { useAssetsStore } from '../../stores/assets'
-import type { RelayRateParams, RelayRateResult } from '../../tools/relayRate'
 import { TextShimmer } from '../TextShimmer'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
+
+export const relayRateParams = z.object({
+  sellAssetId: z.string().describe('The sell AssetID to fetch rate for'),
+  buyAssetId: z.string().describe('The buy AssetID to fetch rate for'),
+  sellAmountCryptoPrecision: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
+})
+
+export type RelayRateParams = z.infer<typeof relayRateParams>
+export type RelayRateResult = {
+  sellAmountCryptoPrecision: string
+  buyAmountCryptoPrecision: string
+  sellAssetId: AssetId
+  buyAssetId: AssetId
+  approvalTarget: string | undefined
+}
 
 const RelayUiContent: ToolCallContentPartComponent<RelayRateParams, RelayRateResult> = ({
   status,

@@ -1,26 +1,35 @@
 import type { ToolCallContentPartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
+import type { SearchTokensInput, SearchTokensOutput } from '@shapeshiftoss/agentic-server'
+import type { Asset } from '@shapeshiftoss/types'
 import { Search } from 'lucide-react'
 
-import type { SearchTokensParams, SearchTokensResult } from '../../tools/searchTokens'
-import type { Asset } from '../../types'
 import { TextShimmer } from '../TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
 
 const Icon = Search
 
-type SearchTokensContentProps = Omit<ToolCallContentPartProps<SearchTokensParams, SearchTokensResult>, 'args'> & {
-  args: Partial<SearchTokensParams>
+type SearchTokensContentProps = Omit<ToolCallContentPartProps<SearchTokensInput, SearchTokensOutput>, 'args'> & {
+  args: Partial<SearchTokensInput>
 }
 
 export const SearchTokensContent: React.FC<SearchTokensContentProps> = ({ args, status, result, isError }) => {
   switch (status.type) {
-    case 'complete':
+    case 'running':
+    case 'requires-action':
+    case 'incomplete': {
+      if (!args.searchTerm) {
+        return <TextShimmer>Searching tokens...</TextShimmer>
+      }
+
+      return <TextShimmer>{`Searching tokens for ${args.searchTerm}...`}</TextShimmer>
+    }
+    case 'complete': {
       if (isError || !result) {
         return (
           <CollapsableDetails title="No tokens found" leftIcon={<Icon className="w-4 h-4 text-red-500" />}>
-            {result ? result.total : 'No tokens found'}
+            {'No tokens found'}
           </CollapsableDetails>
         )
       }
@@ -40,12 +49,11 @@ export const SearchTokensContent: React.FC<SearchTokensContentProps> = ({ args, 
           </ul>
         </CollapsableDetails>
       )
-    default:
-      return <TextShimmer>Searching tokens for "{args.searchTerm}"...</TextShimmer>
+    }
   }
 }
 
-const SearchTokensUI = makeAssistantToolUI<SearchTokensParams, SearchTokensResult>({
+const SearchTokensUI = makeAssistantToolUI<SearchTokensInput, SearchTokensOutput>({
   toolName: 'searchTokens',
   render: SearchTokensContent,
 })

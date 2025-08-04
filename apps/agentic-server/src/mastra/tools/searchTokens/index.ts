@@ -1,18 +1,8 @@
 import { createTool } from '@mastra/core'
-import type { ChainId } from '@shapeshiftoss/caip'
-import {
-  arbitrumChainId,
-  ASSET_NAMESPACE,
-  avalancheChainId,
-  baseChainId,
-  bscChainId,
-  ethChainId,
-  optimismChainId,
-  polygonChainId,
-  toAssetId,
-} from '@shapeshiftoss/caip'
+import { ASSET_NAMESPACE, toAssetId } from '@shapeshiftoss/caip'
 import { asset } from '@shapeshiftoss/types'
 import type { Asset } from '@shapeshiftoss/types'
+import { networkToChainIdMap } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import z from 'zod'
 
@@ -20,16 +10,6 @@ import type { PortalsResponse } from './types'
 
 const PORTALS_BASE_URL = process.env.VITE_PORTALS_BASE_URL
 const PORTALS_API_KEY = process.env.VITE_PORTALS_API_KEY
-
-const networkToChainIdMap: Record<string, ChainId> = {
-  ethereum: ethChainId,
-  polygon: polygonChainId,
-  arbitrum: arbitrumChainId,
-  base: baseChainId,
-  avalanche: avalancheChainId,
-  optimism: optimismChainId,
-  bsc: bscChainId,
-}
 
 export const searchTokensInput = z.object({
   searchTerm: z.string().describe('The search term to find tokens by name or symbol'),

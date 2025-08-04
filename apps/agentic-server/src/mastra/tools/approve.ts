@@ -6,9 +6,9 @@ import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
 import type { swapWorkflowInput } from '../workflows/swap'
-import { getBestRateStep } from '../workflows/swap'
 
 import { getAllowanceOutput } from './getAllowance'
+import { getBestRateStep } from './getBestRate'
 
 export const approveOutput = z.object({
   txHash: z.string().describe('The approval transaction hash'),

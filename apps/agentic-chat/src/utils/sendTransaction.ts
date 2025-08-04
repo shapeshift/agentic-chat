@@ -13,6 +13,7 @@ type SendTransactionParams = {
   from: string
   to: string
   value: string
+  gasLimit?: number
   walletClient: WalletClient
 }
 
@@ -29,17 +30,10 @@ export const sendTransaction = async (params: SendTransactionParams) => {
   const to = getAddress(params.to)
   const value = BigInt(params.value)
   const data = params.data as Hex
+  const gasLimit = params.gasLimit
 
-  try {
-    // First estimate gas to catch potential errors
-    const [gas, gasPrice] = await Promise.all([
-      publicClient.estimateGas({ account, to, value, data }),
-      publicClient.getGasPrice(),
-    ])
+  const gasPrice = await publicClient.getGasPrice()
+  const gas = gasLimit ? BigInt(gasLimit) : await publicClient.estimateGas({ account, to, value, data })
 
-    return await walletClient.sendTransaction({ account, to, value, data, chain, gas, gasPrice })
-  } catch (err) {
-    console.error('Error sending transaction', err)
-    throw err
-  }
+  return await walletClient.sendTransaction({ account, to, value, data, chain, gas, gasPrice })
 }

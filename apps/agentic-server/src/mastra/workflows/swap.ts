@@ -1,11 +1,12 @@
 import { createStep, createWorkflow } from '@mastra/core'
-import { asset, getRateOutput } from '@shapeshiftoss/types'
+import { asset } from '@shapeshiftoss/types'
 import { z } from 'zod'
 
 import { approveStep } from '../tools/approve'
 import { getBebopRateStep } from '../tools/bebopRate'
 import { getAccountInput, getAccountStep } from '../tools/getAccount'
 import { getAllowanceStep } from '../tools/getAllowance'
+import { getBestRateStep } from '../tools/getBestRate'
 import { getRelayRateStep } from '../tools/relayRate'
 import { swapStep } from '../tools/swap'
 
@@ -26,30 +27,6 @@ export const workflowInputStep = createStep({
   execute: ({ inputData }) => {
     const { address, chainId } = inputData
     return Promise.resolve({ address, chainId })
-  },
-})
-
-// Example of leveraging an agent within a workflow step.
-export const getBestRateStep = createStep({
-  id: 'getBestRate',
-  inputSchema: z.object({
-    getBebopRate: getRateOutput,
-    getRelayRate: getRateOutput,
-  }),
-  outputSchema: getRateOutput,
-  execute: async ({ inputData, mastra }) => {
-    const prompt = `Return the best rate from the following options: ${JSON.stringify(inputData, null, 2)}`
-
-    const agent = mastra.getAgent('shapeshiftAgent')
-    if (!agent) throw new Error('ShapeShift Agent not found')
-
-    const { object } = await agent.generate([{ role: 'user', content: prompt }], {
-      experimental_output: getRateOutput,
-    })
-
-    if (!object) throw new Error('Failed to find the best rate')
-
-    return object
   },
 })
 

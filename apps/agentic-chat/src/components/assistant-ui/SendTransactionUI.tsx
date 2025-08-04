@@ -1,14 +1,23 @@
 import type { ToolCallContentPartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import { Send } from 'lucide-react'
+import z from 'zod'
 
-import type { SendTransactionParams } from '../../tools/sendTransaction'
 import { TextShimmer } from '../TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
 
 const Icon = Send
-export type SendTransactionResult = string // tx hash
+
+export const sendTransactionParams = z.object({
+  to: z.string().describe('The address to send the transaction to'),
+  valueCryptoPrecision: z.string().describe('Amount to send in human format, e.g. 1 for 1 ETH'),
+  data: z.string().describe('The transaction data (hex string)'),
+  chainId: z.number().describe('The chain ID where the transaction will be sent'),
+})
+
+export type SendTransactionParams = z.infer<typeof sendTransactionParams>
+export type SendTransactionResult = string // Transaction hash
 
 type SendTransactionContentProps = Omit<
   ToolCallContentPartProps<SendTransactionParams, SendTransactionResult>,

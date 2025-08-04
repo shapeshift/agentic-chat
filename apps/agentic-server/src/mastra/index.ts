@@ -6,6 +6,7 @@ import { shapeshiftAgent } from './agents/shapeshift-agent'
 import { swapWorkflow } from './workflows/swap'
 
 export * from './agents'
+export * from './tools'
 export * from './workflows'
 
 export const mastra = new Mastra({

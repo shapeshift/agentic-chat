@@ -7,5 +7,3 @@ export type Conversation = {
   updatedAt: string
   messages: Message[]
 }
-
-export type ConversationList = Conversation[]

@@ -1,6 +1,5 @@
 import * as caip from '@shapeshiftoss/caip'
-
-import type { Asset } from '../types'
+import type { Asset } from '@shapeshiftoss/types'
 
 const mayaTokenAssetId = 'cosmos:mayachain-mainnet-v1/slip44:maya'
 
@@ -11,6 +10,7 @@ export const ethereum = Object.freeze<Readonly<Asset>>({
   name: 'Ethereum',
   precision: 18,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/ethereum/info/logo.png',
+  network: 'ethereum',
 })
 
 export const bitcoin = Object.freeze<Readonly<Asset>>({
@@ -20,6 +20,7 @@ export const bitcoin = Object.freeze<Readonly<Asset>>({
   name: 'Bitcoin',
   precision: 8,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/bitcoin/info/logo.png',
+  network: 'bitcoin',
 })
 
 export const bitcoincash = Object.freeze<Readonly<Asset>>({
@@ -29,6 +30,7 @@ export const bitcoincash = Object.freeze<Readonly<Asset>>({
   name: 'Bitcoin Cash',
   precision: 8,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/bitcoincash/info/logo.png',
+  network: 'bitcoincash',
 })
 
 export const dogecoin = Object.freeze<Readonly<Asset>>({
@@ -38,6 +40,7 @@ export const dogecoin = Object.freeze<Readonly<Asset>>({
   name: 'Dogecoin',
   precision: 8,
   icon: 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png?1696501409',
+  network: 'dogecoin',
 })
 
 export const litecoin = Object.freeze<Readonly<Asset>>({
@@ -47,6 +50,7 @@ export const litecoin = Object.freeze<Readonly<Asset>>({
   name: 'Litecoin',
   precision: 8,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/litecoin/info/logo.png',
+  network: 'litecoin',
 })
 
 export const atom = Object.freeze<Readonly<Asset>>({
@@ -56,6 +60,7 @@ export const atom = Object.freeze<Readonly<Asset>>({
   name: 'Cosmos',
   precision: 6,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/cosmos/info/logo.png',
+  network: 'cosmos',
 })
 
 export const avax = Object.freeze<Readonly<Asset>>({
@@ -65,6 +70,7 @@ export const avax = Object.freeze<Readonly<Asset>>({
   symbol: 'AVAX',
   precision: 18,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/avalanchec/info/logo.png',
+  network: 'avalanche',
 })
 
 export const thorchain = Object.freeze<Readonly<Asset>>({
@@ -74,6 +80,7 @@ export const thorchain = Object.freeze<Readonly<Asset>>({
   symbol: 'RUNE',
   precision: 8,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/thorchain/info/logo.png',
+  network: 'thorchain',
 })
 
 export const tcy = Object.freeze<Readonly<Asset>>({
@@ -83,6 +90,7 @@ export const tcy = Object.freeze<Readonly<Asset>>({
   symbol: 'TCY',
   precision: 8,
   icon: 'https://raw.githubusercontent.com/shapeshift/web/develop/scripts/generateAssetData/thorchain/icons/tcy-icon.png',
+  network: 'thorchain',
 })
 
 export const maya = Object.freeze<Readonly<Asset>>({
@@ -92,6 +100,7 @@ export const maya = Object.freeze<Readonly<Asset>>({
   symbol: 'MAYA',
   precision: 4,
   icon: 'https://raw.githubusercontent.com/shapeshift/web/develop/scripts/generateAssetData/thorchain/icons/maya.png',
+  network: 'mayachain',
 })
 
 export const mayachain = Object.freeze<Readonly<Asset>>({
@@ -101,6 +110,7 @@ export const mayachain = Object.freeze<Readonly<Asset>>({
   symbol: 'CACAO',
   precision: 10,
   icon: 'https://raw.githubusercontent.com/shapeshift/web/develop/scripts/generateAssetData/thorchain/icons/maya.png',
+  network: 'mayachain',
 })
 
 export const optimism = Object.freeze<Readonly<Asset>>({
@@ -110,6 +120,7 @@ export const optimism = Object.freeze<Readonly<Asset>>({
   symbol: 'ETH',
   precision: 18,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/ethereum/info/logo.png',
+  network: 'optimism',
 })
 
 export const bnbsmartchain = Object.freeze<Readonly<Asset>>({
@@ -119,6 +130,7 @@ export const bnbsmartchain = Object.freeze<Readonly<Asset>>({
   symbol: 'BNB',
   precision: 18,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/binance/info/logo.png',
+  network: 'bsc',
 })
 
 export const polygon = Object.freeze<Readonly<Asset>>({
@@ -128,6 +140,7 @@ export const polygon = Object.freeze<Readonly<Asset>>({
   symbol: 'POL',
   precision: 18,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/polygon/info/logo.png',
+  network: 'polygon',
 })
 
 export const gnosis = Object.freeze<Readonly<Asset>>({
@@ -137,6 +150,7 @@ export const gnosis = Object.freeze<Readonly<Asset>>({
   symbol: 'xDAI',
   precision: 18,
   icon: 'https://assets.coingecko.com/coins/images/11062/large/Identity-Primary-DarkBG.png?1638372986',
+  network: 'gnosis',
 })
 
 export const arbitrum = Object.freeze<Readonly<Asset>>({
@@ -146,6 +160,7 @@ export const arbitrum = Object.freeze<Readonly<Asset>>({
   symbol: 'ETH',
   precision: 18,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/ethereum/info/logo.png',
+  network: 'arbitrum',
 })
 
 export const base = Object.freeze<Readonly<Asset>>({
@@ -155,6 +170,7 @@ export const base = Object.freeze<Readonly<Asset>>({
   symbol: 'ETH',
   precision: 18,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/ethereum/info/logo.png',
+  network: 'base',
 })
 
 export const solana = Object.freeze<Readonly<Asset>>({
@@ -164,6 +180,7 @@ export const solana = Object.freeze<Readonly<Asset>>({
   symbol: 'SOL',
   precision: 9,
   icon: 'https://rawcdn.githack.com/trustwallet/assets/426526def2f327476e868ecb902c515ab17518af/blockchains/solana/info/logo.png',
+  network: 'solana',
 })
 
 export const initialAssets: Record<caip.AssetId, Asset> = {

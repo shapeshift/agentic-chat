@@ -1,14 +1,23 @@
 import type { ToolCallContentPartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import { BadgeCheck } from 'lucide-react'
+import z from 'zod'
 
 import { useAssetsStore } from '../../stores/assets'
-import type { ApproveParams, ApproveResult } from '../../tools/approve'
 import { TextShimmer } from '../TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
 
 const Icon = BadgeCheck
+
+export const approveParamsSchema = z.object({
+  assetId: z.string().describe('The token AssetId to approve'),
+  spender: z.string().describe('The address that will be approved to spend the tokens'),
+  amountCryptoPrecision: z.string().describe('Amount to approve in human format, e.g. 1 for 1 token'),
+})
+
+export type ApproveParams = z.infer<typeof approveParamsSchema>
+export type ApproveResult = string // Tx hash
 
 type ApproveUiContentProps = Omit<ToolCallContentPartProps<ApproveParams, ApproveResult>, 'args'> & {
   args: Partial<ApproveParams>

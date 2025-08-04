@@ -19,7 +19,9 @@ const mastraClient = new MastraClient({
 
 const Icon = Wallet
 
-type SwapWorkflowUiContentProps = ToolCallContentPartProps<SwapWorkflowInput, SwapWorkflowResult>
+type SwapWorkflowUiContentProps = Omit<ToolCallContentPartProps<SwapWorkflowInput, SwapWorkflowResult>, 'args'> & {
+  args: Partial<SwapWorkflowInput>
+}
 
 const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
   const { data: walletClient } = useWalletClient()
@@ -43,14 +45,15 @@ const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
       const workflow = mastraClient.getWorkflow(toolName)
 
       const txHash = await sendTransaction({ ...unsignedTx, walletClient })
+
+      setHasApproved(true)
+
       const result = await workflow.resumeAsync({ runId, step: 'approve', resumeData: { txHash } })
 
       const message: ToolCallMessagePart = { ...ctx, result }
       thread.append({ role: 'assistant', content: [message] })
     } catch (err) {
-      console.error(err)
-    } finally {
-      setHasApproved(true)
+      console.error('Failed to approve:', err)
     }
   }, [approveStep, ctx, hasApproved, setHasApproved, thread, toolName, walletClient])
 
@@ -65,14 +68,15 @@ const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
       const workflow = mastraClient.getWorkflow(toolName)
 
       const txHash = await sendTransaction({ ...unsignedTx, walletClient })
+
+      setHasSwapped(true)
+
       const result = await workflow.resumeAsync({ runId, step: 'swap', resumeData: { txHash } })
 
       const message: ToolCallMessagePart = { ...ctx, result }
       thread.append({ role: 'assistant', content: [message] })
     } catch (err) {
-      console.error(err)
-    } finally {
-      setHasSwapped(true)
+      console.error('Failed to swap:', err)
     }
   }, [ctx, hasSwapped, setHasSwapped, swapStep, thread, toolName, walletClient])
 
@@ -80,7 +84,15 @@ const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
     case 'running':
     case 'requires-action':
     case 'incomplete': {
-      return <TextShimmer>Getting quote for {JSON.stringify(args)}...</TextShimmer>
+      if (!args.buyAsset || !args.sellAsset || !args.sellAmountCryptoPrecision) {
+        return <TextShimmer>Finding route to swap</TextShimmer>
+      }
+
+      return (
+        <TextShimmer>
+          {`Finding route to swap ${parseFloat(args.sellAmountCryptoPrecision).toString()} ${args.sellAsset.symbol} to ${args.buyAsset.symbol}`}
+        </TextShimmer>
+      )
     }
     case 'complete': {
       if (isError || !result || result.status === 'failed') {
@@ -113,14 +125,14 @@ const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
           }
 
           return (
-            <CollapsableDetails title="Quote Details" leftIcon={<Icon className="w-4 h-4 text-green-500" />}>
+            <CollapsableDetails title="Swap Details" leftIcon={<Icon className="w-4 h-4 text-green-500" />}>
               <pre>{JSON.stringify(result, null, 2)}</pre>
             </CollapsableDetails>
           )
         }
         case 'success': {
           return (
-            <CollapsableDetails title="Quote Details" leftIcon={<Icon className="w-4 h-4 text-green-500" />}>
+            <CollapsableDetails title="Swap Details" leftIcon={<Icon className="w-4 h-4 text-green-500" />}>
               <pre>{JSON.stringify(result, null, 2)}</pre>
             </CollapsableDetails>
           )
@@ -130,9 +142,9 @@ const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
   }
 }
 
-const SwapWorkflowUi = makeAssistantToolUI<SwapWorkflowInput, SwapWorkflowResult>({
+const SwapWorkflowUI = makeAssistantToolUI<SwapWorkflowInput, SwapWorkflowResult>({
   toolName: 'swapWorkflow',
   render: SwapWorkflowUiContent,
 })
 
-export default SwapWorkflowUi
+export default SwapWorkflowUI
