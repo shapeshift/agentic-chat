@@ -1,13 +1,12 @@
 export type PortalsToken = {
-  network: string
-  address: string
-  symbol: string
   name: string
   decimals: number
-  chainId: number
+  symbol: string
+  price: number
+  address: string
+  platform: 'native' | 'basic'
+  network: string
   image: string
-  volumeUsd7d: number
-  priceUsd: number
 }
 
 export type PortalsResponse = {

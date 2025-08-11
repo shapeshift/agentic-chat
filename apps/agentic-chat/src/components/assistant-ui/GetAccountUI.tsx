@@ -1,16 +1,17 @@
 import type { ToolCallContentPartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
+import type { GetAccountInput, GetAccountOutput } from '@shapeshiftoss/agentic-server'
+import { chainIdToNetwork } from '@shapeshiftoss/utils'
 import { Wallet } from 'lucide-react'
 
-import type { GetAccountParams, GetAccountResult } from '../../tools/getAccount'
 import { TextShimmer } from '../TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
 
 const Icon = Wallet
 
-type GetAccountUiContentProps = Omit<ToolCallContentPartProps<GetAccountParams, GetAccountResult>, 'args'> & {
-  args: Partial<GetAccountParams>
+type GetAccountUiContentProps = Omit<ToolCallContentPartProps<GetAccountInput, GetAccountOutput>, 'args'> & {
+  args: Partial<GetAccountInput>
 }
 
 const GetAccountUiContent: React.FC<GetAccountUiContentProps> = ({ status, result, args, isError, toolName }) => {
@@ -18,18 +19,18 @@ const GetAccountUiContent: React.FC<GetAccountUiContentProps> = ({ status, resul
     case 'running':
     case 'requires-action':
     case 'incomplete': {
-      if (!args.network) return <TextShimmer>Getting account</TextShimmer>
+      if (!args.chainId) return <TextShimmer>Getting account</TextShimmer>
 
-      return <TextShimmer>Getting account for {args.network}...</TextShimmer>
+      return <TextShimmer>Getting account for {chainIdToNetwork[args.chainId]}...</TextShimmer>
     }
-    case 'complete':
-      if (isError) {
+    case 'complete': {
+      if (isError || !result) {
         return (
           <CollapsableDetails
             title={`An error occurred with ${toolName}`}
             leftIcon={<Icon className="w-4 h-4 text-red-500" />}
           >
-            {JSON.stringify(result)}
+            {JSON.stringify(result || 'Failed to get account details')}
           </CollapsableDetails>
         )
       }
@@ -38,10 +39,11 @@ const GetAccountUiContent: React.FC<GetAccountUiContentProps> = ({ status, resul
           <pre>{JSON.stringify(result, null, 2)}</pre>
         </CollapsableDetails>
       )
+    }
   }
 }
 
-const GetAccountUI = makeAssistantToolUI<GetAccountParams, GetAccountResult>({
+const GetAccountUI = makeAssistantToolUI<GetAccountInput, GetAccountOutput>({
   toolName: 'getAccount',
   render: GetAccountUiContent,
 })

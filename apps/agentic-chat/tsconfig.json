@@ -11,6 +11,8 @@
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "references": [
+    { "path": "../agentic-server" },
+    { "path": "../../packages/types" },
     { "path": "../../packages/utils" }
   ]
 }

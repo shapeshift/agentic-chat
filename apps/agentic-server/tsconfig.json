@@ -3,7 +3,14 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
+    "composite": true,
+    "declaration": true,
+    "noEmit": false,
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
   },
   "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../../packages/types" },
+    { "path": "../../packages/utils" }
+  ]
 }

@@ -8,7 +8,7 @@
   },
   "scripts": {
     "clean": "yarn workspaces foreach --all --parallel run clean && rm -rf node_modules",
-    "build": "yarn workspaces foreach --all --include 'packages/*' --parallel run build",
+    "build": "yarn workspaces foreach --all --include 'packages/*' --parallel run build && yarn workspace @shapeshiftoss/agentic-server build:tsc",
     "dev": "npx concurrently \"yarn dev:packages\" \"yarn dev:apps\"",
     "dev:apps": "npx concurrently \"yarn workspace @shapeshiftoss/agentic-server dev\" \"yarn workspace @shapeshiftoss/agentic-chat dev\"",
     "dev:packages": "yarn workspaces foreach --all --include 'packages/*' --parallel run dev",
@@ -18,7 +18,9 @@
     "type-check": "yarn workspaces foreach --all --parallel run type-check"
   },
   "dependencies": {
+    "@shapeshiftoss/agentic-server": "workspace:^",
     "@shapeshiftoss/caip": "^8.16.0",
+    "@shapeshiftoss/types": "workspace:^",
     "@shapeshiftoss/utils": "workspace:^",
     "bignumber.js": "^9.3.0",
     "lodash": "^4.17.21",

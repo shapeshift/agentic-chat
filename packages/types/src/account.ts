@@ -1,4 +1,4 @@
-export interface TokenBalance {
+interface TokenBalance {
   /**
    *
    * @type {string}
