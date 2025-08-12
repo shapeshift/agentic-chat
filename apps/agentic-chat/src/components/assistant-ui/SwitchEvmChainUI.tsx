@@ -1,8 +1,8 @@
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import { ArrowRightLeft } from 'lucide-react'
 
-import type { SwitchEvmChainParams, SwitchEvmChainResult } from '../../tools/switchEvmChain'
-import { TextShimmer } from '../TextShimmer'
+import { TextShimmer } from '@/components/TextShimmer'
+import type { SwitchEvmChainParams, SwitchEvmChainResult } from '@/tools/switchEvmChain'
 
 import { CollapsableDetails } from './CollapsableDetails'
 

@@ -13,7 +13,7 @@ import { memo, useState } from 'react'
 import type { FC } from 'react'
 import remarkGfm from 'remark-gfm'
 
-import { cn } from '../../lib/utils'
+import { cn } from '@/lib/utils'
 
 import { TooltipIconButton } from './tooltip-icon-button'
 

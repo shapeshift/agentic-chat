@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react'
 
-import { Card, CardContent } from '../ui/card'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
+import { Card, CardContent } from '@/components/ui/card'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 type CollapsableDetailsProps = {
   children: React.ReactNode

@@ -2,7 +2,7 @@ import { ThreadListItemPrimitive, ThreadListPrimitive } from '@assistant-ui/reac
 import { ArchiveIcon, PlusIcon } from 'lucide-react'
 import type { FC } from 'react'
 
-import { Button } from '../ui/button'
+import { Button } from '@/components/ui/button'
 
 import { TooltipIconButton } from './tooltip-icon-button'
 

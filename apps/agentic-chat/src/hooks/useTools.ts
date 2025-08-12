@@ -1,7 +1,7 @@
 import { useAssistantTool } from '@assistant-ui/react'
 import { useWalletClient } from 'wagmi'
 
-import { switchEvmChain, switchEvmChainParams } from '../tools/switchEvmChain'
+import { switchEvmChainParams, switchEvmChain } from '@/tools/switchEvmChain'
 
 const useTools = () => {
   const { data: walletClient } = useWalletClient()

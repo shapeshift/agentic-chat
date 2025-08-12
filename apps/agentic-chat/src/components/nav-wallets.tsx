@@ -1,4 +1,4 @@
-import type { Wallet } from '../types'
+import type { Wallet } from '@/types'
 
 import { SidebarGroup, SidebarMenu, SidebarMenuItem } from './ui/sidebar'
 import { WalletButton } from './wallet-button'

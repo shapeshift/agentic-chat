@@ -3,7 +3,7 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { GetAllowanceInput, GetAllowanceOutput } from '@shapeshiftoss/agentic-server'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
-import { TextShimmer } from '../TextShimmer'
+import { TextShimmer } from '@/components/TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
 

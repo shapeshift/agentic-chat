@@ -6,13 +6,13 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist .mastra",
-    "build": "npx concurrently  \"yarn build:tsc\" \"yarn build:mastra\"",
+    "build": "yarn run -T concurrently \"yarn build:tsc\" \"yarn build:mastra\"",
     "build:tsc": "rm -rf dist && yarn run -T tsc --build",
-    "build:mastra": "yarn mastra build",
-    "dev": "npx concurrently  \"yarn dev:tsc\" \"yarn dev:mastra\"",
+    "build:mastra": "mastra build",
+    "dev": "yarn run -T concurrently \"yarn dev:tsc\" \"yarn dev:mastra\"",
     "dev:tsc": "yarn run -T tsc --build --watch --preserveWatchOutput",
-    "dev:mastra": "NODE_OPTIONS=\"--import tsx/esm\" yarn mastra dev --env ../../.env",
-    "start": "yarn mastra start -env ../../.env",
+    "dev:mastra": "NODE_OPTIONS=\"--import tsx/esm\" mastra dev --env ../../.env",
+    "start": "mastra start -env ../../.env",
     "type-check": "yarn run -T tsc --noEmit"
   },
   "dependencies": {
@@ -21,15 +21,10 @@
     "@mastra/libsql": "^0.12.0",
     "@mastra/loggers": "^0.10.5",
     "@mastra/memory": "^0.12.0",
-    "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "axios": "^1.11.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.2",
-    "ai": "^4.3.16",
     "mastra": "^0.10.18",
-    "react": "*",
     "zod": "*"
   }
 }

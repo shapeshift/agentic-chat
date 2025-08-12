@@ -4,12 +4,12 @@ import type { AssetId } from '@shapeshiftoss/caip'
 import { AlertCircle, ArrowRightLeft } from 'lucide-react'
 import z from 'zod'
 
-import { useAssetsStore } from '../../stores/assets'
-import { TextShimmer } from '../TextShimmer'
-import { Button } from '../ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card'
-import { Input } from '../ui/input'
-import { Label } from '../ui/label'
+import { TextShimmer } from '@/components/TextShimmer'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAssetsStore } from '@/stores/assets'
 
 export const bebopRateParams = z.object({
   sellAssetId: z.string().describe('The sell AssetID to fetch rate for'),

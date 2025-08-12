@@ -35,7 +35,7 @@ const getRelayAssetAddress = (asset: Asset): Address => {
   return isAssetReference(assetReference) ? zeroAddress : (assetReference as Address)
 }
 
-export const getRelayRate = async ({
+const getRelayRate = async ({
   address,
   buyAsset,
   sellAmountCryptoPrecision,

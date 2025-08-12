@@ -3,7 +3,7 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import { Send } from 'lucide-react'
 import z from 'zod'
 
-import { TextShimmer } from '../TextShimmer'
+import { TextShimmer } from '@/components/TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
 
@@ -26,13 +26,7 @@ type SendTransactionContentProps = Omit<
   args: Partial<SendTransactionParams>
 }
 
-export const SendTransactionContent: React.FC<SendTransactionContentProps> = ({
-  status,
-  result,
-  args,
-  isError,
-  toolName,
-}) => {
+const SendTransactionContent: React.FC<SendTransactionContentProps> = ({ status, result, args, isError, toolName }) => {
   switch (status.type) {
     case 'running':
     case 'requires-action':

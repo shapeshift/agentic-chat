@@ -31,4 +31,4 @@ jobs:
 
       - run: yarn install --frozen-lockfile
       - run: yarn build
-      - run: npx concurrently --kill-others-on-fail "yarn type-check" "yarn lint" "yarn test"
+      - run: yarn concurrently --kill-others-on-fail "yarn type-check" "yarn lint" "yarn test"

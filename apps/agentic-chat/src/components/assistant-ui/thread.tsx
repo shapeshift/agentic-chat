@@ -18,8 +18,8 @@ import {
 } from 'lucide-react'
 import type { FC } from 'react'
 
-import { cn } from '../../lib/utils'
-import { Button } from '../ui/button'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 import { MarkdownText } from './markdown-text'
 import { ToolFallback } from './tool-fallback'

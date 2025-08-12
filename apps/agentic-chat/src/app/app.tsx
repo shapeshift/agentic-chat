@@ -2,9 +2,9 @@ import { createAppKit } from '@reown/appkit/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 
-import { OpenAiProvider } from '../components/OpenAiProvider'
-import { networks } from '../lib/appkit'
-import { wagmiConfig, wagmiAdapter } from '../lib/wagmi-config'
+import { OpenAiProvider } from '@/components/OpenAiProvider'
+import { networks } from '@/lib/appkit'
+import { wagmiConfig, wagmiAdapter } from '@/lib/wagmi-config'
 
 import { Dashboard } from './dashboard/page'
 
@@ -27,7 +27,7 @@ if (import.meta.env.VITE_PROJECT_ID) {
   })
 }
 
-export function App() {
+function App() {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>

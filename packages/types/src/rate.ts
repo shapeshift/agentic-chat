@@ -1,15 +1,7 @@
 import z from 'zod'
 
 import { asset } from './asset'
-
-export const unsignedTx = z.object({
-  from: z.string(),
-  chainId: z.string(),
-  to: z.string(),
-  value: z.string(),
-  data: z.string(),
-  gasLimit: z.number().optional(),
-})
+import { unsignedTx } from './tx'
 
 export const getRateInput = z.object({
   address: z.string().describe('The address to get account details for'),
@@ -30,4 +22,3 @@ export const getRateOutput = z.object({
 
 export type GetRateInput = z.infer<typeof getRateInput>
 export type GetRateOutput = z.infer<typeof getRateOutput>
-export type UnsignedTx = z.infer<typeof unsignedTx>

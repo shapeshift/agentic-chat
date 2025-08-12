@@ -6,10 +6,9 @@ import { Wallet } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useWalletClient } from 'wagmi'
 
+import { TextShimmer } from '@/components/TextShimmer'
+import { Button } from '@/components/ui/button'
 import { sendTransaction } from '@/utils/sendTransaction'
-
-import { TextShimmer } from '../TextShimmer'
-import { Button } from '../ui/button'
 
 import { CollapsableDetails } from './CollapsableDetails'
 

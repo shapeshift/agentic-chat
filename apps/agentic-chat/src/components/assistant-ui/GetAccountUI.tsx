@@ -4,7 +4,7 @@ import type { GetAccountInput, GetAccountOutput } from '@shapeshiftoss/agentic-s
 import { chainIdToNetwork } from '@shapeshiftoss/utils'
 import { Wallet } from 'lucide-react'
 
-import { TextShimmer } from '../TextShimmer'
+import { TextShimmer } from '@/components/TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
 

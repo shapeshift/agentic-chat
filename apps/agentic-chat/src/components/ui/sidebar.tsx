@@ -6,8 +6,8 @@ import { cva } from 'class-variance-authority'
 import { PanelLeftIcon } from 'lucide-react'
 import * as React from 'react'
 
-import { useIsMobile } from '../../hooks/use-mobile'
-import { cn } from '../../lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 
 import { Button } from './button'
 import { Input } from './input'

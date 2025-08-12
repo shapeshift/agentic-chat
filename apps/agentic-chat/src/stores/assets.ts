@@ -2,7 +2,7 @@ import type { AssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
 import { create } from 'zustand'
 
-import type { PartialRecord } from '../types'
+import type { PartialRecord } from '@/types'
 
 import { initialAssets } from './constants'
 

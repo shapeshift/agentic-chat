@@ -4,7 +4,7 @@ import type { SearchTokensInput, SearchTokensOutput } from '@shapeshiftoss/agent
 import type { Asset } from '@shapeshiftoss/types'
 import { Search } from 'lucide-react'
 
-import { TextShimmer } from '../TextShimmer'
+import { TextShimmer } from '@/components/TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
 
@@ -14,7 +14,7 @@ type SearchTokensContentProps = Omit<ToolCallContentPartProps<SearchTokensInput,
   args: Partial<SearchTokensInput>
 }
 
-export const SearchTokensContent: React.FC<SearchTokensContentProps> = ({ args, status, result, isError }) => {
+const SearchTokensContent: React.FC<SearchTokensContentProps> = ({ args, status, result, isError }) => {
   switch (status.type) {
     case 'running':
     case 'requires-action':

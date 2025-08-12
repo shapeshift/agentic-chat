@@ -3,8 +3,8 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import { BadgeCheck } from 'lucide-react'
 import z from 'zod'
 
-import { useAssetsStore } from '../../stores/assets'
-import { TextShimmer } from '../TextShimmer'
+import { TextShimmer } from '@/components/TextShimmer'
+import { useAssetsStore } from '@/stores/assets'
 
 import { CollapsableDetails } from './CollapsableDetails'
 
