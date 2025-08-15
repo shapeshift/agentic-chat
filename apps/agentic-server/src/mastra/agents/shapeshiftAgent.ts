@@ -3,8 +3,7 @@ import { LibSQLStore } from '@mastra/libsql'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { assetAgentTool } from '../tools/asset/assetAgent'
-import { portfolioAgentTool } from '../tools/portfolio/portfolioAgent'
+import { assetAgentTool, getAllowanceTool, portfolioAgentTool, swapAgentTool } from '../tools'
 
 export const shapeshiftAgent = new Agent({
   name: 'ShapeShift Agent',
@@ -25,6 +24,8 @@ export const shapeshiftAgent = new Agent({
   tools: {
     assetAgent: assetAgentTool,
     portfolioAgent: portfolioAgentTool,
+    swapAgent: swapAgentTool,
+    getAllowance: getAllowanceTool,
   },
   memory: new Memory({
     storage: new LibSQLStore({

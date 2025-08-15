@@ -3,8 +3,7 @@ import { LibSQLStore } from '@mastra/libsql'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { assetAgentTool } from '../tools/asset/assetAgent'
-import { getAccountTool } from '../tools/portfolio/getAccount'
+import { assetAgentTool, getAccountTool } from '../tools'
 
 export const portfolioAgent = new Agent({
   name: 'Portfolio Agent',
@@ -13,7 +12,7 @@ export const portfolioAgent = new Agent({
 
     📋 Requirements:
       - ALWAYS fetch the user account details first
-      - Then use the asset agent to enrich the portfolio with asset details and market data
+      - THEN use the asset agent to enrich the portfolio with asset details and market data
 
     🚫 NEVER Do:
   `,

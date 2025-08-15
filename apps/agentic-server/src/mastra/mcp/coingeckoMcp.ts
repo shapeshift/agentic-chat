@@ -1,6 +1,6 @@
 import { MCPClient } from '@mastra/mcp'
 
-export const coingeckoMCP = new MCPClient({
+export const coingeckoMcp = new MCPClient({
   id: 'coingecko-mcp-client',
   servers: {
     coingecko: {

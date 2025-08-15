@@ -1,11 +1,8 @@
-import { createStep, createTool } from '@mastra/core'
 import { fromAssetId } from '@shapeshiftoss/caip'
-import { getRateOutput, asset as zAsset } from '@shapeshiftoss/types'
-import { fromBaseUnit, getFeeAssetByChainId, getViemClient, toBaseUnit } from '@shapeshiftoss/utils'
+import { asset as zAsset } from '@shapeshiftoss/types'
+import { fromBaseUnit, getFeeAssetByChainId, getViemClient } from '@shapeshiftoss/utils'
 import { erc20Abi, getAddress } from 'viem'
 import z from 'zod'
-
-import type { swapWorkflowInput } from '../workflows/swap'
 
 export const getAllowanceInput = z.object({
   amount: z.string().describe('The approval amount'),
@@ -21,34 +18,6 @@ export const getAllowanceOutput = z.object({
 
 export type GetAllowanceInput = z.infer<typeof getAllowanceInput>
 export type GetAllowanceOutput = z.infer<typeof getAllowanceOutput>
-
-export const getAllowanceStep = createStep({
-  id: 'getAllowance',
-  description: 'Get the token allowance set for a specific spender address',
-  inputSchema: getRateOutput,
-  outputSchema: getAllowanceOutput,
-  execute: ({ inputData, ...ctx }) => {
-    const { approvalTarget, sellAsset, sellAmountCryptoPrecision } = inputData
-    const { address } = ctx.getInitData<typeof swapWorkflowInput>()
-
-    return getAllowance({
-      amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
-      asset: sellAsset,
-      from: address,
-      spender: approvalTarget,
-    })
-  },
-})
-
-export const getAllowanceTool = createTool({
-  id: 'getAllowance',
-  description: 'Get the token allowance set for a specific spender address',
-  inputSchema: getAllowanceInput,
-  outputSchema: getAllowanceOutput,
-  execute: ({ context }) => {
-    return getAllowance(context)
-  },
-})
 
 export const getAllowance = async ({
   amount,

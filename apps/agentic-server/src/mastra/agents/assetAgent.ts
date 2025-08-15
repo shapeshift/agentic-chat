@@ -2,10 +2,9 @@ import { Agent } from '@mastra/core'
 import { LibSQLStore } from '@mastra/libsql'
 import { Memory } from '@mastra/memory'
 
-//import { coingeckoMCP } from '../mcp/coingecko'
+//import { coingeckoMcp } from '../mcp'
 import { openai } from '../models'
-import { assetConverterTool } from '../tools/asset/assetConverter'
-import { getPortalsAssetsTool } from '../tools/asset/getPortalsAssets'
+import { getPortalsAssetsTool, assetConverterTool } from '../tools'
 
 export const assetAgent = new Agent({
   name: 'Asset Agent',
@@ -14,7 +13,7 @@ export const assetAgent = new Agent({
 
     📋 Requirements:
       - ALWAYS check your memory first BEFORE attempting to fetch from an external data source.
-      - ONLY search for the term provided by the user.
+      - ONLY search for the term provided.
       - ALWAYS use the assetConverter tool as the FINAL step to return the data in a standard format UNLESS it is already in the correct format.
 
     🚫 NEVER Do:
@@ -27,7 +26,7 @@ export const assetAgent = new Agent({
   `,
   model: openai('gpt-4o-mini'),
   tools: {
-    //...(await coingeckoMCP.getTools()),
+    //...(await coingeckoMcp.getTools()),
     getPortalsAssetsTool,
     assetConverterTool,
   },

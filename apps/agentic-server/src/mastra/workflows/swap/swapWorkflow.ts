@@ -2,13 +2,9 @@ import { createStep, createWorkflow } from '@mastra/core'
 import { asset } from '@shapeshiftoss/types'
 import { z } from 'zod'
 
-import { approveStep } from '../tools/approve'
-import { getAllowanceStep } from '../tools/getAllowance'
-import { getAccountInput, getAccountStep } from '../tools/portfolio/getAccount'
-import { getBebopRateStep } from '../tools/swap/bebopRate'
-import { getBestRateStep } from '../tools/swap/getBestRate'
-import { getRelayRateStep } from '../tools/swap/relayRate'
-import { swapStep } from '../tools/swap/swap'
+import { getAccountInput, getAccountStep } from '../../tools'
+
+import { getBebopRateStep, getAllowanceStep, getRelayRateStep, approveStep, getBestRateStep, swapStep } from './steps'
 
 export const swapWorkflowInput = z.object({
   address: z.string().describe('The address to get account details for'),

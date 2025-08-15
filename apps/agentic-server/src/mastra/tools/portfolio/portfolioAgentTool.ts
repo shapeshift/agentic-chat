@@ -2,8 +2,6 @@ import { createTool } from '@mastra/core'
 import { asset } from '@shapeshiftoss/types'
 import z from 'zod'
 
-import { portfolioAgent } from '../../agents/portfolioAgent'
-
 const portfolioAgentInput = z.object({
   prompt: z.string().describe(`
     Prompt for portfolio details related to user accounts.
@@ -36,6 +34,7 @@ export const portfolioAgentTool = createTool({
   outputSchema: portfolioAgentOutput,
   execute: async ({ context, mastra }) => {
     const logger = mastra!.getLogger()
+    const portfolioAgent = mastra!.getAgent('portfolioAgent')
 
     logger.info('portfolioAgentTool', { context })
 

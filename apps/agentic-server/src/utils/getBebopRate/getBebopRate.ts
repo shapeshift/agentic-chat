@@ -1,4 +1,3 @@
-import { createStep } from '@mastra/core'
 import type { ChainId } from '@shapeshiftoss/caip'
 import {
   ethChainId,
@@ -11,14 +10,10 @@ import {
   fromAssetId,
 } from '@shapeshiftoss/caip'
 import type { Asset, GetRateInput, GetRateOutput } from '@shapeshiftoss/types'
-import { getRateOutput } from '@shapeshiftoss/types'
 import { getFeeAssetByChainId, fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import type { Address } from 'viem'
 import { getAddress } from 'viem'
-
-import type { swapWorkflowInput } from '../../../workflows/swap'
-import { getAccountOutput } from '../../portfolio/getAccount'
 
 import type { BebopResponse } from './types'
 
@@ -35,31 +30,13 @@ const bebopChainsMap: Record<ChainId, string> = {
   [bscChainId]: 'bsc',
 }
 
-export const getBebopRateStep = createStep({
-  id: 'getBebopRate',
-  description: 'Return a quote for a swap',
-  inputSchema: getAccountOutput,
-  outputSchema: getRateOutput,
-  execute: async ctx => {
-    const { address, buyAsset, sellAsset, sellAmountCryptoPrecision } = ctx.getInitData<typeof swapWorkflowInput>()
-
-    try {
-      const rate = await getBebopRate({ address, buyAsset, sellAsset, sellAmountCryptoPrecision })
-      return rate
-    } catch (err) {
-      console.error(`failed to getBebopRate:`, err)
-      throw err
-    }
-  },
-})
-
 const getBebopAssetAddress = (asset: Asset): Address => {
   return getAddress(
     asset.assetId === getFeeAssetByChainId(asset.chainId) ? BEBOP_ETH_MARKER : fromAssetId(asset.assetId).assetReference
   )
 }
 
-const getBebopRate = async ({
+export const getBebopRate = async ({
   address,
   buyAsset,
   sellAmountCryptoPrecision,

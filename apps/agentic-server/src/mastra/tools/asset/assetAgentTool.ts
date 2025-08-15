@@ -2,8 +2,6 @@ import { createTool } from '@mastra/core'
 import { asset } from '@shapeshiftoss/types'
 import z from 'zod'
 
-import { assetAgent } from '../../agents/assetAgent'
-
 const assetAgentInput = z.object({
   prompt: z.string().describe(`
     Prompt for asset information details and market data.
@@ -33,6 +31,7 @@ export const assetAgentTool = createTool({
   outputSchema: assetAgentOutput,
   execute: async ({ context, mastra }) => {
     const logger = mastra!.getLogger()
+    const assetAgent = mastra!.getAgent('assetAgent')
 
     logger.info('assetAgentTool', { context })
 

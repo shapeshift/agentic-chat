@@ -1,9 +1,6 @@
 import ApproveUI from '@/components/assistant-ui/ApproveUI'
-import BebopQuoteUI from '@/components/assistant-ui/BebopQuoteUI'
 import GetAccountUI from '@/components/assistant-ui/GetAccountUI'
 import GetAllowanceUI from '@/components/assistant-ui/GetAllowanceUI'
-import RelayQuoteUI from '@/components/assistant-ui/RelayQuoteUI'
-import SearchTokensUI from '@/components/assistant-ui/SearchTokensUI'
 import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
 import SwapWorkflowUI from '@/components/assistant-ui/SwapWorkflowUI'
 import SwitchEvmChainUI from '@/components/assistant-ui/SwitchEvmChainUI'
@@ -31,13 +28,10 @@ export const Dashboard = () => {
           </div>
         </header>
         <div className="overflow-hidden h-full">
-          <BebopQuoteUI />
-          <RelayQuoteUI />
           <SwitchEvmChainUI />
           <GetAccountUI />
           <ApproveUI />
           <GetAllowanceUI />
-          <SearchTokensUI />
           <SendTransactionUI />
           <SwapWorkflowUI />
           <Thread />

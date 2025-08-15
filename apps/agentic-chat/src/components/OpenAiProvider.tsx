@@ -4,7 +4,7 @@ import { AssistantRuntimeProvider } from '@assistant-ui/react'
 import { useChatRuntime } from '@assistant-ui/react-ai-sdk'
 import { useAccount } from 'wagmi'
 
-const agentId = 'shapeshift'
+const agentId = 'shapeshiftAgent'
 
 export function OpenAiProvider({
   children,

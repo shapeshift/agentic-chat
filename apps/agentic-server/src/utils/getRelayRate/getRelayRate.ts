@@ -1,33 +1,11 @@
-import { createStep } from '@mastra/core'
 import { fromAssetId, isAssetReference, fromChainId } from '@shapeshiftoss/caip'
-import { getRateOutput } from '@shapeshiftoss/types'
 import type { Asset, GetRateInput, GetRateOutput } from '@shapeshiftoss/types'
 import { fromBaseUnit, toBaseUnit, isNativeEvmAsset } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import type { Address } from 'viem'
 import { zeroAddress } from 'viem'
 
-import { getAccountOutput } from '../../portfolio/getAccount'
-
 import type { RelayFetchQuoteParams, RelayQuote } from './types'
-
-export const getRelayRateStep = createStep({
-  id: 'getRelayRate',
-  description: 'Return a quote for a swap',
-  inputSchema: getAccountOutput,
-  outputSchema: getRateOutput,
-  execute: async ctx => {
-    const { address, buyAsset, sellAsset, sellAmountCryptoPrecision } = ctx.getInitData()
-
-    try {
-      const rate = await getRelayRate({ address, buyAsset, sellAsset, sellAmountCryptoPrecision })
-      return rate
-    } catch (err) {
-      console.error(`failed to getRelayRate:`, err)
-      throw err
-    }
-  },
-})
 
 const getRelayAssetAddress = (asset: Asset): Address => {
   if (isNativeEvmAsset(asset.assetId)) return zeroAddress
@@ -35,7 +13,7 @@ const getRelayAssetAddress = (asset: Asset): Address => {
   return isAssetReference(assetReference) ? zeroAddress : (assetReference as Address)
 }
 
-const getRelayRate = async ({
+export const getRelayRate = async ({
   address,
   buyAsset,
   sellAmountCryptoPrecision,
