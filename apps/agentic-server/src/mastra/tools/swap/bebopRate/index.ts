@@ -17,12 +17,12 @@ import axios from 'axios'
 import type { Address } from 'viem'
 import { getAddress } from 'viem'
 
-import type { swapWorkflowInput } from '../../workflows/swap'
-import { getAccountOutput } from '../getAccount'
+import type { swapWorkflowInput } from '../../../workflows/swap'
+import { getAccountOutput } from '../../portfolio/getAccount'
 
 import type { BebopResponse } from './types'
 
-const BEBOP_API_KEY = process.env.VITE_BEBOP_API_KEY
+const BEBOP_API_KEY = process.env.BEBOP_API_KEY
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 
 const bebopChainsMap: Record<ChainId, string> = {

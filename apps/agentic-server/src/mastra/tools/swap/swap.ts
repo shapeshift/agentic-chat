@@ -2,7 +2,8 @@ import { createStep } from '@mastra/core'
 import { unsignedTx } from '@shapeshiftoss/types'
 import z from 'zod'
 
-import { approveOutput } from './approve'
+import { approveOutput } from '../approve'
+
 import { getBestRateStep } from './getBestRate'
 
 export const swapOutput = z.object({

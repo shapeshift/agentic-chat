@@ -7,7 +7,7 @@ import axios from 'axios'
 import type { Address } from 'viem'
 import { zeroAddress } from 'viem'
 
-import { getAccountOutput } from '../getAccount'
+import { getAccountOutput } from '../../portfolio/getAccount'
 
 import type { RelayFetchQuoteParams, RelayQuote } from './types'
 

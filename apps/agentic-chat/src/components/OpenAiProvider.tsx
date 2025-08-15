@@ -4,7 +4,7 @@ import { AssistantRuntimeProvider } from '@assistant-ui/react'
 import { useChatRuntime } from '@assistant-ui/react-ai-sdk'
 import { useAccount } from 'wagmi'
 
-const agentId = 'shapeshiftAgent'
+const agentId = 'shapeshift'
 
 export function OpenAiProvider({
   children,
@@ -26,6 +26,13 @@ export function OpenAiProvider({
         },
       ],
       tools: undefined,
+    },
+    onFinish(message) {
+      console.log({ message })
+    },
+    async onResponse(response) {
+      const cloned = response.clone()
+      console.log({ response: await cloned.text() })
     },
   })
 

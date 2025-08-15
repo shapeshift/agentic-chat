@@ -8,7 +8,7 @@ import z from 'zod'
 import type { swapWorkflowInput } from '../workflows/swap'
 
 import { getAllowanceOutput } from './getAllowance'
-import { getBestRateStep } from './getBestRate'
+import { getBestRateStep } from './swap/getBestRate'
 
 export const approveOutput = z.object({
   txHash: z.string().describe('The approval transaction hash'),

@@ -3,12 +3,12 @@ import { asset } from '@shapeshiftoss/types'
 import { z } from 'zod'
 
 import { approveStep } from '../tools/approve'
-import { getBebopRateStep } from '../tools/bebopRate'
-import { getAccountInput, getAccountStep } from '../tools/getAccount'
 import { getAllowanceStep } from '../tools/getAllowance'
-import { getBestRateStep } from '../tools/getBestRate'
-import { getRelayRateStep } from '../tools/relayRate'
-import { swapStep } from '../tools/swap'
+import { getAccountInput, getAccountStep } from '../tools/portfolio/getAccount'
+import { getBebopRateStep } from '../tools/swap/bebopRate'
+import { getBestRateStep } from '../tools/swap/getBestRate'
+import { getRelayRateStep } from '../tools/swap/relayRate'
+import { swapStep } from '../tools/swap/swap'
 
 export const swapWorkflowInput = z.object({
   address: z.string().describe('The address to get account details for'),

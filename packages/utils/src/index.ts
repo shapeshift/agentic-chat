@@ -35,21 +35,21 @@ export const toBaseUnit = (value: string | number | BigNumber, precision: number
 export const getUnchainedHttpUrlEnvVar = (chainId: ChainId): string => {
   switch (chainId) {
     case ethChainId:
-      return 'VITE_UNCHAINED_ETHEREUM_HTTP_URL'
+      return 'UNCHAINED_ETHEREUM_HTTP_URL'
     case avalancheChainId:
-      return 'VITE_UNCHAINED_AVALANCHE_HTTP_URL'
+      return 'UNCHAINED_AVALANCHE_HTTP_URL'
     case optimismChainId:
-      return 'VITE_UNCHAINED_OPTIMISM_HTTP_URL'
+      return 'UNCHAINED_OPTIMISM_HTTP_URL'
     case bscChainId:
-      return 'VITE_UNCHAINED_BNBSMARTCHAIN_HTTP_URL'
+      return 'UNCHAINED_BNBSMARTCHAIN_HTTP_URL'
     case polygonChainId:
-      return 'VITE_UNCHAINED_POLYGON_HTTP_URL'
+      return 'UNCHAINED_POLYGON_HTTP_URL'
     case gnosisChainId:
-      return 'VITE_UNCHAINED_GNOSIS_HTTP_URL'
+      return 'UNCHAINED_GNOSIS_HTTP_URL'
     case arbitrumChainId:
-      return 'VITE_UNCHAINED_ARBITRUM_HTTP_URL'
+      return 'UNCHAINED_ARBITRUM_HTTP_URL'
     case baseChainId:
-      return 'VITE_UNCHAINED_BASE_HTTP_URL'
+      return 'UNCHAINED_BASE_HTTP_URL'
     default:
       throw new Error(`invalid chainId: ${chainId}`)
   }

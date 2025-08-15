@@ -1,3 +1,2 @@
-export * from './getAccount'
+export * from './portfolio/getAccount'
 export * from './getAllowance'
-export * from './searchTokens'
