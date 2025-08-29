@@ -18,11 +18,11 @@ const mastraClient = new MastraClient({
 
 const Icon = Wallet
 
-type SwapWorkflowUiContentProps = Omit<ToolCallContentPartProps<SwapWorkflowInput, SwapWorkflowResult>, 'args'> & {
+type SwapContentProps = Omit<ToolCallContentPartProps<SwapWorkflowInput, SwapWorkflowResult>, 'args'> & {
   args: Partial<SwapWorkflowInput>
 }
 
-const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
+const SwapContent: React.FC<SwapContentProps> = ctx => {
   const { data: walletClient } = useWalletClient()
   const [hasApproved, setHasApproved] = useState(false)
   const [hasSwapped, setHasSwapped] = useState(false)
@@ -30,8 +30,8 @@ const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
 
   const { status, result, args, isError, toolName } = useMemo(() => ctx, [ctx])
 
-  const approveStep = useMemo(() => result?.steps.approve, [result])
-  const swapStep = useMemo(() => result?.steps.swap, [result])
+  const approveStep = useMemo(() => result?.steps?.approve, [result])
+  const swapStep = useMemo(() => result?.steps?.swap, [result])
 
   const approve = useCallback(async () => {
     if (hasApproved) return
@@ -141,9 +141,7 @@ const SwapWorkflowUiContent: React.FC<SwapWorkflowUiContentProps> = ctx => {
   }
 }
 
-const SwapWorkflowUI = makeAssistantToolUI<SwapWorkflowInput, SwapWorkflowResult>({
-  toolName: 'swapWorkflow',
-  render: SwapWorkflowUiContent,
+export const Swap = makeAssistantToolUI<SwapWorkflowInput, SwapWorkflowResult>({
+  toolName: 'swapAgent',
+  render: SwapContent,
 })
-
-export default SwapWorkflowUI

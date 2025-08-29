@@ -2,16 +2,11 @@ import { createTool } from '@mastra/core'
 import { asset } from '@shapeshiftoss/types'
 import z from 'zod'
 
+import { supportedChainsContext } from '../../agents/context'
+
 const portfolioAgentInput = z.object({
-  prompt: z.string().describe(`
-    Prompt for portfolio details related to user accounts.
-
-    📋 Requirements:
-      - Must include a user account (address or xpub) along with an optional network specifier
-      - Add context that we are trying to get portfolio details if missing.
-
-    🚫 NEVER Do:
-  `),
+  prompt: z.string().describe('Prompt for fetching balances for a user account'),
+  user: z.string().describe('User account address or xpub'),
 })
 
 const portfolioAgentOutput = z.object({
@@ -32,20 +27,32 @@ export const portfolioAgentTool = createTool({
   description: 'Fetch account balances',
   inputSchema: portfolioAgentInput,
   outputSchema: portfolioAgentOutput,
-  execute: async ({ context, mastra }) => {
+  execute: async ({ context, mastra, resourceId, threadId, writer }) => {
     const logger = mastra!.getLogger()
-    const portfolioAgent = mastra!.getAgent('portfolioAgent')
+    const portfolioAgent = mastra!.getAgent('portfolio')
 
     logger.info('portfolioAgentTool', { context })
 
-    const { object } = await portfolioAgent.generate(context.prompt, {
-      experimental_output: portfolioAgentOutput,
+    const result = await portfolioAgent.streamVNext(context.prompt, {
+      output: portfolioAgentOutput,
+      context: [
+        {
+          role: 'system',
+          content: supportedChainsContext,
+        },
+      ],
+      memory: {
+        resource: resourceId!,
+        thread: threadId!,
+      },
     })
 
-    if (!object) throw new Error('Failed to get portfolio details')
+    await result.objectStream.pipeTo(writer!)
 
-    logger.info('portfolioAgentTool', { response: object })
+    const response = await result.object
 
-    return object
+    logger.info('portfolioAgentTool', { response })
+
+    return response
   },
 })

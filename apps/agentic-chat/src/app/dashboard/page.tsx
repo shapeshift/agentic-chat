@@ -1,21 +1,20 @@
-import ApproveUI from '@/components/assistant-ui/ApproveUI'
-import GetAccountUI from '@/components/assistant-ui/GetAccountUI'
-import GetAllowanceUI from '@/components/assistant-ui/GetAllowanceUI'
+import { GetAllowance } from '@/components/assistant-ui/GetAllowance'
+import { Portfolio } from '@/components/assistant-ui/Portfolio'
 import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
-import SwapWorkflowUI from '@/components/assistant-ui/SwapWorkflowUI'
+import { Swap } from '@/components/assistant-ui/Swap'
 import SwitchEvmChainUI from '@/components/assistant-ui/SwitchEvmChainUI'
 import { Thread } from '@/components/assistant-ui/thread'
 import { ConnectWallet } from '@/components/connect-wallet'
 import { SidebarLeft } from '@/components/sidebar-left'
 import { SidebarRight } from '@/components/sidebar-right'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import useTools from '@/hooks/useTools'
+//import useTools from '@/hooks/useTools'
 
 const isSidebarLeftEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true'
 const isSidebarRightEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_RIGHT === 'true'
 
 export const Dashboard = () => {
-  useTools()
+  //useTools()
 
   return (
     <SidebarProvider>
@@ -29,11 +28,10 @@ export const Dashboard = () => {
         </header>
         <div className="overflow-hidden h-full">
           <SwitchEvmChainUI />
-          <GetAccountUI />
-          <ApproveUI />
-          <GetAllowanceUI />
+          <Portfolio />
+          <GetAllowance />
           <SendTransactionUI />
-          <SwapWorkflowUI />
+          <Swap />
           <Thread />
         </div>
       </SidebarInset>

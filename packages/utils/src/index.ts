@@ -78,7 +78,7 @@ export const isNativeEvmAsset = (assetId: AssetId): boolean => {
   }
 }
 
-export const getFeeAssetByChainId = (chainId: ChainId): string | undefined => {
+export const getFeeAssetIdByChainId = (chainId: ChainId): string | undefined => {
   switch (chainId) {
     case ethChainId:
       return ethAssetId

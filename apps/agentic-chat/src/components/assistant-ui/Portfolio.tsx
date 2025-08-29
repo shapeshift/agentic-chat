@@ -1,7 +1,6 @@
 import type { ToolCallContentPartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { GetAccountInput, GetAccountOutput } from '@shapeshiftoss/agentic-server'
-import { chainIdToNetwork } from '@shapeshiftoss/utils'
+import type { PortfolioAgentInput, PortfolioAgentOutput } from '@shapeshiftoss/agentic-server'
 import { Wallet } from 'lucide-react'
 
 import { TextShimmer } from '@/components/TextShimmer'
@@ -10,18 +9,18 @@ import { CollapsableDetails } from './CollapsableDetails'
 
 const Icon = Wallet
 
-type GetAccountUiContentProps = Omit<ToolCallContentPartProps<GetAccountInput, GetAccountOutput>, 'args'> & {
-  args: Partial<GetAccountInput>
+type PortfolioContentProps = Omit<ToolCallContentPartProps<PortfolioAgentInput, PortfolioAgentOutput>, 'args'> & {
+  args: Partial<PortfolioAgentInput>
 }
 
-const GetAccountUiContent: React.FC<GetAccountUiContentProps> = ({ status, result, args, isError, toolName }) => {
+const PortfolioContent: React.FC<PortfolioContentProps> = ({ status, result, args, isError, toolName }) => {
   switch (status.type) {
     case 'running':
     case 'requires-action':
     case 'incomplete': {
-      if (!args.chainId) return <TextShimmer>Getting account</TextShimmer>
+      if (!args.prompt) return <TextShimmer>Getting account</TextShimmer>
 
-      return <TextShimmer>Getting account for {chainIdToNetwork[args.chainId]}...</TextShimmer>
+      return <TextShimmer>{args.prompt}</TextShimmer>
     }
     case 'complete': {
       if (isError || !result) {
@@ -43,9 +42,7 @@ const GetAccountUiContent: React.FC<GetAccountUiContentProps> = ({ status, resul
   }
 }
 
-const GetAccountUI = makeAssistantToolUI<GetAccountInput, GetAccountOutput>({
-  toolName: 'getAccount',
-  render: GetAccountUiContent,
+export const Portfolio = makeAssistantToolUI<PortfolioAgentInput, PortfolioAgentOutput>({
+  toolName: 'portfolioAgent',
+  render: PortfolioContent,
 })
-
-export default GetAccountUI

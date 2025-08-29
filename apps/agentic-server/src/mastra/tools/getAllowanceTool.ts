@@ -7,7 +7,7 @@ export const getAllowanceTool = createTool({
   description: 'Get the token allowance set for a specific spender address',
   inputSchema: getAllowanceInput,
   outputSchema: getAllowanceOutput,
-  execute: ({ context, mastra }) => {
+  execute: async ({ context, mastra }) => {
     const logger = mastra!.getLogger()
 
     logger.info('getAllowanceTool', { context })

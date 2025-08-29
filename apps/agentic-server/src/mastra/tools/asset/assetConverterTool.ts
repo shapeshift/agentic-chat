@@ -15,11 +15,11 @@ export const assetConverterTool = createTool({
     assets: z.array(
       z.object({
         assetNamespace: z.enum(['erc20', 'erc721', 'erc1155', 'slip44']).describe(`
-  The asset type as described the chain:
-    - erc20 tokens will ALWAYS have an address associated with the asset
-    - erc721/erc1155 nfts will ALWAYS have an address AND id associated with the asset
-    - slip44 assets are ALWAYS the native asset on chain and don't have an address (eg. ETH)
-`),
+          The asset type as described the chain:
+            - erc20 tokens will ALWAYS have an address associated with the asset
+            - erc721/erc1155 nfts will ALWAYS have an address AND id associated with the asset
+            - slip44 assets are ALWAYS the native asset on chain and don't have an address (eg. ETH)
+        `),
         address: z.string().optional().describe('The address of the token (use undefined for slip44 native assets)'),
         symbol: z.string(),
         name: z.string(),
@@ -48,7 +48,7 @@ export const assetConverterTool = createTool({
       const assetId = toAssetId({
         chainId,
         assetNamespace: ctx.assetNamespace as AssetNamespace,
-        assetReference: ctx.address ?? '60',
+        assetReference: ctx.address || '60',
       })
 
       prev.push({
@@ -64,8 +64,6 @@ export const assetConverterTool = createTool({
 
       return prev
     }, [])
-
-    logger.info('assetConverterTool:', { assets })
 
     return Promise.resolve({ assets })
   },

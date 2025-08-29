@@ -1,12 +1,12 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import { asset as zAsset } from '@shapeshiftoss/types'
-import { fromBaseUnit, getFeeAssetByChainId, getViemClient } from '@shapeshiftoss/utils'
+import { fromBaseUnit, getFeeAssetIdByChainId, getViemClient } from '@shapeshiftoss/utils'
 import { erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
 export const getAllowanceInput = z.object({
-  amount: z.string().describe('The approval amount'),
-  asset: zAsset.describe('The asset to check the allowance for'),
+  amount: z.string().optional().describe('The approval amount'),
+  asset: zAsset.describe('The asset to check the allowance for. Use the asset agent to get the correct asset details.'),
   from: z.string().describe('The address of the user that sets the allowance'),
   spender: z.string().describe('The address of the spender to check allowance from'),
 })
@@ -25,7 +25,7 @@ export const getAllowance = async ({
   from,
   spender,
 }: GetAllowanceInput): Promise<GetAllowanceOutput> => {
-  if (asset.assetId === getFeeAssetByChainId(asset.chainId)) {
+  if (asset.assetId === getFeeAssetIdByChainId(asset.chainId)) {
     return {
       allowance: '0',
       isApprovalRequired: false,
@@ -43,6 +43,6 @@ export const getAllowance = async ({
 
   return {
     allowance: fromBaseUnit(allowance.toString(), asset.precision),
-    isApprovalRequired: allowance < BigInt(amount),
+    isApprovalRequired: !!amount && allowance < BigInt(amount),
   }
 }

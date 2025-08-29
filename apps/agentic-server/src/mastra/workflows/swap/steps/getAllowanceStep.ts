@@ -3,7 +3,7 @@ import { getRateOutput } from '@shapeshiftoss/types'
 import { toBaseUnit } from '@shapeshiftoss/utils'
 
 import { getAllowance, getAllowanceOutput } from '../../../../utils'
-import type { swapWorkflowInput } from '../swapWorkflow'
+import type { swapWorkflowInput } from '../types'
 
 export const getAllowanceStep = createStep({
   id: 'getAllowance',
@@ -16,12 +16,12 @@ export const getAllowanceStep = createStep({
     logger.info('getAllowanceStep', { inputData })
 
     const { approvalTarget, sellAsset, sellAmountCryptoPrecision } = inputData
-    const { address } = getInitData<typeof swapWorkflowInput>()
+    const { sellAccount } = getInitData<typeof swapWorkflowInput>()
 
     return getAllowance({
       amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
       asset: sellAsset,
-      from: address,
+      from: sellAccount.address,
       spender: approvalTarget,
     })
   },

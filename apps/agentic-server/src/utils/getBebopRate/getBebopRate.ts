@@ -10,7 +10,7 @@ import {
   fromAssetId,
 } from '@shapeshiftoss/caip'
 import type { Asset, GetRateInput, GetRateOutput } from '@shapeshiftoss/types'
-import { getFeeAssetByChainId, fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
+import { getFeeAssetIdByChainId, fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import type { Address } from 'viem'
 import { getAddress } from 'viem'
@@ -32,7 +32,9 @@ const bebopChainsMap: Record<ChainId, string> = {
 
 const getBebopAssetAddress = (asset: Asset): Address => {
   return getAddress(
-    asset.assetId === getFeeAssetByChainId(asset.chainId) ? BEBOP_ETH_MARKER : fromAssetId(asset.assetId).assetReference
+    asset.assetId === getFeeAssetIdByChainId(asset.chainId)
+      ? BEBOP_ETH_MARKER
+      : fromAssetId(asset.assetId).assetReference
   )
 }
 

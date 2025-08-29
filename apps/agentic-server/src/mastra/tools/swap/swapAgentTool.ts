@@ -1,16 +1,10 @@
 import { createTool } from '@mastra/core'
 import z from 'zod'
 
+import { supportedChainsContext } from '../../agents/context'
+
 const swapAgentInput = z.object({
-  prompt: z.string().describe(`
-    Prompt for swap action.
-
-    📋 Requirements:
-      - Must include a user account (address or xpub) along with an optional network specifier.
-      - Add context that we are trying to perform a swap if missing.
-
-    🚫 NEVER Do:
-  `),
+  prompt: z.string().describe('Prompt for swap action.'),
 })
 
 const swapAgentOutput = z.any()
@@ -23,21 +17,33 @@ export const swapAgentTool = createTool({
   description: 'Perform swap',
   inputSchema: swapAgentInput,
   outputSchema: swapAgentOutput,
-  execute: async ({ context, mastra }) => {
+  execute: async ({ context, mastra, threadId, resourceId, writer }) => {
     const logger = mastra!.getLogger()
-    const swapAgent = mastra!.getAgent('swapAgent')
+    const swapAgent = mastra!.getAgent('swap')
 
     logger.info('swapAgentTool', { context })
 
-    const { object } = await swapAgent.generate(context.prompt, {
-      experimental_output: swapAgentOutput,
+    const result = await swapAgent.streamVNext(context.prompt, {
+      output: swapAgentOutput,
+      context: [
+        {
+          role: 'system',
+          content: supportedChainsContext,
+        },
+      ],
+      memory: {
+        resource: resourceId!,
+        thread: threadId!,
+      },
     })
 
-    if (!object) throw new Error('Failed to perform swap')
+    await result.objectStream.pipeTo(writer!)
 
-    logger.info('swapAgentTool', { response: object })
+    const response = await result.object
+
+    logger.info('swapAgentTool', { response })
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return object
+    return response
   },
 })

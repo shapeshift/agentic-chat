@@ -2,18 +2,21 @@ import { createTool } from '@mastra/core'
 import { asset } from '@shapeshiftoss/types'
 import z from 'zod'
 
+import { supportedChainsContext } from '../../agents/context'
+
 const assetAgentInput = z.object({
   prompt: z.string().describe(`
     Prompt for asset information details and market data.
 
     📋 Requirements:
-      - Must include an asset symbol, name and/or address search term along with an optional network specifier.
+      - ALWAYS include an asset symbol, name and/or address search term along with an optional network specifier.
+      - ALWAYS include the network if specified.
+      - ONLY fetch details for the specified network if included.
       - Add context that we are trying to get asset details and market data if missing.
 
-    🚫 NEVER Do:
-      - Modify the actual search term provided by the user.
-      - Include user account details (eg. user account address or xpub).
-      - Add placeholder or example data
+    🚫 Restrictions:
+      - NEVER modify the actual search term provided by the user.
+      - NEVER include user account details (eg. user account address or xpub).
   `),
 })
 
@@ -29,31 +32,33 @@ export const assetAgentTool = createTool({
   description: 'Fetch asset details and market data',
   inputSchema: assetAgentInput,
   outputSchema: assetAgentOutput,
-  execute: async ({ context, mastra }) => {
+  execute: async ({ context, mastra, resourceId, writer }) => {
     const logger = mastra!.getLogger()
-    const assetAgent = mastra!.getAgent('assetAgent')
+    const assetAgent = mastra!.getAgent('asset')
 
     logger.info('assetAgentTool', { context })
 
-    const { object } = await assetAgent.generate(context.prompt, {
-      experimental_output: assetAgentOutput,
-      memory: {
-        resource: 'shapeshift',
-        thread: 'shapeshift',
-        options: {
-          semanticRecall: true,
-          workingMemory: {
-            enabled: true,
-            scope: 'resource',
-          },
+    const result = await assetAgent.streamVNext(context.prompt, {
+      output: assetAgentOutput,
+      format: 'aisdk',
+      context: [
+        {
+          role: 'system',
+          content: supportedChainsContext,
         },
+      ],
+      memory: {
+        resource: resourceId || 'shapeshift',
+        thread: 'global',
       },
     })
 
-    if (!object) throw new Error('Failed to fetch asset details or market data')
+    await result.fullStream.pipeTo(writer!)
 
-    logger.info('assetAgentTool', { response: object })
+    const response = await result.object
 
-    return object
+    logger.info('assetAgentTool', { response })
+
+    return response
   },
 })

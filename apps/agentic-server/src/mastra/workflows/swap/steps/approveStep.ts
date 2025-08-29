@@ -6,7 +6,7 @@ import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
 import { getAllowanceOutput } from '../../../../utils'
-import type { swapWorkflowInput } from '../swapWorkflow'
+import type { swapWorkflowInput } from '../types'
 
 import { getBestRateStep } from './getBestRateStep'
 
@@ -23,9 +23,13 @@ export const approveStep = createStep({
   outputSchema: approveOutput,
   suspendSchema: unsignedTx.extend({ runId: z.string() }),
   resumeSchema: approveOutput,
-  execute: async ({ getInitData, getStepResult, resumeData, suspend, runId }) => {
-    const { address, sellAsset, sellAmountCryptoPrecision } = getInitData<typeof swapWorkflowInput>()
+  execute: async ({ getInitData, getStepResult, resumeData, mastra, suspend, runId }) => {
+    const logger = mastra.getLogger()
+
+    const { sellAccount, sellAsset, sellAmountCryptoPrecision } = getInitData<typeof swapWorkflowInput>()
     const { approvalTarget } = getStepResult(getBestRateStep)
+
+    logger.info('approveStep', { sellAccount, sellAsset, sellAmountCryptoPrecision, approvalTarget, resumeData })
 
     try {
       const data = encodeFunctionData({
@@ -38,7 +42,7 @@ export const approveStep = createStep({
         await suspend({
           chainId: sellAsset.chainId,
           data,
-          from: address,
+          from: sellAccount.address,
           to: fromAssetId(sellAsset.assetId).assetReference,
           value: '0',
           runId,

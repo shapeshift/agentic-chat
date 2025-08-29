@@ -41,9 +41,7 @@ const GetAllowanceContent: React.FC<GetAllowanceContentProps> = ({ status, resul
     }
   }
 }
-const GetAllowanceUI = makeAssistantToolUI<GetAllowanceInput, GetAllowanceOutput>({
+export const GetAllowance = makeAssistantToolUI<GetAllowanceInput, GetAllowanceOutput>({
   toolName: 'getAllowance',
   render: GetAllowanceContent,
 })
-
-export default GetAllowanceUI
