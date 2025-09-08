@@ -4,8 +4,13 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 
+const excludedTools = ['updateWorkingMemory']
+
 export const ToolFallback: ToolCallContentPartComponent = ({ toolName, argsText, result }) => {
   const [isCollapsed, setIsCollapsed] = useState(true)
+
+  if (excludedTools.includes(toolName)) return null
+
   return (
     <div className="mb-4 flex w-full flex-col gap-3 rounded-lg border py-3">
       <div className="flex items-center gap-2 px-4">

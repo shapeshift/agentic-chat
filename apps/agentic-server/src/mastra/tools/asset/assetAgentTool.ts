@@ -34,7 +34,7 @@ export const assetAgentTool = createTool({
   outputSchema: assetAgentOutput,
   execute: async ({ context, mastra, resourceId, writer }) => {
     const logger = mastra!.getLogger()
-    const assetAgent = mastra!.getAgent('asset')
+    const assetAgent = mastra!.getAgent('assetAgent')
 
     logger.info('assetAgentTool', { context })
 
@@ -57,7 +57,7 @@ export const assetAgentTool = createTool({
 
     const response = await result.object
 
-    logger.info('assetAgentTool', { response })
+    logger.info('assetAgentTool', { type: 'assetAgentTool', response: response })
 
     return response
   },

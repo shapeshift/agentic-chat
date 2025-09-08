@@ -1,5 +1,5 @@
 import { asset } from '@shapeshiftoss/types'
-import { z } from 'zod'
+import z from 'zod'
 
 import { getAccountOutput } from '../../tools'
 

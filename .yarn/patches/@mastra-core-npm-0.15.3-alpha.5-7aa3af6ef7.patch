@@ -1,0 +1,531 @@
+diff --git a/dist/chunk-23NO6AMW.js b/dist/chunk-23NO6AMW.js
+index 621f2db018fffb550f8503984b192f33ced7121b..62c628e0dad9452bb3b0bf2150da1eb7c4c607e1 100644
+--- a/dist/chunk-23NO6AMW.js
++++ b/dist/chunk-23NO6AMW.js
+@@ -243,6 +243,25 @@ function convertFullStreamChunkToUIMessageStream({
+       }
+     case "tool-output":
+       {
++        if ('type' in part.output) {
++          if (!part.output.type.startsWith('tool-')) return;
++
++          return convertFullStreamChunkToUIMessageStream({
++            part: {
++              toolCallId: part.toolCallId,
++              toolName: part.toolName,
++              ...part.output
++            },
++            onError,
++            messageMetadataValue,
++            responseMessageId,
++            sendFinish,
++            sendReasoning,
++            sendSources,
++            sendStart,
++          });
++        };
++
+         return {
+           id: part.toolCallId,
+           ...part.output
+diff --git a/dist/chunk-JQKPRJCJ.cjs b/dist/chunk-JQKPRJCJ.cjs
+index 497b6d4537f4600cf1ae94287e2238f7096672d3..6e0a5bd7bb97d14b8b7e395c43a00f7ba8cfbff0 100644
+--- a/dist/chunk-JQKPRJCJ.cjs
++++ b/dist/chunk-JQKPRJCJ.cjs
+@@ -29,7 +29,7 @@ var radash = require('radash');
+ var sift = require('sift');
+ var xstate = require('xstate');
+ 
+-function _interopDefault (e) { return e && e.__esModule ? e : { default: e }; }
++function _interopDefault(e) { return e && e.__esModule ? e : { default: e }; }
+ 
+ function _interopNamespace(e) {
+   if (e && e.__esModule) return e;
+@@ -269,6 +269,25 @@ function convertFullStreamChunkToUIMessageStream({
+       }
+     case "tool-output":
+       {
++        if ('type' in part.output) {
++          if (!part.output.type.startsWith('tool-')) return;
++
++          return convertFullStreamChunkToUIMessageStream({
++            part: {
++              toolCallId: part.toolCallId,
++              toolName: part.toolName,
++              ...part.output
++            },
++            onError,
++            messageMetadataValue,
++            responseMessageId,
++            sendFinish,
++            sendReasoning,
++            sendSources,
++            sendStart,
++          });
++        };
++
+         return {
+           id: part.toolCallId,
+           ...part.output
+@@ -5035,7 +5054,7 @@ var Machine = class extends EventEmitter__default.default {
+         this.logger.debug(`Step ${stepId} completed`);
+       },
+       snapshotStep: xstate.assign({
+-        _snapshot: ({}, params) => {
++        _snapshot: ({ }, params) => {
+           const {
+             stepId
+           } = params;
+@@ -5986,8 +6005,8 @@ var WorkflowInstance = class {
+     resumeData,
+     runtimeContext
+   } = {
+-    runtimeContext: new chunkGPWMM745_cjs.RuntimeContext()
+-  }) {
++      runtimeContext: new chunkGPWMM745_cjs.RuntimeContext()
++    }) {
+     this.#executionSpan = this.#mastra?.getTelemetry()?.tracer.startSpan(`workflow.${this.name}.execute`, {
+       attributes: {
+         componentName: this.name,
+@@ -6078,7 +6097,8 @@ var WorkflowInstance = class {
+         variables: this.#resultMapping,
+         context: {
+           steps: results,
+-          triggerData}
++          triggerData
++        }
+       });
+     }
+     return result;
+@@ -6264,7 +6284,8 @@ var WorkflowInstance = class {
+     const trigger = prevSnapshot.trigger;
+     delete prevSnapshot.trigger;
+     const snapshot = {
+-      ...trigger};
++      ...trigger
++    };
+     const m = getActivePathsAndStatus(prevSnapshot.value);
+     return {
+       runId: this.runId,
+@@ -6431,7 +6452,7 @@ var WorkflowInstance = class {
+       if (!targetStep) throw new Error(`Step not found`);
+       const {
+         payload = {},
+-        execute: execute2 = async () => {}
++        execute: execute2 = async () => { }
+       } = targetStep.step;
+       const mergedData = {
+         ...payload,
+@@ -6567,14 +6588,14 @@ var LegacyWorkflow = class extends chunkKXCUCBEI_cjs.MastraBase {
+       }
+     }
+     const step = isWorkflow(next) ?
+-    // @ts-ignore
+-    workflowToStep(next, {
+-      mastra: this.#mastra
+-    }) : isAgent(next) ?
+-    // @ts-ignore
+-    agentToStep(next, {
+-      mastra: this.#mastra
+-    }) : next;
++      // @ts-ignore
++      workflowToStep(next, {
++        mastra: this.#mastra
++      }) : isAgent(next) ?
++        // @ts-ignore
++        agentToStep(next, {
++          mastra: this.#mastra
++        }) : next;
+     const stepKey = this.#makeStepKey(step, config);
+     const when = config?.["#internal"]?.when || config?.when;
+     const graphEntry = {
+@@ -6646,10 +6667,10 @@ var LegacyWorkflow = class extends chunkKXCUCBEI_cjs.MastraBase {
+       }
+     }
+     const step = isWorkflow(next) ?
+-    // @ts-ignore
+-    workflowToStep(next, {
+-      mastra: this.#mastra
+-    }) : next;
++      // @ts-ignore
++      workflowToStep(next, {
++        mastra: this.#mastra
++      }) : next;
+     const stepKey = this.#makeStepKey(step, config);
+     const when = config?.["#internal"]?.when || config?.when;
+     const graphEntry = {
+@@ -7286,7 +7307,7 @@ var LegacyWorkflow = class extends chunkKXCUCBEI_cjs.MastraBase {
+       if (!targetStep) throw new Error(`Step not found`);
+       const {
+         payload = {},
+-        execute: execute2 = async () => {}
++        execute: execute2 = async () => { }
+       } = targetStep.step;
+       const finalAction = this.telemetry ? executeStep(execute2, `workflow.${this.name}.action.${stepId}`, {
+         componentName: this.name,
+@@ -7885,17 +7906,17 @@ var PromptInjectionDetector = class _PromptInjectionDetector {
+   includeScores;
+   // Default detection categories based on OWASP LLM01 and common attack patterns
+   static DEFAULT_DETECTION_TYPES = ["injection",
+-  // General prompt injection attempts
+-  "jailbreak",
+-  // Attempts to bypass safety measures
+-  "tool-exfiltration",
+-  // Attempts to misuse or extract tool information
+-  "data-exfiltration",
+-  // Attempts to extract sensitive data
+-  "system-override",
+-  // Attempts to override system instructions
+-  "role-manipulation"
+-  // Attempts to manipulate the AI's role or persona
++    // General prompt injection attempts
++    "jailbreak",
++    // Attempts to bypass safety measures
++    "tool-exfiltration",
++    // Attempts to misuse or extract tool information
++    "data-exfiltration",
++    // Attempts to extract sensitive data
++    "system-override",
++    // Attempts to override system instructions
++    "role-manipulation"
++    // Attempts to manipulate the AI's role or persona
+   ];
+   constructor(options) {
+     this.detectionTypes = options.detectionTypes || _PromptInjectionDetector.DEFAULT_DETECTION_TYPES;
+@@ -8103,31 +8124,31 @@ var PIIDetector = class _PIIDetector {
+   preserveFormat;
+   // Default PII types based on common privacy regulations and comprehensive PII detection
+   static DEFAULT_DETECTION_TYPES = ["email",
+-  // Email addresses
+-  "phone",
+-  // Phone numbers
+-  "credit-card",
+-  // Credit card numbers
+-  "ssn",
+-  // Social Security Numbers
+-  "api-key",
+-  // API keys and tokens
+-  "ip-address",
+-  // IP addresses (IPv4 and IPv6)
+-  "name",
+-  // Person names
+-  "address",
+-  // Physical addresses
+-  "date-of-birth",
+-  // Dates of birth
+-  "url",
+-  // URLs that might contain PII
+-  "uuid",
+-  // Universally Unique Identifiers
+-  "crypto-wallet",
+-  // Cryptocurrency wallet addresses
+-  "iban"
+-  // International Bank Account Numbers
++    // Email addresses
++    "phone",
++    // Phone numbers
++    "credit-card",
++    // Credit card numbers
++    "ssn",
++    // Social Security Numbers
++    "api-key",
++    // API keys and tokens
++    "ip-address",
++    // IP addresses (IPv4 and IPv6)
++    "name",
++    // Person names
++    "address",
++    // Physical addresses
++    "date-of-birth",
++    // Dates of birth
++    "url",
++    // URLs that might contain PII
++    "uuid",
++    // Universally Unique Identifiers
++    "crypto-wallet",
++    // Cryptocurrency wallet addresses
++    "iban"
++    // International Bank Account Numbers
+   ];
+   constructor(options) {
+     this.detectionTypes = options.detectionTypes || _PIIDetector.DEFAULT_DETECTION_TYPES;
+@@ -10155,10 +10176,10 @@ exports.Agent = class Agent extends (_a = chunkKXCUCBEI_cjs.MastraBase) {
+           runtimeContext
+         });
+         const toolEnhancements = [
+-        // toolsets
+-        toolsets && Object.keys(toolsets || {}).length > 0 ? `toolsets present (${Object.keys(toolsets || {}).length} tools)` : void 0,
+-        // memory tools
+-        memory && resourceId ? "memory and resourceId available" : void 0].filter(Boolean).join(", ");
++          // toolsets
++          toolsets && Object.keys(toolsets || {}).length > 0 ? `toolsets present (${Object.keys(toolsets || {}).length} tools)` : void 0,
++          // memory tools
++          memory && resourceId ? "memory and resourceId available" : void 0].filter(Boolean).join(", ");
+         this.logger.debug(`[Agent:${this.name}] - Enhancing tools: ${toolEnhancements}`, {
+           runId,
+           toolsets: toolsets ? Object.keys(toolsets) : void 0,
+@@ -10287,41 +10308,41 @@ exports.Agent = class Agent extends (_a = chunkKXCUCBEI_cjs.MastraBase) {
+ The following messages were remembered from a different conversation:
+ <remembered_from_other_conversation>
+ ${(() => {
+-            let result = ``;
+-            const messages2 = new chunk5CJDO3UO_cjs.MessageList().add(resultsFromOtherThreads, "memory").get.all.v1();
+-            let lastYmd = null;
+-            for (const msg of messages2) {
+-              const date = msg.createdAt;
+-              const year = date.getUTCFullYear();
+-              const month = date.toLocaleString("default", {
+-                month: "short"
+-              });
+-              const day = date.getUTCDate();
+-              const ymd = `${year}, ${month}, ${day}`;
+-              const utcHour = date.getUTCHours();
+-              const utcMinute = date.getUTCMinutes();
+-              const hour12 = utcHour % 12 || 12;
+-              const ampm = utcHour < 12 ? "AM" : "PM";
+-              const timeofday = `${hour12}:${utcMinute < 10 ? "0" : ""}${utcMinute} ${ampm}`;
+-              if (!lastYmd || lastYmd !== ymd) {
+-                result += `
++              let result = ``;
++              const messages2 = new chunk5CJDO3UO_cjs.MessageList().add(resultsFromOtherThreads, "memory").get.all.v1();
++              let lastYmd = null;
++              for (const msg of messages2) {
++                const date = msg.createdAt;
++                const year = date.getUTCFullYear();
++                const month = date.toLocaleString("default", {
++                  month: "short"
++                });
++                const day = date.getUTCDate();
++                const ymd = `${year}, ${month}, ${day}`;
++                const utcHour = date.getUTCHours();
++                const utcMinute = date.getUTCMinutes();
++                const hour12 = utcHour % 12 || 12;
++                const ampm = utcHour < 12 ? "AM" : "PM";
++                const timeofday = `${hour12}:${utcMinute < 10 ? "0" : ""}${utcMinute} ${ampm}`;
++                if (!lastYmd || lastYmd !== ymd) {
++                  result += `
+ the following messages are from ${ymd}
+ `;
+-              }
+-              result += `
++                }
++                result += `
+ Message ${msg.threadId && msg.threadId !== threadObject.id ? "from previous conversation" : ""} at ${timeofday}: ${JSON.stringify(msg)}`;
+-              lastYmd = ymd;
+-            }
+-            return result;
+-          })()}
++                lastYmd = ymd;
++              }
++              return result;
++            })()}
+ <end_remembered_from_other_conversation>`;
+         }
+         if (memorySystemMessage) {
+           messageList.addSystem(memorySystemMessage, "memory");
+         }
+         messageList.add(memoryMessages.filter(m => m.threadId === threadObject.id),
+-        // filter out messages from other threads. those are added to system message above
+-        "memory").add(messages, "user");
++          // filter out messages from other threads. those are added to system message above
++          "memory").add(messages, "user");
+         const {
+           tripwireTriggered,
+           tripwireReason
+@@ -10892,10 +10913,10 @@ Message ${msg.threadId && msg.threadId !== threadObject.id ? "from previous conv
+       }),
+       execute: async () => {
+         const toolEnhancements = [
+-        // toolsets
+-        options?.toolsets && Object.keys(options?.toolsets || {}).length > 0 ? `toolsets present (${Object.keys(options?.toolsets || {}).length} tools)` : void 0,
+-        // memory tools
+-        memory && resourceId ? "memory and resourceId available" : void 0].filter(Boolean).join(", ");
++          // toolsets
++          options?.toolsets && Object.keys(options?.toolsets || {}).length > 0 ? `toolsets present (${Object.keys(options?.toolsets || {}).length} tools)` : void 0,
++          // memory tools
++          memory && resourceId ? "memory and resourceId available" : void 0].filter(Boolean).join(", ");
+         this.logger.debug(`[Agent:${this.name}] - Enhancing tools: ${toolEnhancements}`, {
+           runId,
+           toolsets: options?.toolsets ? Object.keys(options?.toolsets) : void 0,
+@@ -11041,40 +11062,40 @@ Message ${msg.threadId && msg.threadId !== threadObject.id ? "from previous conv
+ The following messages were remembered from a different conversation:
+ <remembered_from_other_conversation>
+ ${(() => {
+-            let result2 = ``;
+-            const messages = new chunk5CJDO3UO_cjs.MessageList().add(resultsFromOtherThreads, "memory").get.all.v1();
+-            let lastYmd = null;
+-            for (const msg of messages) {
+-              const date = msg.createdAt;
+-              const year = date.getUTCFullYear();
+-              const month = date.toLocaleString("default", {
+-                month: "short"
+-              });
+-              const day = date.getUTCDate();
+-              const ymd = `${year}, ${month}, ${day}`;
+-              const utcHour = date.getUTCHours();
+-              const utcMinute = date.getUTCMinutes();
+-              const hour12 = utcHour % 12 || 12;
+-              const ampm = utcHour < 12 ? "AM" : "PM";
+-              const timeofday = `${hour12}:${utcMinute < 10 ? "0" : ""}${utcMinute} ${ampm}`;
+-              if (!lastYmd || lastYmd !== ymd) {
+-                result2 += `
++              let result2 = ``;
++              const messages = new chunk5CJDO3UO_cjs.MessageList().add(resultsFromOtherThreads, "memory").get.all.v1();
++              let lastYmd = null;
++              for (const msg of messages) {
++                const date = msg.createdAt;
++                const year = date.getUTCFullYear();
++                const month = date.toLocaleString("default", {
++                  month: "short"
++                });
++                const day = date.getUTCDate();
++                const ymd = `${year}, ${month}, ${day}`;
++                const utcHour = date.getUTCHours();
++                const utcMinute = date.getUTCMinutes();
++                const hour12 = utcHour % 12 || 12;
++                const ampm = utcHour < 12 ? "AM" : "PM";
++                const timeofday = `${hour12}:${utcMinute < 10 ? "0" : ""}${utcMinute} ${ampm}`;
++                if (!lastYmd || lastYmd !== ymd) {
++                  result2 += `
+ the following messages are from ${ymd}
+ `;
++                }
++                result2 += `Message ${msg.threadId && msg.threadId !== threadObject.id ? "from previous conversation" : ""} at ${timeofday}: ${JSON.stringify(msg)}`;
++                lastYmd = ymd;
+               }
+-              result2 += `Message ${msg.threadId && msg.threadId !== threadObject.id ? "from previous conversation" : ""} at ${timeofday}: ${JSON.stringify(msg)}`;
+-              lastYmd = ymd;
+-            }
+-            return result2;
+-          })()}
++              return result2;
++            })()}
+ <end_remembered_from_other_conversation>`;
+         }
+         if (memorySystemMessage) {
+           messageList.addSystem(memorySystemMessage, "memory");
+         }
+         messageList.add(memoryMessages.filter(m => m.threadId === threadObject.id),
+-        // filter out messages from other threads. those are added to system message above
+-        "memory").add(options.messages, "user");
++          // filter out messages from other threads. those are added to system message above
++          "memory").add(options.messages, "user");
+         const {
+           tripwireTriggered,
+           tripwireReason
+@@ -11193,7 +11214,7 @@ the following messages are from ${ymd}
+       };
+       if (result2.tripwire) {
+         const emptyResult = {
+-          textStream: async function* () {}(),
++          textStream: async function* () { }(),
+           fullStream: new globalThis.ReadableStream({
+             start(controller) {
+               controller.close();
+@@ -11811,7 +11832,7 @@ the following messages are from ${ymd}
+     const beforeResult = await before();
+     if (beforeResult.tripwire) {
+       const emptyResult = {
+-        textStream: async function* () {}(),
++        textStream: async function* () { }(),
+         fullStream: Promise.resolve("").then(() => {
+           const emptyStream = new globalThis.ReadableStream({
+             start(controller) {
+@@ -11855,7 +11876,7 @@ the following messages are from ${ymd}
+           return emptyStream;
+         }),
+         get experimental_partialOutputStream() {
+-          return async function* () {}();
++          return async function* () { }();
+         },
+         pipeDataStreamToResponse: () => Promise.resolve(),
+         pipeTextStreamToResponse: () => Promise.resolve(),
+@@ -12606,8 +12627,8 @@ var DefaultExecutionEngine = class extends ExecutionEngine {
+           return null;
+         },
+         // TODO: this function shouldn't have suspend probably?
+-        suspend: async _suspendPayload => {},
+-        bail: () => {},
++        suspend: async _suspendPayload => { },
++        bail: () => { },
+         abort: () => {
+           abortController?.abort();
+         },
+@@ -12685,8 +12706,8 @@ var DefaultExecutionEngine = class extends ExecutionEngine {
+           return null;
+         },
+         // TODO: this function shouldn't have suspend probably?
+-        suspend: async _suspendPayload => {},
+-        bail: () => {},
++        suspend: async _suspendPayload => { },
++        bail: () => { },
+         abort: () => {
+           abortController?.abort();
+         },
+@@ -13253,8 +13274,8 @@ var DefaultExecutionEngine = class extends ExecutionEngine {
+             return null;
+           },
+           // TODO: this function shouldn't have suspend probably?
+-          suspend: async _suspendPayload => {},
+-          bail: () => {},
++          suspend: async _suspendPayload => { },
++          bail: () => { },
+           abort: () => {
+             abortController?.abort();
+           },
+@@ -13487,8 +13508,8 @@ var DefaultExecutionEngine = class extends ExecutionEngine {
+           const result2 = stepResults[step2.id];
+           return result2?.status === "success" ? result2.output : null;
+         },
+-        suspend: async _suspendPayload => {},
+-        bail: () => {},
++        suspend: async _suspendPayload => { },
++        bail: () => { },
+         abort: () => {
+           abortController?.abort();
+         },
+@@ -15367,7 +15388,7 @@ var Run = class {
+     const unwatch = this.watch(async event => {
+       try {
+         await writer.write(event);
+-      } catch {}
++      } catch { }
+     }, "watch-v2");
+     this.closeStreamAction = async () => {
+       this.emitter.emit("watch-v2", {
+@@ -15396,7 +15417,7 @@ var Run = class {
+       runtimeContext
+     }).then(result => {
+       if (result.status !== "suspended") {
+-        this.closeStreamAction?.().catch(() => {});
++        this.closeStreamAction?.().catch(() => { });
+       }
+       return result;
+     });
+@@ -15423,7 +15444,7 @@ var Run = class {
+     inputData,
+     runtimeContext
+   } = {}) {
+-    this.closeStreamAction = async () => {};
++    this.closeStreamAction = async () => { };
+     return new MastraWorkflowStream({
+       run: this,
+       createStream: writer => {
+@@ -15506,7 +15527,7 @@ var Run = class {
+           writableStream: writable
+         }).then(result => {
+           if (result.status !== "suspended") {
+-            this.closeStreamAction?.().catch(() => {});
++            this.closeStreamAction?.().catch(() => { });
+           }
+           return result;
+         });
+@@ -15683,7 +15704,7 @@ var Run = class {
+       tracingContext: params.tracingContext
+     }).then(result => {
+       if (result.status !== "suspended") {
+-        this.closeStreamAction?.().catch(() => {});
++        this.closeStreamAction?.().catch(() => { });
+       }
+       return result;
+     });

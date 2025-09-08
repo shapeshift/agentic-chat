@@ -13,9 +13,9 @@ import {
 } from '@shapeshiftoss/caip'
 import { useAccount } from 'wagmi'
 
-const agentId = 'shapeshift'
+const agentId = 'shapeshiftAgent'
 
-export function OpenAiProvider({
+export default function ({
   children,
 }: Readonly<{
   children: React.ReactNode
@@ -23,12 +23,14 @@ export function OpenAiProvider({
   const account = useAccount()
 
   const runtime = useChatRuntime({
+    id: account.address,
     transport: new AssistantChatTransport({
       api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/agents/${agentId}/stream/vnext/ui`,
       body: {
         runId: agentId,
         resourceId: agentId,
         threadId: agentId,
+        format: 'aisdk',
         context: [
           {
             role: 'user',
@@ -44,18 +46,8 @@ export function OpenAiProvider({
             }),
           },
         ],
-        tools: undefined,
       },
     }),
-    onFinish(message) {
-      console.log({ message })
-    },
-    onToolCall({ toolCall }) {
-      console.log({ toolCall })
-    },
-    onData(data) {
-      console.log({ data })
-    },
   })
 
   return <AssistantRuntimeProvider runtime={runtime}>{children}</AssistantRuntimeProvider>

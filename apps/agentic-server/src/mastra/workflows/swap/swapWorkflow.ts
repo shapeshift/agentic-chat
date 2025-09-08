@@ -1,5 +1,5 @@
 import { createWorkflow } from '@mastra/core'
-import { z } from 'zod'
+import z from 'zod'
 
 import { getBebopRateStep, getAllowanceStep, getRelayRateStep, approveStep, getBestRateStep, swapStep } from './steps'
 import { swapWorkflowInput } from './types'

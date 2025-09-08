@@ -10,16 +10,35 @@ export * from './tools'
 export * from './workflows'
 
 export const mastra = new Mastra({
+  server: {
+    middleware: [
+      {
+        path: '/api/agents/*/stream/vnext/*',
+        handler: async (c, next) => {
+          const body = await c.req.json()
+
+          if ('state' in body && body.state == null) {
+            delete body.state
+            delete body.tools
+          }
+
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+          c.req.json = async () => Promise.resolve(body)
+
+          return next()
+        },
+      },
+    ],
+  },
   agents: {
-    asset: assetAgent,
-    portfolio: portfolioAgent,
-    shapeshift: shapeshiftAgent,
-    swap: swapAgent,
+    assetAgent,
+    portfolioAgent,
+    shapeshiftAgent,
+    swapAgent,
   },
   workflows: { swapWorkflow },
   storage: new LibSQLStore({
-    // stores telemetry, evals, ... into memory storage, if it needs to persist, change to file:../mastra.db
-    url: ':memory:',
+    url: 'file:../mastra.db', // path is relative to the .mastra/output directory
   }),
   logger: new PinoLogger({
     name: 'Mastra',

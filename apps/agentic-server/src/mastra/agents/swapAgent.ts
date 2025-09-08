@@ -40,11 +40,11 @@ export const swapAgent = new Agent({
   `,
   model: openai('gpt-4o-mini'),
   tools: {
-    assetAgent: assetAgentTool,
-    portfolioAgent: portfolioAgentTool,
+    assetAgentTool,
+    portfolioAgentTool,
   },
   workflows: {
-    swap: swapWorkflow,
+    swapWorkflow,
   },
   memory: new Memory({
     options: {

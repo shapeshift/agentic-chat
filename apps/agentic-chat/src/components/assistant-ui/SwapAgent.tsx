@@ -18,11 +18,11 @@ const mastraClient = new MastraClient({
 
 const Icon = Wallet
 
-type SwapContentProps = Omit<ToolCallContentPartProps<SwapWorkflowInput, SwapWorkflowResult>, 'args'> & {
+type SwapAgentContentProps = Omit<ToolCallContentPartProps<SwapWorkflowInput, SwapWorkflowResult>, 'args'> & {
   args: Partial<SwapWorkflowInput>
 }
 
-const SwapContent: React.FC<SwapContentProps> = ctx => {
+const SwapAgentContent: React.FC<SwapAgentContentProps> = ctx => {
   const { data: walletClient } = useWalletClient()
   const [hasApproved, setHasApproved] = useState(false)
   const [hasSwapped, setHasSwapped] = useState(false)
@@ -141,7 +141,7 @@ const SwapContent: React.FC<SwapContentProps> = ctx => {
   }
 }
 
-export const Swap = makeAssistantToolUI<SwapWorkflowInput, SwapWorkflowResult>({
-  toolName: 'swapAgent',
-  render: SwapContent,
+export const SwapAgent = makeAssistantToolUI<SwapWorkflowInput, SwapWorkflowResult>({
+  toolName: 'swapAgentTool',
+  render: SwapAgentContent,
 })

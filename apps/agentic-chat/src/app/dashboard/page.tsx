@@ -1,7 +1,11 @@
+import { AssetAgent } from '@/components/assistant-ui/AssetAgent'
+import { AssetConverter } from '@/components/assistant-ui/AssetConverter'
+import { GetAccount } from '@/components/assistant-ui/GetAccount'
 import { GetAllowance } from '@/components/assistant-ui/GetAllowance'
-import { Portfolio } from '@/components/assistant-ui/Portfolio'
+import { GetPortalsAssets } from '@/components/assistant-ui/GetPortalsAssets'
+import { PortfolioAgent } from '@/components/assistant-ui/PortfolioAgent'
 import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
-import { Swap } from '@/components/assistant-ui/Swap'
+import { SwapAgent } from '@/components/assistant-ui/SwapAgent'
 import SwitchEvmChainUI from '@/components/assistant-ui/SwitchEvmChainUI'
 import { Thread } from '@/components/assistant-ui/thread'
 import { ConnectWallet } from '@/components/connect-wallet'
@@ -27,11 +31,15 @@ export const Dashboard = () => {
           </div>
         </header>
         <div className="overflow-hidden h-full">
-          <SwitchEvmChainUI />
-          <Portfolio />
+          <AssetAgent />
+          <AssetConverter />
+          <GetAccount />
           <GetAllowance />
+          <GetPortalsAssets />
+          <PortfolioAgent />
           <SendTransactionUI />
-          <Swap />
+          <SwapAgent />
+          <SwitchEvmChainUI />
           <Thread />
         </div>
       </SidebarInset>

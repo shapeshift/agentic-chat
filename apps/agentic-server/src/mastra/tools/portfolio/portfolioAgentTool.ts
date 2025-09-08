@@ -29,12 +29,13 @@ export const portfolioAgentTool = createTool({
   outputSchema: portfolioAgentOutput,
   execute: async ({ context, mastra, resourceId, threadId, writer }) => {
     const logger = mastra!.getLogger()
-    const portfolioAgent = mastra!.getAgent('portfolio')
+    const portfolioAgent = mastra!.getAgent('portfolioAgent')
 
     logger.info('portfolioAgentTool', { context })
 
     const result = await portfolioAgent.streamVNext(context.prompt, {
       output: portfolioAgentOutput,
+      format: 'aisdk',
       context: [
         {
           role: 'system',
@@ -47,11 +48,11 @@ export const portfolioAgentTool = createTool({
       },
     })
 
-    await result.objectStream.pipeTo(writer!)
+    await result.fullStream.pipeTo(writer!)
 
-    const response = await result.object
+    const response = result.object
 
-    logger.info('portfolioAgentTool', { response })
+    logger.info('portfolioAgentTool', { response: response })
 
     return response
   },

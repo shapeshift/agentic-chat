@@ -68,7 +68,7 @@ export const getPortalsAssets = async ({
   const { data } = await axios.get<TokensResponse>(`${PORTALS_BASE_URL}/v2/tokens`, {
     headers: { Authorization: `Bearer ${PORTALS_API_KEY}` },
     params: {
-      limit: assetIds?.length ?? 25,
+      limit: assetIds?.length ?? 10,
       networks: network,
       ...(searchTerm && { search: searchTerm }),
       ...(assetIds && {

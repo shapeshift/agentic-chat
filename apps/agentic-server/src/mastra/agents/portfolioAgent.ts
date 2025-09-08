@@ -25,7 +25,7 @@ export const portfolioAgent = new Agent({
   `,
   model: openai('gpt-4o-mini'),
   tools: {
-    assetAgent: assetAgentTool,
+    assetAgentTool,
     getAccountTool,
   },
   memory: new Memory({

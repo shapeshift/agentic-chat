@@ -4,7 +4,7 @@ import { ASSET_NAMESPACE, toAssetId } from '@shapeshiftoss/caip'
 import type { Account } from '@shapeshiftoss/types'
 import { getFeeAssetIdByChainId, getUnchainedHttpUrlEnvVar } from '@shapeshiftoss/utils'
 import axios from 'axios'
-import { z } from 'zod'
+import z from 'zod'
 
 const portfolio = z.array(
   z.object({

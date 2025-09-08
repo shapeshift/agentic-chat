@@ -139,7 +139,7 @@
   -webkit-background-clip: text;
   background-repeat: no-repeat;
   background-size: 50% 200%;
-  display: inline-block;
+  display: block;
 }
 
 @keyframes loading-shimmer {
@@ -149,5 +149,30 @@
 
   to {
     background-position: 250% top;
+  }
+}
+
+.loading-success {
+  display: block;
+  color: var(--muted-foreground);
+  animation: successFadeIn 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes successFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(1px);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(4px);
+    filter: blur(0.5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }

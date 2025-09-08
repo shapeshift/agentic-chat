@@ -55,10 +55,10 @@ export const shapeshiftAgent = new Agent({
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
-    assetAgent: assetAgentTool,
-    portfolioAgent: portfolioAgentTool,
-    swapAgent: swapAgentTool,
-    getAllowance: getAllowanceTool,
+    assetAgentTool,
+    portfolioAgentTool,
+    swapAgentTool,
+    getAllowanceTool,
   },
   memory: new Memory({
     options: {

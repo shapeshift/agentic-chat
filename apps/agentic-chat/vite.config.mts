@@ -8,9 +8,6 @@ export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
   envDir: resolve(__dirname, '../..'),
   server: {
-    hmr: {
-      port: 4201,
-    },
     port: 4200,
     host: 'localhost',
   },

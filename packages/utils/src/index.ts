@@ -17,6 +17,10 @@ import {
   gnosisAssetId,
   optimismAssetId,
   polygonAssetId,
+  fromChainId,
+  CHAIN_NAMESPACE,
+  CHAIN_REFERENCE,
+  ASSET_REFERENCE,
 } from '@shapeshiftoss/caip'
 import BigNumber from 'bignumber.js'
 
@@ -98,6 +102,38 @@ export const getFeeAssetIdByChainId = (chainId: ChainId): string | undefined => 
       return baseAssetId
     default:
       return undefined
+  }
+}
+
+export const getNativeAssetReferenceByChainId = (chainId: ChainId): string => {
+  const { chainNamespace, chainReference } = fromChainId(chainId)
+
+  switch (chainNamespace) {
+    case CHAIN_NAMESPACE.Evm:
+      switch (chainReference) {
+        case CHAIN_REFERENCE.AvalancheCChain:
+          return ASSET_REFERENCE.AvalancheC
+        case CHAIN_REFERENCE.EthereumMainnet:
+          return ASSET_REFERENCE.Ethereum
+        case CHAIN_REFERENCE.OptimismMainnet:
+          return ASSET_REFERENCE.Optimism
+        case CHAIN_REFERENCE.BnbSmartChainMainnet:
+          return ASSET_REFERENCE.BnbSmartChain
+        case CHAIN_REFERENCE.PolygonMainnet:
+          return ASSET_REFERENCE.Polygon
+        case CHAIN_REFERENCE.GnosisMainnet:
+          return ASSET_REFERENCE.Gnosis
+        case CHAIN_REFERENCE.ArbitrumMainnet:
+          return ASSET_REFERENCE.Arbitrum
+        case CHAIN_REFERENCE.ArbitrumNovaMainnet:
+          return ASSET_REFERENCE.ArbitrumNova
+        case CHAIN_REFERENCE.BaseMainnet:
+          return ASSET_REFERENCE.Base
+        default:
+          throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
+      }
+    default:
+      throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
   }
 }
 
