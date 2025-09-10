@@ -9,7 +9,7 @@ const portfolioAgentInput = z.object({
   user: z.string().describe('User account address or xpub'),
 })
 
-const portfolioAgentOutput = z.object({
+export const portfolioAgentOutput = z.object({
   account: z.string().describe('Account address or xpub'),
   balances: z.array(
     z.object({
@@ -52,7 +52,7 @@ export const portfolioAgentTool = createTool({
 
     const response = result.object
 
-    logger.info('portfolioAgentTool', { response: response })
+    logger.info('portfolioAgentTool', { response })
 
     return response
   },

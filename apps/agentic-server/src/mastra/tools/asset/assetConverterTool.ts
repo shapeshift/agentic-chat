@@ -44,7 +44,7 @@ export const assetConverterTool = createTool({
   description: 'Converts common asset details into a standard asset format.',
   inputSchema: assetConverterInput,
   outputSchema: assetConverterOutput,
-  execute: ({ context, mastra }): Promise<AssetConverterOutput> => {
+  execute: ({ context, mastra }) => {
     const logger = mastra!.getLogger()
 
     logger.info('assetConverterTool:', { context })

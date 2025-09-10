@@ -4,7 +4,7 @@ import { Memory } from '@mastra/memory'
 
 //import { coingeckoMcp } from '../mcp'
 import { openai } from '../models'
-import { getPortalsAssetsTool, assetConverterTool } from '../tools'
+import { getPortalsAssetsTool, assetConverterTool, assetAgentOutput } from '../tools'
 
 export const assetAgent = new Agent({
   name: 'Asset Agent',
@@ -53,6 +53,7 @@ export const assetAgent = new Agent({
       workingMemory: {
         enabled: true,
         scope: 'resource',
+        schema: assetAgentOutput,
       },
     },
     storage: new LibSQLStore({

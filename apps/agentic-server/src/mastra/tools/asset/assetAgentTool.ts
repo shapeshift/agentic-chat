@@ -20,7 +20,7 @@ const assetAgentInput = z.object({
   `),
 })
 
-const assetAgentOutput = z.object({
+export const assetAgentOutput = z.object({
   assets: z.array(asset),
 })
 
@@ -57,7 +57,7 @@ export const assetAgentTool = createTool({
 
     const response = await result.object
 
-    logger.info('assetAgentTool', { type: 'assetAgentTool', response: response })
+    logger.info('assetAgentTool', { response })
 
     return response
   },

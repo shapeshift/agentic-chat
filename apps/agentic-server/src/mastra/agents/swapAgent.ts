@@ -1,6 +1,8 @@
 import { Agent } from '@mastra/core'
 import { LibSQLStore } from '@mastra/libsql'
 import { Memory } from '@mastra/memory'
+import { getRateOutput } from '@shapeshiftoss/types'
+import z from 'zod'
 
 import { openai } from '../models'
 import { assetAgentTool, portfolioAgentTool } from '../tools'
@@ -51,6 +53,9 @@ export const swapAgent = new Agent({
       workingMemory: {
         enabled: true,
         scope: 'thread',
+        schema: z.object({
+          rates: z.array(getRateOutput),
+        }),
       },
     },
     storage: new LibSQLStore({

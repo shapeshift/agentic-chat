@@ -1,9 +1,10 @@
 import { Agent } from '@mastra/core'
 import { LibSQLStore } from '@mastra/libsql'
 import { Memory } from '@mastra/memory'
+import z from 'zod'
 
 import { openai } from '../models'
-import { assetAgentTool, getAccountTool } from '../tools'
+import { assetAgentTool, getAccountTool, portfolioAgentOutput } from '../tools'
 
 export const portfolioAgent = new Agent({
   name: 'Portfolio Agent',
@@ -22,6 +23,7 @@ export const portfolioAgent = new Agent({
 
     🧠 Asset Agent Tool:
       - ALWAYS make a single call with all caip19 assetIds including any native slip44 assets.
+      - NEVER call the asset agent tool multiple times for portfolio assets.
   `,
   model: openai('gpt-4o-mini'),
   tools: {
@@ -33,6 +35,9 @@ export const portfolioAgent = new Agent({
       workingMemory: {
         enabled: true,
         scope: 'thread',
+        schema: z.object({
+          portfolios: z.array(portfolioAgentOutput),
+        }),
       },
     },
     storage: new LibSQLStore({

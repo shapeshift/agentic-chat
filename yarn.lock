@@ -26,53 +26,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ag-ui/client@npm:^0.0.35":
-  version: 0.0.35
-  resolution: "@ag-ui/client@npm:0.0.35"
-  dependencies:
-    "@ag-ui/core": "npm:0.0.35"
-    "@ag-ui/encoder": "npm:0.0.35"
-    "@ag-ui/proto": "npm:0.0.35"
-    "@types/uuid": "npm:^10.0.0"
-    fast-json-patch: "npm:^3.1.1"
-    rxjs: "npm:7.8.1"
-    untruncate-json: "npm:^0.0.1"
-    uuid: "npm:^11.1.0"
-    zod: "npm:^3.22.4"
-  checksum: 10/983a5951747cb72816477721b61353affb209c025d0520596c979c36f4b8747d433a7806b34ad36c3ab6596ce071a647b5d5a3741d8d8db39b73bd8112d17962
-  languageName: node
-  linkType: hard
-
-"@ag-ui/core@npm:0.0.35":
-  version: 0.0.35
-  resolution: "@ag-ui/core@npm:0.0.35"
-  dependencies:
-    rxjs: "npm:7.8.1"
-    zod: "npm:^3.22.4"
-  checksum: 10/1974b255cf95c1a6107fe8b6900973073275f2b667bb410571fcec2988f511198fb810fc360f9c629a4700207a31c753d5fc2330cfdd10a133c10b9c097f9a2a
-  languageName: node
-  linkType: hard
-
-"@ag-ui/encoder@npm:0.0.35":
-  version: 0.0.35
-  resolution: "@ag-ui/encoder@npm:0.0.35"
-  dependencies:
-    "@ag-ui/core": "npm:0.0.35"
-    "@ag-ui/proto": "npm:0.0.35"
-  checksum: 10/fcb218184b79fc7a03fc1a5aa36b048db9241ae50cf6cf58f5bb8c1389f3016e1de24a74eda002962a3121a6f30fb8eaa02c666f542b6720a486bd7afb1cfb34
-  languageName: node
-  linkType: hard
-
-"@ag-ui/proto@npm:0.0.35":
-  version: 0.0.35
-  resolution: "@ag-ui/proto@npm:0.0.35"
-  dependencies:
-    "@ag-ui/core": "npm:0.0.35"
-    "@bufbuild/protobuf": "npm:^2.2.5"
-  checksum: 10/8ffae6648aea0b171be0c9a60ba635b9ec92f21f8bebf96b4894d4c898f62205cd79b00ed35ec6a47937894faed91d77776b79eda0c6b24bc318d311ff7be49c
-  languageName: node
-  linkType: hard
-
 "@ai-sdk/gateway@npm:1.0.15":
   version: 1.0.15
   resolution: "@ai-sdk/gateway@npm:1.0.15"
@@ -242,9 +195,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@assistant-ui/react-ai-sdk@npm:^1.0.5":
-  version: 1.0.5
-  resolution: "@assistant-ui/react-ai-sdk@npm:1.0.5"
+"@assistant-ui/react-ai-sdk@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@assistant-ui/react-ai-sdk@npm:1.1.0"
   dependencies:
     "@ai-sdk/provider": "npm:^2.0.0"
     "@ai-sdk/react": "npm:^2.0.15"
@@ -256,7 +209,7 @@ __metadata:
     zod: "npm:^4.0.17"
     zustand: "npm:^5.0.7"
   peerDependencies:
-    "@assistant-ui/react": ^0.10.43
+    "@assistant-ui/react": ^0.11.0
     "@types/react": "*"
     assistant-cloud: "*"
     react: ^18 || ^19 || ^19.0.0-rc
@@ -265,13 +218,13 @@ __metadata:
       optional: true
     assistant-cloud:
       optional: true
-  checksum: 10/de28244c4531ebfbc61c30b2a27ee447e972395e44d097d69e869b254d7b6e5ba37194d8b104a80a6b7d743d8fc4c823f6e7f2b1c5ce30b5c11bbd07c7af73e2
+  checksum: 10/d458dbbcf779b8146a7f755ce910feca178cd781d2a1793ff84c4f34367b846e1a3d0d09c86fd8e914cf8b36685322f51b9b3628d1d71bdc83f93bfc5ecbf41b
   languageName: node
   linkType: hard
 
-"@assistant-ui/react-markdown@npm:^0.10.9":
-  version: 0.10.9
-  resolution: "@assistant-ui/react-markdown@npm:0.10.9"
+"@assistant-ui/react-markdown@npm:^0.11.0":
+  version: 0.11.0
+  resolution: "@assistant-ui/react-markdown@npm:0.11.0"
   dependencies:
     "@radix-ui/react-primitive": "npm:^2.1.3"
     "@radix-ui/react-use-callback-ref": "npm:^1.1.1"
@@ -279,20 +232,21 @@ __metadata:
     classnames: "npm:^2.5.1"
     react-markdown: "npm:^10.1.0"
   peerDependencies:
-    "@assistant-ui/react": ^0.10.42
+    "@assistant-ui/react": ^0.11.0
     "@types/react": "*"
     react: ^18 || ^19 || ^19.0.0-rc
   peerDependenciesMeta:
     "@types/react":
       optional: true
-  checksum: 10/46ef803a0020e3087dc20422922790d8396166b93092257e474377d962e0c27f5c7dece96eb70caf52473f49cacfb9d25ed92878dd9a29d3fbf33455e770fe4f
+  checksum: 10/ef165a10fe804084fa6e026107a0be5ba80777413cd2b877b32d155fd5b30a781192e7b4e3db09b5145b501793dc739db045369088dc99b2036042d5c629662c
   languageName: node
   linkType: hard
 
-"@assistant-ui/react@npm:^0.10.45":
-  version: 0.10.45
-  resolution: "@assistant-ui/react@npm:0.10.45"
+"@assistant-ui/react@npm:^0.11.0":
+  version: 0.11.0
+  resolution: "@assistant-ui/react@npm:0.11.0"
   dependencies:
+    "@assistant-ui/tap": "npm:^0.1.0"
     "@radix-ui/primitive": "npm:^1.1.3"
     "@radix-ui/react-compose-refs": "npm:^1.1.2"
     "@radix-ui/react-context": "npm:^1.1.2"
@@ -319,7 +273,19 @@ __metadata:
       optional: true
     "@types/react-dom":
       optional: true
-  checksum: 10/303a515784c72059ab268ce2cd8dd67bc03d81ae005b04fe4cc6677982ecacb1f3c06d28bb694836643f2d1431babea0d0cecea3e114895bcec6b2b5447b14f4
+  checksum: 10/dad539ef4bb58715a5304c96bd1d354141ea40633642c112136a06e0a82ae64c6772860867ee3595dfefc0de4735b8ff017ebff41ac4c9cc49d15f27f27719d2
+  languageName: node
+  linkType: hard
+
+"@assistant-ui/tap@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "@assistant-ui/tap@npm:0.1.0"
+  peerDependencies:
+    react: "*"
+  peerDependenciesMeta:
+    react:
+      optional: true
+  checksum: 10/ea4c649c531fae34f97571249d62a3f6a372856457e9ae7f82f297b34a3a0737826ad416f22a783ca9f7146aafd09dc8322421f9b84ae3560c4e9b823f7ecb94
   languageName: node
   linkType: hard
 
@@ -797,13 +763,6 @@ __metadata:
     "@babel/helper-string-parser": "npm:^7.27.1"
     "@babel/helper-validator-identifier": "npm:^7.27.1"
   checksum: 10/a8de404a2e3109651f346d892dc020ce2c82046068f4ce24de7f487738dfbfa7bd716b35f1dcd6d6c32dde96208dc74a56b7f56a2c0bcb5af0ddc56cbee13533
-  languageName: node
-  linkType: hard
-
-"@bufbuild/protobuf@npm:^2.2.5":
-  version: 2.6.2
-  resolution: "@bufbuild/protobuf@npm:2.6.2"
-  checksum: 10/e1d5c2f93738f7a9d797cf4dc41dc798a83c50d3765e8d1041f57c4839da932a417ecc3dbc9c91a49e5432c0b1465adea5eb3f7b2479dc390875639654b9bfab
   languageName: node
   linkType: hard
 
@@ -1573,16 +1532,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@libsql/client@npm:^0.15.12":
-  version: 0.15.14
-  resolution: "@libsql/client@npm:0.15.14"
+"@libsql/client@npm:^0.15.14":
+  version: 0.15.15
+  resolution: "@libsql/client@npm:0.15.15"
   dependencies:
     "@libsql/core": "npm:^0.15.14"
     "@libsql/hrana-client": "npm:^0.7.0"
     js-base64: "npm:^3.7.5"
-    libsql: "npm:^0.5.20"
+    libsql: "npm:^0.5.22"
     promise-limit: "npm:^2.7.0"
-  checksum: 10/15b8c430a0ab37d0654385df80325e5541466280a9605eb953c16791743336918383dcfba5dcdd9b4c5a7a99c04d00a34aa4006e1d1edc9d226562d50c194465
+  checksum: 10/552be2745d46bcb15368f95f1c1777c014c5b0bb70185b09617153b12acaa2b211f3c99dcbe0d1520eb3b72151227a09f8a84f29604dcdd1befa603b5133576f
   languageName: node
   linkType: hard
 
@@ -1595,16 +1554,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@libsql/darwin-arm64@npm:0.5.20":
-  version: 0.5.20
-  resolution: "@libsql/darwin-arm64@npm:0.5.20"
+"@libsql/darwin-arm64@npm:0.5.22":
+  version: 0.5.22
+  resolution: "@libsql/darwin-arm64@npm:0.5.22"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@libsql/darwin-x64@npm:0.5.20":
-  version: 0.5.20
-  resolution: "@libsql/darwin-x64@npm:0.5.20"
+"@libsql/darwin-x64@npm:0.5.22":
+  version: 0.5.22
+  resolution: "@libsql/darwin-x64@npm:0.5.22"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
@@ -1638,51 +1597,51 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@libsql/linux-arm-gnueabihf@npm:0.5.20":
-  version: 0.5.20
-  resolution: "@libsql/linux-arm-gnueabihf@npm:0.5.20"
+"@libsql/linux-arm-gnueabihf@npm:0.5.22":
+  version: 0.5.22
+  resolution: "@libsql/linux-arm-gnueabihf@npm:0.5.22"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"@libsql/linux-arm-musleabihf@npm:0.5.20":
-  version: 0.5.20
-  resolution: "@libsql/linux-arm-musleabihf@npm:0.5.20"
+"@libsql/linux-arm-musleabihf@npm:0.5.22":
+  version: 0.5.22
+  resolution: "@libsql/linux-arm-musleabihf@npm:0.5.22"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"@libsql/linux-arm64-gnu@npm:0.5.20":
-  version: 0.5.20
-  resolution: "@libsql/linux-arm64-gnu@npm:0.5.20"
+"@libsql/linux-arm64-gnu@npm:0.5.22":
+  version: 0.5.22
+  resolution: "@libsql/linux-arm64-gnu@npm:0.5.22"
   conditions: os=linux & cpu=arm64
   languageName: node
   linkType: hard
 
-"@libsql/linux-arm64-musl@npm:0.5.20":
-  version: 0.5.20
-  resolution: "@libsql/linux-arm64-musl@npm:0.5.20"
+"@libsql/linux-arm64-musl@npm:0.5.22":
+  version: 0.5.22
+  resolution: "@libsql/linux-arm64-musl@npm:0.5.22"
   conditions: os=linux & cpu=arm64
   languageName: node
   linkType: hard
 
-"@libsql/linux-x64-gnu@npm:0.5.20":
-  version: 0.5.20
-  resolution: "@libsql/linux-x64-gnu@npm:0.5.20"
+"@libsql/linux-x64-gnu@npm:0.5.22":
+  version: 0.5.22
+  resolution: "@libsql/linux-x64-gnu@npm:0.5.22"
   conditions: os=linux & cpu=x64
   languageName: node
   linkType: hard
 
-"@libsql/linux-x64-musl@npm:0.5.20":
-  version: 0.5.20
-  resolution: "@libsql/linux-x64-musl@npm:0.5.20"
+"@libsql/linux-x64-musl@npm:0.5.22":
+  version: 0.5.22
+  resolution: "@libsql/linux-x64-musl@npm:0.5.22"
   conditions: os=linux & cpu=x64
   languageName: node
   linkType: hard
 
-"@libsql/win32-x64-msvc@npm:0.5.20":
-  version: 0.5.20
-  resolution: "@libsql/win32-x64-msvc@npm:0.5.20"
+"@libsql/win32-x64-msvc@npm:0.5.22":
+  version: 0.5.22
+  resolution: "@libsql/win32-x64-msvc@npm:0.5.22"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
@@ -1719,26 +1678,35 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mastra/client-js@npm:^0.11.3-alpha.5":
-  version: 0.11.3-alpha.5
-  resolution: "@mastra/client-js@npm:0.11.3-alpha.5"
+"@mastra/ai-sdk@npm:^0.0.2":
+  version: 0.0.2
+  resolution: "@mastra/ai-sdk@npm:0.0.2"
+  peerDependencies:
+    "@mastra/core": ">=0.15.3-0 <0.17.0-0"
+    zod: ^3.25.0 || ^4.0.0
+  checksum: 10/9935c29d088b7327ea4cfe29c43752a5010c4c64f68811aa1270d9499bed6beb298f2a66b86a694b4aa711283d3aac05a5e9882dfe95a163aeef0efefa159fe2
+  languageName: node
+  linkType: hard
+
+"@mastra/client-js@npm:^0.12.0":
+  version: 0.12.0
+  resolution: "@mastra/client-js@npm:0.12.0"
   dependencies:
-    "@ag-ui/client": "npm:^0.0.35"
     "@ai-sdk/ui-utils": "npm:^1.2.11"
     "@lukeed/uuid": "npm:^2.0.1"
-    "@mastra/core": "npm:0.15.3-alpha.5"
+    "@mastra/core": "npm:0.16.0"
     json-schema: "npm:^0.4.0"
     rxjs: "npm:7.8.1"
     zod-to-json-schema: "npm:^3.24.6"
   peerDependencies:
     zod: ^3.25.0 || ^4.0.0
-  checksum: 10/f17e12f046801b60a6f7a37119944be5dc0dbad76536db86d08fe9f573dd71e2b8877390a77026e5ef71ae218ab83cfa68e00d3f2a3e7ec16424d15836858caa
+  checksum: 10/e24da00e006bf843cc201d5480b565a8770351f44de7e15659f4e8f7480c0536243d464f1d182c90507e9034007f7674e222b50ed307761550f4f512d8027bcb
   languageName: node
   linkType: hard
 
-"@mastra/core@npm:0.15.3-alpha.5":
-  version: 0.15.3-alpha.5
-  resolution: "@mastra/core@npm:0.15.3-alpha.5"
+"@mastra/core@npm:0.16.0":
+  version: 0.16.0
+  resolution: "@mastra/core@npm:0.16.0"
   dependencies:
     "@a2a-js/sdk": "npm:~0.2.4"
     "@ai-sdk/provider": "npm:^1.1.3"
@@ -1746,7 +1714,7 @@ __metadata:
     "@ai-sdk/provider-utils-v5": "npm:@ai-sdk/provider-utils@3.0.3"
     "@ai-sdk/provider-v5": "npm:@ai-sdk/provider@2.0.0"
     "@ai-sdk/ui-utils": "npm:^1.2.11"
-    "@mastra/schema-compat": "npm:0.11.2-alpha.2"
+    "@mastra/schema-compat": "npm:0.11.2"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/auto-instrumentations-node": "npm:^0.62.1"
     "@opentelemetry/core": "npm:^2.0.1"
@@ -1779,13 +1747,13 @@ __metadata:
     zod-to-json-schema: "npm:^3.24.6"
   peerDependencies:
     zod: ^3.25.0 || ^4.0.0
-  checksum: 10/3e1a6311b7d89e3f74a6fb8dc64f6bce0bec92afc811f5a3907cf9b7d2fe142d02ad064652aa76b1801d8585ef6b785d22af021a1a76b316eae335b06eb264fc
+  checksum: 10/f076a563a40571bad19a572e34d94738894b52cdf3dcb0b710dec2604a2cbde879a427355e9432657e5874edbbe1b6daa06c03a02dfe380709a3fd8d21f302bc
   languageName: node
   linkType: hard
 
-"@mastra/core@patch:@mastra/core@npm%3A0.15.3-alpha.5#~/.yarn/patches/@mastra-core-npm-0.15.3-alpha.5-7aa3af6ef7.patch":
-  version: 0.15.3-alpha.5
-  resolution: "@mastra/core@patch:@mastra/core@npm%3A0.15.3-alpha.5#~/.yarn/patches/@mastra-core-npm-0.15.3-alpha.5-7aa3af6ef7.patch::version=0.15.3-alpha.5&hash=2b38cb"
+"@mastra/core@patch:@mastra/core@npm%3A0.16.0#~/.yarn/patches/@mastra-core-npm-0.16.0-88356d3dd9.patch":
+  version: 0.16.0
+  resolution: "@mastra/core@patch:@mastra/core@npm%3A0.16.0#~/.yarn/patches/@mastra-core-npm-0.16.0-88356d3dd9.patch::version=0.16.0&hash=d36987"
   dependencies:
     "@a2a-js/sdk": "npm:~0.2.4"
     "@ai-sdk/provider": "npm:^1.1.3"
@@ -1793,7 +1761,7 @@ __metadata:
     "@ai-sdk/provider-utils-v5": "npm:@ai-sdk/provider-utils@3.0.3"
     "@ai-sdk/provider-v5": "npm:@ai-sdk/provider@2.0.0"
     "@ai-sdk/ui-utils": "npm:^1.2.11"
-    "@mastra/schema-compat": "npm:0.11.2-alpha.2"
+    "@mastra/schema-compat": "npm:0.11.2"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/auto-instrumentations-node": "npm:^0.62.1"
     "@opentelemetry/core": "npm:^2.0.1"
@@ -1826,18 +1794,18 @@ __metadata:
     zod-to-json-schema: "npm:^3.24.6"
   peerDependencies:
     zod: ^3.25.0 || ^4.0.0
-  checksum: 10/61c76b49ccfeb4a1faf4f3d345a411f9c13ce11ccb5ca4995c550209478e0219a5f671ca36cad1a9094f273d3b2689aa82358c8c3a7e2b481e1e5f3b50b844eb
+  checksum: 10/75c0179755f025517c90708d9394bf2c459782e37a99a6073f58b3506dc1ec820072918228bbc61cfad1a1e195bc60082d0ff62e824212cb9c5309aacc19ee45
   languageName: node
   linkType: hard
 
-"@mastra/deployer@npm:^0.15.3-alpha.5":
-  version: 0.15.3-alpha.5
-  resolution: "@mastra/deployer@npm:0.15.3-alpha.5"
+"@mastra/deployer@npm:^0.16.0":
+  version: 0.16.0
+  resolution: "@mastra/deployer@npm:0.16.0"
   dependencies:
     "@babel/core": "npm:^7.28.0"
     "@babel/helper-module-imports": "npm:^7.27.1"
     "@babel/preset-typescript": "npm:^7.27.1"
-    "@mastra/server": "npm:^0.15.3-alpha.5"
+    "@mastra/server": "npm:^0.16.0"
     "@neon-rs/load": "npm:^0.1.82"
     "@optimize-lodash/rollup-plugin": "npm:^5.0.2"
     "@rollup/plugin-alias": "npm:^5.1.1"
@@ -1862,38 +1830,38 @@ __metadata:
     rollup-plugin-node-externals: "npm:^8.0.1"
     typescript-paths: "npm:^1.5.1"
   peerDependencies:
-    "@mastra/core": ">=0.15.2-0 <0.16.0-0"
+    "@mastra/core": ">=0.16.0-0 <0.17.0-0"
     zod: ^3.25.0 || ^4.0.0
-  checksum: 10/bcc46e04e804055c101fe55a778712c642184f1ffd86f179f6c12d362e628c14683beb7870c68f3d0662e2821db1f7415c016aefc6fae72820bc4b61fb507529
+  checksum: 10/1688206e33a7d0fb38ea1b831010f41f69782637e3ac3de9783ebce5571fb556b64672c8fe8d4ff10a441d789b56990e959ae985cc8433ee3278f677ce7427dd
   languageName: node
   linkType: hard
 
-"@mastra/libsql@npm:^0.13.8-alpha.1":
-  version: 0.13.8-alpha.1
-  resolution: "@mastra/libsql@npm:0.13.8-alpha.1"
+"@mastra/libsql@npm:^0.14.0":
+  version: 0.14.0
+  resolution: "@mastra/libsql@npm:0.14.0"
   dependencies:
-    "@libsql/client": "npm:^0.15.12"
+    "@libsql/client": "npm:^0.15.14"
   peerDependencies:
-    "@mastra/core": ">=0.15.0-0 <0.16.0-0"
-  checksum: 10/cabea6685dd3ad619de8f3bd7b13820b40825497d36fd104ab6723df1b1b104c8aaf6062c8de76c1145de3b1e082b0542c836f9e3944630a44dadfd45656a282
+    "@mastra/core": ">=0.16.0-0 <0.17.0-0"
+  checksum: 10/effb2a7b27012a88d1a58e3b2caabce040fbe5f68a62c35c297d0210f8343845337503c77801fe60959e5cd91e1574c84e33f235f96f69166e505e94b4bfa925
   languageName: node
   linkType: hard
 
-"@mastra/loggers@npm:^0.10.10-alpha.0":
-  version: 0.10.10-alpha.0
-  resolution: "@mastra/loggers@npm:0.10.10-alpha.0"
+"@mastra/loggers@npm:^0.10.11":
+  version: 0.10.11
+  resolution: "@mastra/loggers@npm:0.10.11"
   dependencies:
     pino: "npm:^9.7.0"
     pino-pretty: "npm:^13.0.0"
   peerDependencies:
-    "@mastra/core": ">=0.10.4-0 <0.16.0-0"
-  checksum: 10/357191bef23127918e01c59671bf41c182681f75af4c5c9b473d93736b1ce8dcd83b9d81354553c037c8031dcc8aeafeebfe4128d00205c7b94db27128a6ac51
+    "@mastra/core": ">=0.15.3-0 <0.17.0-0"
+  checksum: 10/04dc6abd6d6b51227bc02c5a46ba7f896ef3fe8140e3df9e391852b4521c9a5a197b3f7216367f3292651f146005a3c053e3ee2421307d1830364e7b6abd9ba6
   languageName: node
   linkType: hard
 
-"@mastra/mcp@npm:^0.11.3-alpha.2":
-  version: 0.11.3-alpha.2
-  resolution: "@mastra/mcp@npm:0.11.3-alpha.2"
+"@mastra/mcp@npm:^0.11.4":
+  version: 0.11.4
+  resolution: "@mastra/mcp@npm:0.11.4"
   dependencies:
     "@apidevtools/json-schema-ref-parser": "npm:^14.1.1"
     "@modelcontextprotocol/sdk": "npm:^1.17.3"
@@ -1904,17 +1872,17 @@ __metadata:
     zod-from-json-schema: "npm:^0.5.0"
     zod-from-json-schema-v3: "npm:zod-from-json-schema@^0.0.5"
   peerDependencies:
-    "@mastra/core": ">=0.15.3-0 <0.16.0-0"
+    "@mastra/core": ">=0.15.3-0 <0.17.0-0"
     zod: ^3.25.0 || ^4.0.0
-  checksum: 10/001a8fafb3470937f1243d16ae4b00c78f9e1f27bfa780b48074ce6001291b6552001421cf251da732a8016d121eb4ba9bae9a7398956aa9efc88ff0092768f5
+  checksum: 10/0cb8fd243806bcc6d48284a1a760b715953be13fe3d71adfec73881b09fe84883864560e78c4614815d599432c8d7fa29c2e787b76439482a921817259b0f4f0
   languageName: node
   linkType: hard
 
-"@mastra/memory@npm:^0.14.3-alpha.2":
-  version: 0.14.3-alpha.2
-  resolution: "@mastra/memory@npm:0.14.3-alpha.2"
+"@mastra/memory@npm:^0.14.4":
+  version: 0.14.4
+  resolution: "@mastra/memory@npm:0.14.4"
   dependencies:
-    "@mastra/schema-compat": "npm:0.11.2-alpha.2"
+    "@mastra/schema-compat": "npm:0.11.2"
     "@upstash/redis": "npm:^1.35.3"
     ai: "npm:^4.3.19"
     ai-v5: "npm:ai@5.0.28"
@@ -1928,15 +1896,15 @@ __metadata:
     xxhash-wasm: "npm:^1.1.0"
     zod-to-json-schema: "npm:^3.24.6"
   peerDependencies:
-    "@mastra/core": ">=0.15.2-0 <0.16.0-0"
+    "@mastra/core": ">=0.15.3-0 <0.17.0-0"
     zod: ^3.25.0 || ^4.0.0
-  checksum: 10/9860811337951beee8aef8242e991bd863d006289b5886fdc1689ca72205f66e1efd58a83e9f4fd9938477bc23adfdeea123a1fe546eb68081d6d850c692a5df
+  checksum: 10/f1aeb1540f9a16c193901ea9d1147184667e9e752e4c32bd69d22f9044f9da78fda284519befc0246de2e082a03fb60ae358406e45a7a2716365f327046fa085
   languageName: node
   linkType: hard
 
-"@mastra/schema-compat@npm:0.11.2-alpha.2":
-  version: 0.11.2-alpha.2
-  resolution: "@mastra/schema-compat@npm:0.11.2-alpha.2"
+"@mastra/schema-compat@npm:0.11.2":
+  version: 0.11.2
+  resolution: "@mastra/schema-compat@npm:0.11.2"
   dependencies:
     json-schema: "npm:^0.4.0"
     zod-from-json-schema: "npm:^0.5.0"
@@ -1945,17 +1913,17 @@ __metadata:
   peerDependencies:
     ai: ^4.0.0 || ^5.0.0
     zod: ^3.25.0 || ^4.0.0
-  checksum: 10/b369ced55cc73c430dd36fbf771b1602129668a41fa2860d2ca226e20d8416b98f739ff43c7c2cea8ebba94e58b5d97b7394866d09d10eb23b6e7000dfaa4955
+  checksum: 10/717825fc3348b26f2721e7539afc4ce0c0c161943da7450a84252dc6932a1a58633963c838df18ab5bc9e51853bedb000c8e4d97605025893ec2b05c7c945681
   languageName: node
   linkType: hard
 
-"@mastra/server@npm:^0.15.3-alpha.5":
-  version: 0.15.3-alpha.5
-  resolution: "@mastra/server@npm:0.15.3-alpha.5"
+"@mastra/server@npm:^0.16.0":
+  version: 0.16.0
+  resolution: "@mastra/server@npm:0.16.0"
   peerDependencies:
-    "@mastra/core": ">=0.15.2-0 <0.16.0-0"
+    "@mastra/core": ">=0.16.0-0 <0.17.0-0"
     zod: ^3.25.0 || ^4.0.0
-  checksum: 10/18b1099c713bdbfd728b1ba5ad758bd146028ff242d4a4579b4fe0d1e113bc5c3b3af0cfe806379a7bc7701c7f0a3d826238ac93990a74bd8a57b297855fbdd1
+  checksum: 10/1acf5130e535f96ceb8843ac93e7009008b364634a25debe8b1aedf0433bf8046ede171b89b5e16e2aa092d44db58d351e2d99866fce82bdf2031007fdaff407
   languageName: node
   linkType: hard
 
@@ -5031,10 +4999,10 @@ __metadata:
   resolution: "@shapeshiftoss/agentic-chat@workspace:apps/agentic-chat"
   dependencies:
     "@ai-sdk/ui-utils": "npm:^1.2.11"
-    "@assistant-ui/react": "npm:^0.10.45"
-    "@assistant-ui/react-ai-sdk": "npm:^1.0.5"
-    "@assistant-ui/react-markdown": "npm:^0.10.9"
-    "@mastra/client-js": "npm:^0.11.3-alpha.5"
+    "@assistant-ui/react": "npm:^0.11.0"
+    "@assistant-ui/react-ai-sdk": "npm:^1.1.0"
+    "@assistant-ui/react-markdown": "npm:^0.11.0"
+    "@mastra/client-js": "npm:^0.12.0"
     "@radix-ui/react-avatar": "npm:^1.1.4"
     "@radix-ui/react-collapsible": "npm:^1.1.4"
     "@radix-ui/react-dialog": "npm:^1.1.7"
@@ -5079,12 +5047,13 @@ __metadata:
   resolution: "@shapeshiftoss/agentic-server@workspace:apps/agentic-server"
   dependencies:
     "@ai-sdk/openai": "npm:^2.0.23"
-    "@mastra/core": "patch:@mastra/core@npm%3A0.15.3-alpha.5#~/.yarn/patches/@mastra-core-npm-0.15.3-alpha.5-7aa3af6ef7.patch"
-    "@mastra/libsql": "npm:^0.13.8-alpha.1"
-    "@mastra/loggers": "npm:^0.10.10-alpha.0"
-    "@mastra/memory": "npm:^0.14.3-alpha.2"
+    "@mastra/ai-sdk": "npm:^0.0.2"
+    "@mastra/core": "patch:@mastra/core@npm%3A0.16.0#~/.yarn/patches/@mastra-core-npm-0.16.0-88356d3dd9.patch"
+    "@mastra/libsql": "npm:^0.14.0"
+    "@mastra/loggers": "npm:^0.10.11"
+    "@mastra/memory": "npm:^0.14.4"
     axios: "npm:^1.11.0"
-    mastra: "npm:^0.11.3-alpha.3"
+    mastra: "npm:^0.12.0"
     zod: "npm:*"
   languageName: unknown
   linkType: soft
@@ -5998,13 +5967,6 @@ __metadata:
   version: 2.0.11
   resolution: "@types/unist@npm:2.0.11"
   checksum: 10/6d436e832bc35c6dde9f056ac515ebf2b3384a1d7f63679d12358766f9b313368077402e9c1126a14d827f10370a5485e628bf61aa91117cf4fc882423191a4e
-  languageName: node
-  linkType: hard
-
-"@types/uuid@npm:^10.0.0":
-  version: 10.0.0
-  resolution: "@types/uuid@npm:10.0.0"
-  checksum: 10/e3958f8b0fe551c86c14431f5940c3470127293280830684154b91dc7eb3514aeb79fe3216968833cf79d4d1c67f580f054b5be2cd562bebf4f728913e73e944
   languageName: node
   linkType: hard
 
@@ -9550,13 +9512,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-json-patch@npm:^3.1.1":
-  version: 3.1.1
-  resolution: "fast-json-patch@npm:3.1.1"
-  checksum: 10/3e56304e1c95ad1862a50e5b3f557a74c65c0ff2ba5b15caab983b43e70e86ddbc5bc887e9f7064f0aacfd0f0435a29ab2f000fe463379e72b906486345e6671
-  languageName: node
-  linkType: hard
-
 "fast-json-stable-stringify@npm:^2.0.0":
   version: 2.1.0
   resolution: "fast-json-stable-stringify@npm:2.1.0"
@@ -11199,19 +11154,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"libsql@npm:^0.5.20":
-  version: 0.5.20
-  resolution: "libsql@npm:0.5.20"
+"libsql@npm:^0.5.22":
+  version: 0.5.22
+  resolution: "libsql@npm:0.5.22"
   dependencies:
-    "@libsql/darwin-arm64": "npm:0.5.20"
-    "@libsql/darwin-x64": "npm:0.5.20"
-    "@libsql/linux-arm-gnueabihf": "npm:0.5.20"
-    "@libsql/linux-arm-musleabihf": "npm:0.5.20"
-    "@libsql/linux-arm64-gnu": "npm:0.5.20"
-    "@libsql/linux-arm64-musl": "npm:0.5.20"
-    "@libsql/linux-x64-gnu": "npm:0.5.20"
-    "@libsql/linux-x64-musl": "npm:0.5.20"
-    "@libsql/win32-x64-msvc": "npm:0.5.20"
+    "@libsql/darwin-arm64": "npm:0.5.22"
+    "@libsql/darwin-x64": "npm:0.5.22"
+    "@libsql/linux-arm-gnueabihf": "npm:0.5.22"
+    "@libsql/linux-arm-musleabihf": "npm:0.5.22"
+    "@libsql/linux-arm64-gnu": "npm:0.5.22"
+    "@libsql/linux-arm64-musl": "npm:0.5.22"
+    "@libsql/linux-x64-gnu": "npm:0.5.22"
+    "@libsql/linux-x64-musl": "npm:0.5.22"
+    "@libsql/win32-x64-msvc": "npm:0.5.22"
     "@neon-rs/load": "npm:^0.0.4"
     detect-libc: "npm:2.0.2"
   dependenciesMeta:
@@ -11233,7 +11188,7 @@ __metadata:
       optional: true
     "@libsql/win32-x64-msvc":
       optional: true
-  checksum: 10/a93412d53157890cbbeaa8a55ee65d4d436ecffb107400118d8f23854883d9fbe8355fa651996900ed7536f111a3f645bbe6f42563897e7ae06af084210d7d93
+  checksum: 10/089225702beda85fe0fed073a540ab48f63c8c64857b0012c0a7d81a3c92e3595ea7bd7732d5147d0521f8928f97d3e44198125dddfebe0b5789a6738ab1a3c1
   conditions: (os=darwin | os=linux | os=win32) & (cpu=x64 | cpu=arm64 | cpu=wasm32 | cpu=arm)
   languageName: node
   linkType: hard
@@ -11537,14 +11492,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mastra@npm:^0.11.3-alpha.3":
-  version: 0.11.3-alpha.3
-  resolution: "mastra@npm:0.11.3-alpha.3"
+"mastra@npm:^0.12.0":
+  version: 0.12.0
+  resolution: "mastra@npm:0.12.0"
   dependencies:
     "@clack/prompts": "npm:^0.11.0"
-    "@mastra/deployer": "npm:^0.15.3-alpha.5"
-    "@mastra/loggers": "npm:^0.10.10-alpha.0"
-    "@mastra/mcp": "npm:^0.11.3-alpha.2"
+    "@mastra/deployer": "npm:^0.16.0"
+    "@mastra/loggers": "npm:^0.10.11"
+    "@mastra/mcp": "npm:^0.11.4"
     "@opentelemetry/auto-instrumentations-node": "npm:^0.62.1"
     "@opentelemetry/core": "npm:^2.0.1"
     "@opentelemetry/exporter-trace-otlp-grpc": "npm:^0.203.0"
@@ -11570,11 +11525,11 @@ __metadata:
     yocto-spinner: "npm:^0.2.3"
     zod-to-json-schema: "npm:^3.24.6"
   peerDependencies:
-    "@mastra/core": ">=0.10.2-0 <0.16.0-0"
+    "@mastra/core": ">=0.10.2-0 <0.17.0-0"
     zod: ^3.25.0 || ^4.0.0
   bin:
     mastra: dist/index.js
-  checksum: 10/7a102faafd392944a986b1d293b2469c6e229cf7ad71d538f8c3dedb3ddc3fe31f8444ec46972e713b05ad99e4e6817620a07466ede108eac135ac70bf7dcb5a
+  checksum: 10/e51f7cb73a9ce309045f3f101e9cd71e8e38a6ac3c5f7b739cdc68c71dac75f9806aa293dc0111c0dc756120370cce5fe9e307f6a3f0d9db1ac901a69f2b6fe8
   languageName: node
   linkType: hard
 
@@ -15684,13 +15639,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"untruncate-json@npm:^0.0.1":
-  version: 0.0.1
-  resolution: "untruncate-json@npm:0.0.1"
-  checksum: 10/60fe7e60bff82d512ca1fb7ea4b09caf2dfb0a1fdf6a966a923f55f3cb49618f3bc24843172e6ab6480231327a78c86d2a5a4328f290a5c8819e5b9a4fcce6ab
-  languageName: node
-  linkType: hard
-
 "update-browserslist-db@npm:^1.1.3":
   version: 1.1.3
   resolution: "update-browserslist-db@npm:1.1.3"
@@ -16642,7 +16590,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.22.4, zod@npm:^3.23.8, zod@npm:^3.24.2":
+"zod@npm:^3.23.8, zod@npm:^3.24.2":
   version: 3.25.76
   resolution: "zod@npm:3.25.76"
   checksum: 10/f0c963ec40cd96858451d1690404d603d36507c1fc9682f2dae59ab38b578687d542708a7fdbf645f77926f78c9ed558f57c3d3aa226c285f798df0c4da16995

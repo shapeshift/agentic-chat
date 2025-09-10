@@ -1,0 +1,30 @@
+diff --git a/dist/chunk-YILDTNQM.js b/dist/chunk-YILDTNQM.js
+index 246640d4d827a1fbae917b1f33c22726574683af..9b06138669dc697cf0cf247eea5bd9b182c890cd 100644
+--- a/dist/chunk-YILDTNQM.js
++++ b/dist/chunk-YILDTNQM.js
+@@ -243,6 +243,25 @@ function convertFullStreamChunkToUIMessageStream({
+       }
+     case "tool-output":
+       {
++        if ('type' in part.output) {
++          if (!part.output.type.startsWith('tool-')) return;
++
++          return convertFullStreamChunkToUIMessageStream({
++            part: {
++              toolCallId: part.toolCallId,
++              toolName: part.toolName,
++              ...part.output
++            },
++            onError,
++            messageMetadataValue,
++            responseMessageId,
++            sendFinish,
++            sendReasoning,
++            sendSources,
++            sendStart,
++          });
++        };
++
+         return {
+           id: part.toolCallId,
+           ...part.output

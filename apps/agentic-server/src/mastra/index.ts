@@ -1,3 +1,4 @@
+import { chatRoute } from '@mastra/ai-sdk'
 import { Mastra } from '@mastra/core'
 import { LibSQLStore } from '@mastra/libsql'
 import { PinoLogger } from '@mastra/loggers'
@@ -13,7 +14,7 @@ export const mastra = new Mastra({
   server: {
     middleware: [
       {
-        path: '/api/agents/*/stream/vnext/*',
+        path: '/chat/*',
         handler: async (c, next) => {
           const body = await c.req.json()
 
@@ -28,6 +29,11 @@ export const mastra = new Mastra({
           return next()
         },
       },
+    ],
+    apiRoutes: [
+      chatRoute({
+        path: '/chat/:agentId',
+      }),
     ],
   },
   agents: {

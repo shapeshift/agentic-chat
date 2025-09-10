@@ -25,24 +25,25 @@ export default function ({
   const runtime = useChatRuntime({
     id: account.address,
     transport: new AssistantChatTransport({
-      api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/agents/${agentId}/stream/vnext/ui`,
+      api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/chat/${agentId}`,
       body: {
         runId: agentId,
         resourceId: agentId,
         threadId: agentId,
-        format: 'aisdk',
         context: [
           {
             role: 'user',
             content: JSON.stringify({
-              [ethChainId]: account.address,
-              [arbitrumChainId]: account.address,
-              [optimismChainId]: account.address,
-              [baseChainId]: account.address,
-              [gnosisChainId]: account.address,
-              [bscChainId]: account.address,
-              [polygonChainId]: account.address,
-              [baseChainId]: account.address,
+              wallet: {
+                [ethChainId]: account.address,
+                [arbitrumChainId]: account.address,
+                [optimismChainId]: account.address,
+                [baseChainId]: account.address,
+                [gnosisChainId]: account.address,
+                [bscChainId]: account.address,
+                [polygonChainId]: account.address,
+                [baseChainId]: account.address,
+              },
             }),
           },
         ],
