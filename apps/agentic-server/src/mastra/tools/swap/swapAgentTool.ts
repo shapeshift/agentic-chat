@@ -1,13 +1,20 @@
 import { createTool } from '@mastra/core'
+import { asset } from '@shapeshiftoss/types'
 import z from 'zod'
 
 import { supportedChainsContext } from '../../agents/context'
+import { portfolioAgentOutput } from '../portfolio'
 
 const swapAgentInput = z.object({
   prompt: z.string().describe('Prompt for swap action.'),
 })
 
-const swapAgentOutput = z.object()
+const swapAgentOutput = z.object({
+  sellAccount: portfolioAgentOutput,
+  sellAsset: asset,
+  buyAccount: portfolioAgentOutput,
+  buyAsset: asset,
+})
 
 export type SwapAgentInput = z.infer<typeof swapAgentInput>
 export type SwapAgentOutput = z.infer<typeof swapAgentOutput>
@@ -17,7 +24,7 @@ export const swapAgentTool = createTool({
   description: 'Perform swap',
   inputSchema: swapAgentInput,
   outputSchema: swapAgentOutput,
-  execute: async ({ context, mastra, threadId, resourceId, writer }) => {
+  execute: async ({ context, mastra, writer }) => {
     const logger = mastra!.getLogger()
     const swapAgent = mastra!.getAgent('swapAgent')
 
@@ -32,15 +39,11 @@ export const swapAgentTool = createTool({
           content: supportedChainsContext,
         },
       ],
-      memory: {
-        resource: resourceId!,
-        thread: threadId!,
-      },
     })
 
     await result.fullStream.pipeTo(writer!)
 
-    const response = result.object
+    const response = await result.object
 
     logger.info('swapAgentTool', { response: response })
 
