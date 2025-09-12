@@ -6,9 +6,11 @@ import type { PartialRecord } from '@/types'
 
 import { initialAssets } from './constants'
 
+export type AssetWithoutPrice = Omit<Asset, 'price'>
+
 type AssetsState = {
   ids: AssetId[]
-  assetsById: PartialRecord<AssetId, Asset>
+  assetsById: PartialRecord<AssetId, AssetWithoutPrice>
 }
 
 type AssetsActions = {
@@ -20,9 +22,9 @@ export type AssetsStore = AssetsState & AssetsActions
 export const useAssetsStore = create<AssetsStore>(set => ({
   ids: Object.keys(initialAssets),
   assetsById: initialAssets,
-  upsert: (assets: Asset[]) => {
+  upsert: (assets: AssetWithoutPrice[]) => {
     set(state => {
-      const newAssetsById: PartialRecord<AssetId, Asset> = { ...state.assetsById }
+      const newAssetsById: PartialRecord<AssetId, AssetWithoutPrice> = { ...state.assetsById }
       const newById = [...state.ids]
 
       assets.forEach(asset => {

@@ -2,7 +2,7 @@ import { createAppKit } from '@reown/appkit/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 
-import { OpenAiProvider } from '@/components/OpenAiProvider'
+import AssistantRuntimeProvider from '@/app/AssistantRuntimeProvider'
 import { networks } from '@/lib/appkit'
 import { wagmiConfig, wagmiAdapter } from '@/lib/wagmi-config'
 
@@ -31,9 +31,9 @@ function App() {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <OpenAiProvider>
+        <AssistantRuntimeProvider>
           <Dashboard />
-        </OpenAiProvider>
+        </AssistantRuntimeProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )

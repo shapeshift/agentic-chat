@@ -1,9 +1,10 @@
 import * as caip from '@shapeshiftoss/caip'
-import type { Asset } from '@shapeshiftoss/types'
+
+import type { AssetWithoutPrice } from './assets'
 
 const mayaTokenAssetId = 'cosmos:mayachain-mainnet-v1/slip44:maya'
 
-export const ethereum = Object.freeze<Readonly<Asset>>({
+export const ethereum = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.ethAssetId,
   chainId: caip.ethChainId,
   symbol: 'ETH',
@@ -13,7 +14,7 @@ export const ethereum = Object.freeze<Readonly<Asset>>({
   network: 'ethereum',
 })
 
-export const bitcoin = Object.freeze<Readonly<Asset>>({
+export const bitcoin = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.btcAssetId,
   chainId: caip.btcChainId,
   symbol: 'BTC',
@@ -23,7 +24,7 @@ export const bitcoin = Object.freeze<Readonly<Asset>>({
   network: 'bitcoin',
 })
 
-export const bitcoincash = Object.freeze<Readonly<Asset>>({
+export const bitcoincash = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.bchAssetId,
   chainId: caip.bchChainId,
   symbol: 'BCH',
@@ -33,7 +34,7 @@ export const bitcoincash = Object.freeze<Readonly<Asset>>({
   network: 'bitcoincash',
 })
 
-export const dogecoin = Object.freeze<Readonly<Asset>>({
+export const dogecoin = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.dogeAssetId,
   chainId: caip.dogeChainId,
   symbol: 'DOGE',
@@ -43,7 +44,7 @@ export const dogecoin = Object.freeze<Readonly<Asset>>({
   network: 'dogecoin',
 })
 
-export const litecoin = Object.freeze<Readonly<Asset>>({
+export const litecoin = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.ltcAssetId,
   chainId: caip.ltcChainId,
   symbol: 'LTC',
@@ -53,7 +54,7 @@ export const litecoin = Object.freeze<Readonly<Asset>>({
   network: 'litecoin',
 })
 
-export const atom = Object.freeze<Readonly<Asset>>({
+export const atom = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.cosmosAssetId,
   chainId: caip.cosmosChainId,
   symbol: 'ATOM',
@@ -63,7 +64,7 @@ export const atom = Object.freeze<Readonly<Asset>>({
   network: 'cosmos',
 })
 
-export const avax = Object.freeze<Readonly<Asset>>({
+export const avax = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.avalancheAssetId,
   chainId: caip.avalancheChainId,
   name: 'Avalanche',
@@ -73,7 +74,7 @@ export const avax = Object.freeze<Readonly<Asset>>({
   network: 'avalanche',
 })
 
-export const thorchain = Object.freeze<Readonly<Asset>>({
+export const thorchain = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.thorchainAssetId,
   chainId: caip.thorchainChainId,
   name: 'THORChain',
@@ -83,7 +84,7 @@ export const thorchain = Object.freeze<Readonly<Asset>>({
   network: 'thorchain',
 })
 
-export const tcy = Object.freeze<Readonly<Asset>>({
+export const tcy = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.tcyAssetId,
   chainId: caip.thorchainChainId,
   name: 'TCY',
@@ -93,7 +94,7 @@ export const tcy = Object.freeze<Readonly<Asset>>({
   network: 'thorchain',
 })
 
-export const maya = Object.freeze<Readonly<Asset>>({
+export const maya = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: mayaTokenAssetId,
   chainId: caip.mayachainChainId,
   name: 'MAYA',
@@ -103,7 +104,7 @@ export const maya = Object.freeze<Readonly<Asset>>({
   network: 'mayachain',
 })
 
-export const mayachain = Object.freeze<Readonly<Asset>>({
+export const mayachain = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.mayachainAssetId,
   chainId: caip.mayachainChainId,
   name: 'MAYAChain',
@@ -113,7 +114,7 @@ export const mayachain = Object.freeze<Readonly<Asset>>({
   network: 'mayachain',
 })
 
-export const optimism = Object.freeze<Readonly<Asset>>({
+export const optimism = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.optimismAssetId,
   chainId: caip.optimismChainId,
   name: 'Ethereum',
@@ -123,7 +124,7 @@ export const optimism = Object.freeze<Readonly<Asset>>({
   network: 'optimism',
 })
 
-export const bnbsmartchain = Object.freeze<Readonly<Asset>>({
+export const bnbsmartchain = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.bscAssetId,
   chainId: caip.bscChainId,
   name: 'BNB',
@@ -133,7 +134,7 @@ export const bnbsmartchain = Object.freeze<Readonly<Asset>>({
   network: 'bsc',
 })
 
-export const polygon = Object.freeze<Readonly<Asset>>({
+export const polygon = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.polygonAssetId,
   chainId: caip.polygonChainId,
   name: 'Polygon Ecosystem Token',
@@ -143,7 +144,7 @@ export const polygon = Object.freeze<Readonly<Asset>>({
   network: 'polygon',
 })
 
-export const gnosis = Object.freeze<Readonly<Asset>>({
+export const gnosis = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.gnosisAssetId,
   chainId: caip.gnosisChainId,
   name: 'xDAI',
@@ -153,7 +154,7 @@ export const gnosis = Object.freeze<Readonly<Asset>>({
   network: 'gnosis',
 })
 
-export const arbitrum = Object.freeze<Readonly<Asset>>({
+export const arbitrum = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.arbitrumAssetId,
   chainId: caip.arbitrumChainId,
   name: 'Ethereum',
@@ -163,7 +164,7 @@ export const arbitrum = Object.freeze<Readonly<Asset>>({
   network: 'arbitrum',
 })
 
-export const base = Object.freeze<Readonly<Asset>>({
+export const base = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.baseAssetId,
   chainId: caip.baseChainId,
   name: 'Ethereum',
@@ -173,7 +174,7 @@ export const base = Object.freeze<Readonly<Asset>>({
   network: 'base',
 })
 
-export const solana = Object.freeze<Readonly<Asset>>({
+export const solana = Object.freeze<Readonly<AssetWithoutPrice>>({
   assetId: caip.solAssetId,
   chainId: caip.solanaChainId,
   name: 'Solana',
@@ -183,7 +184,7 @@ export const solana = Object.freeze<Readonly<Asset>>({
   network: 'solana',
 })
 
-export const initialAssets: Record<caip.AssetId, Asset> = {
+export const initialAssets: Record<caip.AssetId, AssetWithoutPrice> = {
   [arbitrum.assetId]: arbitrum,
   [avax.assetId]: avax,
   [base.assetId]: base,

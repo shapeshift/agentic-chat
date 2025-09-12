@@ -24,7 +24,7 @@
     "@shapeshiftoss/utils": "workspace:^",
     "bignumber.js": "^9.3.0",
     "viem": "^2.31.0",
-    "zod": "^3.25.67"
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@types/eslint-plugin-jsx-a11y": "^6.10.0",
@@ -47,12 +47,12 @@
     "typescript": "^5.8.3",
     "vitest": "^3.2.3"
   },
-  "resolutions": {
-    "zod": "^3.25.67"
-  },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "yarn@4.9.2"
+  "packageManager": "yarn@4.9.4",
+  "resolutions": {
+    "@mastra/core@npm:0.16.0": "patch:@mastra/core@npm%3A0.16.0#~/.yarn/patches/@mastra-core-npm-0.16.0-88356d3dd9.patch"
+  }
 }

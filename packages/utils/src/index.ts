@@ -17,6 +17,10 @@ import {
   gnosisAssetId,
   optimismAssetId,
   polygonAssetId,
+  fromChainId,
+  CHAIN_NAMESPACE,
+  CHAIN_REFERENCE,
+  ASSET_REFERENCE,
 } from '@shapeshiftoss/caip'
 import BigNumber from 'bignumber.js'
 
@@ -35,21 +39,21 @@ export const toBaseUnit = (value: string | number | BigNumber, precision: number
 export const getUnchainedHttpUrlEnvVar = (chainId: ChainId): string => {
   switch (chainId) {
     case ethChainId:
-      return 'VITE_UNCHAINED_ETHEREUM_HTTP_URL'
+      return 'UNCHAINED_ETHEREUM_HTTP_URL'
     case avalancheChainId:
-      return 'VITE_UNCHAINED_AVALANCHE_HTTP_URL'
+      return 'UNCHAINED_AVALANCHE_HTTP_URL'
     case optimismChainId:
-      return 'VITE_UNCHAINED_OPTIMISM_HTTP_URL'
+      return 'UNCHAINED_OPTIMISM_HTTP_URL'
     case bscChainId:
-      return 'VITE_UNCHAINED_BNBSMARTCHAIN_HTTP_URL'
+      return 'UNCHAINED_BNBSMARTCHAIN_HTTP_URL'
     case polygonChainId:
-      return 'VITE_UNCHAINED_POLYGON_HTTP_URL'
+      return 'UNCHAINED_POLYGON_HTTP_URL'
     case gnosisChainId:
-      return 'VITE_UNCHAINED_GNOSIS_HTTP_URL'
+      return 'UNCHAINED_GNOSIS_HTTP_URL'
     case arbitrumChainId:
-      return 'VITE_UNCHAINED_ARBITRUM_HTTP_URL'
+      return 'UNCHAINED_ARBITRUM_HTTP_URL'
     case baseChainId:
-      return 'VITE_UNCHAINED_BASE_HTTP_URL'
+      return 'UNCHAINED_BASE_HTTP_URL'
     default:
       throw new Error(`invalid chainId: ${chainId}`)
   }
@@ -78,7 +82,7 @@ export const isNativeEvmAsset = (assetId: AssetId): boolean => {
   }
 }
 
-export const getFeeAssetByChainId = (chainId: ChainId): string | undefined => {
+export const getFeeAssetIdByChainId = (chainId: ChainId): string | undefined => {
   switch (chainId) {
     case ethChainId:
       return ethAssetId
@@ -98,6 +102,38 @@ export const getFeeAssetByChainId = (chainId: ChainId): string | undefined => {
       return baseAssetId
     default:
       return undefined
+  }
+}
+
+export const getNativeAssetReferenceByChainId = (chainId: ChainId): string => {
+  const { chainNamespace, chainReference } = fromChainId(chainId)
+
+  switch (chainNamespace) {
+    case CHAIN_NAMESPACE.Evm:
+      switch (chainReference) {
+        case CHAIN_REFERENCE.AvalancheCChain:
+          return ASSET_REFERENCE.AvalancheC
+        case CHAIN_REFERENCE.EthereumMainnet:
+          return ASSET_REFERENCE.Ethereum
+        case CHAIN_REFERENCE.OptimismMainnet:
+          return ASSET_REFERENCE.Optimism
+        case CHAIN_REFERENCE.BnbSmartChainMainnet:
+          return ASSET_REFERENCE.BnbSmartChain
+        case CHAIN_REFERENCE.PolygonMainnet:
+          return ASSET_REFERENCE.Polygon
+        case CHAIN_REFERENCE.GnosisMainnet:
+          return ASSET_REFERENCE.Gnosis
+        case CHAIN_REFERENCE.ArbitrumMainnet:
+          return ASSET_REFERENCE.Arbitrum
+        case CHAIN_REFERENCE.ArbitrumNovaMainnet:
+          return ASSET_REFERENCE.ArbitrumNova
+        case CHAIN_REFERENCE.BaseMainnet:
+          return ASSET_REFERENCE.Base
+        default:
+          throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
+      }
+    default:
+      throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
   }
 }
 
