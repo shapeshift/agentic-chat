@@ -68,7 +68,7 @@ export const getPortalsAssets = async ({
   const { data } = await axios.get<TokensResponse>(`${PORTALS_BASE_URL}/v2/tokens`, {
     headers: { Authorization: `Bearer ${PORTALS_API_KEY}` },
     params: {
-      limit: assetIds?.length ?? 10,
+      limit: assetIds?.length ?? 5,
       networks: network,
       ...(searchTerm && { search: searchTerm }),
       ...(assetIds && {
@@ -96,19 +96,5 @@ export const getPortalsAssets = async ({
     },
   })
 
-  const result = {
-    tokens: data.tokens.map(token => ({
-      address: token.address,
-      decimals: token.decimals,
-      image: token.image,
-      name: token.name,
-      network: token.network,
-      platform: token.platform,
-      price: token.price,
-      symbol: token.symbol,
-    })),
-    totalItems: data.totalItems,
-  }
-
-  return result
+  return data
 }

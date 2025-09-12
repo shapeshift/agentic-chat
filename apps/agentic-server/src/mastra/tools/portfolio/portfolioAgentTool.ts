@@ -27,7 +27,7 @@ export const portfolioAgentTool = createTool({
   description: 'Fetch account balances',
   inputSchema: portfolioAgentInput,
   outputSchema: portfolioAgentOutput,
-  execute: async ({ context, mastra, resourceId, threadId, writer }) => {
+  execute: async ({ context, mastra, writer }) => {
     const logger = mastra!.getLogger()
     const portfolioAgent = mastra!.getAgent('portfolioAgent')
 
@@ -42,15 +42,11 @@ export const portfolioAgentTool = createTool({
           content: supportedChainsContext,
         },
       ],
-      memory: {
-        resource: resourceId!,
-        thread: threadId!,
-      },
     })
 
     await result.fullStream.pipeTo(writer!)
 
-    const response = result.object
+    const response = await result.object
 
     logger.info('portfolioAgentTool', { response })
 

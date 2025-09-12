@@ -6,6 +6,7 @@ import { GetPortalsAssets } from '@/components/assistant-ui/GetPortalsAssets'
 import { PortfolioAgent } from '@/components/assistant-ui/PortfolioAgent'
 import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
 import { SwapAgent } from '@/components/assistant-ui/SwapAgent'
+import { SwapWorkflow } from '@/components/assistant-ui/SwapWorkflow'
 import SwitchEvmChainUI from '@/components/assistant-ui/SwitchEvmChainUI'
 import { Thread } from '@/components/assistant-ui/thread'
 import { ConnectWallet } from '@/components/connect-wallet'
@@ -39,6 +40,7 @@ export const Dashboard = () => {
           <PortfolioAgent />
           <SendTransactionUI />
           <SwapAgent />
+          <SwapWorkflow />
           <SwitchEvmChainUI />
           <Thread />
         </div>

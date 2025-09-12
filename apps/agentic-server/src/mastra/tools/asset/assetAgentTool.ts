@@ -32,7 +32,7 @@ export const assetAgentTool = createTool({
   description: 'Fetch asset details and market data',
   inputSchema: assetAgentInput,
   outputSchema: assetAgentOutput,
-  execute: async ({ context, mastra, resourceId, writer }) => {
+  execute: async ({ context, mastra, writer }) => {
     const logger = mastra!.getLogger()
     const assetAgent = mastra!.getAgent('assetAgent')
 
@@ -47,10 +47,6 @@ export const assetAgentTool = createTool({
           content: supportedChainsContext,
         },
       ],
-      memory: {
-        resource: resourceId || 'shapeshift',
-        thread: 'global',
-      },
     })
 
     await result.fullStream.pipeTo(writer!)

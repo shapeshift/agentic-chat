@@ -14,17 +14,15 @@ type GetPortalsAssetsContentProps = Omit<
 
 const GetPortalsAssetsContent: React.FC<GetPortalsAssetsContentProps> = ({ status, result, isError }) => {
   switch (status.type) {
-    case 'running':
-    case 'requires-action':
-    case 'incomplete': {
+    case 'running': {
       return <TextShimmer>Checking Portals for asset details</TextShimmer>
     }
     case 'complete': {
-      if (isError || !result) {
-        return <TextComplete>{'No assets details discovered on Portals'}</TextComplete>
+      if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
+        return <TextComplete>{'Failed to discover asset details on Portals ❌'}</TextComplete>
       }
 
-      return <TextComplete>{'Asset details discovered on Portals'}</TextComplete>
+      return <TextComplete>{'Asset details discovered on Portals ✅'}</TextComplete>
     }
   }
 }

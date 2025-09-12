@@ -17,11 +17,11 @@ const AssetConverterContent: React.FC<AssetConverterContentProps> = ({ status, r
       return <TextShimmer>Formatting asset details</TextShimmer>
     }
     case 'complete': {
-      if (isError || !result) {
-        return <TextComplete>{'Failed to format assets details'}</TextComplete>
+      if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
+        return <TextComplete>{'Failed to format assets details ❌'}</TextComplete>
       }
 
-      return <TextComplete>{'Asset details formatted successfully'}</TextComplete>
+      return <TextComplete>{'Asset details formatted successfully ✅'}</TextComplete>
     }
   }
 }

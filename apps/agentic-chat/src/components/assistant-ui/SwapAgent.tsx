@@ -1,147 +1,31 @@
-import type { ToolCallContentPartProps, ToolCallMessagePart } from '@assistant-ui/react'
-import { makeAssistantToolUI, useAssistantRuntime } from '@assistant-ui/react'
-import { MastraClient } from '@mastra/client-js'
-import type { SwapWorkflowInput, SwapWorkflowResult } from '@shapeshiftoss/agentic-server'
-import { Wallet } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
-import { useWalletClient } from 'wagmi'
+import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import { makeAssistantToolUI } from '@assistant-ui/react'
+import type { SwapAgentInput, SwapAgentOutput } from '@shapeshiftoss/agentic-server'
 
+import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
-import { Button } from '@/components/ui/button'
-import { sendTransaction } from '@/utils/sendTransaction'
 
-import { CollapsableDetails } from './CollapsableDetails'
-
-const mastraClient = new MastraClient({
-  baseUrl: 'http://localhost:4111',
-})
-
-const Icon = Wallet
-
-type SwapAgentContentProps = Omit<ToolCallContentPartProps<SwapWorkflowInput, SwapWorkflowResult>, 'args'> & {
-  args: Partial<SwapWorkflowInput>
+type SwapAgentContentProps = Omit<ToolCallContentPartProps<SwapAgentInput, SwapAgentOutput>, 'args'> & {
+  args: Partial<SwapAgentInput>
 }
 
-const SwapAgentContent: React.FC<SwapAgentContentProps> = ctx => {
-  const { data: walletClient } = useWalletClient()
-  const [hasApproved, setHasApproved] = useState(false)
-  const [hasSwapped, setHasSwapped] = useState(false)
-  const { thread } = useAssistantRuntime()
-
-  const { status, result, args, isError, toolName } = useMemo(() => ctx, [ctx])
-
-  const approveStep = useMemo(() => result?.steps?.approve, [result])
-  const swapStep = useMemo(() => result?.steps?.swap, [result])
-
-  const approve = useCallback(async () => {
-    if (hasApproved) return
-    if (!walletClient) return
-    if (!approveStep?.suspendPayload) return
-
-    const { runId, ...unsignedTx } = approveStep.suspendPayload
-
-    try {
-      const workflow = mastraClient.getWorkflow(toolName)
-
-      const txHash = await sendTransaction({ ...unsignedTx, walletClient })
-
-      setHasApproved(true)
-
-      const result = await workflow.resumeAsync({ runId, step: 'approve', resumeData: { txHash } })
-
-      const message: ToolCallMessagePart = { ...ctx, result }
-      thread.append({ role: 'assistant', content: [message] })
-    } catch (err) {
-      console.error('Failed to approve:', err)
-    }
-  }, [approveStep, ctx, hasApproved, setHasApproved, thread, toolName, walletClient])
-
-  const swap = useCallback(async () => {
-    if (hasSwapped) return
-    if (!walletClient) return
-    if (!swapStep?.suspendPayload) return
-
-    const { runId, ...unsignedTx } = swapStep.suspendPayload
-
-    try {
-      const workflow = mastraClient.getWorkflow(toolName)
-
-      const txHash = await sendTransaction({ ...unsignedTx, walletClient })
-
-      setHasSwapped(true)
-
-      const result = await workflow.resumeAsync({ runId, step: 'swap', resumeData: { txHash } })
-
-      const message: ToolCallMessagePart = { ...ctx, result }
-      thread.append({ role: 'assistant', content: [message] })
-    } catch (err) {
-      console.error('Failed to swap:', err)
-    }
-  }, [ctx, hasSwapped, setHasSwapped, swapStep, thread, toolName, walletClient])
-
+const SwapAgentContent: React.FC<SwapAgentContentProps> = ({ args, result, status, isError }) => {
   switch (status.type) {
-    case 'running':
-    case 'requires-action':
-    case 'incomplete': {
-      if (!args.buyAsset || !args.sellAsset || !args.sellAmountCryptoPrecision) {
-        return <TextShimmer>Finding route to swap</TextShimmer>
-      }
-
-      return (
-        <TextShimmer>
-          {`Finding route to swap ${parseFloat(args.sellAmountCryptoPrecision).toString()} ${args.sellAsset.symbol} to ${args.buyAsset.symbol}`}
-        </TextShimmer>
-      )
+    case 'running': {
+      if (!args.prompt) return null
+      return <TextShimmer>{args.prompt}</TextShimmer>
     }
     case 'complete': {
-      if (isError || !result || result.status === 'failed') {
-        return (
-          <CollapsableDetails
-            title={`An error occurred with ${toolName}`}
-            leftIcon={<Icon className="w-4 h-4 text-red-500" />}
-          >
-            {JSON.stringify(result || 'Failed to fetch quote')}
-          </CollapsableDetails>
-        )
+      if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
+        return <TextComplete>{`Failed to perform swap ❌`}</TextComplete>
       }
 
-      switch (result.status) {
-        case 'suspended': {
-          if (result.suspended.flat().includes('approve')) {
-            return (
-              <Button disabled={hasApproved} onClick={() => void approve()}>
-                Approve
-              </Button>
-            )
-          }
-
-          if (result.suspended.flat().includes('swap')) {
-            return (
-              <Button disabled={hasSwapped} onClick={() => void swap()}>
-                Swap
-              </Button>
-            )
-          }
-
-          return (
-            <CollapsableDetails title="Swap Details" leftIcon={<Icon className="w-4 h-4 text-green-500" />}>
-              <pre>{JSON.stringify(result, null, 2)}</pre>
-            </CollapsableDetails>
-          )
-        }
-        case 'success': {
-          return (
-            <CollapsableDetails title="Swap Details" leftIcon={<Icon className="w-4 h-4 text-green-500" />}>
-              <pre>{JSON.stringify(result, null, 2)}</pre>
-            </CollapsableDetails>
-          )
-        }
-      }
+      return <TextComplete>{`Swap completed ✅`}</TextComplete>
     }
   }
 }
 
-export const SwapAgent = makeAssistantToolUI<SwapWorkflowInput, SwapWorkflowResult>({
+export const SwapAgent = makeAssistantToolUI<SwapAgentInput, SwapAgentOutput>({
   toolName: 'swapAgentTool',
   render: SwapAgentContent,
 })

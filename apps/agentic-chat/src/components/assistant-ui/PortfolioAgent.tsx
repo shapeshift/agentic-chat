@@ -11,20 +11,18 @@ type PortfolioAgentContentProps = Omit<ToolCallContentPartProps<PortfolioAgentIn
 
 const PortfolioAgentContent: React.FC<PortfolioAgentContentProps> = ({ status, result, args, isError }) => {
   switch (status.type) {
-    case 'running':
-    case 'requires-action':
-    case 'incomplete': {
-      if (!args.user) return <TextShimmer>{'Gathering portfolio data'}</TextShimmer>
-      return <TextShimmer>{`Gathering portfolio for ${args.user}`}</TextShimmer>
+    case 'running': {
+      if (!args.prompt) return null
+      return <TextShimmer>{args.prompt}</TextShimmer>
     }
     case 'complete': {
-      if (isError || !result) {
-        if (!args.user) return <TextShimmer>{'Failed to gather portfolio data'}</TextShimmer>
-        return <TextComplete>{`Failed to gather portfolio data for ${args.user}`}</TextComplete>
+      if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
+        if (!args.user) return <TextComplete>{'Failed to gather portfolio data ❌'}</TextComplete>
+        return <TextComplete>{`Failed to gather portfolio data for ${args.user} ❌`}</TextComplete>
       }
 
-      if (!args.user) return <TextComplete>{'Portfolio data gathered successfully'}</TextComplete>
-      return <TextShimmer>{`Porfolio data gathered for ${args.user}`}</TextShimmer>
+      if (!args.user) return <TextComplete>{'Portfolio data gathered successfully ✅'}</TextComplete>
+      return <TextComplete>{`Porfolio data gathered for ${args.user} ✅`}</TextComplete>
     }
   }
 }

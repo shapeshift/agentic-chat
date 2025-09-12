@@ -9,19 +9,18 @@ type AssetAgentContentProps = Omit<ToolCallContentPartProps<AssetAgentInput, Ass
   args: Partial<AssetAgentInput>
 }
 
-const AssetAgentContent: React.FC<AssetAgentContentProps> = ({ status, result, isError }) => {
+const AssetAgentContent: React.FC<AssetAgentContentProps> = ({ args, status, result, isError }) => {
   switch (status.type) {
-    case 'running':
-    case 'requires-action':
-    case 'incomplete': {
-      return <TextShimmer>{'Fetching asset details'}</TextShimmer>
+    case 'running': {
+      if (!args.prompt) return null
+      return <TextShimmer>{args.prompt}</TextShimmer>
     }
     case 'complete': {
-      if (isError || !result) {
-        return <TextComplete>{JSON.stringify(result || 'Failed to fetch asset details')}</TextComplete>
+      if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
+        return <TextComplete>{'Failed to fetch asset details ❌'}</TextComplete>
       }
 
-      return <TextComplete>{'Fetched asset details'}</TextComplete>
+      return <TextComplete>{'Fetched asset details ✅'}</TextComplete>
     }
   }
 }

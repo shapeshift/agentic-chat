@@ -12,22 +12,20 @@ type GetAccountContentProps = Omit<ToolCallContentPartProps<GetAccountInput, Get
 
 const GetAccountContent: React.FC<GetAccountContentProps> = ({ args, status, result, isError }) => {
   switch (status.type) {
-    case 'running':
-    case 'requires-action':
-    case 'incomplete': {
+    case 'running': {
       const network = args.chainId && chainIdToNetwork[args.chainId]
       if (!network) return <TextShimmer>{'Checking account details'}</TextShimmer>
       return <TextShimmer>{`Checking account details on ${network}`}</TextShimmer>
     }
     case 'complete': {
-      if (isError || !result) {
+      if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
         const network = chainIdToNetwork[result?.chainId ?? args.chainId ?? '']
-        if (!network) return <TextShimmer>{'No account details discovered'}</TextShimmer>
-        return <TextComplete>{`No account details discovered on ${network}`}</TextComplete>
+        if (!network) return <TextComplete>{'No account details discovered ❌'}</TextComplete>
+        return <TextComplete>{`No account details discovered on ${network} ❌`}</TextComplete>
       }
 
       const network = chainIdToNetwork[result.chainId]
-      return <TextComplete>{`Account details discovered on ${network}`}</TextComplete>
+      return <TextComplete>{`Account details discovered on ${network} ✅`}</TextComplete>
     }
   }
 }

@@ -1,5 +1,4 @@
 import { Agent } from '@mastra/core'
-import { LibSQLStore } from '@mastra/libsql'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
@@ -20,9 +19,10 @@ export const shapeshiftAgent = new Agent({
       - Format: Always use markdown for clear communication
 
     📋 Requirements:
-      - ALWAYS display crypto values in human readable format using asset.precision for conversion from base units to crypto precision.
+      - ALWAYS return crypto values to the user in human readable format using the correct precision (ie. base unit value / precision = human readable crypto amount).
       - ALWAYS confirm with the user what network they are interested in if not specified.
       - ALWAYS show the address for tokens
+      - ALWAYS assume internal crypto values are in base unit precision unless "crypto precision" is stated.
 
     🚫 Restrictions:
       - NEVER assume the network the user is talking about.
@@ -37,8 +37,9 @@ export const shapeshiftAgent = new Agent({
 
     🧠 Portfolio Agent:
       - Fetches account balances for a user address or xpub.
-      - ALWAYS include the address or xpub from the user context.
+      - ALWAYS include the address or xpub from the user wallet context.
       - ONLY fetch details for the specified network if provided.
+      - Balances are always returned in base unit format
       - The prompt should explain that you are fetching account details for the user {ADDRESS or XPUB} on {NETWORK}.
 
     🧠 Swap Agent:
@@ -64,11 +65,7 @@ export const shapeshiftAgent = new Agent({
     options: {
       workingMemory: {
         enabled: true,
-        scope: 'thread',
       },
     },
-    storage: new LibSQLStore({
-      url: 'file:../mastra.db', // path is relative to the .mastra/output directory
-    }),
   }),
 })
