@@ -1,4 +1,5 @@
 export * from './asset'
 export * from './getAllowanceTool'
+export * from './mathCalculatorTool'
 export * from './portfolio'
 export * from './swap'
