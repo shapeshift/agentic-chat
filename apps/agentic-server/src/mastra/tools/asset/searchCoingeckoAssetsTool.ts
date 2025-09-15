@@ -6,8 +6,10 @@ import { networkToChainIdMap } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import z from 'zod'
 
-const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
+import { UNIFIED_NETWORKS, UNIFIED_TO_SEARCH_PLATFORM, UNIFIED_TO_NETWORK_KEY } from './networkMappings'
+import type { UnifiedNetwork } from './networkMappings'
 
+const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
 
 export const searchResponse = z.object({
   coins: z.array(
@@ -44,44 +46,51 @@ type SearchResponse = z.infer<typeof searchResponse>
 type CoinResponse = z.infer<typeof coinResponse>
 
 // Helper function to convert CoinResponse to Asset
-const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: string): Asset | null => {
+const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: UnifiedNetwork): Asset | null => {
   console.log(`Converting coin: ${coin.id}, network: ${requestedNetwork}`)
+
+  if (!coin.id || !coin.symbol || !coin.name) {
+    console.log(`Invalid coin data for ${coin.id}: missing required fields`)
+    return null
+  }
 
   try {
     const price = coin.market_data.current_price.usd?.toString() || '0'
 
     // If network is specified, look for that platform directly
-    if (requestedNetwork && coin.detail_platforms[requestedNetwork]) {
-      console.log(`Found platform ${requestedNetwork} for ${coin.id}`)
-      const platform = coin.detail_platforms[requestedNetwork]
+    if (requestedNetwork) {
+      const platformId = UNIFIED_TO_SEARCH_PLATFORM[requestedNetwork]
+      if (coin.detail_platforms[platformId]) {
+        console.log(`Found platform ${platformId} for ${coin.id}`)
+        const platform = coin.detail_platforms[platformId]
 
-      if (platform?.contract_address && platform.contract_address !== '0x0000000000000000000000000000000000000000') {
-        // ERC20 token on requested network
-        const networkKey = Object.keys(networkToChainIdMap).find(
-          key => networkToChainIdMap[key] && coin.detail_platforms[requestedNetwork]
-        )
+        if (platform?.contract_address && platform.contract_address !== '0x0000000000000000000000000000000000000000') {
+          // ERC20 token on requested network
+          const networkKey = UNIFIED_TO_NETWORK_KEY[requestedNetwork]
+          if (!networkKey) {
+            console.log(
+              `No network mapping found for unified network ${requestedNetwork}. Available networks: ${UNIFIED_NETWORKS.join(', ')}`
+            )
+            return null
+          }
 
-        if (!networkKey) {
-          console.log(`No network mapping found for platform ${requestedNetwork}`)
-          return null
-        }
+          const chainId = networkToChainIdMap[networkKey]
+          const assetId = toAssetId({
+            chainId,
+            assetNamespace: 'erc20',
+            assetReference: platform.contract_address,
+          })
 
-        const chainId = networkToChainIdMap[networkKey]
-        const assetId = toAssetId({
-          chainId,
-          assetNamespace: 'erc20',
-          assetReference: platform.contract_address,
-        })
-
-        return {
-          assetId,
-          chainId,
-          symbol: coin.symbol.toUpperCase(),
-          name: coin.name,
-          network: networkKey,
-          precision: platform.decimal_place,
-          price,
-          icon: coin.image.large,
+          return {
+            assetId,
+            chainId,
+            symbol: coin.symbol.toUpperCase(),
+            name: coin.name,
+            network: networkKey,
+            precision: platform.decimal_place,
+            price,
+            icon: coin.image.large,
+          }
         }
       }
     }
@@ -123,20 +132,13 @@ const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: string): Ass
       ) {
         // Find the network key for ethereum or first available platform
         const platformName = coin.detail_platforms['ethereum'] ? 'ethereum' : Object.keys(coin.detail_platforms)[0]
-        const networkKey = Object.keys(networkToChainIdMap).find(key => {
-          // Map platform names back to network keys
-          const platformMappings: Record<string, string> = {
-            ethereum: 'ethereum',
-            'optimistic-ethereum': 'optimism',
-            'arbitrum-one': 'arbitrum',
-            'polygon-pos': 'polygon_pos',
-            avalanche: 'avalanche',
-            bsc: 'bsc',
-            base: 'base',
-            xdai: 'gnosis',
-          }
-          return platformMappings[platformName] === key
-        })
+
+        // Find unified network that maps to this platform
+        const unifiedNetwork = Object.entries(UNIFIED_TO_SEARCH_PLATFORM).find(
+          ([, platform]) => platform === platformName
+        )?.[0] as UnifiedNetwork | undefined
+
+        const networkKey = unifiedNetwork ? UNIFIED_TO_NETWORK_KEY[unifiedNetwork] : undefined
 
         if (networkKey) {
           const chainId = networkToChainIdMap[networkKey]
@@ -160,32 +162,37 @@ const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: string): Ass
       }
     }
 
-    console.log(`No valid platform found for ${coin.id}`)
+    console.log(
+      `No valid platform found for ${coin.id}${requestedNetwork ? ` on network ${requestedNetwork}` : ''}. Available networks: ${UNIFIED_NETWORKS.join(', ')}`
+    )
     return null
   } catch (error) {
-    console.error('Error converting coin to asset:', error)
+    console.error(`Error converting coin ${coin.id} to asset:`, error)
     return null
   }
 }
 
 export const searchCoingeckoAssetsInput = z.object({
-  searchTerm: z.string().describe('The search term to find tokens by name or symbol'),
-  network: z
-    .enum(['ethereum', 'optimistic-ethereum', 'arbitrum-one', 'polygon-pos', 'avalanche', 'bsc', 'base', 'xdai'])
-    .optional()
-    .describe(`
-      Optional network to filter results. Use exact CoinGecko platform names:
+  searchTerm: z
+    .string()
+    .trim()
+    .min(2, 'Search term must be at least 2 characters')
+    .describe('The search term to find tokens by name or symbol (minimum 2 characters)'),
+  network: z.enum(UNIFIED_NETWORKS).optional().describe(`
+      Optional network to filter results. Use unified network identifiers:
       - ethereum (for Ethereum mainnet)
-      - optimistic-ethereum (for Optimism)
-      - arbitrum-one (for Arbitrum)
-      - polygon-pos (for Polygon)
+      - optimism (for Optimism)
+      - arbitrum (for Arbitrum)
+      - polygon (for Polygon)
       - avalanche (for Avalanche)
       - bsc (for Binance Smart Chain)
       - base (for Base)
-      - xdai (for Gnosis)
+      - gnosis (for Gnosis)
       
-      Attempt to determine which crypto network the user wants and map it to the correct network name option.
-      Examples: "eth" or "ethereum" → "ethereum", "arb" or "arbitrum" → "arbitrum-one", "op" or "optimism" → "optimistic-ethereum"
+      Examples: When user says "ETH", "ethereum", or "mainnet" → use "ethereum"
+      When user says "arb", "arbitrum" → use "arbitrum"
+      When user says "op", "optimism" → use "optimism"
+      When user says "matic", "polygon" → use "polygon"
     `),
 })
 
@@ -196,7 +203,7 @@ export type SearchCoingeckoAssetsOutput = z.infer<typeof searchCoingeckoAssetsOu
 
 export const searchCoingeckoAssetsTool = createTool({
   id: 'searchCoingeckoAssets',
-  description: 'Search for asset data by name or symbol using CoinGecko',
+  description: `Search for cryptocurrency assets by name or symbol. Returns detailed asset data.`,
   inputSchema: searchCoingeckoAssetsInput,
   outputSchema: searchCoingeckoAssetsOutput,
   execute: ({ context, mastra }) => {
@@ -214,27 +221,67 @@ export const searchCoingeckoAssets = async ({
 }: SearchCoingeckoAssetsInput): Promise<SearchCoingeckoAssetsOutput> => {
   console.log('Searching CoinGecko for:', { searchTerm, network })
 
-  const { data } = await axios.get<SearchResponse>(`https://pro-api.coingecko.com/api/v3/search?query=${searchTerm}`, {
-    headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
-  })
+  // Validate inputs
+  if (!searchTerm?.trim()) {
+    throw new Error('Search term cannot be empty')
+  }
 
-  const coins = await Promise.all(
-    data.coins.map(coin => {
-      return axios.get<CoinResponse>(`https://pro-api.coingecko.com/api/v3/coins/${coin.id}`, {
+  if (searchTerm.trim().length < 2) {
+    throw new Error('Search term must be at least 2 characters')
+  }
+
+  try {
+    const { data } = await axios.get<SearchResponse>(
+      `https://pro-api.coingecko.com/api/v3/search?query=${encodeURIComponent(searchTerm.trim())}`,
+      {
         headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
+        timeout: 10000,
+      }
+    )
+
+    // Limit results to max 5 to improve performance
+    const limitedCoins = data.coins.slice(0, 5)
+    console.log(`Limited search results from ${data.coins.length} to ${limitedCoins.length} coins`)
+
+    const coins = await Promise.allSettled(
+      limitedCoins.map(coin => {
+        return axios.get<CoinResponse>(`https://pro-api.coingecko.com/api/v3/coins/${coin.id}`, {
+          headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
+          timeout: 10000,
+        })
       })
-    })
-  )
+    )
 
-  // Convert coins to assets
-  const assets = coins
-    .map(({ data }) => coinResponseToAsset(data, network))
-    .filter((asset): asset is Asset => asset !== null)
+    const successfulCoins = coins.filter(result => result.status === 'fulfilled').map(result => result.value)
 
-  console.log(
-    'Search results:',
-    assets.map(({ symbol, price, assetId }) => ({ symbol, price, assetId }))
-  )
+    // Convert coins to assets
+    const assets = successfulCoins
+      .map(({ data }) => coinResponseToAsset(data, network))
+      .filter((asset): asset is Asset => asset !== null)
 
-  return assets
+    if (assets.length === 0) {
+      console.log(
+        `No valid assets found for search term: ${searchTerm}${network ? ` on network: ${network}` : ''}. Available networks: ${UNIFIED_NETWORKS.join(', ')}`
+      )
+    }
+
+    console.log(
+      'Search results:',
+      assets.map(({ symbol, price, assetId }) => ({ symbol, price, assetId }))
+    )
+
+    return assets
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.')
+      }
+      if (error.response?.status === 404) {
+        console.log(`No results found for search term: ${searchTerm}`)
+        return []
+      }
+      throw new Error(`CoinGecko API error: ${error.response?.status} ${error.response?.statusText}`)
+    }
+    throw new Error(`Failed to search CoinGecko: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
 }

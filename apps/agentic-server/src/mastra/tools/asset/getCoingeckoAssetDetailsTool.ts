@@ -6,28 +6,10 @@ import { networkToChainIdMap } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import z from 'zod'
 
-const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
+import { UNIFIED_NETWORKS, UNIFIED_TO_ONCHAIN_NETWORK, UNIFIED_TO_NETWORK_KEY } from './networkMappings'
+import type { UnifiedNetwork } from './networkMappings'
 
-// Map user-friendly terms to CoinGecko Network IDs (for onchain API)
-const userTermToNetworkId = {
-  eth: 'eth',
-  ethereum: 'eth',
-  op: 'optimism',
-  opt: 'optimism',
-  optimism: 'optimism',
-  arb: 'arbitrum',
-  arbitrum: 'arbitrum',
-  poly: 'polygon',
-  polygon: 'polygon',
-  matic: 'polygon',
-  avax: 'avax',
-  avalanche: 'avax',
-  base: 'base',
-  bsc: 'bsc',
-  binance: 'bsc',
-  gnosis: 'gnosis',
-  xdai: 'gnosis',
-}
+const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
 
 export const tokensResponse = z.object({
   data: z.array(
@@ -49,10 +31,27 @@ export const tokensResponse = z.object({
 type TokensResponse = z.infer<typeof tokensResponse>
 
 // Helper function to convert TokenResponse to Asset
-const tokenResponseToAsset = (token: TokensResponse['data'][0], network: string): Asset | null => {
+const tokenResponseToAsset = (token: TokensResponse['data'][0], unifiedNetwork: UnifiedNetwork): Asset | null => {
   try {
-    const chainId = networkToChainIdMap[network]
-    if (!chainId) return null
+    if (!token.attributes?.address || !token.attributes?.symbol || !token.attributes?.name) {
+      console.log(`Invalid token data: missing required fields for ${token.id}`)
+      return null
+    }
+
+    // Use unified network to get network key
+    const networkKey = UNIFIED_TO_NETWORK_KEY[unifiedNetwork]
+    if (!networkKey) {
+      console.log(
+        `No network mapping found for unified network ${unifiedNetwork}. Available networks: ${UNIFIED_NETWORKS.join(', ')}`
+      )
+      return null
+    }
+
+    const chainId = networkToChainIdMap[networkKey]
+    if (!chainId) {
+      console.log(`No chainId found for network ${networkKey}`)
+      return null
+    }
 
     const assetId = toAssetId({
       chainId,
@@ -65,32 +64,37 @@ const tokenResponseToAsset = (token: TokensResponse['data'][0], network: string)
       chainId,
       symbol: token.attributes.symbol.toUpperCase(),
       name: token.attributes.name,
-      network,
+      network: networkKey,
       precision: token.attributes.decimals,
       price: token.attributes.price_usd.toString(),
       icon: token.attributes.image_url,
     }
   } catch (error) {
-    console.error('Error converting token to asset:', error)
+    console.error(`Error converting token ${token.id} to asset:`, error)
     return null
   }
 }
 
 export const getCoingeckoAssetDetailsInput = z.object({
-  assetIds: z.array(z.string()).describe('A list of caip19 assetIds'),
-  network: z
-    .string()
-    .transform(userTerm => userTermToNetworkId[userTerm.toLowerCase() as keyof typeof userTermToNetworkId] || userTerm)
-    .describe(`
-      Network name for onchain API. Accepts user-friendly terms:
-      "eth", "ethereum" → transforms to "eth"
-      "arb", "arbitrum" → transforms to "arbitrum"  
-      "op", "opt", "optimism" → transforms to "optimism"
-      "poly", "polygon", "matic" → transforms to "polygon"
-      "avax", "avalanche" → transforms to "avax"
-      "base" → transforms to "base"
-      "bsc", "binance" → transforms to "bsc"
-      "gnosis", "xdai" → transforms to "gnosis"
+  assetIds: z
+    .array(z.string().min(1, 'Asset ID cannot be empty'))
+    .min(1, 'At least one asset ID is required')
+    .describe('A list of CAIP-19 asset IDs (e.g., "eip155:1/erc20:0xa0b86a33e6...")'),
+  network: z.enum(UNIFIED_NETWORKS).describe(`
+      Network identifier using unified network names:
+      - ethereum (for Ethereum mainnet)
+      - optimism (for Optimism)
+      - arbitrum (for Arbitrum)
+      - polygon (for Polygon)
+      - avalanche (for Avalanche)
+      - bsc (for Binance Smart Chain)
+      - base (for Base)
+      - gnosis (for Gnosis)
+      
+      Examples: When user says "ETH", "ethereum", "mainnet" → use "ethereum"
+      When user says "arb", "arbitrum" → use "arbitrum"
+      When user says "op", "optimism" → use "optimism"
+      When user says "matic", "polygon" → use "polygon"
     `),
 })
 
@@ -119,26 +123,72 @@ export const getCoingeckoAssetDetails = async ({
 }: GetCoingeckoAssetDetailsInput): Promise<GetCoingeckoAssetDetailsOutput> => {
   console.log('Getting CoinGecko asset details for:', { assetIds, network })
 
-  const addresses = assetIds.map(assetId => fromAssetId(assetId).assetReference)
-  console.log('Extracted addresses:', addresses)
+  // Validate inputs
+  if (!assetIds?.length) {
+    throw new Error('At least one asset ID is required')
+  }
 
-  const { data } = await axios.get<TokensResponse>(
-    `https://pro-api.coingecko.com/api/v3/onchain/networks/${network}/tokens/multi/${addresses.join(',')}`,
-    {
-      headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
+  if (!network) {
+    throw new Error('Network parameter is required')
+  }
+
+  try {
+    const addresses = assetIds.map(assetId => {
+      try {
+        const parsed = fromAssetId(assetId)
+        if (!parsed.assetReference) {
+          throw new Error(`No asset reference found in ${assetId}`)
+        }
+        return parsed.assetReference
+      } catch {
+        throw new Error(`Invalid asset ID format: ${assetId}`)
+      }
+    })
+    console.log('Extracted addresses:', addresses)
+
+    // Map unified network to onchain API network ID
+    const onchainNetworkId = UNIFIED_TO_ONCHAIN_NETWORK[network]
+    console.log(`Mapped unified network ${network} to onchain network ${onchainNetworkId}`)
+
+    const { data } = await axios.get<TokensResponse>(
+      `https://pro-api.coingecko.com/api/v3/onchain/networks/${onchainNetworkId}/tokens/multi/${addresses.join(',')}`,
+      {
+        headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
+        timeout: 10000,
+      }
+    )
+    console.log('CoinGecko onchain API response:', data)
+
+    // Convert tokens to assets
+    const assets = data.data
+      .map(token => tokenResponseToAsset(token, network))
+      .filter((asset): asset is Asset => asset !== null)
+
+    if (assets.length === 0) {
+      console.log(
+        `No valid assets found for asset IDs: ${assetIds.join(', ')} on network: ${network}. Available networks: ${UNIFIED_NETWORKS.join(', ')}`
+      )
     }
-  )
-  console.log('CoinGecko response:', data)
 
-  // Convert tokens to assets
-  const assets = data.data
-    .map(token => tokenResponseToAsset(token, network))
-    .filter((asset): asset is Asset => asset !== null)
+    console.log(
+      'Asset details results:',
+      assets.map(({ symbol, price, assetId }) => ({ symbol, price, assetId }))
+    )
 
-  console.log(
-    'Asset details results:',
-    assets.map(({ symbol, price, assetId }) => ({ symbol, price, assetId }))
-  )
-
-  return assets
+    return assets
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.')
+      }
+      if (error.response?.status === 404) {
+        console.log(`No asset details found for IDs: ${assetIds.join(', ')} on network: ${network}`)
+        return []
+      }
+      throw new Error(`CoinGecko API error: ${error.response?.status} ${error.response?.statusText}`)
+    }
+    throw new Error(
+      `Failed to get asset details from CoinGecko: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
+  }
 }
