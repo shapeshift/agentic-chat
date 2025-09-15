@@ -8,26 +8,6 @@ import z from 'zod'
 
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
 
-// Map user-friendly terms to CoinGecko Platform IDs (for search/coins API)
-const userTermToPlatformId = {
-  eth: 'ethereum',
-  ethereum: 'ethereum',
-  op: 'optimistic-ethereum',
-  opt: 'optimistic-ethereum',
-  optimism: 'optimistic-ethereum',
-  arb: 'arbitrum-one',
-  arbitrum: 'arbitrum-one',
-  poly: 'polygon-pos',
-  polygon: 'polygon-pos',
-  matic: 'polygon-pos',
-  avax: 'avalanche',
-  avalanche: 'avalanche',
-  base: 'base',
-  bsc: 'bsc',
-  binance: 'bsc',
-  gnosis: 'xdai',
-  xdai: 'xdai',
-}
 
 export const searchResponse = z.object({
   coins: z.array(
@@ -191,22 +171,21 @@ const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: string): Ass
 export const searchCoingeckoAssetsInput = z.object({
   searchTerm: z.string().describe('The search term to find tokens by name or symbol'),
   network: z
-    .string()
+    .enum(['ethereum', 'optimistic-ethereum', 'arbitrum-one', 'polygon-pos', 'avalanche', 'bsc', 'base', 'xdai'])
     .optional()
-    .transform(userTerm =>
-      userTerm
-        ? userTermToPlatformId[userTerm.toLowerCase() as keyof typeof userTermToPlatformId] || userTerm
-        : undefined
-    ).describe(`
-      Optional network name. Accepts user-friendly terms:
-      "eth", "ethereum" → transforms to "ethereum"
-      "arb", "arbitrum" → transforms to "arbitrum-one"  
-      "op", "opt", "optimism" → transforms to "optimistic-ethereum"
-      "poly", "polygon", "matic" → transforms to "polygon-pos"
-      "avax", "avalanche" → transforms to "avalanche"
-      "base" → transforms to "base"
-      "bsc", "binance" → transforms to "bsc"
-      "gnosis", "xdai" → transforms to "xdai"
+    .describe(`
+      Optional network to filter results. Use exact CoinGecko platform names:
+      - ethereum (for Ethereum mainnet)
+      - optimistic-ethereum (for Optimism)
+      - arbitrum-one (for Arbitrum)
+      - polygon-pos (for Polygon)
+      - avalanche (for Avalanche)
+      - bsc (for Binance Smart Chain)
+      - base (for Base)
+      - xdai (for Gnosis)
+      
+      Attempt to determine which crypto network the user wants and map it to the correct network name option.
+      Examples: "eth" or "ethereum" → "ethereum", "arb" or "arbitrum" → "arbitrum-one", "op" or "optimism" → "optimistic-ethereum"
     `),
 })
 

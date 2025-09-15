@@ -32,13 +32,7 @@ export const assetAgent = new Agent({
       - Use for discovering assets by name or symbol (e.g., "ethereum", "USDC", "FOX")
       - ONLY search for the exact term provided by the user
       - Returns COMPLETE asset information including current price, symbol, name, assetId
-      - Accepts user-friendly network terms (automatically transforms to platform IDs):
-        * "eth", "ethereum" → "ethereum"
-        * "arb", "arbitrum" → "arbitrum-one"  
-        * "op", "opt", "optimism" → "optimistic-ethereum"
-        * "poly", "polygon", "matic" → "polygon-pos"
-        * "avax", "avalanche" → "avalanche"
-        * "base", "bsc", "gnosis", "xdai" → same
+      - When user specifies a network, map their terms to the correct enum value
       - If no network specified, omit parameter to get assets from all networks
       - NO additional calls needed when search succeeds - results are complete
 
