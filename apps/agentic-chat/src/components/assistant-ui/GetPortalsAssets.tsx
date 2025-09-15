@@ -1,33 +1,33 @@
 import type { ToolCallContentPartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { GetPortalsAssetsInput, GetPortalsAssetsOutput } from '@shapeshiftoss/agentic-server'
+import type { SearchCoingeckoAssetsInput, SearchCoingeckoAssetsOutput } from '@shapeshiftoss/agentic-server'
 
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
 type GetPortalsAssetsContentProps = Omit<
-  ToolCallContentPartProps<GetPortalsAssetsInput, GetPortalsAssetsOutput>,
+  ToolCallContentPartProps<SearchCoingeckoAssetsInput, SearchCoingeckoAssetsOutput>,
   'args'
 > & {
-  args: Partial<GetPortalsAssetsInput>
+  args: Partial<SearchCoingeckoAssetsInput>
 }
 
 const GetPortalsAssetsContent: React.FC<GetPortalsAssetsContentProps> = ({ status, result, isError }) => {
   switch (status.type) {
     case 'running': {
-      return <TextShimmer>Checking Portals for asset details</TextShimmer>
+      return <TextShimmer>Checking CoinGecko for asset details</TextShimmer>
     }
     case 'complete': {
       if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
-        return <TextComplete>{'Failed to discover asset details on Portals ❌'}</TextComplete>
+        return <TextComplete>{'Failed to discover asset details on CoinGecko ❌'}</TextComplete>
       }
 
-      return <TextComplete>{'Asset details discovered on Portals ✅'}</TextComplete>
+      return <TextComplete>{'Asset details discovered on CoinGecko ✅'}</TextComplete>
     }
   }
 }
 
-export const GetPortalsAssets = makeAssistantToolUI<GetPortalsAssetsInput, GetPortalsAssetsOutput>({
-  toolName: 'getPortalsAssetsTool',
+export const GetPortalsAssets = makeAssistantToolUI<SearchCoingeckoAssetsInput, SearchCoingeckoAssetsOutput>({
+  toolName: 'searchCoingeckoAssetsTool',
   render: GetPortalsAssetsContent,
 })

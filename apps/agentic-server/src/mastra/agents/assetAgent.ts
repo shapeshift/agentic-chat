@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getPortalsAssetsTool, assetConverterTool, assetAgentOutput } from '../tools'
+import { searchCoingeckoAssetsTool, getCoingeckoAssetDetailsTool, assetAgentOutput } from '../tools'
 
 export const assetAgent = new Agent({
   name: 'Asset Agent',
@@ -11,14 +11,12 @@ export const assetAgent = new Agent({
 
     Data Source Priority:
       1) Check internal memory first
-      2) Use Coingecko data source if asset is not found in memory
-      3) Use Portals data source if asset is not found from Coingecko
+      2) Use CoinGecko search for unknown asset names/symbols
+      3) Use CoinGecko asset details for specific CAIP-19 asset IDs
 
     📋 Requirements:
       - ALWAYS check your memory for a matching asset first before attempting to fetch from an external data source tool.
       - ALWAYS use the asset details that match most closely with the user search term if multiple assets are returned from a data source tool.
-      - ALWAYS provide as complete of asset details as possible when calling the asset converter tool.
-      - ALWAYS use the assetConverter tool as the final step to return the data in a standard format.
       - ALWAYS make a single tool call for all assets if possible including slip44 native assets.
       - ALWAYS use empty string or undefined for unknown values.
 
@@ -29,33 +27,40 @@ export const assetAgent = new Agent({
       - NEVER make multiple redundant tool calls for the same asset.
       - NEVER make a separate call for slip44 assetIds.
 
-    🔧 Portals Asset Tool:
-      - ONLY search for the exact term provided by the user.
-      - ALWAYS make a single tool call if a list of caip19 assetIds is provided including slip44 native assets.
-      - ALWAYS include the slip44 native asset assetId in the list of assetIds.
-      - NEVER make a tool call for the slip44 native asset assetId separately.
-      - ALWAYS include the specified network if included.
-      - NEVER fetch the same asset twice by both search term and caip19 assetId.
-      - NEVER make additional searches for variations of the same asset.
 
-    🔧 Coingecko Asset Tool:
-      - ONLY search for the exact term provided by the user.
-      - ALWAYS make a single tool call if a list of caip19 assetIds is provided excluding slip44 native assets.
-      - ALWAYS make a separate tool call for the slip44 native asset assetId.
-      - ALWAYS include the specified network if included.
-      - NEVER fetch the same asset twice by both search term and caip19 assetId.
-      - NEVER make additional searches for variations of the same asset.
+    🔧 Search CoinGecko Assets Tool:
+      - Use for discovering assets by name or symbol (e.g., "ethereum", "USDC", "FOX")
+      - ONLY search for the exact term provided by the user
+      - Returns COMPLETE asset information including current price, symbol, name, assetId
+      - Accepts user-friendly network terms (automatically transforms to platform IDs):
+        * "eth", "ethereum" → "ethereum"
+        * "arb", "arbitrum" → "arbitrum-one"  
+        * "op", "opt", "optimism" → "optimistic-ethereum"
+        * "poly", "polygon", "matic" → "polygon-pos"
+        * "avax", "avalanche" → "avalanche"
+        * "base", "bsc", "gnosis", "xdai" → same
+      - If no network specified, omit parameter to get assets from all networks
+      - NO additional calls needed when search succeeds - results are complete
 
-    🔧 Asset Converter Tool:
-      - ALWAYS include the price from the data source.
-      - ALWAYS include the imageUrl from the data source if available.
-      - NEVER provide an address for native slip44 assets.
-      - NEVER attempt to convert the same asset twice.
+    🔧 Get CoinGecko Asset Details Tool:
+      - ONLY use when you already have specific CAIP-19 asset IDs from external sources
+      - Examples: portfolio queries, wallet balances, swap workflows
+      - DO NOT use after successful search results - search already provides complete data
+      - ALWAYS provide the network parameter (required)
+      - Accepts user-friendly network terms (automatically transforms to network IDs):
+        * "eth", "ethereum" → "eth"
+        * "arb", "arbitrum" → "arbitrum"  
+        * "op", "opt", "optimism" → "optimism"
+        * "poly", "polygon", "matic" → "polygon"
+        * "avax", "avalanche" → "avax"
+        * "base", "bsc", "gnosis" → same
+      - Only works with ERC20 tokens, not slip44 native assets
+
   `,
   model: openai('gpt-4o-mini'),
   tools: {
-    getPortalsAssetsTool,
-    assetConverterTool,
+    searchCoingeckoAssetsTool,
+    getCoingeckoAssetDetailsTool,
   },
   memory: new Memory({
     options: {
