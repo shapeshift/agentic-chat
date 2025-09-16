@@ -43,18 +43,25 @@ export const tokenResponseToAsset = (
   }
 }
 
-export const createERC20Asset = (
+export const createAsset = (
   coin: CoinResponse,
-  platform: { contract_address: string; decimal_place: number },
-  unifiedNetwork: UnifiedNetwork
+  options: {
+    platform?: { contract_address: string; decimal_place: number }
+    unifiedNetwork: UnifiedNetwork
+    isNativeETH?: boolean
+  }
 ): Asset | null => {
+  const { platform, unifiedNetwork, isNativeETH = false } = options
+
+  if (isNativeETH && coin.id !== 'ethereum') return null
+
   const chainId = networkToChainIdMap[unifiedNetwork]
   if (!chainId) return null
 
   const assetId = toAssetId({
     chainId,
-    assetNamespace: 'erc20',
-    assetReference: platform.contract_address,
+    assetNamespace: isNativeETH ? 'slip44' : 'erc20',
+    assetReference: isNativeETH ? ETH_SLIP44 : platform!.contract_address,
   })
 
   return {
@@ -63,38 +70,22 @@ export const createERC20Asset = (
     symbol: coin.symbol.toUpperCase(),
     name: coin.name,
     network: unifiedNetwork,
-    precision: platform.decimal_place,
+    precision: isNativeETH ? ETH_PRECISION : platform!.decimal_place,
     price: coin.market_data.current_price.usd?.toString() || '0',
     icon: coin.image.large,
     availableNetworks: getAvailableNetworks(coin),
   }
 }
 
-export const createNativeETHAsset = (coin: CoinResponse): Asset | null => {
-  if (coin.id !== 'ethereum') return null
+// Legacy function names for backward compatibility
+export const createERC20Asset = (
+  coin: CoinResponse,
+  platform: { contract_address: string; decimal_place: number },
+  unifiedNetwork: UnifiedNetwork
+): Asset | null => createAsset(coin, { platform, unifiedNetwork })
 
-  const network = 'ethereum'
-  const chainId = networkToChainIdMap[network]
-  if (!chainId) return null
-
-  const assetId = toAssetId({
-    chainId,
-    assetNamespace: 'slip44',
-    assetReference: ETH_SLIP44,
-  })
-
-  return {
-    assetId,
-    chainId,
-    symbol: coin.symbol.toUpperCase(),
-    name: coin.name,
-    network,
-    precision: ETH_PRECISION,
-    price: coin.market_data.current_price.usd?.toString() || '0',
-    icon: coin.image.large,
-    availableNetworks: getAvailableNetworks(coin),
-  }
-}
+export const createNativeETHAsset = (coin: CoinResponse): Asset | null =>
+  createAsset(coin, { unifiedNetwork: 'ethereum', isNativeETH: true })
 
 export const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: UnifiedNetwork): Asset | null => {
   if (!coin.id || !coin.symbol || !coin.name) {

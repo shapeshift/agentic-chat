@@ -21,8 +21,11 @@ export const searchCoingeckoAssets = async ({
   searchTerm,
   network,
 }: SearchCoingeckoAssetsInput): Promise<SearchCoingeckoAssetsOutput> => {
+  if (!COINGECKO_API_KEY) {
+    throw new Error('COINGECKO_API_KEY is not set')
+  }
+
   try {
-    // Search for coins
     const { data } = await axios.get<SearchResponse>(
       `https://pro-api.coingecko.com/api/v3/search?query=${encodeURIComponent(searchTerm.trim())}`,
       {

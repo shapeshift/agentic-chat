@@ -3,7 +3,6 @@ import z from 'zod'
 
 import { UNIFIED_NETWORKS } from '../constants'
 
-// CoinGecko API response schemas
 export const tokensResponse = z.object({
   data: z.array(
     z.object({
@@ -45,7 +44,6 @@ export const coinResponse = z.object({
 export type TokensResponse = z.infer<typeof tokensResponse>
 export type CoinResponse = z.infer<typeof coinResponse>
 
-// Tool input/output schemas
 export const searchCoingeckoAssetsInput = z.object({
   searchTerm: z
     .string()
@@ -74,7 +72,6 @@ export const getCoingeckoAssetDetailsInput = z.object({
 
 export const getCoingeckoAssetDetailsOutput = z.array(asset)
 
-// Tool types
 export type SearchCoingeckoAssetsInput = z.infer<typeof searchCoingeckoAssetsInput>
 export type SearchCoingeckoAssetsOutput = z.infer<typeof searchCoingeckoAssetsOutput>
 export type GetCoingeckoAssetDetailsInput = z.infer<typeof getCoingeckoAssetDetailsInput>

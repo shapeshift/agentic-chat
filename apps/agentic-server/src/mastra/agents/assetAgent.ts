@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { searchCoingeckoAssetsTool, getCoingeckoAssetDetailsTool, assetConverterTool, assetAgentOutput } from '../tools'
+import { searchCoingeckoAssetsTool, getCoingeckoAssetDetailsTool, assetAgentOutput } from '../tools'
 
 export const assetAgent = new Agent({
   name: 'Asset Agent',
@@ -16,10 +16,8 @@ export const assetAgent = new Agent({
     📋 Requirements:
       - ALWAYS check your memory for a matching asset first before attempting to fetch from an external data source tool.
       - ALWAYS use the asset details that match most closely with the user search term if multiple assets are returned from a data source tool.
-      - ALWAYS provide as complete of asset details as possible when calling the asset converter tool.
-      - ALWAYS use the assetConverter tool as the final step to return the data in a standard format.
       - ALWAYS make a single tool call for all assets if possible including slip44 native assets.
-      - ALWAYS use empty string or undefined for unknown values.
+      - ALWAYS return the asset data in the standard format provided by the CoinGecko tools.
 
     🚫 Restrictions:
       - NEVER add placeholder or example data.
@@ -39,17 +37,11 @@ export const assetAgent = new Agent({
       - ALWAYS make a single tool call if a list of caip19 assetIds is provided.
       - ALWAYS include the specified network if included.
 
-    🔧 Asset Converter Tool:
-      - ALWAYS include the price from the data source.
-      - ALWAYS include the imageUrl from the data source if available.
-      - NEVER provide an address for native slip44 assets.
-      - NEVER attempt to convert the same asset twice.
   `,
   model: openai('gpt-4o-mini'),
   tools: {
     searchCoingeckoAssetsTool,
     getCoingeckoAssetDetailsTool,
-    assetConverterTool,
   },
   memory: new Memory({
     options: {

@@ -26,6 +26,9 @@ export const getCoingeckoAssetDetails = async ({
   assetIds,
   network,
 }: GetCoingeckoAssetDetailsInput): Promise<GetCoingeckoAssetDetailsOutput> => {
+  if (!COINGECKO_API_KEY) {
+    throw new Error('COINGECKO_API_KEY is not set')
+  }
   try {
     const addresses = assetIds.map(assetId => {
       try {

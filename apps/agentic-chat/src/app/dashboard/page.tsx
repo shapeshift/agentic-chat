@@ -1,5 +1,4 @@
 import { AssetAgent } from '@/components/assistant-ui/AssetAgent'
-import { AssetConverter } from '@/components/assistant-ui/AssetConverter'
 import { GetAccount } from '@/components/assistant-ui/GetAccount'
 import { GetAllowance } from '@/components/assistant-ui/GetAllowance'
 import { GetAssets } from '@/components/assistant-ui/GetAssets'
@@ -33,7 +32,6 @@ export const Dashboard = () => {
         </header>
         <div className="overflow-hidden h-full">
           <AssetAgent />
-          <AssetConverter />
           <GetAccount />
           <GetAllowance />
           <GetAssets />

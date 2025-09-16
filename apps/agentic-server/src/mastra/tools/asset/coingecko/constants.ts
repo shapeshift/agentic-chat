@@ -16,7 +16,7 @@ export const UNIFIED_TO_SEARCH_PLATFORM: Record<UnifiedNetwork, string> = {
   arbitrum: 'arbitrum-one',
   polygon: 'polygon-pos',
   avalanche: 'avalanche',
-  bsc: 'bsc',
+  bsc: 'binance-smart-chain',
   base: 'base',
   gnosis: 'xdai',
 }
