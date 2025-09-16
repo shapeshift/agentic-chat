@@ -79,23 +79,8 @@ export const getCoingeckoAssetDetailsInput = z.object({
   assetIds: z
     .array(z.string().min(1, 'Asset ID cannot be empty'))
     .min(1, 'At least one asset ID is required')
-    .describe('A list of CAIP-19 asset IDs (e.g., "eip155:1/erc20:0xa0b86a33e6...")'),
-  network: z.enum(UNIFIED_NETWORKS).describe(`
-      Network identifier using unified network names:
-      - ethereum (for Ethereum mainnet)
-      - optimism (for Optimism)
-      - arbitrum (for Arbitrum)
-      - polygon (for Polygon)
-      - avalanche (for Avalanche)
-      - bsc (for Binance Smart Chain)
-      - base (for Base)
-      - gnosis (for Gnosis)
-      
-      Examples: When user says "ETH", "ethereum", "mainnet" → use "ethereum"
-      When user says "arb", "arbitrum" → use "arbitrum"
-      When user says "op", "optimism" → use "optimism"
-      When user says "matic", "polygon" → use "polygon"
-    `),
+    .describe('List of CAIP-19 asset IDs (e.g., "eip155:1/erc20:0xa0b86a33e6...")'),
+  network: z.enum(UNIFIED_NETWORKS).describe('Network identifier: ethereum, optimism, arbitrum, polygon, avalanche, bsc, base, gnosis'),
 })
 
 export const getCoingeckoAssetDetailsOutput = z.array(asset)
