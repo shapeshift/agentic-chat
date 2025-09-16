@@ -53,7 +53,13 @@ export const assetAgentTool = createTool({
 
     const response = await result.object
 
-    logger.info('assetAgentTool', { response })
+    logger.info('assetAgentTool response', { response })
+
+    // Ensure we always return a valid response
+    if (!response || !response.assets) {
+      logger.warn('assetAgentTool received invalid response, returning empty assets array')
+      return { assets: [] }
+    }
 
     return response
   },

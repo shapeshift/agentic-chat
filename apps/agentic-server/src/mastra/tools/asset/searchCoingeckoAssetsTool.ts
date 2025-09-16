@@ -48,6 +48,7 @@ type CoinResponse = z.infer<typeof coinResponse>
 // Helper function to convert CoinResponse to Asset
 const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: UnifiedNetwork): Asset | null => {
   console.log(`Converting coin: ${coin.id}, network: ${requestedNetwork}`)
+  console.log(`Available platforms for ${coin.id}:`, Object.keys(coin.detail_platforms))
 
   if (!coin.id || !coin.symbol || !coin.name) {
     console.log(`Invalid coin data for ${coin.id}: missing required fields`)
@@ -60,9 +61,12 @@ const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: UnifiedNetwo
     // If network is specified, look for that platform directly
     if (requestedNetwork) {
       const platformId = UNIFIED_TO_SEARCH_PLATFORM[requestedNetwork]
+      console.log(`Looking for platform ${platformId} in coin ${coin.id}`)
+
       if (coin.detail_platforms[platformId]) {
         console.log(`Found platform ${platformId} for ${coin.id}`)
         const platform = coin.detail_platforms[platformId]
+        console.log(`Platform data:`, platform)
 
         if (platform?.contract_address && platform.contract_address !== '0x0000000000000000000000000000000000000000') {
           // ERC20 token on requested network
@@ -91,7 +95,11 @@ const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: UnifiedNetwo
             price,
             icon: coin.image.large,
           }
+        } else {
+          console.log(`Platform ${platformId} found but no valid contract address: ${platform?.contract_address}`)
         }
+      } else {
+        console.log(`Platform ${platformId} not found in coin ${coin.id}`)
       }
     }
 
