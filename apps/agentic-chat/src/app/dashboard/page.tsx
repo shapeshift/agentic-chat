@@ -2,7 +2,7 @@ import { AssetAgent } from '@/components/assistant-ui/AssetAgent'
 import { AssetConverter } from '@/components/assistant-ui/AssetConverter'
 import { GetAccount } from '@/components/assistant-ui/GetAccount'
 import { GetAllowance } from '@/components/assistant-ui/GetAllowance'
-import { GetPortalsAssets } from '@/components/assistant-ui/GetPortalsAssets'
+import { GetAssets } from '@/components/assistant-ui/GetAssets'
 import { PortfolioAgent } from '@/components/assistant-ui/PortfolioAgent'
 import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
 import { SwapAgent } from '@/components/assistant-ui/SwapAgent'
@@ -36,7 +36,7 @@ export const Dashboard = () => {
           <AssetConverter />
           <GetAccount />
           <GetAllowance />
-          <GetPortalsAssets />
+          <GetAssets />
           <PortfolioAgent />
           <SendTransactionUI />
           <SwapAgent />
