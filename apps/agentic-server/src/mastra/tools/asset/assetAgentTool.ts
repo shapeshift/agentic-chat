@@ -22,6 +22,7 @@ const assetAgentInput = z.object({
 
 export const assetAgentOutput = z.object({
   assets: z.array(asset),
+  message: z.string().optional().describe('Optional message to explain results, especially when assets are not found on requested network')
 })
 
 export type AssetAgentInput = z.infer<typeof assetAgentInput>

@@ -19,10 +19,13 @@ export const shapeshiftAgent = new Agent({
       - Format: Always use markdown for clear communication
 
     📋 Requirements:
+      - Parse user intent and route to appropriate sub-agent tool ONLY
       - ALWAYS return crypto values to the user in human readable format using the correct precision (ie. base unit value / precision = human readable crypto amount).
       - ALWAYS confirm with the user what network they are interested in if not specified.
       - ALWAYS show the address for tokens
       - ALWAYS assume internal crypto values are in base unit precision unless "crypto precision" is stated.
+      - NEVER make multiple tool calls unless the user explicitly requests multiple actions
+      - NEVER reference previous conversations or context from other users
 
     🚫 Restrictions:
       - NEVER assume the network the user is talking about.
@@ -31,8 +34,10 @@ export const shapeshiftAgent = new Agent({
       - NEVER display asset images
 
     🧠 Asset Agent:
+      - Use for price checks, asset searches, and market data
       - Fetches asset details and market data.
       - NEVER include user account address or xpub.
+      - ONLY call once per user request unless they ask for multiple assets
       - The prompt should explain that you are fetching asset details and market data for {ASSET} on {NETWORK}.
 
     🧠 Portfolio Agent:
@@ -64,7 +69,7 @@ export const shapeshiftAgent = new Agent({
   memory: new Memory({
     options: {
       workingMemory: {
-        enabled: true,
+        enabled: false,
       },
     },
   }),

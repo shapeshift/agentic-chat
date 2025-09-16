@@ -45,6 +45,34 @@ export const coinResponse = z.object({
 type SearchResponse = z.infer<typeof searchResponse>
 type CoinResponse = z.infer<typeof coinResponse>
 
+// Helper function to get all networks where a coin is available
+const getAvailableNetworks = (coin: CoinResponse): string[] => {
+  const networks: string[] = []
+
+  // Create reverse mapping from platform ID to unified network
+  const platformToUnified: Record<string, string> = {}
+  for (const [unifiedNetwork, platformId] of Object.entries(UNIFIED_TO_SEARCH_PLATFORM)) {
+    platformToUnified[platformId] = unifiedNetwork
+  }
+
+  // Check each platform in the coin data
+  for (const [platformId, platform] of Object.entries(coin.detail_platforms)) {
+    if (platform?.contract_address && platform.contract_address !== '0x0000000000000000000000000000000000000000') {
+      const unifiedNetwork = platformToUnified[platformId]
+      if (unifiedNetwork) {
+        networks.push(unifiedNetwork)
+      }
+    }
+  }
+
+  // Special case for ethereum native asset
+  if (coin.id === 'ethereum') {
+    networks.push('ethereum')
+  }
+
+  return [...new Set(networks)] // Remove duplicates
+}
+
 // Helper function to convert CoinResponse to Asset
 const coinResponseToAsset = (coin: CoinResponse, requestedNetwork?: UnifiedNetwork): Asset | null => {
   console.log(`Converting coin: ${coin.id}, network: ${requestedNetwork}`)
@@ -204,7 +232,10 @@ export const searchCoingeckoAssetsInput = z.object({
     `),
 })
 
-export const searchCoingeckoAssetsOutput = z.array(asset)
+export const searchCoingeckoAssetsOutput = z.object({
+  assets: z.array(asset),
+  alternativeNetworks: z.record(z.string(), z.array(z.string())).optional().describe('Map of asset names to networks where they were found but not returned due to network filtering')
+})
 
 export type SearchCoingeckoAssetsInput = z.infer<typeof searchCoingeckoAssetsInput>
 export type SearchCoingeckoAssetsOutput = z.infer<typeof searchCoingeckoAssetsOutput>
@@ -262,15 +293,31 @@ export const searchCoingeckoAssets = async ({
 
     const successfulCoins = coins.filter(result => result.status === 'fulfilled').map(result => result.value)
 
-    // Convert coins to assets
-    const assets = successfulCoins
-      .map(({ data }) => coinResponseToAsset(data, network))
-      .filter((asset): asset is Asset => asset !== null)
+    // Convert coins to assets and collect alternative network data
+    const assets: Asset[] = []
+    const alternativeNetworks: Record<string, string[]> = {}
+
+    successfulCoins.forEach(({ data: coin }) => {
+      const asset = coinResponseToAsset(coin, network)
+      if (asset) {
+        assets.push(asset)
+      } else if (network) {
+        // If no asset was created for the requested network, check what networks are available
+        const availableNetworks = getAvailableNetworks(coin)
+        if (availableNetworks.length > 0) {
+          const coinName = coin.name || coin.symbol
+          alternativeNetworks[coinName] = availableNetworks
+        }
+      }
+    })
 
     if (assets.length === 0) {
       console.log(
         `No valid assets found for search term: ${searchTerm}${network ? ` on network: ${network}` : ''}. Available networks: ${UNIFIED_NETWORKS.join(', ')}`
       )
+      if (Object.keys(alternativeNetworks).length > 0) {
+        console.log('Alternative networks found:', alternativeNetworks)
+      }
     }
 
     console.log(
@@ -278,7 +325,10 @@ export const searchCoingeckoAssets = async ({
       assets.map(({ symbol, price, assetId }) => ({ symbol, price, assetId }))
     )
 
-    return assets
+    return {
+      assets,
+      ...(Object.keys(alternativeNetworks).length > 0 && { alternativeNetworks })
+    }
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 429) {
@@ -286,7 +336,7 @@ export const searchCoingeckoAssets = async ({
       }
       if (error.response?.status === 404) {
         console.log(`No results found for search term: ${searchTerm}`)
-        return []
+        return { assets: [] }
       }
       throw new Error(`CoinGecko API error: ${error.response?.status} ${error.response?.statusText}`)
     }

@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { searchCoingeckoAssetsTool, getCoingeckoAssetDetailsTool, assetAgentOutput } from '../tools'
+import { searchCoingeckoAssetsTool, getCoingeckoAssetDetailsTool } from '../tools'
 
 export const assetAgent = new Agent({
   name: 'Asset Agent',
@@ -33,6 +33,9 @@ export const assetAgent = new Agent({
       - Network parameter uses UNIFIED network IDs: 'ethereum', 'optimism', 'arbitrum', 'polygon', etc.
       - Map user terms: "eth/ethereum/mainnet" → "ethereum", "arb/arbitrum" → "arbitrum", "op/optimism" → "optimism"
       - If no network specified, omit parameter to get assets from all networks
+      - Returns alternativeNetworks data when assets aren't found on the requested network
+      - When assets aren't found on requested network, inform user about alternative networks
+      - DO NOT automatically fetch assets from alternative networks - only inform the user
       - NO additional calls needed when search succeeds - results are complete
       - Input validation: minimum 2 characters, automatically trimmed
 
@@ -53,9 +56,17 @@ export const assetAgent = new Agent({
       - ALWAYS return a valid response with the assets array, even if empty
 
     📤 Output Format:
-      - ALWAYS return results in the format: { "assets": [array of asset objects] }
-      - If no assets found, return: { "assets": [] }
-      - NEVER return null or undefined
+      - ALWAYS return EXACTLY this JSON structure:
+      {
+        "assets": [array of asset objects],
+        "message": "optional explanatory message"
+      }
+
+      Examples:
+      - If assets found: { "assets": [{assetId: "...", symbol: "ETH", ...}], "message": "Found 1 asset" }
+      - If no assets found: { "assets": [], "message": "No PUMP found on Base. However, PUMP is available on: ethereum, polygon" }
+      - The message field helps explain results but can be omitted if assets are found
+      - NEVER return null, undefined, or any other structure
 
   `,
   model: openai('gpt-4o-mini'),

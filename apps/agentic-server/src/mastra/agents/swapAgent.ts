@@ -31,6 +31,36 @@ export const swapAgent = new Agent({
       - ALWAYS include the address or xpub from the user wallet context.
       - ALWAYS include the network specified by the swap action.
       - The prompt should explain that you are fetching account details for the user {ADDRESS or XPUB} on {NETWORK}.
+
+    📤 Output Format:
+      - ALWAYS return EXACTLY this JSON structure:
+      {
+        "sellAccount": {
+          "account": "user address or xpub",
+          "balances": [{"asset": {...}, "value": "..."}]
+        },
+        "sellAsset": {assetId: "...", symbol: "...", ...},
+        "buyAccount": {
+          "account": "user address or xpub",
+          "balances": [{"asset": {...}, "value": "..."}]
+        },
+        "buyAsset": {assetId: "...", symbol: "...", ...}
+      }
+
+      Example:
+      {
+        "sellAccount": {
+          "account": "0x123...",
+          "balances": [{"asset": {...}, "value": "1000000000000000000"}]
+        },
+        "sellAsset": {assetId: "eip155:1/erc20:0x...", symbol: "USDC", ...},
+        "buyAccount": {
+          "account": "0x123...",
+          "balances": [{"asset": {...}, "value": "500000000000000000"}]
+        },
+        "buyAsset": {assetId: "eip155:1/slip44:60", symbol: "ETH", ...}
+      }
+      - NEVER return null, undefined, or any other structure
   `,
   model: openai('gpt-4o-mini'),
   tools: {
