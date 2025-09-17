@@ -43,7 +43,7 @@ export const getAccountTool = createTool({
   },
 })
 
-const getAccount = async ({ address, chainId }: GetAccountInput): Promise<GetAccountOutput> => {
+export const getAccount = async ({ address, chainId }: GetAccountInput): Promise<GetAccountOutput> => {
   const baseUrl = process.env[getUnchainedHttpUrlEnvVar(chainId)]
 
   const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${address}`)

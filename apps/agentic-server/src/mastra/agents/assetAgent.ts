@@ -13,17 +13,11 @@ export const assetAgent = new Agent({
     - Use exact search terms from user
     - Respect specified network - only return assets from that network
     - If no assets found on specified network, inform user about alternative networks
-    - Use single tool call when possible
     - Use empty string for unknown values
 
-    Restrictions:
-    - Never return assets from different networks than requested
-    - Never make multiple redundant tool calls
-    - Never add placeholder data
-    - Never search related terms or synonyms
-
-    Search Tool: Use for asset discovery by name/symbol
-    Details Tool: Only use when you have specific CAIP-19 asset IDs
+    Tools:
+    - Search Tool: Use for asset discovery by name/symbol
+    - Details Tool: Use when you have specific CAIP-19 asset IDs
 
     Network mapping: eth/ethereum/mainnet → "ethereum", arb/arbitrum → "arbitrum"
 

@@ -9,11 +9,14 @@ export const portfolioAgent = new Agent({
   instructions: `
     You fetch portfolio balances for user accounts.
 
-    Process:
-    1. Get account details first using get account tool
-    2. Enrich with asset details using asset agent (single call with all asset IDs)
-    3. Include specified network if provided
-    4. Return all assets including native slip44 assets
+    Steps:
+    1. Use getAccountTool to fetch account balances
+    2. Extract ALL asset IDs from the response
+    3. Make exactly ONE assetAgent call with ALL asset IDs
+    4. If some assets fail to fetch, that's okay - continue with what you have
+    5. Return the combined portfolio data
+
+    Never call assetAgent more than once per request.
 
     Balances are in base unit format.
 
