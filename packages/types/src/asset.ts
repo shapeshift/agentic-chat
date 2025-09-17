@@ -11,6 +11,7 @@ export const asset = z.object({
   precision: z.number().describe('The asset decimal precision'),
   price: z.string().describe('The current market price'),
   icon: z.string().optional().nullable().describe('The asset icon url'),
+  availableNetworks: z.array(z.string()).optional().describe('List of networks where this asset is available'),
 })
 
 export type Asset = z.infer<typeof asset>

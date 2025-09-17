@@ -145,6 +145,7 @@ export const networkToChainIdMap: Record<string, ChainId> = {
   avalanche: avalancheChainId,
   optimism: optimismChainId,
   bsc: bscChainId,
+  gnosis: gnosisChainId,
 }
 
 export const chainIdToNetwork: Record<ChainId, string> = Object.fromEntries(
