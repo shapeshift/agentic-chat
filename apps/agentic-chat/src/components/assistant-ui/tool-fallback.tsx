@@ -4,7 +4,14 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 
-const excludedTools = ['updateWorkingMemory']
+const excludedTools = [
+  'updateWorkingMemory',
+  'getCoingeckoAssetDetails',
+  'getCoingeckoAssetDetailsTool',
+  'searchCoingeckoAssets',
+  'getAccount',
+  'mathCalculatorTool',
+]
 
 export const ToolFallback: ToolCallContentPartComponent = ({ toolName, argsText, result }) => {
   const [isCollapsed, setIsCollapsed] = useState(true)

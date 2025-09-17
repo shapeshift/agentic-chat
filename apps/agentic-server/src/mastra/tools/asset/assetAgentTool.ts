@@ -22,6 +22,10 @@ const assetAgentInput = z.object({
 
 export const assetAgentOutput = z.object({
   assets: z.array(asset),
+  message: z
+    .string()
+    .optional()
+    .describe('Optional message to explain results, especially when assets are not found on requested network'),
 })
 
 export type AssetAgentInput = z.infer<typeof assetAgentInput>
@@ -53,7 +57,13 @@ export const assetAgentTool = createTool({
 
     const response = await result.object
 
-    logger.info('assetAgentTool', { response })
+    logger.info('assetAgentTool response', { response })
+
+    // Ensure we always return a valid response
+    if (!response || !response.assets) {
+      logger.warn('assetAgentTool received invalid response, returning empty assets array')
+      return { assets: [] }
+    }
 
     return response
   },
