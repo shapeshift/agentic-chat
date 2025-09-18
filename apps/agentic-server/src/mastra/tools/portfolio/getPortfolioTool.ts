@@ -9,13 +9,13 @@ import { getCoingeckoAssetDetails } from '../asset/coingecko/detailsTool'
 
 import { getAccount } from './getAccountTool'
 
-export const getEnrichedPortfolioInput = z.object({
+export const getPortfolioInput = z.object({
   address: z.string().describe('The address to get portfolio for'),
   chainId: z.string().describe('The chainId in caip-10 format (ex. eip155:42161)'),
-  network: z.string().describe('The network name for asset enrichment (ex. arbitrum)'),
+  network: z.string().describe('The network name for asset details (ex. arbitrum)'),
 })
 
-export const getEnrichedPortfolioOutput = z.object({
+export const getPortfolioOutput = z.object({
   account: z.string().describe('Account address'),
   balances: z.array(
     z.object({
@@ -25,19 +25,19 @@ export const getEnrichedPortfolioOutput = z.object({
   ),
 })
 
-export type GetEnrichedPortfolioInput = z.infer<typeof getEnrichedPortfolioInput>
-export type GetEnrichedPortfolioOutput = z.infer<typeof getEnrichedPortfolioOutput>
+export type GetPortfolioInput = z.infer<typeof getPortfolioInput>
+export type GetPortfolioOutput = z.infer<typeof getPortfolioOutput>
 
-export const getEnrichedPortfolioTool = createTool({
-  id: 'getEnrichedPortfolio',
-  description: 'Get complete portfolio with balances and enriched asset details in one call',
-  inputSchema: getEnrichedPortfolioInput,
-  outputSchema: getEnrichedPortfolioOutput,
+export const getPortfolioTool = createTool({
+  id: 'getPortfolio',
+  description: 'Get complete portfolio with balances and asset details in one call',
+  inputSchema: getPortfolioInput,
+  outputSchema: getPortfolioOutput,
   execute: async ({ context, mastra }) => {
     const logger = mastra!.getLogger()
     const { address, chainId, network } = context
 
-    logger.info('getEnrichedPortfolioTool', { context })
+    logger.info('getPortfolioTool', { context })
 
     try {
       // Step 1: Get account balances
@@ -91,7 +91,7 @@ export const getEnrichedPortfolioTool = createTool({
       logger.info(`Returning portfolio with ${balances.length} assets`)
       return result
     } catch (error) {
-      logger.error('getEnrichedPortfolioTool error:', { error })
+      logger.error('getPortfolioTool error:', { error })
       throw error
     }
   },
@@ -111,6 +111,7 @@ function createFallbackAsset(assetId: string, network: string): Asset {
       precision: assetNamespace === 'slip44' ? 18 : 18, // Default to 18
       price: '0',
       icon: '',
+      availableNetworks: [network],
     }
   } catch {
     // If we can't parse the assetId, return a minimal asset
@@ -123,6 +124,7 @@ function createFallbackAsset(assetId: string, network: string): Asset {
       precision: 18,
       price: '0',
       icon: '',
+      availableNetworks: [network],
     }
   }
 }

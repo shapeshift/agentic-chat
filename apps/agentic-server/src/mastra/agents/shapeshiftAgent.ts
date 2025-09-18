@@ -5,7 +5,7 @@ import { openai } from '../models'
 import {
   assetAgentTool,
   getAllowanceTool,
-  getEnrichedPortfolioTool,
+  getPortfolioTool,
   mathCalculatorTool,
   portfolioAgentTool,
   swapAgentTool,
@@ -37,7 +37,7 @@ export const shapeshiftAgent = new Agent({
 
     Tools:
     - Asset Agent: Price checks, asset searches (prompt: "fetching {ASSET} on {NETWORK}")
-    - getEnrichedPortfolio: Get complete portfolio with asset details (address, chainId, network)
+    - getPortfolio: Get complete portfolio with asset details (address, chainId, network)
     - Portfolio Agent: Account balances (prompt: "fetching account {ADDRESS} on {NETWORK}")
     - Swap Agent: Swap operations (prompt: "swapping {AMOUNT} {FROM} to {TO} for {ADDRESS}")
     - Math Calculator: Convert base units to readable format
@@ -47,7 +47,7 @@ export const shapeshiftAgent = new Agent({
   model: openai('gpt-4o-mini'),
   tools: {
     assetAgentTool,
-    getEnrichedPortfolioTool,
+    getPortfolioTool,
     mathCalculatorTool,
     portfolioAgentTool,
     swapAgentTool,

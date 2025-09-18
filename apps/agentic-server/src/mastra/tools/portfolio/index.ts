@@ -1,3 +1,3 @@
 export * from './getAccountTool'
 export * from './portfolioAgentTool'
-export * from './getEnrichedPortfolioTool'
+export * from './getPortfolioTool'
