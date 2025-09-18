@@ -1,18 +1,18 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { SearchCoingeckoAssetsInput, SearchCoingeckoAssetsOutput } from '@shapeshiftoss/agentic-server'
+import type { GetCoingeckoAssetsInput, GetCoingeckoAssetsOutput } from '@shapeshiftoss/agentic-server'
 
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
-type GetAssetsContentProps = Omit<
-  ToolCallMessagePartProps<SearchCoingeckoAssetsInput, SearchCoingeckoAssetsOutput>,
+type GetCoingeckoAssetsContentProps = Omit<
+  ToolCallMessagePartProps<GetCoingeckoAssetsInput, GetCoingeckoAssetsOutput>,
   'args'
 > & {
-  args: Partial<SearchCoingeckoAssetsInput>
+  args: Partial<GetCoingeckoAssetsInput>
 }
 
-const GetAssetsContent: React.FC<GetAssetsContentProps> = ({ status, result, isError }) => {
+const GetCoingeckoAssetsContent: React.FC<GetCoingeckoAssetsContentProps> = ({ status, result, isError }) => {
   switch (status.type) {
     case 'running': {
       return <TextShimmer>Checking CoinGecko for asset details</TextShimmer>
@@ -27,7 +27,7 @@ const GetAssetsContent: React.FC<GetAssetsContentProps> = ({ status, result, isE
   }
 }
 
-export const GetAssets = makeAssistantToolUI<SearchCoingeckoAssetsInput, SearchCoingeckoAssetsOutput>({
-  toolName: 'searchCoingeckoAssetsTool',
-  render: GetAssetsContent,
+export const GetCoingeckoAssets = makeAssistantToolUI<GetCoingeckoAssetsInput, GetCoingeckoAssetsOutput>({
+  toolName: 'getCoingeckoAssetsTool',
+  render: GetCoingeckoAssetsContent,
 })
