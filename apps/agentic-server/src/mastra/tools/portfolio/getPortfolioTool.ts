@@ -21,6 +21,8 @@ export const getPortfolioOutput = z.object({
     z.object({
       asset: asset,
       value: z.string().describe('Asset balance value in base units'),
+      cryptoValue: z.string().describe('Human-readable asset amount (e.g., "208")'),
+      userCurrencyValue: z.string().describe('USD value (e.g., "5.89")'),
     })
   ),
 })
@@ -67,19 +69,17 @@ export const getPortfolioTool = createTool({
       const balances = accountData.portfolio.map(portfolioItem => {
         // Find matching enriched asset data
         const enrichedAsset = enrichedAssets.find(asset => asset.assetId === portfolioItem.assetId)
+        const assetData = enrichedAsset || createFallbackAsset(portfolioItem.assetId, network)
 
-        if (enrichedAsset) {
-          return {
-            asset: enrichedAsset,
-            value: portfolioItem.balance,
-          }
-        }
+        // Calculate human-readable values
+        const cryptoValue = (parseFloat(portfolioItem.balance) / Math.pow(10, assetData.precision)).toString()
+        const userCurrencyValue = (parseFloat(cryptoValue) * parseFloat(assetData.price)).toFixed(2)
 
-        // Fallback: create basic asset info from assetId
-        const fallbackAsset = createFallbackAsset(portfolioItem.assetId, network)
         return {
-          asset: fallbackAsset,
+          asset: assetData,
           value: portfolioItem.balance,
+          cryptoValue,
+          userCurrencyValue,
         }
       })
 

@@ -16,7 +16,9 @@ export const portfolioAgentOutput = z.object({
   balances: z.array(
     z.object({
       asset: asset,
-      value: z.string().describe('Asset balance value'),
+      value: z.string().describe('Asset balance value in base units'),
+      cryptoValue: z.string().describe('Human-readable asset amount (e.g., "208")'),
+      userCurrencyValue: z.string().describe('USD value (e.g., "5.89")'),
     })
   ),
 })

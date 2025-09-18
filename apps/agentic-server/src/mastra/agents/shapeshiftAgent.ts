@@ -22,7 +22,7 @@ export const shapeshiftAgent = new Agent({
     Core behavior:
     - Parse user intent and route to appropriate tool
     - Confirm network if not specified by user
-    - ALWAYS convert base units using Math Calculator: value / (10^precision)
+    - ALWAYS use cryptoValue and userCurrencyValue from tool responses
     - Show both token amount and USD value: "208 FOX (~$5.89 USD)"
     - Show token addresses
     - Use markdown formatting

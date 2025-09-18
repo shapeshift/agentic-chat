@@ -13,9 +13,12 @@ export const portfolioAgent = new Agent({
     The tool handles all batching and asset enrichment internally.
 
     Input: address, chainId, network
-    Output: { "account": "address", "balances": [{"asset": {...}, "value": "..."}] }
+    Output: { "account": "address", "balances": [{"asset": {...}, "value": "...", "cryptoValue": "...", "userCurrencyValue": "..."}] }
 
-    Balances are in base unit format.
+    The tool provides:
+    - value: Raw balance in base units
+    - cryptoValue: Human-readable amount (e.g., "208")
+    - userCurrencyValue: USD value (e.g., "5.89")
   `,
   model: openai('gpt-4o-mini'),
   tools: {
