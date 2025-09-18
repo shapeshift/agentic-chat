@@ -23,6 +23,7 @@
     "@shapeshiftoss/types": "workspace:^",
     "@shapeshiftoss/utils": "workspace:^",
     "bignumber.js": "^9.3.0",
+    "expr-eval": "^2.0.2",
     "viem": "^2.31.0",
     "zod": "^4.1.5"
   },

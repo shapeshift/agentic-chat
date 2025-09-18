@@ -3,13 +3,9 @@ import { asset } from '@shapeshiftoss/types'
 import z from 'zod'
 
 import { supportedChainsContext } from '../../agents/context'
-import { UNIFIED_NETWORKS } from '../asset/constants'
 
 const portfolioAgentInput = z.object({
-  prompt: z.string().describe('Prompt for fetching balances for a user account'),
-  user: z.string().describe('User account address or xpub'),
-  chainId: z.string().describe('Chain ID in CAIP-10 format (ex. eip155:42161)'),
-  network: z.enum(UNIFIED_NETWORKS).describe('Network name for asset enrichment (ex. arbitrum)'),
+  prompt: z.string().describe('Natural language request for portfolio data'),
 })
 
 export const portfolioAgentOutput = z.object({
@@ -38,9 +34,7 @@ export const portfolioAgentTool = createTool({
 
     logger.info('portfolioAgentTool', { context })
 
-    const enrichedPrompt = `${context.prompt}. Use these parameters: address="${context.user}", chainId="${context.chainId}", network="${context.network}"`
-
-    const result = await portfolioAgent.streamVNext(enrichedPrompt, {
+    const result = await portfolioAgent.streamVNext(context.prompt, {
       output: portfolioAgentOutput,
       format: 'aisdk',
       context: [
