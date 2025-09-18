@@ -1,11 +1,11 @@
-import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { PortfolioAgentInput, PortfolioAgentOutput } from '@shapeshiftoss/agentic-server'
 
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
-type PortfolioAgentContentProps = Omit<ToolCallContentPartProps<PortfolioAgentInput, PortfolioAgentOutput>, 'args'> & {
+type PortfolioAgentContentProps = Omit<ToolCallMessagePartProps<PortfolioAgentInput, PortfolioAgentOutput>, 'args'> & {
   args: Partial<PortfolioAgentInput>
 }
 

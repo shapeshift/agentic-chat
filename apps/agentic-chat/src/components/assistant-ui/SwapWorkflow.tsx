@@ -1,4 +1,4 @@
-import type { ToolCallContentPartProps, ToolCallMessagePart } from '@assistant-ui/react'
+import type { ToolCallMessagePartProps, ToolCallMessagePart } from '@assistant-ui/react'
 import { makeAssistantToolUI, useAssistantRuntime } from '@assistant-ui/react'
 import { MastraClient } from '@mastra/client-js'
 import type { SwapWorkflowInput, SwapWorkflowResult } from '@shapeshiftoss/agentic-server'
@@ -17,7 +17,7 @@ const mastraClient = new MastraClient({
 
 const Icon = Wallet
 
-type SwapWorkflowContentProps = Omit<ToolCallContentPartProps<SwapWorkflowInput, SwapWorkflowResult>, 'args'> & {
+type SwapWorkflowContentProps = Omit<ToolCallMessagePartProps<SwapWorkflowInput, SwapWorkflowResult>, 'args'> & {
   args: Partial<SwapWorkflowInput>
 }
 

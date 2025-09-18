@@ -1,4 +1,4 @@
-import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { SearchCoingeckoAssetsInput, SearchCoingeckoAssetsOutput } from '@shapeshiftoss/agentic-server'
 
@@ -6,7 +6,7 @@ import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
 type GetAssetsContentProps = Omit<
-  ToolCallContentPartProps<SearchCoingeckoAssetsInput, SearchCoingeckoAssetsOutput>,
+  ToolCallMessagePartProps<SearchCoingeckoAssetsInput, SearchCoingeckoAssetsOutput>,
   'args'
 > & {
   args: Partial<SearchCoingeckoAssetsInput>
