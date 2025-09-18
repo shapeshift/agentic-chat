@@ -136,18 +136,3 @@ export const getNativeAssetReferenceByChainId = (chainId: ChainId): string => {
       throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
   }
 }
-
-export const networkToChainIdMap: Record<string, ChainId> = {
-  ethereum: ethChainId,
-  polygon: polygonChainId,
-  arbitrum: arbitrumChainId,
-  base: baseChainId,
-  avalanche: avalancheChainId,
-  optimism: optimismChainId,
-  bsc: bscChainId,
-  gnosis: gnosisChainId,
-}
-
-export const chainIdToNetwork: Record<ChainId, string> = Object.fromEntries(
-  Object.entries(networkToChainIdMap).map(([network, chainId]) => [chainId, network])
-)
