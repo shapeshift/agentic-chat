@@ -1,4 +1,4 @@
-import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { GetAllowanceInput, GetAllowanceOutput } from '@shapeshiftoss/agentic-server'
 import { AlertCircle, CheckCircle } from 'lucide-react'
@@ -7,7 +7,7 @@ import { TextShimmer } from '@/components/TextShimmer'
 
 import { CollapsableDetails } from './CollapsableDetails'
 
-type GetAllowanceContentProps = Omit<ToolCallContentPartProps<GetAllowanceInput, GetAllowanceOutput>, 'args'> & {
+type GetAllowanceContentProps = Omit<ToolCallMessagePartProps<GetAllowanceInput, GetAllowanceOutput>, 'args'> & {
   args: Partial<GetAllowanceInput>
 }
 

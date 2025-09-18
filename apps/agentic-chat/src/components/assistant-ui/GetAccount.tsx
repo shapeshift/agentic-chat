@@ -1,12 +1,12 @@
-import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { GetAccountInput, GetAccountOutput } from '@shapeshiftoss/agentic-server'
-import { chainIdToNetwork } from '@shapeshiftoss/utils'
+import { chainIdToNetwork } from '@shapeshiftoss/types'
 
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
-type GetAccountContentProps = Omit<ToolCallContentPartProps<GetAccountInput, GetAccountOutput>, 'args'> & {
+type GetAccountContentProps = Omit<ToolCallMessagePartProps<GetAccountInput, GetAccountOutput>, 'args'> & {
   args: Partial<GetAccountInput>
 }
 

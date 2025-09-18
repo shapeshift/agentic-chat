@@ -1,4 +1,4 @@
-import type { ToolCallContentPartComponent } from '@assistant-ui/react'
+import type { ToolCallMessagePartComponent } from '@assistant-ui/react'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 import { useState } from 'react'
 
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 
 const excludedTools = ['updateWorkingMemory']
 
-export const ToolFallback: ToolCallContentPartComponent = ({ toolName, argsText, result }) => {
+export const ToolFallback: ToolCallMessagePartComponent = ({ toolName, argsText, result }) => {
   const [isCollapsed, setIsCollapsed] = useState(true)
 
   if (excludedTools.includes(toolName)) return null

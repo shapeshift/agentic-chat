@@ -1,4 +1,4 @@
-import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import { Send } from 'lucide-react'
 import z from 'zod'
@@ -20,7 +20,7 @@ export type SendTransactionParams = z.infer<typeof sendTransactionParams>
 export type SendTransactionResult = string // Transaction hash
 
 type SendTransactionContentProps = Omit<
-  ToolCallContentPartProps<SendTransactionParams, SendTransactionResult>,
+  ToolCallMessagePartProps<SendTransactionParams, SendTransactionResult>,
   'args'
 > & {
   args: Partial<SendTransactionParams>

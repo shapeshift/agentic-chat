@@ -1,11 +1,11 @@
-import type { ToolCallContentPartProps } from '@assistant-ui/react'
+import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { SwapAgentInput, SwapAgentOutput } from '@shapeshiftoss/agentic-server'
 
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
-type SwapAgentContentProps = Omit<ToolCallContentPartProps<SwapAgentInput, SwapAgentOutput>, 'args'> & {
+type SwapAgentContentProps = Omit<ToolCallMessagePartProps<SwapAgentInput, SwapAgentOutput>, 'args'> & {
   args: Partial<SwapAgentInput>
 }
 
