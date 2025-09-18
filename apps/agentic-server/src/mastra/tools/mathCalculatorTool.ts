@@ -1,12 +1,9 @@
 import { createTool } from '@mastra/core'
-import { create, all } from 'mathjs'
+import { Parser } from 'expr-eval'
 import z from 'zod'
 
-// Create math.js instance configured for BigNumber with high precision
-const math = create(all, {
-  number: 'BigNumber', // Use BigNumber by default
-  precision: 64, // 64 significant digits for high precision
-})
+// Create expr-eval parser instance
+const parser = new Parser()
 
 // Safety constants to prevent DoS attacks
 const MAX_EXPRESSION_LENGTH = 1000
@@ -53,17 +50,18 @@ export const mathCalculatorTool = createTool({
         }
       }
 
-      // Evaluate the expression using math.js with BigNumber precision
-      const rawResult = math.evaluate(expression)
+      // Parse and evaluate the expression using expr-eval
+      const expr = parser.parse(expression)
+      const rawResult = expr.evaluate()
 
       // Convert result to string format
       let result: string
       if (precision !== undefined) {
         // Apply specific precision if requested
-        result = math.format(rawResult, { precision })
+        result = rawResult.toFixed(precision)
       } else {
         // Use default string representation
-        result = String(rawResult)
+        result = rawResult.toString()
       }
 
       logger.info('mathCalculatorTool result:', { expression, result })
