@@ -3,6 +3,7 @@ import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
 import { getPortfolioTool } from '../tools'
+import { supportedChainsContext } from './context'
 
 export const portfolioAgent = new Agent({
   name: 'Portfolio Agent',
@@ -19,7 +20,8 @@ export const portfolioAgent = new Agent({
     - value: Raw balance in base units
     - cryptoValue: Human-readable amount (e.g., "208")
     - userCurrencyValue: USD value (e.g., "5.89")
-  `,
+
+  ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
     getPortfolioTool,

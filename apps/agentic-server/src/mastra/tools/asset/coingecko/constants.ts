@@ -31,3 +31,61 @@ export const UNIFIED_TO_ONCHAIN_NETWORK: Record<UnifiedNetwork, string> = {
   base: 'base',
   gnosis: 'gnosis',
 }
+
+interface NativeAssetInfo {
+  coinGeckoId: string
+  symbol: string
+  name: string
+  icon: string
+}
+
+export const NATIVE_ASSET_MAP: Record<string, NativeAssetInfo> = {
+  'eip155:1/slip44:60': {
+    coinGeckoId: 'ethereum',
+    symbol: 'ETH',
+    name: 'Ethereum',
+    icon: 'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png',
+  },
+  'eip155:42161/slip44:60': {
+    coinGeckoId: 'ethereum',
+    symbol: 'ETH',
+    name: 'Ethereum',
+    icon: 'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png',
+  },
+  'eip155:10/slip44:60': {
+    coinGeckoId: 'ethereum',
+    symbol: 'ETH',
+    name: 'Ethereum',
+    icon: 'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png',
+  },
+  'eip155:8453/slip44:60': {
+    coinGeckoId: 'ethereum',
+    symbol: 'ETH',
+    name: 'Ethereum',
+    icon: 'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png',
+  },
+  'eip155:137/slip44:60': {
+    coinGeckoId: 'matic-network',
+    symbol: 'MATIC',
+    name: 'Polygon',
+    icon: 'https://coin-images.coingecko.com/coins/images/4713/large/polygon.png',
+  },
+  'eip155:56/slip44:60': {
+    coinGeckoId: 'binancecoin',
+    symbol: 'BNB',
+    name: 'BNB',
+    icon: 'https://coin-images.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
+  },
+  'eip155:43114/slip44:60': {
+    coinGeckoId: 'avalanche-2',
+    symbol: 'AVAX',
+    name: 'Avalanche',
+    icon: 'https://coin-images.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png',
+  },
+  'eip155:100/slip44:60': {
+    coinGeckoId: 'xdai',
+    symbol: 'xDAI',
+    name: 'Gnosis',
+    icon: 'https://coin-images.coingecko.com/coins/images/11062/large/Identity-Primary-DarkBG.png',
+  },
+}

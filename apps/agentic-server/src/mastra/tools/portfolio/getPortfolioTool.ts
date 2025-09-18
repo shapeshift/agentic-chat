@@ -4,6 +4,7 @@ import type { Asset } from '@shapeshiftoss/types'
 import { asset } from '@shapeshiftoss/types'
 import z from 'zod'
 
+import { UNIFIED_NETWORKS } from '../asset/constants'
 import { UNIFIED_TO_ONCHAIN_NETWORK } from '../asset/coingecko/constants'
 import { getCoingeckoAssetDetails } from '../asset/coingecko/detailsTool'
 
@@ -12,7 +13,7 @@ import { getAccount } from './getAccountTool'
 export const getPortfolioInput = z.object({
   address: z.string().describe('The address to get portfolio for'),
   chainId: z.string().describe('The chainId in caip-10 format (ex. eip155:42161)'),
-  network: z.string().describe('The network name for asset details (ex. arbitrum)'),
+  network: z.enum(UNIFIED_NETWORKS).describe('The network name for asset details (ex. arbitrum)'),
 })
 
 export const getPortfolioOutput = z.object({
