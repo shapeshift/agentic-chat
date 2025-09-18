@@ -1,40 +1,38 @@
 import { createTool } from '@mastra/core'
-import { fromAssetId } from '@shapeshiftoss/caip'
-import { chainIdToNetwork } from '@shapeshiftoss/utils'
+import { ASSET_NAMESPACE, fromAssetId, toAssetId } from '@shapeshiftoss/caip'
+import type { Asset, Network } from '@shapeshiftoss/types'
+import { asset, chainIdToNetwork, NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
+import { getNativeAssetReferenceByChainId } from '@shapeshiftoss/utils'
 import axios from 'axios'
+import { zeroAddress } from 'viem'
 import z from 'zod'
 
 const PORTALS_BASE_URL = process.env.PORTALS_BASE_URL
 const PORTALS_API_KEY = process.env.PORTALS_API_KEY
 
-export const tokensResponse = z.object({
-  tokens: z.array(
-    z.object({
-      name: z.string(),
-      decimals: z.number(),
-      symbol: z.string(),
-      price: z.number(),
-      address: z.string(),
-      platform: z.string(),
-      network: z.string(),
-      image: z.string(),
-    })
-  ),
-  totalItems: z.number(),
-})
-
-type TokensResponse = z.infer<typeof tokensResponse>
+type TokensResponse = {
+  tokens: {
+    name: string
+    decimals: number
+    symbol: string
+    price: number
+    address: string
+    platform: string
+    network: string
+    image: string
+  }[]
+  totalItems: number
+}
 
 export const getPortalsAssetsInput = z.object({
   searchTerm: z.string().optional().describe('The search term to find tokens by name or symbol'),
   assetIds: z.array(z.string()).optional().describe('A list of caip19 assetIds'),
-  network: z
-    .enum(['ethereum', 'optimism', 'arbitrum', 'polygon', 'avalanche', 'bsc', 'base', 'gnosis'])
-    .optional()
-    .describe('Optional network to filter tokens by'),
+  network: z.enum(NETWORKS).optional().describe('Optional network to filter tokens by'),
 })
 
-export const getPortalsAssetsOutput = tokensResponse
+export const getPortalsAssetsOutput = z.object({
+  assets: z.array(asset),
+})
 
 export type GetPortalsAssetsInput = z.infer<typeof getPortalsAssetsInput>
 export type GetPortalsAssetsOutput = z.infer<typeof getPortalsAssetsOutput>
@@ -58,12 +56,7 @@ export const getPortalsAssets = async ({
   assetIds,
   network,
 }: GetPortalsAssetsInput): Promise<GetPortalsAssetsOutput> => {
-  if (!searchTerm && !assetIds) {
-    return {
-      tokens: [],
-      totalItems: 0,
-    }
-  }
+  if (!searchTerm && !assetIds) return { assets: [] }
 
   const { data } = await axios.get<TokensResponse>(`${PORTALS_BASE_URL}/v2/tokens`, {
     headers: { Authorization: `Bearer ${PORTALS_API_KEY}` },
@@ -77,7 +70,7 @@ export const getPortalsAssets = async ({
 
           switch (assetNamespace) {
             case 'slip44':
-              acc.push(`${chainIdToNetwork[chainId]}:0x0000000000000000000000000000000000000000`)
+              acc.push(`${chainIdToNetwork[chainId]}:${zeroAddress}`)
               break
             case 'erc20':
             case 'bep20':
@@ -96,5 +89,34 @@ export const getPortalsAssets = async ({
     },
   })
 
-  return data
+  const assets = data.tokens.reduce<Asset[]>((prev, token) => {
+    const chainId = networkToChainIdMap[token.network as Network]
+
+    if (!chainId) return prev
+
+    const assetId = (() => {
+      try {
+        const assetNamespace = token.platform === 'native' ? ASSET_NAMESPACE.slip44 : ASSET_NAMESPACE.erc20
+        const assetReference = token.platform === 'native' ? getNativeAssetReferenceByChainId(chainId) : token.address
+        return toAssetId({ chainId, assetNamespace, assetReference })
+      } catch {}
+    })()
+
+    if (!assetId) return prev
+
+    prev.push({
+      assetId,
+      chainId,
+      name: token.name,
+      network: token.network,
+      precision: token.decimals,
+      price: String(token.price),
+      symbol: token.symbol,
+      icon: token.image,
+    })
+
+    return prev
+  }, [])
+
+  return { assets }
 }
