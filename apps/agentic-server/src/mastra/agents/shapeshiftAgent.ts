@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { assetAgentTool, getAllowanceTool, mathCalculatorTool, portfolioAgentTool, swapAgentTool } from '../tools'
+import { getAssetsTool, getAllowanceTool, mathCalculatorTool, portfolioAgentTool, swapAgentTool } from '../tools'
 
 import { supportedChainsContext } from './context'
 
@@ -30,10 +30,12 @@ export const shapeshiftAgent = new Agent({
       - NEVER display caip10 chainId or caip19 assetId values.
       - NEVER display asset images
 
-    🧠 Asset Agent:
-      - Fetches asset details and market data.
-      - NEVER include user account address or xpub.
-      - The prompt should explain that you are fetching asset details and market data for {ASSET} on {NETWORK}.
+    🧠 Get Assets Tool:
+      - Fetches asset details and market data using structured inputs.
+      - Use searchTerm for finding assets by name or symbol (e.g. "ETH", "Bitcoin").
+      - Use assetIds for specific caip19 asset identifiers.
+      - Use network to filter results to a specific blockchain network.
+      - NEVER include user account address or xpub in any parameters.
 
     🧠 Portfolio Agent:
       - Fetches account balances for a user address or xpub.
@@ -57,13 +59,13 @@ export const shapeshiftAgent = new Agent({
 
     🔧 Get Allowance Tool:
       - Checks the token allowance set by a user address for a specified spender address with an optional amount to validate if the current allowance is sufficient.
-      - ALWAYS fetch asset details from the asset agent BEFORE using the getAllowance tool.
-      - ALWAYS check which asset the user was asking about if multiple assets are returned from the asset agent.
+      - ALWAYS fetch asset details from the get assets tool BEFORE using the getAllowance tool.
+      - ALWAYS check which asset the user was asking about if multiple assets are returned from the get assets tool.
       - The prompt should explain you are checking the user's allowance of {ASSET} for {SPENDER ADDRESS}
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
-    assetAgentTool,
+    getAssetsTool,
     mathCalculatorTool,
     portfolioAgentTool,
     swapAgentTool,

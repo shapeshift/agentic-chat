@@ -1,19 +1,19 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { AssetAgentInput, AssetAgentOutput } from '@shapeshiftoss/agentic-server'
+import type { GetAssetsInput, GetAssetsOutput } from '@shapeshiftoss/agentic-server'
 
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
-type AssetAgentContentProps = Omit<ToolCallMessagePartProps<AssetAgentInput, AssetAgentOutput>, 'args'> & {
-  args: Partial<AssetAgentInput>
+type AssetAgentContentProps = Omit<ToolCallMessagePartProps<GetAssetsInput, GetAssetsOutput>, 'args'> & {
+  args: Partial<GetAssetsInput>
 }
 
 const AssetAgentContent: React.FC<AssetAgentContentProps> = ({ args, status, result, isError }) => {
   switch (status.type) {
     case 'running': {
-      if (!args.prompt) return null
-      return <TextShimmer>{args.prompt}</TextShimmer>
+      const displayText = args.searchTerm || args.assetIds?.join(', ') || 'Fetching assets...'
+      return <TextShimmer>{displayText}</TextShimmer>
     }
     case 'complete': {
       if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
@@ -25,7 +25,7 @@ const AssetAgentContent: React.FC<AssetAgentContentProps> = ({ args, status, res
   }
 }
 
-export const AssetAgent = makeAssistantToolUI<AssetAgentInput, AssetAgentOutput>({
-  toolName: 'assetAgentTool',
+export const AssetAgent = makeAssistantToolUI<GetAssetsInput, GetAssetsOutput>({
+  toolName: 'getAssets',
   render: AssetAgentContent,
 })
