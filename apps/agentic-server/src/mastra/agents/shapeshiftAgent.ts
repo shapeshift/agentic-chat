@@ -2,7 +2,8 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, getAllowanceTool, mathCalculatorTool, portfolioAgentTool, swapAgentTool } from '../tools'
+import { getAssetsTool, mathCalculatorTool, swapAgentTool } from '../tools'
+import { portfolioWorkflow } from '../workflows'
 
 import { supportedChainsContext } from './context'
 
@@ -30,25 +31,12 @@ export const shapeshiftAgent = new Agent({
       - NEVER display caip10 chainId or caip19 assetId values.
       - NEVER display asset images
 
-    🧠 Get Assets Tool:
-      - Fetches asset details and market data using structured inputs.
-      - Use searchTerm for finding assets by name or symbol (e.g. "ETH", "Bitcoin").
-      - Use assetIds for specific caip19 asset identifiers.
-      - Use network to filter results to a specific blockchain network.
-      - NEVER include user account address or xpub in any parameters.
-
-    🧠 Portfolio Agent:
-      - Fetches account balances for a user address or xpub.
-      - ALWAYS include the address or xpub from the user wallet context.
-      - ONLY fetch details for the specified network if provided.
-      - Balances are always returned in base unit format
-      - The prompt should explain that you are fetching account details for the user {ADDRESS or XPUB} on {NETWORK}.
-
-    🧠 Swap Agent:
-      - Fetches available rates and walks the user through performing a swap.
-      - ALWAYS include the address or xpub from the user context.
-      - If the user is asking to swap, the prompt should explain you are performing a swap of {AMOUNT} {INPUT ASSET} on {NETWORK} to {OUTPUT ASSET} on {NETWORK} for the user address or xpub.
-      - If the user is confirming a swap action, the prompt should explain your are confirming a swap of {AMOUNT} {INPUT ASSET} on {NETWORK} to {OUTPUT ASSET} on {NETWORK} for the user address or xpub.
+    🔧 Get Assets Tool:
+      - Fetches asset details and market data.
+      - ALWAYS use this tool whenever a user is asking about an asset name or symbol (e.g. "ETH", "Bitcoin").
+      - ALWAYS use searchTerm for finding assets by name or symbol (e.g. "ETH", "Bitcoin").
+      - ALWAYS use assetIds for finding assets by caip19 (e.g. "eip155:1/slip44:60").
+      - ALWAYS use the user specified network if provided.
 
     🔧 Math Calculator Tool:
       - ALWAYS use this tool to convert raw balance values to human-readable format.
@@ -62,14 +50,28 @@ export const shapeshiftAgent = new Agent({
       - ALWAYS fetch asset details from the get assets tool BEFORE using the getAllowance tool.
       - ALWAYS check which asset the user was asking about if multiple assets are returned from the get assets tool.
       - The prompt should explain you are checking the user's allowance of {ASSET} for {SPENDER ADDRESS}
+
+    ⚙️ Portfolio Workflow:
+      - Fetches account details and balances for a user address or xpub.
+      - ALWAYS include the address or xpub from the user wallet context.
+      - ALWAYS require the user to specify the network.
+      - ONLY fetch details for the specified network.
+      - Balances are always returned in base unit format.
+
+    🧠 Swap Agent:
+      - Fetches available rates and walks the user through performing a swap.
+      - ALWAYS include the address or xpub from the user context.
+      - If the user is asking to swap, the prompt should explain you are performing a swap of {AMOUNT} {INPUT ASSET} on {NETWORK} to {OUTPUT ASSET} on {NETWORK} for the user address or xpub.
+      - If the user is confirming a swap action, the prompt should explain your are confirming a swap of {AMOUNT} {INPUT ASSET} on {NETWORK} to {OUTPUT ASSET} on {NETWORK} for the user address or xpub.
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
     getAssetsTool,
     mathCalculatorTool,
-    portfolioAgentTool,
     swapAgentTool,
-    getAllowanceTool,
+  },
+  workflows: {
+    portfolioWorkflow,
   },
   memory: new Memory({
     options: {

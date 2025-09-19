@@ -3,7 +3,7 @@ import { GetAllowance } from '@/components/assistant-ui/GetAllowance'
 import { GetAssets } from '@/components/assistant-ui/GetAssets'
 import { GetCoingeckoAssets } from '@/components/assistant-ui/GetCoingeckoAssets'
 import { GetPortalsAssets } from '@/components/assistant-ui/GetPortalsAssets'
-import { PortfolioAgent } from '@/components/assistant-ui/PortfolioAgent'
+import { PortfolioWorkflow } from '@/components/assistant-ui/PortfolioWorkflow'
 import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
 import { SwapAgent } from '@/components/assistant-ui/SwapAgent'
 import { SwapWorkflow } from '@/components/assistant-ui/SwapWorkflow'
@@ -37,7 +37,7 @@ export const Dashboard = () => {
           <GetAllowance />
           <GetCoingeckoAssets />
           <GetPortalsAssets />
-          <PortfolioAgent />
+          <PortfolioWorkflow />
           <SendTransactionUI />
           <SwapAgent />
           <SwapWorkflow />

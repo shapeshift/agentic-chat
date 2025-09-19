@@ -2,7 +2,8 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, portfolioAgentTool, swapWorkflowTool } from '../tools'
+import { getAssetsTool, swapWorkflowTool } from '../tools'
+import { portfolioWorkflow } from '../workflows'
 
 export const swapAgent = new Agent({
   name: 'Swap Agent',
@@ -18,24 +19,27 @@ export const swapAgent = new Agent({
     🚫 Restrictions:
       - NEVER fetch the same asset multiple times.
 
-    🧠 Get Assets Tool:
+    🔧 Get Assets Tool:
       - Fetches asset details and market data using structured inputs.
       - Use searchTerm parameter for finding assets by name or symbol for the swap.
       - Use network parameter to filter to the specified blockchain network.
       - NEVER include user account address or xpub in any parameters.
       - ONLY fetch asset details for the swap assets specified by the user.
 
-    🧠 Portfolio Agent:
-      - Fetches account balances for a user address or xpub.
+    ⚙️ Portfolio Workflow:
+      - Fetches account details and balances for a user address or xpub.
       - ALWAYS include the address or xpub from the user wallet context.
-      - ALWAYS include the network specified by the swap action.
-      - The prompt should explain that you are fetching account details for the user {ADDRESS or XPUB} on {NETWORK}.
+      - ALWAYS require the user to specify the network.
+      - ONLY fetch details for the specified network.
+      - Balances are always returned in base unit format.
   `,
   model: openai('gpt-4o-mini'),
   tools: {
     getAssetsTool,
-    portfolioAgentTool,
     swapWorkflowTool,
+  },
+  workflows: {
+    portfolioWorkflow,
   },
   memory: new Memory({
     options: {

@@ -17,7 +17,7 @@ export const getBebopRateStep = createStep({
     const { sellAccount, buyAsset, sellAsset, sellAmountCryptoPrecision } = inputData
 
     try {
-      const rate = await getBebopRate({ address: sellAccount.address, buyAsset, sellAsset, sellAmountCryptoPrecision })
+      const rate = await getBebopRate({ address: sellAccount.account, buyAsset, sellAsset, sellAmountCryptoPrecision })
       return rate
     } catch (err) {
       console.error(`failed to getBebopRate:`, err)

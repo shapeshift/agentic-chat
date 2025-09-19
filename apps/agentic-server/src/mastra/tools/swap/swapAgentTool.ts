@@ -3,16 +3,16 @@ import { asset } from '@shapeshiftoss/types'
 import z from 'zod'
 
 import { supportedChainsContext } from '../../agents/context'
-import { portfolioAgentOutput } from '../portfolio'
+import { portfolioWorkflow } from '../../workflows'
 
 const swapAgentInput = z.object({
   prompt: z.string().describe('Prompt for swap action.'),
 })
 
 const swapAgentOutput = z.object({
-  sellAccount: portfolioAgentOutput,
+  sellAccount: portfolioWorkflow.outputSchema,
   sellAsset: asset,
-  buyAccount: portfolioAgentOutput,
+  buyAccount: portfolioWorkflow.outputSchema,
   buyAsset: asset,
 })
 

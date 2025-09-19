@@ -1,5 +1,5 @@
 export * from './asset'
 export * from './getAllowanceTool'
+export * from './getAccountTool'
 export * from './mathCalculatorTool'
-export * from './portfolio'
 export * from './swap'

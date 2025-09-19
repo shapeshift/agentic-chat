@@ -3,8 +3,8 @@ import { Mastra } from '@mastra/core'
 import { LibSQLStore } from '@mastra/libsql'
 import { PinoLogger } from '@mastra/loggers'
 
-import { portfolioAgent, shapeshiftAgent, swapAgent } from './agents'
-import { swapWorkflow } from './workflows/swap/swapWorkflow'
+import { shapeshiftAgent, swapAgent } from './agents'
+import { portfolioWorkflow, swapWorkflow } from './workflows'
 
 export * from './agents'
 export * from './tools'
@@ -37,11 +37,10 @@ export const mastra = new Mastra({
     ],
   },
   agents: {
-    portfolioAgent,
     shapeshiftAgent,
     swapAgent,
   },
-  workflows: { swapWorkflow },
+  workflows: { portfolioWorkflow, swapWorkflow },
   storage: new LibSQLStore({
     url: 'file:./mastra.db',
   }),

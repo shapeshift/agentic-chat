@@ -10,17 +10,23 @@ type GetAssetsContentProps = Omit<ToolCallMessagePartProps<GetAssetsInput, GetAs
 }
 
 const GetAssetsContent: React.FC<GetAssetsContentProps> = ({ args, status, result, isError }) => {
+  const assetDetailsText = (() => {
+    const parts = ['asset details']
+    if (args.searchTerm) parts.push(`for ${args.searchTerm}`)
+    if (args.network) parts.push(`on ${args.network}`)
+    return parts.join(' ')
+  })()
+
   switch (status.type) {
     case 'running': {
-      const displayText = args.searchTerm || args.assetIds?.join(', ') || 'Fetching assets...'
-      return <TextShimmer>{displayText}</TextShimmer>
+      return <TextShimmer>{`Fetching ${assetDetailsText}`}</TextShimmer>
     }
     case 'complete': {
       if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
-        return <TextComplete>{'Failed to fetch asset details ❌'}</TextComplete>
+        return <TextComplete>{`Failed to fetch ${assetDetailsText} ❌`}</TextComplete>
       }
 
-      return <TextComplete>{'Fetched asset details ✅'}</TextComplete>
+      return <TextComplete>{`Fetched ${assetDetailsText} ✅`}</TextComplete>
     }
   }
 }
