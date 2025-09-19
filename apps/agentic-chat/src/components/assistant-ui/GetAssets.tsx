@@ -5,11 +5,11 @@ import type { GetAssetsInput, GetAssetsOutput } from '@shapeshiftoss/agentic-ser
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
-type AssetAgentContentProps = Omit<ToolCallMessagePartProps<GetAssetsInput, GetAssetsOutput>, 'args'> & {
+type GetAssetsContentProps = Omit<ToolCallMessagePartProps<GetAssetsInput, GetAssetsOutput>, 'args'> & {
   args: Partial<GetAssetsInput>
 }
 
-const AssetAgentContent: React.FC<AssetAgentContentProps> = ({ args, status, result, isError }) => {
+const GetAssetsContent: React.FC<GetAssetsContentProps> = ({ args, status, result, isError }) => {
   switch (status.type) {
     case 'running': {
       const displayText = args.searchTerm || args.assetIds?.join(', ') || 'Fetching assets...'
@@ -25,7 +25,7 @@ const AssetAgentContent: React.FC<AssetAgentContentProps> = ({ args, status, res
   }
 }
 
-export const AssetAgent = makeAssistantToolUI<GetAssetsInput, GetAssetsOutput>({
-  toolName: 'getAssets',
-  render: AssetAgentContent,
+export const GetAssets = makeAssistantToolUI<GetAssetsInput, GetAssetsOutput>({
+  toolName: 'getAssetsTool',
+  render: GetAssetsContent,
 })
