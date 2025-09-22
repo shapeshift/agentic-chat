@@ -17,7 +17,7 @@ export const getRelayRateStep = createStep({
     const { sellAccount, buyAsset, sellAsset, sellAmountCryptoPrecision } = inputData
 
     try {
-      const rate = await getRelayRate({ address: sellAccount.address, buyAsset, sellAsset, sellAmountCryptoPrecision })
+      const rate = await getRelayRate({ address: sellAccount.account, buyAsset, sellAsset, sellAmountCryptoPrecision })
       return rate
     } catch (err) {
       console.error(`failed to getRelayRate:`, err)

@@ -42,7 +42,7 @@ export const approveStep = createStep({
         await suspend({
           chainId: sellAsset.chainId,
           data,
-          from: sellAccount.address,
+          from: sellAccount.account,
           to: fromAssetId(sellAsset.assetId).assetReference,
           value: '0',
           runId,

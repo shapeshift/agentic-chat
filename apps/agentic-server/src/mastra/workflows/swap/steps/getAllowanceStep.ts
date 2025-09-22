@@ -21,7 +21,7 @@ export const getAllowanceStep = createStep({
     return getAllowance({
       amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
       asset: sellAsset,
-      from: sellAccount.address,
+      from: sellAccount.account,
       spender: approvalTarget,
     })
   },

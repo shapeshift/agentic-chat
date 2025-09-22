@@ -26,9 +26,9 @@ export const getAssetsTool = createTool({
   inputSchema: getAssetsInput,
   outputSchema: getAssetsOutput,
   execute: async ({ context, mastra }) => {
-    const logger = mastra!.getLogger()
+    const logger = mastra?.getLogger()
 
-    logger.info('getAssetsTool', { context })
+    logger?.info('getAssetsTool', { context })
 
     const { searchTerm, assetIds, network } = context
 
@@ -45,10 +45,10 @@ export const getAssetsTool = createTool({
 
       if (coingeckoResult && coingeckoResult.assets.length > 0) {
         assets = coingeckoResult.assets
-        logger.info('getAssetsTool: Found assets from CoinGecko', { count: assets.length })
+        logger?.info('getAssetsTool: Found assets from CoinGecko', { count: assets.length })
       }
     } catch (error) {
-      logger.warn('getAssetsTool: CoinGecko failed', { error })
+      logger?.warn('getAssetsTool: CoinGecko failed', { error })
     }
 
     // If no assets found in CoinGecko, try Portals
@@ -62,10 +62,10 @@ export const getAssetsTool = createTool({
 
         if (portalsResult.assets.length > 0) {
           assets = portalsResult.assets
-          logger.info('getAssetsTool: Found assets from Portals', { count: assets.length })
+          logger?.info('getAssetsTool: Found assets from Portals', { count: assets.length })
         }
       } catch (error) {
-        logger.warn('getAssetsTool: Portals failed', { error })
+        logger?.warn('getAssetsTool: Portals failed', { error })
       }
     }
 
@@ -75,7 +75,7 @@ export const getAssetsTool = createTool({
     }
 
     const response = { assets }
-    logger.info('getAssetsTool: Final response', { response })
+    logger?.info('getAssetsTool: Final response', { response })
 
     return response
   },
