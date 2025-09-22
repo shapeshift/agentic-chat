@@ -1,16 +1,13 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { PortfolioWorkflowInput, PortfolioWorkflowResults } from '@shapeshiftoss/agentic-server'
+import type { PortfolioToolInput, PortfolioToolOutput } from '@shapeshiftoss/agentic-server'
 import { chainIdToNetwork } from '@shapeshiftoss/types'
 
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
-type PortfolioWorkflowContentProps = Omit<
-  ToolCallMessagePartProps<PortfolioWorkflowInput, PortfolioWorkflowResults>,
-  'args'
-> & {
-  args: Partial<PortfolioWorkflowInput>
+type PortfolioWorkflowContentProps = Omit<ToolCallMessagePartProps<PortfolioToolInput, PortfolioToolOutput>, 'args'> & {
+  args: Partial<PortfolioToolInput>
 }
 
 const PortfolioWorkflowContent: React.FC<PortfolioWorkflowContentProps> = ({ status, result, args, isError }) => {
@@ -35,7 +32,7 @@ const PortfolioWorkflowContent: React.FC<PortfolioWorkflowContentProps> = ({ sta
   }
 }
 
-export const PortfolioWorkflow = makeAssistantToolUI<PortfolioWorkflowInput, PortfolioWorkflowResults>({
-  toolName: 'portfolioWorkflow',
+export const PortfolioWorkflow = makeAssistantToolUI<PortfolioToolInput, PortfolioToolOutput>({
+  toolName: 'portfolio',
   render: PortfolioWorkflowContent,
 })
