@@ -1,6 +1,6 @@
-import { AssetAgent } from '@/components/assistant-ui/AssetAgent'
 import { GetAccount } from '@/components/assistant-ui/GetAccount'
 import { GetAllowance } from '@/components/assistant-ui/GetAllowance'
+import { GetAssets } from '@/components/assistant-ui/GetAssets'
 import { GetCoingeckoAssets } from '@/components/assistant-ui/GetCoingeckoAssets'
 import { GetPortalsAssets } from '@/components/assistant-ui/GetPortalsAssets'
 import { PortfolioAgent } from '@/components/assistant-ui/PortfolioAgent'
@@ -32,7 +32,7 @@ export const Dashboard = () => {
           </div>
         </header>
         <div className="overflow-hidden h-full">
-          <AssetAgent />
+          <GetAssets />
           <GetAccount />
           <GetAllowance />
           <GetCoingeckoAssets />

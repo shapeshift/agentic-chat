@@ -1,3 +1,3 @@
-export * from './assetAgentTool'
+export * from './getAssetsTool'
 export * from './coingecko'
 export * from './getPortalsAssetsTool'
