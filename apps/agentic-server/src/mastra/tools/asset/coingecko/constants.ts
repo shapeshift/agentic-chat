@@ -1,13 +1,4 @@
-import {
-  arbitrum,
-  avax,
-  base,
-  bnbsmartchain,
-  ethereum,
-  gnosis,
-  optimism,
-  polygon,
-} from '@shapeshiftoss/agentic-chat/src/stores/constants'
+import { arbitrum, avax, base, bnbsmartchain, ethereum, gnosis, optimism, polygon } from '@shapeshiftoss/types'
 import type { Network } from '@shapeshiftoss/types'
 
 export const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY

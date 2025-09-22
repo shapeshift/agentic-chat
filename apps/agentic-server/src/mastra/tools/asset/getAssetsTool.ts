@@ -70,7 +70,7 @@ export const getAssetsTool = createTool({
     }
 
     // If we have multiple assets, just take the first (most relevant) result
-    if (assets.length > 1) {
+    if (!assetIds && searchTerm && assets.length > 1) {
       assets = [assets[0]]
     }
 
