@@ -43,7 +43,7 @@ export const portfolioWorkflow = createWorkflow({
   description: 'Fetch account balances and enrich with asset data',
   inputSchema: portfolioWorkflowInput,
   outputSchema: portfolioWorkflowOutput,
-  steps: [getAccountStep],
+  steps: [getAccountStep, getAssetsStep, portfolioResponseStep],
 })
   .then(getAccountStep)
   .then(getAssetsStep)

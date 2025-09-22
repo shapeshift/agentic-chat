@@ -2,8 +2,8 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, mathCalculatorTool, swapAgentTool } from '../tools'
-import { portfolioWorkflow } from '../workflows'
+import { getAssetsTool } from '../tools'
+import { portfolioWorkflow, swapWorkflow } from '../workflows'
 
 import { supportedChainsContext } from './context'
 
@@ -45,12 +45,6 @@ export const shapeshiftAgent = new Agent({
       - Use this for ALL balance values returned from portfolio and swap tools.
       - Can also handle any other mathematical calculations needed.
 
-    🔧 Get Allowance Tool:
-      - Checks the token allowance set by a user address for a specified spender address with an optional amount to validate if the current allowance is sufficient.
-      - ALWAYS fetch asset details from the get assets tool BEFORE using the getAllowance tool.
-      - ALWAYS check which asset the user was asking about if multiple assets are returned from the get assets tool.
-      - The prompt should explain you are checking the user's allowance of {ASSET} for {SPENDER ADDRESS}
-
     ⚙️ Portfolio Workflow:
       - Fetches account details and balances for a user address or xpub.
       - ALWAYS include the address or xpub from the user wallet context.
@@ -58,20 +52,19 @@ export const shapeshiftAgent = new Agent({
       - ONLY fetch details for the specified network.
       - Balances are always returned in base unit format.
 
-    🧠 Swap Agent:
+    ⚙️ Swap Workflow:
       - Fetches available rates and walks the user through performing a swap.
-      - ALWAYS include the address or xpub from the user context.
-      - If the user is asking to swap, the prompt should explain you are performing a swap of {AMOUNT} {INPUT ASSET} on {NETWORK} to {OUTPUT ASSET} on {NETWORK} for the user address or xpub.
-      - If the user is confirming a swap action, the prompt should explain your are confirming a swap of {AMOUNT} {INPUT ASSET} on {NETWORK} to {OUTPUT ASSET} on {NETWORK} for the user address or xpub.
+      - ALWAYS fetch asset details for the buy and sell assets.
+      - NEVER fetch portfolio details for the buy and sell accounts.
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
     getAssetsTool,
-    mathCalculatorTool,
-    swapAgentTool,
+    //mathCalculatorTool,
   },
   workflows: {
     portfolioWorkflow,
+    swapWorkflow,
   },
   memory: new Memory({
     options: {

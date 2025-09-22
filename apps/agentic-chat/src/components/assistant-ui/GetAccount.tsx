@@ -11,21 +11,23 @@ type GetAccountContentProps = Omit<ToolCallMessagePartProps<GetAccountInput, Get
 }
 
 const GetAccountContent: React.FC<GetAccountContentProps> = ({ args, status, result, isError }) => {
+  const accountDetailsText = (() => {
+    const parts = ['account details']
+    if (args.account) parts.push(`for ${args.account}`)
+    if (args.chainId) parts.push(`on ${chainIdToNetwork[args.chainId]}`)
+    return parts.join(' ')
+  })()
+
   switch (status.type) {
     case 'running': {
-      const network = args.chainId && chainIdToNetwork[args.chainId]
-      if (!network) return <TextShimmer>{'Checking account details'}</TextShimmer>
-      return <TextShimmer>{`Checking account details on ${network}`}</TextShimmer>
+      return <TextShimmer>{`Checking ${accountDetailsText}`}</TextShimmer>
     }
     case 'complete': {
       if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
-        const network = chainIdToNetwork[result?.chainId ?? args.chainId ?? '']
-        if (!network) return <TextComplete>{'No account details discovered ❌'}</TextComplete>
-        return <TextComplete>{`No account details discovered on ${network} ❌`}</TextComplete>
+        return <TextComplete>{`Failed to find ${accountDetailsText} ❌`}</TextComplete>
       }
 
-      const network = chainIdToNetwork[result.chainId]
-      return <TextComplete>{`Account details discovered on ${network} ✅`}</TextComplete>
+      return <TextComplete>{`Found ${accountDetailsText} ✅`}</TextComplete>
     }
   }
 }
