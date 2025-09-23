@@ -1,19 +1,21 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { SwapAgentInput, SwapAgentOutput } from '@shapeshiftoss/agentic-server'
+import type { SwapWorkflowInput, SwapWorkflowResult } from '@shapeshiftoss/agentic-server'
 
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
-type SwapAgentContentProps = Omit<ToolCallMessagePartProps<SwapAgentInput, SwapAgentOutput>, 'args'> & {
-  args: Partial<SwapAgentInput>
+type SwapAgentContentProps = Omit<ToolCallMessagePartProps<SwapWorkflowInput, SwapWorkflowResult>, 'args'> & {
+  args: Partial<SwapWorkflowInput>
 }
 
 const SwapAgentContent: React.FC<SwapAgentContentProps> = ({ args, result, status, isError }) => {
   switch (status.type) {
     case 'running': {
-      if (!args.prompt) return null
-      return <TextShimmer>{args.prompt}</TextShimmer>
+      const sellAsset = args.sellAsset?.symbol || 'unknown'
+      const buyAsset = args.buyAsset?.symbol || 'unknown'
+      const amount = args.sellAmountCryptoPrecision || 'unknown'
+      return <TextShimmer>{`Swapping ${amount} ${sellAsset} to ${buyAsset}`}</TextShimmer>
     }
     case 'complete': {
       if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
@@ -25,7 +27,7 @@ const SwapAgentContent: React.FC<SwapAgentContentProps> = ({ args, result, statu
   }
 }
 
-export const SwapAgent = makeAssistantToolUI<SwapAgentInput, SwapAgentOutput>({
-  toolName: 'swapAgentTool',
+export const SwapAgent = makeAssistantToolUI<SwapWorkflowInput, SwapWorkflowResult>({
+  toolName: 'swapWorkflow',
   render: SwapAgentContent,
 })

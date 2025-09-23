@@ -8,6 +8,7 @@ import z from 'zod'
 import { getAllowanceOutput } from '../../../../utils'
 import type { swapWorkflowInput } from '../types'
 
+import { getSellAccountStep } from './getAccountStep'
 import { getBestRateStep } from './getBestRateStep'
 
 export const approveOutput = z.object({
@@ -26,7 +27,8 @@ export const approveStep = createStep({
   execute: async ({ getInitData, getStepResult, resumeData, mastra, suspend, runId }) => {
     const logger = mastra.getLogger()
 
-    const { sellAccount, sellAsset, sellAmountCryptoPrecision } = getInitData<typeof swapWorkflowInput>()
+    const { sellAsset, sellAmountCryptoPrecision } = getInitData<typeof swapWorkflowInput>()
+    const sellAccount = getStepResult(getSellAccountStep)
     const { approvalTarget } = getStepResult(getBestRateStep)
 
     logger.info('approveStep', { sellAccount, sellAsset, sellAmountCryptoPrecision, approvalTarget, resumeData })

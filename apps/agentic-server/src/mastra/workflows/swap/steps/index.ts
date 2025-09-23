@@ -1,4 +1,5 @@
 export * from './approveStep'
+export * from './getAccountStep'
 export * from './getAllowanceStep'
 export * from './getBebopRateStep'
 export * from './getBestRateStep'
