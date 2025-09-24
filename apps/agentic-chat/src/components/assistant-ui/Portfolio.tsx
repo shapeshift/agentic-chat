@@ -6,11 +6,11 @@ import { chainIdToNetwork } from '@shapeshiftoss/types'
 import { TextComplete } from '@/components/TextComplete'
 import { TextShimmer } from '@/components/TextShimmer'
 
-type PortfolioWorkflowContentProps = Omit<ToolCallMessagePartProps<PortfolioToolInput, PortfolioToolOutput>, 'args'> & {
+type PortfolioContentProps = Omit<ToolCallMessagePartProps<PortfolioToolInput, PortfolioToolOutput>, 'args'> & {
   args: Partial<PortfolioToolInput>
 }
 
-const PortfolioWorkflowContent: React.FC<PortfolioWorkflowContentProps> = ({ status, result, args, isError }) => {
+const PortfolioContent: React.FC<PortfolioContentProps> = ({ status, result, args, isError }) => {
   const porfolioDetailsText = (() => {
     const parts = ['portfolio details']
     if (args.account) parts.push(`for ${args.account}`)
@@ -32,7 +32,7 @@ const PortfolioWorkflowContent: React.FC<PortfolioWorkflowContentProps> = ({ sta
   }
 }
 
-export const PortfolioWorkflow = makeAssistantToolUI<PortfolioToolInput, PortfolioToolOutput>({
-  toolName: 'portfolio',
-  render: PortfolioWorkflowContent,
+export const Portfolio = makeAssistantToolUI<PortfolioToolInput, PortfolioToolOutput>({
+  toolName: 'portfolioTool',
+  render: PortfolioContent,
 })

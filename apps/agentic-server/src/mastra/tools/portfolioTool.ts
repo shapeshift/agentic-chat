@@ -1,7 +1,7 @@
 import { createTool } from '@mastra/core'
 import z from 'zod'
-
-import { getAccountTool, getAssetsTool } from './index'
+import { getAccountTool } from './getAccountTool'
+import { getAssetsTool } from './asset'
 
 const portfolioToolInput = z.object({
   account: z.string().describe('Account address or xpub'),
@@ -27,44 +27,43 @@ const portfolioToolOutput = z.object({
 export type PortfolioToolInput = z.infer<typeof portfolioToolInput>
 export type PortfolioToolOutput = z.infer<typeof portfolioToolOutput>
 
-export { portfolioToolOutput }
-
 export const portfolioTool = createTool({
-  id: 'portfolio',
+  id: 'portfolioTool',
   description: 'Fetch account balances and enrich with asset data',
   inputSchema: portfolioToolInput,
   outputSchema: portfolioToolOutput,
   execute: async ({ context, mastra, runtimeContext }) => {
+    const logger = mastra?.getLogger()
+
+    logger?.info('portfolioTool', { context })
+
     // Step 1: Get account balances
-    const accountResult = await getAccountTool.execute({
+    const { account, balances, chainId } = await getAccountTool.execute({
       context,
       mastra,
       runtimeContext,
     })
 
     // Step 2: Get asset details
-    const assetIds = Object.keys(accountResult.balances)
-    const assetsResult = await getAssetsTool.execute({
-      context: { assetIds },
+    const { assets } = await getAssetsTool.execute({
+      context: { assetIds: Object.keys(balances) },
       mastra,
       runtimeContext,
     })
 
     // Step 3: Combine data
-    const balances = assetsResult.assets.map(asset => ({
-      asset: {
-        assetId: asset.assetId,
-        name: asset.name,
-        symbol: asset.symbol,
-        precision: asset.precision,
-      },
-      value: accountResult.balances[asset.assetId] || '0',
-    }))
-
     return {
-      account: accountResult.account,
-      chainId: accountResult.chainId,
-      balances,
+      account,
+      chainId,
+      balances: assets.map(asset => ({
+        asset: {
+          assetId: asset.assetId,
+          name: asset.name,
+          symbol: asset.symbol,
+          precision: asset.precision,
+        },
+        value: balances[asset.assetId] || '0',
+      })),
     }
   },
 })

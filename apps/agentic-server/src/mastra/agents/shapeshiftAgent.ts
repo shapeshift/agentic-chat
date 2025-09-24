@@ -45,13 +45,7 @@ export const shapeshiftAgent = new Agent({
       - Use this for ALL balance values returned from portfolio and swap tools.
       - Can also handle any other mathematical calculations needed.
 
-    🔧 Get Allowance Tool:
-      - Checks the token allowance set by a user address for a specified spender address with an optional amount to validate if the current allowance is sufficient.
-      - ALWAYS fetch asset details from the get assets tool BEFORE using the getAllowance tool.
-      - ALWAYS check which asset the user was asking about if multiple assets are returned from the get assets tool.
-      - The prompt should explain you are checking the user's allowance of {ASSET} for {SPENDER ADDRESS}
-
-    ⚙️ Portfolio Tool:
+    🔧 Portfolio Tool:
       - Fetches account details and balances for a user address or xpub.
       - ALWAYS include the address or xpub from the user wallet context.
       - ALWAYS require the user to specify the network.

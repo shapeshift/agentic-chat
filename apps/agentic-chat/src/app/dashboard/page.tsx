@@ -3,9 +3,8 @@ import { GetAllowance } from '@/components/assistant-ui/GetAllowance'
 import { GetAssets } from '@/components/assistant-ui/GetAssets'
 import { GetCoingeckoAssets } from '@/components/assistant-ui/GetCoingeckoAssets'
 import { GetPortalsAssets } from '@/components/assistant-ui/GetPortalsAssets'
-import { PortfolioWorkflow } from '@/components/assistant-ui/PortfolioWorkflow'
+import { Portfolio } from '@/components/assistant-ui/Portfolio'
 import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
-import { SwapAgent } from '@/components/assistant-ui/SwapAgent'
 import { SwapWorkflow } from '@/components/assistant-ui/SwapWorkflow'
 import SwitchEvmChainUI from '@/components/assistant-ui/SwitchEvmChainUI'
 import { Thread } from '@/components/assistant-ui/thread'
@@ -37,9 +36,8 @@ export const Dashboard = () => {
           <GetAllowance />
           <GetCoingeckoAssets />
           <GetPortalsAssets />
-          <PortfolioWorkflow />
+          <Portfolio />
           <SendTransactionUI />
-          <SwapAgent />
           <SwapWorkflow />
           <SwitchEvmChainUI />
           <Thread />
