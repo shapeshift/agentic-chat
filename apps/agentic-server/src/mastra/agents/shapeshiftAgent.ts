@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, mathCalculatorTool, portfolioTool } from '../tools'
+import { getAssetsTool, mathCalculatorTool, portfolioTool, consoleLogTool } from '../tools'
 import { swapWorkflow } from '../workflows'
 
 import { supportedChainsContext } from './context'
@@ -59,6 +59,7 @@ export const shapeshiftAgent = new Agent({
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
+    consoleLogTool,
     getAssetsTool,
     mathCalculatorTool,
     portfolioTool,
