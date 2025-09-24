@@ -57,14 +57,7 @@ export const mathCalculatorTool = createTool({
       const rawResult = math.evaluate(expression)
 
       // Convert result to string format
-      let result: string
-      if (precision !== undefined) {
-        // Apply specific precision if requested
-        result = math.format(rawResult, { precision })
-      } else {
-        // Use default string representation
-        result = String(rawResult)
-      }
+      const result = math.format(rawResult, { precision, notation: 'fixed' })
 
       logger.info('mathCalculatorTool result:', { expression, result })
 

@@ -62,6 +62,8 @@ export const shapeshiftAgent = new Agent({
       - Fetches available rates and walks the user through performing a swap.
       - ALWAYS fetch asset details for the buy and sell assets.
       - NEVER fetch portfolio details for the buy and sell accounts.
+      - ALWAYS use human-readable amounts (e.g. "15" for 15 ETH) for sellAmountCryptoPrecision.
+      - NEVER convert amounts to base units before calling the swap workflow.
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
