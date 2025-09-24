@@ -1,7 +1,6 @@
 import { useThread } from '@assistant-ui/react'
 import { useEffect, useRef } from 'react'
 
-import type { ActionType } from '@/lib/frontend-actions'
 import { frontendActions, isSupportedAction, isFrontendActionResult } from '@/lib/frontend-actions'
 
 export const useFrontendActions = () => {
@@ -23,8 +22,12 @@ export const useFrontendActions = () => {
             const actionKey = `${part.toolCallId || 'unknown'}-${part.result.timestamp}`
 
             if (!executedActions.current.has(actionKey) && isSupportedAction(part.result.action)) {
-              const handler = frontendActions[part.result.action as ActionType]
-              handler(part.result)
+              const handler = frontendActions[part.result.action]
+              // Execute handler and handle both sync and async cases
+              const result = handler(part.result as any) // eslint-disable-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+              if (result instanceof Promise) {
+                result.catch(error => console.error('Frontend action failed:', error))
+              }
               executedActions.current.add(actionKey)
             }
           }

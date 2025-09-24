@@ -2,7 +2,14 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, mathCalculatorTool, portfolioTool, consoleLogTool } from '../tools'
+import {
+  consoleLogTool,
+  executeSwapTool,
+  getAssetsTool,
+  mathCalculatorTool,
+  prepareSwapTool,
+  portfolioTool,
+} from '../tools'
 import { swapWorkflow } from '../workflows'
 
 import { supportedChainsContext } from './context'
@@ -52,17 +59,32 @@ export const shapeshiftAgent = new Agent({
       - ONLY fetch details for the specified network.
       - Balances are always returned in base unit format.
 
-    ⚙️ Swap Workflow:
-      - Fetches available rates and walks the user through performing a swap.
-      - ALWAYS fetch asset details for the buy and sell assets.
-      - NEVER fetch portfolio details for the buy and sell accounts.
+    🔧 Prepare Swap Tool:
+      - Simple interface: sellAsset: {symbolOrName, network?}, buyAsset: {symbolOrName, network?}
+      - SAME-CHAIN SWAPS (default): "swap FOX to ETH on arbitrum" → both assets get network="arbitrum"
+      - CROSS-CHAIN SWAPS: "swap ETH on ethereum to AVAX on avalanche" → sellAsset gets network="ethereum", buyAsset gets network="avalanche"
+      - If user only mentions one network, assume both assets are on that network
+      - Returns detailed summary with USD values, rates, and transaction details
+      - Present swap details and ask for user confirmation
+
+    🔧 Execute Swap Tool:
+      - Use this tool ONLY after user confirms they want to proceed with the swap.
+      - Triggers frontend wallet interaction to sign and send transactions.
+      - Takes the output from prepareSwap tool as input.
+      - Will handle both approval (if needed) and swap transactions automatically.
+
+    📋 Simple Examples:
+      - "swap 20 FOX to ETH on arbitrum" → sellAsset: {symbolOrName: "FOX", network: "arbitrum"}, buyAsset: {symbolOrName: "ETH", network: "arbitrum"}
+      - "swap ETH on ethereum to AVAX on avalanche" → sellAsset: {symbolOrName: "ETH", network: "ethereum"}, buyAsset: {symbolOrName: "AVAX", network: "avalanche"}
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
     consoleLogTool,
+    executeSwapTool,
     getAssetsTool,
     mathCalculatorTool,
     portfolioTool,
+    prepareSwapTool,
   },
   workflows: {
     swapWorkflow,
