@@ -2,8 +2,8 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { consoleLogTool, getAssetsTool } from '../tools'
-import { portfolioWorkflow, swapWorkflow } from '../workflows'
+import { consoleLogTool, getAssetsTool, mathCalculatorTool } from '../tools'
+import { swapWorkflow } from '../workflows'
 
 import { supportedChainsContext } from './context'
 
@@ -61,10 +61,9 @@ export const shapeshiftAgent = new Agent({
   tools: {
     consoleLogTool,
     getAssetsTool,
-    //mathCalculatorTool,
+    mathCalculatorTool,
   },
   workflows: {
-    portfolioWorkflow,
     swapWorkflow,
   },
   memory: new Memory({

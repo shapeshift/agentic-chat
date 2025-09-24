@@ -8,19 +8,18 @@ import { PortfolioWorkflow } from '@/components/assistant-ui/PortfolioWorkflow'
 import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
 import { SwapAgent } from '@/components/assistant-ui/SwapAgent'
 import { SwapWorkflow } from '@/components/assistant-ui/SwapWorkflow'
-import SwitchEvmChainUI from '@/components/assistant-ui/SwitchEvmChainUI'
 import { Thread } from '@/components/assistant-ui/thread'
 import { ConnectWallet } from '@/components/connect-wallet'
 import { SidebarLeft } from '@/components/sidebar-left'
 import { SidebarRight } from '@/components/sidebar-right'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import useTools from '@/hooks/useTools'
+import { useFrontendActions } from '@/hooks/useFrontendActions'
 
 const isSidebarLeftEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true'
 const isSidebarRightEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_RIGHT === 'true'
 
 export const Dashboard = () => {
-  useTools()
+  useFrontendActions() // Single hook handles all frontend actions
 
   return (
     <SidebarProvider>
@@ -43,7 +42,6 @@ export const Dashboard = () => {
           <SendTransactionUI />
           <SwapAgent />
           <SwapWorkflow />
-          <SwitchEvmChainUI />
           <Thread />
         </div>
       </SidebarInset>
