@@ -30,6 +30,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.488.0",
+    "pako": "^2.1.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "react-router-dom": "7.8.2",
@@ -37,8 +38,7 @@
     "tailwind-merge": "^3.2.0",
     "viem": "*",
     "wagmi": "^2.15.6",
-    "zod": "*",
-    "zustand": "^5.0.6"
+    "zod": "*"
   },
   "devDependencies": {
     "@ai-sdk/ui-utils": "^1.2.11",
@@ -46,6 +46,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "16.1.0",
+    "@types/pako": "^2.0.4",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
     "@vitejs/plugin-react": "^5.0.2",
