@@ -3,7 +3,6 @@ import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
 import {
-  consoleLogTool,
   executeSwapTool,
   getAssetsTool,
   mathCalculatorTool,
@@ -65,13 +64,21 @@ export const shapeshiftAgent = new Agent({
       - CROSS-CHAIN SWAPS: "swap ETH on ethereum to AVAX on avalanche" → sellAsset gets network="ethereum", buyAsset gets network="avalanche"
       - If user only mentions one network, assume both assets are on that network
       - Returns detailed summary with USD values, rates, and transaction details
-      - Present swap details and ask for user confirmation
 
     🔧 Execute Swap Tool:
-      - Use this tool ONLY after user confirms they want to proceed with the swap.
+      - Use this tool IMMEDIATELY after prepareSwap when user expresses intent to swap.
+      - NO user confirmation required - the user already expressed intent by asking for a swap.
       - Triggers frontend wallet interaction to sign and send transactions.
-      - Takes the output from prepareSwap tool as input.
+      - Takes the COMPLETE output from prepareSwap tool as input.
+      - IMPORTANT: Pass through ALL fields from prepareSwap including approvalTx, swapTx, and swapData exactly as received.
       - Will handle both approval (if needed) and swap transactions automatically.
+
+    💬 Communication Flow:
+      - ALWAYS provide a user-facing message BEFORE using any tool
+      - When user asks to swap: FIRST send a message acknowledging the request and mentioning wallet confirmation may be needed, THEN use prepareSwapTool
+      - After prepareSwapTool returns: IMMEDIATELY send a message with swap summary (rate, gas, network details) BEFORE using executeSwapTool
+      - After executeSwapTool: Do NOT send detailed swap summary - the UI shows completion feedback
+      - Never use tools without first communicating what you're doing to the user
 
     📋 Simple Examples:
       - "swap 20 FOX to ETH on arbitrum" → sellAsset: {symbolOrName: "FOX", network: "arbitrum"}, buyAsset: {symbolOrName: "ETH", network: "arbitrum"}
@@ -79,12 +86,12 @@ export const shapeshiftAgent = new Agent({
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
-    consoleLogTool,
     executeSwapTool,
     getAssetsTool,
     mathCalculatorTool,
     portfolioTool,
     prepareSwapTool,
+    //consoleLogTool,
   },
   workflows: {
     swapWorkflow,

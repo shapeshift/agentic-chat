@@ -26,6 +26,9 @@ export default function ({
     id: account.address,
     transport: new AssistantChatTransport({
       api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/chat/${agentId}`,
+      onFinish: (event) => {
+        console.log('🔄 [Frontend] Message received at:', new Date().toISOString(), event)
+      },
       body: {
         runId: agentId,
         resourceId: agentId,

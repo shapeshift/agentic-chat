@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 
-const excludedTools = ['updateWorkingMemory', 'mathCalculatorTool']
+const excludedTools = ['updateWorkingMemory', 'consoleLogTool', 'mathCalculatorTool']
 
 export const ToolFallback: ToolCallMessagePartComponent = ({ toolName, argsText, result }) => {
   const [isCollapsed, setIsCollapsed] = useState(true)

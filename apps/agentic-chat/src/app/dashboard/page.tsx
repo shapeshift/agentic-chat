@@ -1,4 +1,5 @@
-import ConsoleLogUI from '@/components/assistant-ui/ConsoleLogUI'
+import { ExecuteSwapUI } from '@/components/assistant-ui/ExecuteSwapUI'
+import { PrepareSwapUI } from '@/components/assistant-ui/PrepareSwapUI'
 import { GetAccount } from '@/components/assistant-ui/GetAccount'
 import { GetAllowance } from '@/components/assistant-ui/GetAllowance'
 import { GetAssets } from '@/components/assistant-ui/GetAssets'
@@ -31,7 +32,8 @@ export const Dashboard = () => {
           </div>
         </header>
         <div className="overflow-hidden h-full">
-          <ConsoleLogUI />
+          <PrepareSwapUI />
+          <ExecuteSwapUI />
           <GetAssets />
           <GetAccount />
           <GetAllowance />

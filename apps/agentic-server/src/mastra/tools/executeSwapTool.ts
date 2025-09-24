@@ -1,11 +1,27 @@
 import { createTool } from '@mastra/core'
-import { unsignedTx } from '@shapeshiftoss/types'
 import z from 'zod'
 
 export const executeSwapInput = z.object({
   needsApproval: z.boolean(),
-  approvalTx: unsignedTx.optional(),
-  swapTx: unsignedTx,
+  approvalTx: z
+    .object({
+      chainId: z.string(),
+      data: z.string(),
+      from: z.string(),
+      to: z.string(),
+      value: z.string(),
+      dataCompressed: z.string().optional(),
+    })
+    .optional(),
+  swapTx: z.object({
+    chainId: z.string(),
+    data: z.string().optional(),
+    from: z.string(),
+    to: z.string(),
+    value: z.string(),
+    gasLimit: z.string().optional(),
+    dataCompressed: z.string().optional(),
+  }),
   swapData: z.object({
     sellAmountCryptoPrecision: z.string(),
     buyAmountCryptoPrecision: z.string(),
@@ -21,8 +37,25 @@ export const executeSwapOutput = z.object({
   action: z.literal('execute_swap'),
   timestamp: z.number(),
   needsApproval: z.boolean(),
-  approvalTx: unsignedTx.optional(),
-  swapTx: unsignedTx,
+  approvalTx: z
+    .object({
+      chainId: z.string(),
+      data: z.string(),
+      from: z.string(),
+      to: z.string(),
+      value: z.string(),
+      dataCompressed: z.string().optional(),
+    })
+    .optional(),
+  swapTx: z.object({
+    chainId: z.string(),
+    data: z.string().optional(),
+    from: z.string(),
+    to: z.string(),
+    value: z.string(),
+    gasLimit: z.string().optional(),
+    dataCompressed: z.string().optional(),
+  }),
   swapData: z.object({
     sellAmountCryptoPrecision: z.string(),
     buyAmountCryptoPrecision: z.string(),
@@ -44,9 +77,11 @@ export const executeSwapTool = createTool({
   outputSchema: executeSwapOutput,
   // eslint-disable-next-line @typescript-eslint/require-await
   execute: async ({ context }) => {
+    console.log('🚀 [executeSwapTool] STARTING execution at:', new Date().toISOString())
+    
     const { needsApproval, approvalTx, swapTx, swapData } = context
 
-    return {
+    const result = {
       action: 'execute_swap' as const,
       timestamp: Date.now(),
       needsApproval,
@@ -54,5 +89,9 @@ export const executeSwapTool = createTool({
       swapTx,
       swapData,
     }
+    
+    console.log('✅ [executeSwapTool] COMPLETED execution at:', new Date().toISOString())
+    
+    return result
   },
 })

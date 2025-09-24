@@ -1,4 +1,4 @@
-import type { consoleLogOutput, executeSwapOutput } from '@shapeshiftoss/agentic-server'
+import type { consoleLogOutput } from '@shapeshiftoss/agentic-server'
 import type { z } from 'zod'
 
 export interface BaseFrontendAction {
@@ -6,12 +6,11 @@ export interface BaseFrontendAction {
   timestamp: number
 }
 
-export type { consoleLogOutput, executeSwapOutput } from '@shapeshiftoss/agentic-server'
+export type { consoleLogOutput } from '@shapeshiftoss/agentic-server'
 export type ConsoleLogAction = z.infer<typeof consoleLogOutput>
-export type ExecuteSwapAction = z.infer<typeof executeSwapOutput>
 
 // Union of all frontend actions (add new actions here)
-export type FrontendAction = ConsoleLogAction | ExecuteSwapAction
+export type FrontendAction = ConsoleLogAction
 
 export type ActionHandler<T extends BaseFrontendAction = FrontendAction> = (data: T) => void | Promise<void>
 
@@ -27,8 +26,8 @@ export function isFrontendActionResult(result: unknown): result is FrontendActio
   )
 }
 
-export type ActionType = 'console_log' | 'execute_swap' // Add new action types here
+export type ActionType = 'console_log' // Add new action types here
 
 export function isSupportedAction(action: string): action is ActionType {
-  return action === 'console_log' || action === 'execute_swap' // Add new action checks here
+  return action === 'console_log' // Add new action checks here
 }

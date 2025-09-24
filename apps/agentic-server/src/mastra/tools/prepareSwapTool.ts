@@ -1,6 +1,7 @@
+import { gzipSync } from 'zlib'
+
 import { createTool } from '@mastra/core'
 import { fromAssetId } from '@shapeshiftoss/caip'
-import { unsignedTx } from '@shapeshiftoss/types'
 import { toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import z from 'zod'
@@ -10,6 +11,18 @@ import { getBebopRate } from '../../utils/getBebopRate'
 import { getRelayRate } from '../../utils/getRelayRate'
 
 import { getAssetsTool } from './asset/getAssetsTool'
+
+// Utility function to compress large transaction data
+const compressTransactionData = (data: string, threshold = 2000): { data: string; dataCompressed?: string } => {
+  if (data.length > threshold) {
+    const compressed = gzipSync(Buffer.from(data, 'utf8')).toString('base64')
+    return {
+      data: '', // Clear original data to save space
+      dataCompressed: compressed,
+    }
+  }
+  return { data }
+}
 
 const assetInput = z.object({
   symbolOrName: z.string().describe('Token symbol or name (e.g., "ETH", "USDC", "Bitcoin")'),
@@ -52,8 +65,27 @@ export const prepareSwapOutput = z.object({
     isCrossChain: z.boolean(),
   }),
   needsApproval: z.boolean(),
-  approvalTx: unsignedTx.optional(),
-  swapTx: unsignedTx,
+  approvalTx: z
+    .object({
+      chainId: z.string(),
+      data: z.string(),
+      from: z.string(),
+      to: z.string(),
+      value: z.string(),
+      // Compressed version for large data
+      dataCompressed: z.string().optional(),
+    })
+    .optional(),
+  swapTx: z.object({
+    chainId: z.string(),
+    data: z.string().optional(),
+    from: z.string(),
+    to: z.string(),
+    value: z.string(),
+    gasLimit: z.string().optional(),
+    // Compressed version for large data
+    dataCompressed: z.string().optional(),
+  }),
   swapData: z.object({
     sellAmountCryptoPrecision: z.string(),
     buyAmountCryptoPrecision: z.string(),
@@ -75,7 +107,8 @@ export const prepareSwapTool = createTool({
   outputSchema: prepareSwapOutput,
   execute: async ({ context, mastra, runtimeContext }) => {
     const logger = mastra?.getLogger()
-    logger?.info('prepareSwapTool:', { context })
+    logger?.info('🚀 [prepareSwapTool] STARTING execution:', { context })
+    console.log('🚀 [prepareSwapTool] STARTING execution at:', new Date().toISOString())
 
     const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount, userAddress } = context
 
@@ -176,7 +209,7 @@ export const prepareSwapTool = createTool({
     })
 
     // Check allowance and build approval transaction if needed
-    let approvalTx: z.infer<typeof unsignedTx> | undefined
+    let approvalTx
     if (needsApproval) {
       logger?.info('🔧 Building approval transaction:', {
         sellAssetId: sellAsset.assetId,
@@ -191,30 +224,37 @@ export const prepareSwapTool = createTool({
       })
 
       const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
+      const compressedData = compressTransactionData(data)
 
       approvalTx = {
         chainId: sellAsset.chainId,
-        data,
+        ...compressedData,
         from: userAddress,
         to: tokenAddress,
         value: '0',
       }
     }
 
-    // Build swap transaction with data validation
-    const swapTx: z.infer<typeof unsignedTx> = bestRate.unsignedTx
-    
-    // Validate transaction data for JSON serialization
-    if (swapTx.data && typeof swapTx.data === 'string') {
+    // Build swap transaction with compression
+    const originalSwapTx = bestRate.unsignedTx
+    const swapCalldata = originalSwapTx.data || ''
+
+    // Validate and compress transaction data
+    if (swapCalldata && typeof swapCalldata === 'string') {
       // Ensure the data is a valid hex string
-      if (!swapTx.data.startsWith('0x')) {
+      if (!swapCalldata.startsWith('0x')) {
         throw new Error('Invalid transaction data: must start with 0x')
       }
-      // Log the data length for debugging
-      logger?.info('💾 Swap transaction data size:', {
-        dataLength: swapTx.data.length,
-        provider: bestRate.source,
-      })
+    }
+
+    const compressedSwapData = compressTransactionData(swapCalldata)
+    const swapTx = {
+      chainId: originalSwapTx.chainId,
+      ...compressedSwapData,
+      from: originalSwapTx.from,
+      to: originalSwapTx.to,
+      value: originalSwapTx.value || '0',
+      ...(originalSwapTx.gasLimit && { gasLimit: String(originalSwapTx.gasLimit) }),
     }
 
     // Create enhanced summary for user
@@ -255,7 +295,7 @@ export const prepareSwapTool = createTool({
       isCrossChain: sellAsset.network !== buyAsset.network,
     }
 
-    const swapData = {
+    const swapExecutionData = {
       sellAmountCryptoPrecision: sellAmount,
       buyAmountCryptoPrecision: bestRate.buyAmountCryptoPrecision,
       approvalTarget: bestRate.approvalTarget,
@@ -265,12 +305,17 @@ export const prepareSwapTool = createTool({
       buyAccount: userAddress,
     }
 
-    return {
+    const result = {
       summary,
       needsApproval,
       approvalTx,
       swapTx,
-      swapData,
+      swapData: swapExecutionData,
     }
+
+    logger?.info('✅ [prepareSwapTool] COMPLETED execution:', { needsApproval })
+    console.log('✅ [prepareSwapTool] COMPLETED execution at:', new Date().toISOString())
+
+    return result
   },
 })
