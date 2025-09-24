@@ -1,4 +1,5 @@
 export * from './asset'
+export * from './consoleLogTool'
 export * from './getAllowanceTool'
 export * from './getAccountTool'
 export * from './mathCalculatorTool'
