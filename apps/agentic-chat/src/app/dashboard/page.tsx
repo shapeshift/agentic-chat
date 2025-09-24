@@ -1,9 +1,11 @@
+import { ExecuteSwapUI } from '@/components/assistant-ui/ExecuteSwapUI'
 import { GetAccount } from '@/components/assistant-ui/GetAccount'
 import { GetAllowance } from '@/components/assistant-ui/GetAllowance'
 import { GetAssets } from '@/components/assistant-ui/GetAssets'
 import { GetCoingeckoAssets } from '@/components/assistant-ui/GetCoingeckoAssets'
 import { GetPortalsAssets } from '@/components/assistant-ui/GetPortalsAssets'
 import { Portfolio } from '@/components/assistant-ui/Portfolio'
+import { PrepareSwapUI } from '@/components/assistant-ui/PrepareSwapUI'
 import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
 import { SwapWorkflow } from '@/components/assistant-ui/SwapWorkflow'
 import SwitchEvmChainUI from '@/components/assistant-ui/SwitchEvmChainUI'
@@ -31,6 +33,8 @@ export const Dashboard = () => {
           </div>
         </header>
         <div className="overflow-hidden h-full">
+          <PrepareSwapUI />
+          <ExecuteSwapUI />
           <GetAssets />
           <GetAccount />
           <GetAllowance />

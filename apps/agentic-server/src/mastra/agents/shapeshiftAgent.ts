@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, mathCalculatorTool, portfolioTool } from '../tools'
+import { executeSwapTool, getAssetsTool, mathCalculatorTool, prepareSwapTool, portfolioTool } from '../tools'
 import { swapWorkflow } from '../workflows'
 
 import { supportedChainsContext } from './context'
@@ -52,16 +52,39 @@ export const shapeshiftAgent = new Agent({
       - ONLY fetch details for the specified network.
       - Balances are always returned in base unit format.
 
-    ⚙️ Swap Workflow:
-      - Fetches available rates and walks the user through performing a swap.
-      - ALWAYS fetch asset details for the buy and sell assets.
-      - NEVER fetch portfolio details for the buy and sell accounts.
+    🔧 Prepare Swap Tool:
+      - Simple interface: sellAsset: {symbolOrName, network?}, buyAsset: {symbolOrName, network?}
+      - SAME-CHAIN SWAPS (default): "swap FOX to ETH on arbitrum" → both assets get network="arbitrum"
+      - CROSS-CHAIN SWAPS: "swap ETH on ethereum to AVAX on avalanche" → sellAsset gets network="ethereum", buyAsset gets network="avalanche"
+      - If user only mentions one network, assume both assets are on that network
+      - Returns detailed summary with USD values, rates, and transaction details
+
+    🔧 Execute Swap Tool:
+      - Use this tool IMMEDIATELY after prepareSwap when user expresses intent to swap.
+      - NO user confirmation required - the user already expressed intent by asking for a swap.
+      - Triggers frontend wallet interaction to sign and send transactions.
+      - Takes the COMPLETE output from prepareSwap tool as input.
+      - IMPORTANT: Pass through ALL fields from prepareSwap including approvalTx, swapTx, and swapData exactly as received.
+      - Will handle both approval (if needed) and swap transactions automatically.
+
+    💬 Communication Flow:
+      - ALWAYS provide a user-facing message BEFORE using any tool
+      - When user asks to swap: FIRST send a message acknowledging the request and mentioning wallet confirmation may be needed, THEN use prepareSwapTool
+      - After prepareSwapTool returns: IMMEDIATELY send a message with swap summary (rate, gas, network details) BEFORE using executeSwapTool
+      - After executeSwapTool: Do NOT send detailed swap summary - the UI shows completion feedback
+      - Never use tools without first communicating what you're doing to the user
+
+    📋 Simple Examples:
+      - "swap 20 FOX to ETH on arbitrum" → sellAsset: {symbolOrName: "FOX", network: "arbitrum"}, buyAsset: {symbolOrName: "ETH", network: "arbitrum"}
+      - "swap ETH on ethereum to AVAX on avalanche" → sellAsset: {symbolOrName: "ETH", network: "ethereum"}, buyAsset: {symbolOrName: "AVAX", network: "avalanche"}
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
+    executeSwapTool,
     getAssetsTool,
     mathCalculatorTool,
     portfolioTool,
+    prepareSwapTool,
   },
   workflows: {
     swapWorkflow,
