@@ -4,7 +4,7 @@ import type { executeSwapInput, executeSwapOutput } from '@shapeshiftoss/agentic
 import type { z } from 'zod'
 
 import { TextShimmer } from '@/components/TextShimmer'
-import { useSwapExecution } from '@/hooks/useSwapExecution'
+import { useLocalSwapExecution } from '@/hooks/useLocalSwapExecution'
 
 type ExecuteSwapInput = z.infer<typeof executeSwapInput>
 type ExecuteSwapOutput = z.infer<typeof executeSwapOutput>
@@ -13,65 +13,101 @@ type ExecuteSwapContentProps = Omit<ToolCallMessagePartProps<ExecuteSwapInput, E
   args: Partial<ExecuteSwapInput>
 }
 
+const ApprovalStep: React.FC<{
+  phase: 'idle' | 'approving' | 'swapping' | 'success' | 'error'
+  progress: {
+    needsApproval: boolean
+    approvalComplete: boolean
+    approvalSkipped: boolean
+    swapComplete: boolean
+  }
+}> = ({ phase, progress }) => {
+  if (progress.approvalSkipped) {
+    return <div className="loading-success">✅ Token approval skipped</div>
+  }
+
+  if (!progress.needsApproval) {
+    return null
+  }
+
+  switch (phase) {
+    case 'approving':
+      return <TextShimmer>⏳ Approving token spending...</TextShimmer>
+    case 'swapping':
+    case 'success':
+      return <div className="loading-success">✅ Token approved</div>
+    default:
+      return <div>⏳ Approving token spending...</div>
+  }
+}
+
+const SignatureStep: React.FC<{
+  phase: 'idle' | 'approving' | 'swapping' | 'success' | 'error'
+}> = ({ phase }) => {
+  switch (phase) {
+    case 'swapping':
+      return <TextShimmer>⏳ Signing swap transaction...</TextShimmer>
+    case 'success':
+      return <div className="loading-success">✅ Transaction signed</div>
+    case 'idle':
+    case 'approving':
+      return null
+    default:
+      return <div>⏳ Signing swap transaction...</div>
+  }
+}
+
+const CompletionStep: React.FC<{
+  phase: 'idle' | 'approving' | 'swapping' | 'success' | 'error'
+}> = ({ phase }) => {
+  if (phase === 'success') {
+    return <div className="loading-success">🎉 Swap complete!</div>
+  }
+  return null
+}
+
+const SwapError: React.FC<{ error?: string }> = ({ error }) => (
+  <div className="text-muted-foreground">⚠️ Swap execution failed: {error}</div>
+)
+
+const SwapProgress: React.FC<{
+  phase: 'idle' | 'approving' | 'swapping' | 'success' | 'error'
+  progress: {
+    needsApproval: boolean
+    approvalComplete: boolean
+    approvalSkipped: boolean
+    swapComplete: boolean
+  }
+}> = ({ phase, progress }) => {
+  return (
+    <div className="space-y-2 text-muted-foreground">
+      <ApprovalStep phase={phase} progress={progress} />
+      <SignatureStep phase={phase} />
+      <CompletionStep phase={phase} />
+    </div>
+  )
+}
+
 const ExecuteSwapContent: React.FC<ExecuteSwapContentProps> = ({ status, result }) => {
-  // Only pass swap data when tool is complete and successful
   const swapData = status.type === 'complete' && result ? result : null
-  const { state, error } = useSwapExecution(swapData)
+  const { phase, error, progress } = useLocalSwapExecution(swapData)
 
   if (status.type === 'running') {
     return <TextShimmer>Preparing swap transaction...</TextShimmer>
   }
 
-  if (state === 'error') {
-    return <div className="text-muted-foreground">⚠️ Swap execution failed: {error}</div>
+  if (phase === 'error') {
+    return <SwapError error={error} />
   }
 
   if (swapData) {
-    const needsApproval = swapData.needsApproval
-    const approvalComplete =
-      state === 'approval_success' || state === 'signature_pending' || state === 'signature_success'
-    const approvalSkipped = state === 'approval_skipped'
-    const signaturePending = state === 'signature_pending'
-    const signatureComplete = state === 'signature_success'
-
-    return (
-      <div className="space-y-2 text-muted-foreground">
-        {/* Step 1: Approval */}
-        {needsApproval && !approvalSkipped && (
-          <div>
-            {state === 'approval_pending' ? (
-              <TextShimmer>⏳ Approving token spending...</TextShimmer>
-            ) : approvalComplete ? (
-              <div className="loading-success">✅ Token approved</div>
-            ) : (
-              <div>⏳ Approving token spending...</div>
-            )}
-          </div>
-        )}
-
-        {approvalSkipped && <div className="loading-success">✅ Token approval skipped</div>}
-
-        {/* Step 2: Signature */}
-        <div>
-          {signaturePending ? (
-            <TextShimmer>⏳ Signing swap transaction...</TextShimmer>
-          ) : signatureComplete ? (
-            <div className="loading-success">✅ Transaction signed</div>
-          ) : state !== 'idle' && state !== 'approval_pending' ? (
-            <div>⏳ Signing swap transaction...</div>
-          ) : null}
-        </div>
-
-        {/* Step 3: Complete */}
-        {signatureComplete && <div className="loading-success">🎉 Swap complete!</div>}
-      </div>
-    )
+    return <SwapProgress phase={phase} progress={progress} />
   }
 
   return <div className="text-muted-foreground">⚠️ Swap execution failed</div>
 }
 
 export const ExecuteSwapUI = makeAssistantToolUI<ExecuteSwapInput, ExecuteSwapOutput>({
-  toolName: 'executeSwapTool',
+  toolName: 'triggerSwapExecutionTool',
   render: ExecuteSwapContent,
 })

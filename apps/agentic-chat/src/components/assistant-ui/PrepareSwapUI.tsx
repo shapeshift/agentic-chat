@@ -17,9 +17,13 @@ const PrepareSwapContent: React.FC<PrepareSwapContentProps> = ({ status, result 
     return <TextShimmer>Getting swap quote...</TextShimmer>
   }
 
-  if (status.type === 'complete' && result) {
+  if (status.type === 'complete') {
+    if (!result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
+      return <div className="text-muted-foreground">❌ Failed to get swap quote</div>
+    }
+
     return (
-      <div className="text-muted-foreground text-sm">
+      <div className="text-muted-foreground">
         ✅ Quote found • Rate: 1 {result.swapData.sellAsset.symbol} ={' '}
         {(
           parseFloat(result.swapData.buyAmountCryptoPrecision) / parseFloat(result.swapData.sellAmountCryptoPrecision)
@@ -29,7 +33,7 @@ const PrepareSwapContent: React.FC<PrepareSwapContentProps> = ({ status, result 
     )
   }
 
-  return <div className="text-muted-foreground text-sm">⚠️ Failed to get swap quote</div>
+  return <div className="text-muted-foreground">Failed to get swap quote</div>
 }
 
 export const PrepareSwapUI = makeAssistantToolUI<PrepareSwapInput, PrepareSwapOutput>({

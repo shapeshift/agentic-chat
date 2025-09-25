@@ -1,101 +1,216 @@
-import { gzipSync } from 'zlib'
-
 import { createTool } from '@mastra/core'
+import type { MastraUnion } from '@mastra/core/action'
+import type { RuntimeContext } from '@mastra/core/runtime-context'
 import { fromAssetId } from '@shapeshiftoss/caip'
-import { toBaseUnit } from '@shapeshiftoss/utils'
+import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
+import { toBaseUnit, fromBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
 import { getAllowance } from '../../utils'
 import { getBebopRate } from '../../utils/getBebopRate'
 import { getRelayRate } from '../../utils/getRelayRate'
+import { createCompressedTransaction } from '../../utils/transactionCompression'
 
 import { getAssetsTool } from './asset/getAssetsTool'
+import { getAccountTool } from './getAccountTool'
+import { assetInputSchema, swapPreparationSchema } from './schemas/swapSchemas'
+import type { AssetInput } from './schemas/swapSchemas'
 
-// Utility function to compress large transaction data
-const compressTransactionData = (data: string, threshold = 2000): { data: string; dataCompressed?: string } => {
-  if (data.length > threshold) {
-    const compressed = gzipSync(Buffer.from(data, 'utf8')).toString('base64')
-    return {
-      data: '', // Clear original data to save space
-      dataCompressed: compressed,
-    }
-  }
-  return { data }
+interface ResolvedAssets {
+  sellAsset: Asset
+  buyAsset: Asset
 }
 
-const assetInput = z.object({
-  symbolOrName: z.string().describe('Token symbol or name (e.g., "ETH", "USDC", "Bitcoin")'),
-  network: z
-    .enum(['ethereum', 'optimism', 'arbitrum', 'polygon', 'avalanche', 'bsc', 'base', 'gnosis'])
-    .optional()
-    .describe('Network for this asset. If not specified, will search across all networks.'),
-})
+type GetAssetsTool = typeof getAssetsTool
+
+async function resolveSwapAssets(
+  sellAssetInput: AssetInput,
+  buyAssetInput: AssetInput,
+  getAssetsTool: GetAssetsTool,
+  mastra: MastraUnion,
+  runtimeContext: RuntimeContext<unknown>
+): Promise<ResolvedAssets> {
+  const [buyAssetsResult, sellAssetsResult] = await Promise.all([
+    getAssetsTool.execute({
+      context: { searchTerm: buyAssetInput.symbolOrName, network: buyAssetInput.network },
+      mastra,
+      runtimeContext,
+    }),
+    getAssetsTool.execute({
+      context: { searchTerm: sellAssetInput.symbolOrName, network: sellAssetInput.network },
+      mastra,
+      runtimeContext,
+    }),
+  ])
+
+  if (sellAssetsResult.assets.length === 0) {
+    throw new Error(
+      `No asset found for "${sellAssetInput.symbolOrName}"${sellAssetInput.network ? ` on ${sellAssetInput.network}` : ''}`
+    )
+  }
+  if (sellAssetsResult.assets.length > 1) {
+    throw new Error(`Multiple assets found for "${sellAssetInput.symbolOrName}". Please be more specific.`)
+  }
+  if (buyAssetsResult.assets.length === 0) {
+    throw new Error(
+      `No asset found for "${buyAssetInput.symbolOrName}"${buyAssetInput.network ? ` on ${buyAssetInput.network}` : ''}`
+    )
+  }
+  if (buyAssetsResult.assets.length > 1) {
+    throw new Error(`Multiple assets found for "${buyAssetInput.symbolOrName}". Please be more specific.`)
+  }
+
+  const sellAsset = sellAssetsResult.assets[0]
+  const buyAsset = buyAssetsResult.assets[0]
+
+  return { sellAsset, buyAsset }
+}
+
+type SwapRate = GetRateOutput
+
+async function fetchBestSwapRate(
+  userAddress: string,
+  sellAsset: Asset,
+  buyAsset: Asset,
+  sellAmount: string
+): Promise<SwapRate> {
+  const [bebopRate, relayRate] = await Promise.all([
+    getBebopRate({
+      address: userAddress,
+      sellAsset,
+      buyAsset,
+      sellAmountCryptoPrecision: sellAmount,
+    }).catch(() => null),
+    getRelayRate({
+      address: userAddress,
+      sellAsset,
+      buyAsset,
+      sellAmountCryptoPrecision: sellAmount,
+    }).catch(() => null),
+  ])
+
+  const availableRates = [bebopRate, relayRate].filter((rate): rate is SwapRate => rate !== null)
+
+  if (availableRates.length === 0) {
+    throw new Error(
+      'No rates available from any provider. This swap route may not be supported or the amount may be too small.'
+    )
+  }
+
+  // Find the rate with the highest buy amount
+  const bestRate = availableRates.reduce((best, current) =>
+    parseFloat(current.buyAmountCryptoPrecision) > parseFloat(best.buyAmountCryptoPrecision) ? current : best
+  )
+
+  return bestRate
+}
+
+type TransactionData = {
+  chainId: string
+  data: string
+  from: string
+  to: string
+  value: string
+}
+
+function buildApprovalTransaction(
+  needsApproval: boolean,
+  sellAsset: Asset,
+  approvalTarget: string,
+  sellAmount: string,
+  userAddress: string
+): TransactionData | undefined {
+  if (!needsApproval) {
+    return undefined
+  }
+
+  const data = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [getAddress(approvalTarget), BigInt(toBaseUnit(sellAmount, sellAsset.precision))],
+  })
+
+  const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
+
+  return createCompressedTransaction({
+    chainId: sellAsset.chainId,
+    data,
+    from: userAddress,
+    to: tokenAddress,
+    value: '0',
+  })
+}
+
+function buildSwapTransaction(bestRate: SwapRate) {
+  const originalSwapTx = bestRate.unsignedTx
+  const swapCalldata = originalSwapTx.data || ''
+
+  // Validate transaction data
+  if (swapCalldata && typeof swapCalldata === 'string') {
+    // Ensure the data is a valid hex string
+    if (!swapCalldata.startsWith('0x')) {
+      throw new Error('Invalid transaction data: must start with 0x')
+    }
+  }
+
+  return createCompressedTransaction({
+    chainId: originalSwapTx.chainId,
+    data: swapCalldata,
+    from: originalSwapTx.from,
+    to: originalSwapTx.to,
+    value: originalSwapTx.value || '0',
+    ...(originalSwapTx.gasLimit && { gasLimit: String(originalSwapTx.gasLimit) }),
+  })
+}
+
+function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string, bestRate: SwapRate) {
+  const sellValueUSD = (parseFloat(sellAmount) * parseFloat(sellAsset.price || '0')).toFixed(2)
+  const buyEstimatedValueUSD = (
+    parseFloat(bestRate.buyAmountCryptoPrecision) * parseFloat(buyAsset.price || '0')
+  ).toFixed(2)
+  const exchangeRate = (parseFloat(bestRate.buyAmountCryptoPrecision) / parseFloat(sellAmount)).toFixed(8)
+
+  // Calculate price impact (difference in USD values)
+  const priceImpact =
+    sellValueUSD && buyEstimatedValueUSD
+      ? (((parseFloat(buyEstimatedValueUSD) - parseFloat(sellValueUSD)) / parseFloat(sellValueUSD)) * 100).toFixed(2)
+      : '0.00'
+
+  return {
+    sellAsset: {
+      symbol: sellAsset.symbol.toUpperCase(),
+      amount: sellAmount,
+      network: sellAsset.network,
+      chainName: sellAsset.name || 'Unknown Chain',
+      valueUSD: `$${sellValueUSD}`,
+      priceUSD: `$${parseFloat(sellAsset.price || '0').toFixed(4)}`,
+    },
+    buyAsset: {
+      symbol: buyAsset.symbol.toUpperCase(),
+      estimatedAmount: parseFloat(bestRate.buyAmountCryptoPrecision).toFixed(8),
+      network: buyAsset.network,
+      chainName: buyAsset.name || 'Unknown Chain',
+      estimatedValueUSD: `$${buyEstimatedValueUSD}`,
+      priceUSD: `$${parseFloat(buyAsset.price || '0').toFixed(2)}`,
+    },
+    exchange: {
+      provider: bestRate.source || 'Unknown',
+      rate: `1 ${sellAsset.symbol.toUpperCase()} = ${exchangeRate} ${buyAsset.symbol.toUpperCase()}`,
+      priceImpact: `${priceImpact}%`,
+    },
+    isCrossChain: sellAsset.network !== buyAsset.network,
+  }
+}
 
 export const prepareSwapInput = z.object({
-  sellAsset: assetInput.describe('Asset to sell'),
-  buyAsset: assetInput.describe('Asset to buy'),
+  sellAsset: assetInputSchema.describe('Asset to sell'),
+  buyAsset: assetInputSchema.describe('Asset to buy'),
   sellAmount: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
   userAddress: z.string().describe('User wallet address for the swap'),
 })
 
-export const prepareSwapOutput = z.object({
-  summary: z.object({
-    sellAsset: z.object({
-      symbol: z.string(),
-      amount: z.string(),
-      network: z.string(),
-      chainName: z.string(),
-      valueUSD: z.string(),
-      priceUSD: z.string(),
-    }),
-    buyAsset: z.object({
-      symbol: z.string(),
-      estimatedAmount: z.string(),
-      network: z.string(),
-      chainName: z.string(),
-      estimatedValueUSD: z.string(),
-      priceUSD: z.string(),
-    }),
-    exchange: z.object({
-      provider: z.string(),
-      rate: z.string(),
-      priceImpact: z.string().optional(),
-    }),
-    isCrossChain: z.boolean(),
-  }),
-  needsApproval: z.boolean(),
-  approvalTx: z
-    .object({
-      chainId: z.string(),
-      data: z.string(),
-      from: z.string(),
-      to: z.string(),
-      value: z.string(),
-      // Compressed version for large data
-      dataCompressed: z.string().optional(),
-    })
-    .optional(),
-  swapTx: z.object({
-    chainId: z.string(),
-    data: z.string().optional(),
-    from: z.string(),
-    to: z.string(),
-    value: z.string(),
-    gasLimit: z.string().optional(),
-    // Compressed version for large data
-    dataCompressed: z.string().optional(),
-  }),
-  swapData: z.object({
-    sellAmountCryptoPrecision: z.string(),
-    buyAmountCryptoPrecision: z.string(),
-    approvalTarget: z.string(),
-    sellAsset: z.any(),
-    buyAsset: z.any(),
-    sellAccount: z.string(),
-    buyAccount: z.string(),
-  }),
-})
+export const prepareSwapOutput = swapPreparationSchema
 
 export type PrepareSwapInput = z.infer<typeof prepareSwapInput>
 export type PrepareSwapOutput = z.infer<typeof prepareSwapOutput>
@@ -107,46 +222,21 @@ export const prepareSwapTool = createTool({
   outputSchema: prepareSwapOutput,
   execute: async ({ context, mastra, runtimeContext }) => {
     const logger = mastra?.getLogger()
+    if (!mastra) {
+      throw Error('no mastra instance')
+    }
     logger?.info('🚀 [prepareSwapTool] STARTING execution:', { context })
-    console.log('🚀 [prepareSwapTool] STARTING execution at:', new Date().toISOString())
 
     const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount, userAddress } = context
 
-    // Search for assets
-    const [buyAssetsResult, sellAssetsResult] = await Promise.all([
-      getAssetsTool.execute({
-        context: { searchTerm: buyAssetInput.symbolOrName, network: buyAssetInput.network },
-        mastra,
-        runtimeContext,
-      }),
-      getAssetsTool.execute({
-        context: { searchTerm: sellAssetInput.symbolOrName, network: sellAssetInput.network },
-        mastra,
-        runtimeContext,
-      }),
-    ])
+    const { sellAsset, buyAsset } = await resolveSwapAssets(
+      sellAssetInput,
+      buyAssetInput,
+      getAssetsTool,
+      mastra,
+      runtimeContext
+    )
 
-    if (sellAssetsResult.assets.length === 0) {
-      throw new Error(
-        `No asset found for "${sellAssetInput.symbolOrName}"${sellAssetInput.network ? ` on ${sellAssetInput.network}` : ''}`
-      )
-    }
-    if (sellAssetsResult.assets.length > 1) {
-      throw new Error(`Multiple assets found for "${sellAssetInput.symbolOrName}". Please be more specific.`)
-    }
-    if (buyAssetsResult.assets.length === 0) {
-      throw new Error(
-        `No asset found for "${buyAssetInput.symbolOrName}"${buyAssetInput.network ? ` on ${buyAssetInput.network}` : ''}`
-      )
-    }
-    if (buyAssetsResult.assets.length > 1) {
-      throw new Error(`Multiple assets found for "${buyAssetInput.symbolOrName}". Please be more specific.`)
-    }
-
-    const sellAsset = sellAssetsResult.assets[0]
-    const buyAsset = buyAssetsResult.assets[0]
-
-    // Debug logging for resolved assets
     logger?.info('📋 Resolved assets:', {
       sellAsset: {
         assetId: sellAsset.assetId,
@@ -162,33 +252,8 @@ export const prepareSwapTool = createTool({
       },
     })
 
-    // Fetch rates from both providers
-    const [bebopRate, relayRate] = await Promise.all([
-      getBebopRate({
-        address: userAddress,
-        sellAsset,
-        buyAsset,
-        sellAmountCryptoPrecision: sellAmount,
-      }).catch(() => null),
-      getRelayRate({
-        address: userAddress,
-        sellAsset,
-        buyAsset,
-        sellAmountCryptoPrecision: sellAmount,
-      }).catch(() => null),
-    ])
+    const bestRate = await fetchBestSwapRate(userAddress, sellAsset, buyAsset, sellAmount)
 
-    // Choose best rate
-    const bestRate = [bebopRate, relayRate].filter(Boolean).reduce((best, current) => {
-      if (!best) return current
-      return parseFloat(current!.buyAmountCryptoPrecision) > parseFloat(best.buyAmountCryptoPrecision) ? current : best
-    })
-
-    if (!bestRate) {
-      throw new Error('No rates available from any provider')
-    }
-
-    // Check allowance
     const allowanceData = await getAllowance({
       amount: toBaseUnit(sellAmount, sellAsset.precision),
       asset: sellAsset,
@@ -198,7 +263,6 @@ export const prepareSwapTool = createTool({
 
     const needsApproval = allowanceData.isApprovalRequired
 
-    // Debug logging for approval check
     logger?.info('🔍 Allowance check:', {
       needsApproval,
       sellAssetId: sellAsset.assetId,
@@ -208,92 +272,47 @@ export const prepareSwapTool = createTool({
       sellAmountBaseUnit: toBaseUnit(sellAmount, sellAsset.precision),
     })
 
-    // Check allowance and build approval transaction if needed
-    let approvalTx
+    // Balance validation
+    const accountData = await getAccountTool.execute({
+      context: { account: userAddress, chainId: sellAsset.chainId },
+      mastra,
+      runtimeContext,
+    })
+
+    const userBalance = accountData.balances[sellAsset.assetId] || '0'
+    const sellAmountBaseUnit = toBaseUnit(sellAmount, sellAsset.precision)
+
+    if (BigInt(userBalance) < BigInt(sellAmountBaseUnit)) {
+      const availableAmount = fromBaseUnit(userBalance, sellAsset.precision)
+      throw new Error(
+        `Insufficient ${sellAsset.symbol} balance. Required: ${sellAmount}, Available: ${availableAmount}`
+      )
+    }
+
+    logger?.info('✅ Balance check passed:', {
+      sellAssetSymbol: sellAsset.symbol,
+      required: sellAmount,
+      available: fromBaseUnit(userBalance, sellAsset.precision),
+    })
+
     if (needsApproval) {
       logger?.info('🔧 Building approval transaction:', {
         sellAssetId: sellAsset.assetId,
         sellAssetSymbol: sellAsset.symbol,
         approvalTarget: bestRate.approvalTarget,
       })
-
-      const data = encodeFunctionData({
-        abi: erc20Abi,
-        functionName: 'approve',
-        args: [getAddress(bestRate.approvalTarget), BigInt(toBaseUnit(sellAmount, sellAsset.precision))],
-      })
-
-      const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
-      const compressedData = compressTransactionData(data)
-
-      approvalTx = {
-        chainId: sellAsset.chainId,
-        ...compressedData,
-        from: userAddress,
-        to: tokenAddress,
-        value: '0',
-      }
     }
+    const approvalTx = buildApprovalTransaction(
+      needsApproval,
+      sellAsset,
+      bestRate.approvalTarget,
+      sellAmount,
+      userAddress
+    )
 
-    // Build swap transaction with compression
-    const originalSwapTx = bestRate.unsignedTx
-    const swapCalldata = originalSwapTx.data || ''
+    const swapTx = buildSwapTransaction(bestRate)
 
-    // Validate and compress transaction data
-    if (swapCalldata && typeof swapCalldata === 'string') {
-      // Ensure the data is a valid hex string
-      if (!swapCalldata.startsWith('0x')) {
-        throw new Error('Invalid transaction data: must start with 0x')
-      }
-    }
-
-    const compressedSwapData = compressTransactionData(swapCalldata)
-    const swapTx = {
-      chainId: originalSwapTx.chainId,
-      ...compressedSwapData,
-      from: originalSwapTx.from,
-      to: originalSwapTx.to,
-      value: originalSwapTx.value || '0',
-      ...(originalSwapTx.gasLimit && { gasLimit: String(originalSwapTx.gasLimit) }),
-    }
-
-    // Create enhanced summary for user
-    const sellValueUSD = (parseFloat(sellAmount) * parseFloat(sellAsset.price || '0')).toFixed(2)
-    const buyEstimatedValueUSD = (
-      parseFloat(bestRate.buyAmountCryptoPrecision) * parseFloat(buyAsset.price || '0')
-    ).toFixed(2)
-    const exchangeRate = (parseFloat(bestRate.buyAmountCryptoPrecision) / parseFloat(sellAmount)).toFixed(8)
-
-    // Calculate price impact (difference in USD values)
-    const priceImpact =
-      sellValueUSD && buyEstimatedValueUSD
-        ? (((parseFloat(buyEstimatedValueUSD) - parseFloat(sellValueUSD)) / parseFloat(sellValueUSD)) * 100).toFixed(2)
-        : '0.00'
-
-    const summary = {
-      sellAsset: {
-        symbol: sellAsset.symbol.toUpperCase(),
-        amount: sellAmount,
-        network: sellAsset.network,
-        chainName: sellAsset.name || 'Unknown Chain',
-        valueUSD: `$${sellValueUSD}`,
-        priceUSD: `$${parseFloat(sellAsset.price || '0').toFixed(4)}`,
-      },
-      buyAsset: {
-        symbol: buyAsset.symbol.toUpperCase(),
-        estimatedAmount: parseFloat(bestRate.buyAmountCryptoPrecision).toFixed(8),
-        network: buyAsset.network,
-        chainName: buyAsset.name || 'Unknown Chain',
-        estimatedValueUSD: `$${buyEstimatedValueUSD}`,
-        priceUSD: `$${parseFloat(buyAsset.price || '0').toFixed(2)}`,
-      },
-      exchange: {
-        provider: bestRate.source || 'Unknown',
-        rate: `1 ${sellAsset.symbol.toUpperCase()} = ${exchangeRate} ${buyAsset.symbol.toUpperCase()}`,
-        priceImpact: `${priceImpact}%`,
-      },
-      isCrossChain: sellAsset.network !== buyAsset.network,
-    }
+    const summary = createSwapSummary(sellAsset, buyAsset, sellAmount, bestRate)
 
     const swapExecutionData = {
       sellAmountCryptoPrecision: sellAmount,
@@ -314,7 +333,6 @@ export const prepareSwapTool = createTool({
     }
 
     logger?.info('✅ [prepareSwapTool] COMPLETED execution:', { needsApproval })
-    console.log('✅ [prepareSwapTool] COMPLETED execution at:', new Date().toISOString())
 
     return result
   },

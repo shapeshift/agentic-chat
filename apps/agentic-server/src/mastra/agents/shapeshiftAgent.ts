@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { executeSwapTool, getAssetsTool, mathCalculatorTool, prepareSwapTool, portfolioTool } from '../tools'
+import { triggerSwapExecutionTool, getAssetsTool, mathCalculatorTool, prepareSwapTool, portfolioTool } from '../tools'
 import { swapWorkflow } from '../workflows'
 
 import { supportedChainsContext } from './context'
@@ -51,27 +51,40 @@ export const shapeshiftAgent = new Agent({
       - ALWAYS require the user to specify the network.
       - ONLY fetch details for the specified network.
       - Balances are always returned in base unit format.
+      - NEVER use the portfolio tool before swaps unless:
+        * User says "all my [token]" or "max [token]" 
+        * User explicitly asks to check their balance first
+        * User asks "how much can I swap?"
+      - For specific amounts (e.g., "swap 10 USDC"), use that exact amount
 
     🔧 Prepare Swap Tool:
+      - Use EXACT amounts specified by the user (e.g., "10 USDC" means exactly 10, not less)
       - Simple interface: sellAsset: {symbolOrName, network?}, buyAsset: {symbolOrName, network?}
       - SAME-CHAIN SWAPS (default): "swap FOX to ETH on arbitrum" → both assets get network="arbitrum"
-      - CROSS-CHAIN SWAPS: "swap ETH on ethereum to AVAX on avalanche" → sellAsset gets network="ethereum", buyAsset gets network="avalanche"
+      - CROSS-CHAIN SWAPS: "swap ETH on ethereum to AVAX on avalanche" → separate networks
       - If user only mentions one network, assume both assets are on that network
-      - Returns detailed summary with USD values, rates, and transaction details
+      - Returns detailed summary with USD values, rates, fees and transaction details
+      
+      ⚠️ Error Handling:
+      - If prepareSwap fails with "Insufficient balance", explain the exact shortage
+      - If prepareSwap fails with "No rates available", explain:
+        * "This swap route is not currently supported"
+        * "The amount may be too small"
+      - NEVER proceed to triggerSwapExecution if prepareSwap failed
 
-    🔧 Execute Swap Tool:
-      - Use this tool IMMEDIATELY after prepareSwap when user expresses intent to swap.
-      - NO user confirmation required - the user already expressed intent by asking for a swap.
-      - Triggers frontend wallet interaction to sign and send transactions.
-      - Takes the COMPLETE output from prepareSwap tool as input.
-      - IMPORTANT: Pass through ALL fields from prepareSwap including approvalTx, swapTx, and swapData exactly as received.
-      - Will handle both approval (if needed) and swap transactions automatically.
+    🔧 Trigger Swap Execution Tool:
+      - Use this tool IMMEDIATELY after prepareSwap succeeds when user wants to swap
+      - This INITIATES wallet interaction - does NOT complete the swap
+      - User will need to approve/sign transactions in their wallet
+      - Takes the COMPLETE output from prepareSwap as input
+      - Pass through ALL fields including approvalTx, swapTx, and swapData
+      - The UI will show approval and swap progress
 
     💬 Communication Flow:
       - ALWAYS provide a user-facing message BEFORE using any tool
       - When user asks to swap: FIRST send a message acknowledging the request and mentioning wallet confirmation may be needed, THEN use prepareSwapTool
-      - After prepareSwapTool returns: IMMEDIATELY send a message with swap summary (rate, gas, network details) BEFORE using executeSwapTool
-      - After executeSwapTool: Do NOT send detailed swap summary - the UI shows completion feedback
+      - After prepareSwapTool returns: IMMEDIATELY send a message with swap summary (rate, gas, network details) BEFORE using triggerSwapExecutionTool
+      - After triggerSwapExecutionTool: Say "I've initiated the swap. Please check your wallet to approve and sign the transaction(s)."
       - Never use tools without first communicating what you're doing to the user
 
     📋 Simple Examples:
@@ -80,7 +93,7 @@ export const shapeshiftAgent = new Agent({
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
-    executeSwapTool,
+    triggerSwapExecutionTool,
     getAssetsTool,
     mathCalculatorTool,
     portfolioTool,

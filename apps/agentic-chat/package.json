@@ -38,7 +38,8 @@
     "tailwind-merge": "^3.2.0",
     "viem": "*",
     "wagmi": "^2.15.6",
-    "zod": "*"
+    "zod": "*",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@ai-sdk/ui-utils": "^1.2.11",
