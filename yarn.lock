@@ -5227,6 +5227,7 @@ __metadata:
     vite: "npm:^7.1.4"
     wagmi: "npm:^2.15.6"
     zod: "npm:*"
+    zustand: "npm:^5.0.8"
   languageName: unknown
   linkType: soft
 
@@ -16981,7 +16982,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zustand@npm:^5.0.7":
+"zustand@npm:^5.0.7, zustand@npm:^5.0.8":
   version: 5.0.8
   resolution: "zustand@npm:5.0.8"
   peerDependencies:

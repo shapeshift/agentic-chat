@@ -45,44 +45,55 @@ export const getBebopRate = async ({
   sellAsset,
 }: GetRateInput): Promise<GetRateOutput> => {
   const bebopNetwork = bebopChainsMap[sellAsset.chainId]
-
   const buyTokenAddress = getBebopAssetAddress(buyAsset)
+  const sellTokenAddress = getBebopAssetAddress(sellAsset)
+  const sellAmountBaseUnit = toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision)
 
-  const { data } = await axios.get<BebopResponse>(`https://api.bebop.xyz/router/${bebopNetwork}/v1/quote`, {
-    headers: { 'source-auth': BEBOP_API_KEY },
-    params: {
-      sell_tokens: getBebopAssetAddress(sellAsset),
-      buy_tokens: buyTokenAddress,
-      sell_amounts: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
-      taker_address: address,
-      approval_type: 'Standard',
-      skip_validation: 'true',
-      gasless: 'false',
-      source: 'shapeshift',
-    },
-  })
+  const requestParams = {
+    sell_tokens: sellTokenAddress,
+    buy_tokens: buyTokenAddress,
+    sell_amounts: sellAmountBaseUnit,
+    taker_address: address,
+    approval_type: 'Standard',
+    skip_validation: 'true',
+    gasless: 'false',
+    source: 'shapeshift',
+  }
 
-  if (!data.routes?.[0]?.quote) throw new Error('No routes found in Bebop response')
+  try {
+    const { data } = await axios.get<BebopResponse>(`https://api.bebop.xyz/router/${bebopNetwork}/v1/quote`, {
+      headers: { 'source-auth': BEBOP_API_KEY },
+      params: requestParams,
+    })
 
-  const quote = data.routes[0].quote
+    if (!data.routes?.[0]?.quote) throw new Error('No routes found in Bebop response')
 
-  const buyAmountCryptoBaseUnit = quote.buyTokens[buyTokenAddress].amount.toString()
-  const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, quote.buyTokens[buyTokenAddress].decimals)
+    const quote = data.routes[0].quote
+    const buyAmountCryptoBaseUnit = quote.buyTokens[buyTokenAddress].amount.toString()
+    const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, quote.buyTokens[buyTokenAddress].decimals)
 
-  return {
-    approvalTarget: quote.approvalTarget,
-    buyAsset,
-    buyAmountCryptoPrecision,
-    sellAsset,
-    sellAmountCryptoPrecision,
-    source: 'bebop',
-    unsignedTx: {
-      chainId: sellAsset.chainId,
-      data: quote.tx.data,
-      from: quote.tx.from,
-      to: quote.tx.to,
-      value: quote.tx.value,
-      ...(quote.tx.gas && { gasLimit: quote.tx.gas }),
-    },
+    return {
+      approvalTarget: quote.approvalTarget,
+      buyAsset,
+      buyAmountCryptoPrecision,
+      sellAsset,
+      sellAmountCryptoPrecision,
+      source: 'bebop',
+      unsignedTx: {
+        chainId: sellAsset.chainId,
+        data: quote.tx.data,
+        from: quote.tx.from,
+        to: quote.tx.to,
+        value: quote.tx.value,
+        ...(quote.tx.gas && { gasLimit: quote.tx.gas }),
+      },
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('[getBebopRate] API request failed:', error.response?.status, error.response?.data || error.message)
+    } else {
+      console.error('[getBebopRate] Unexpected error:', error)
+    }
+    throw error
   }
 }

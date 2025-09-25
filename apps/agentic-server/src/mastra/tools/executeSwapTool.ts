@@ -1,97 +1,44 @@
 import { createTool } from '@mastra/core'
 import z from 'zod'
 
-export const executeSwapInput = z.object({
-  needsApproval: z.boolean(),
-  approvalTx: z
-    .object({
-      chainId: z.string(),
-      data: z.string(),
-      from: z.string(),
-      to: z.string(),
-      value: z.string(),
-      dataCompressed: z.string().optional(),
-    })
-    .optional(),
-  swapTx: z.object({
-    chainId: z.string(),
-    data: z.string().optional(),
-    from: z.string(),
-    to: z.string(),
-    value: z.string(),
-    gasLimit: z.string().optional(),
-    dataCompressed: z.string().optional(),
-  }),
-  swapData: z.object({
-    sellAmountCryptoPrecision: z.string(),
-    buyAmountCryptoPrecision: z.string(),
-    approvalTarget: z.string(),
-    sellAsset: z.any(),
-    buyAsset: z.any(),
-    sellAccount: z.string(),
-    buyAccount: z.string(),
-  }),
-})
+import { swapPreparationSchema } from './schemas/swapSchemas'
+import type { SwapPreparation } from './schemas/swapSchemas'
 
-export const executeSwapOutput = z.object({
-  action: z.literal('execute_swap'),
+// Execute swap input is just the swap preparation output
+export const executeSwapInput = swapPreparationSchema
+
+// Execute swap output extends the input with execution metadata
+export const executeSwapOutput = swapPreparationSchema.extend({
+  action: z.literal('initiate_swap_execution'),
   timestamp: z.number(),
-  needsApproval: z.boolean(),
-  approvalTx: z
-    .object({
-      chainId: z.string(),
-      data: z.string(),
-      from: z.string(),
-      to: z.string(),
-      value: z.string(),
-      dataCompressed: z.string().optional(),
-    })
-    .optional(),
-  swapTx: z.object({
-    chainId: z.string(),
-    data: z.string().optional(),
-    from: z.string(),
-    to: z.string(),
-    value: z.string(),
-    gasLimit: z.string().optional(),
-    dataCompressed: z.string().optional(),
-  }),
-  swapData: z.object({
-    sellAmountCryptoPrecision: z.string(),
-    buyAmountCryptoPrecision: z.string(),
-    approvalTarget: z.string(),
-    sellAsset: z.any(),
-    buyAsset: z.any(),
-    sellAccount: z.string(),
-    buyAccount: z.string(),
-  }),
 })
 
-export type ExecuteSwapInput = z.infer<typeof executeSwapInput>
+export type ExecuteSwapInput = SwapPreparation
 export type ExecuteSwapOutput = z.infer<typeof executeSwapOutput>
 
-export const executeSwapTool = createTool({
-  id: 'executeSwap',
-  description: 'Trigger frontend execution of swap transactions (approval and swap)',
+export const triggerSwapExecutionTool = createTool({
+  id: 'triggerSwapExecution',
+  description: "Initiate swap execution in user's wallet (approval and swap transactions)",
   inputSchema: executeSwapInput,
   outputSchema: executeSwapOutput,
-  // eslint-disable-next-line @typescript-eslint/require-await
-  execute: async ({ context }) => {
-    console.log('🚀 [executeSwapTool] STARTING execution at:', new Date().toISOString())
+  execute: async ({ context, mastra }) => {
+    const logger = mastra?.getLogger()
+    logger?.info('🚀 [triggerSwapExecution] STARTING execution:', { context })
 
-    const { needsApproval, approvalTx, swapTx, swapData } = context
-
+    // Pass through all the swap preparation data and add execution metadata
     const result = {
-      action: 'execute_swap' as const,
+      ...context,
+      action: 'initiate_swap_execution' as const,
       timestamp: Date.now(),
-      needsApproval,
-      approvalTx,
-      swapTx,
-      swapData,
     }
 
-    console.log('✅ [executeSwapTool] COMPLETED execution at:', new Date().toISOString())
+    logger?.info('✅ [triggerSwapExecution] INITIATED execution:', {
+      needsApproval: context.needsApproval,
+      timestamp: result.timestamp,
+      sellAsset: context.swapData.sellAsset?.symbol,
+      buyAsset: context.swapData.buyAsset?.symbol,
+    })
 
-    return result
+    return Promise.resolve(result)
   },
 })
