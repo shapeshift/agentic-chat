@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { triggerSwapExecutionTool, getAssetsTool, mathCalculatorTool, prepareSwapTool, portfolioTool } from '../tools'
+import { getAssetsTool, mathCalculatorTool, prepareSwapTool, portfolioTool } from '../tools'
 import { swapWorkflow } from '../workflows'
 
 import { supportedChainsContext } from './context'
@@ -89,21 +89,11 @@ export const shapeshiftAgent = new Agent({
       - If prepareSwap fails with "No rates available", explain:
         * "This swap route is not currently supported"
         * "The amount may be too small"
-      - NEVER proceed to triggerSwapExecution if prepareSwap failed
-
-    🔧 Trigger Swap Execution Tool:
-      - Use this tool IMMEDIATELY after prepareSwap succeeds when user wants to swap
-      - This INITIATES wallet interaction - does NOT complete the swap
-      - User will need to approve/sign transactions in their wallet
-      - Takes the COMPLETE output from prepareSwap as input
-      - Pass through ALL fields including approvalTx, swapTx, and swapData
-      - The UI will show approval and swap progress
-
     💬 Communication Flow:
       - ALWAYS provide a user-facing message BEFORE using any tool
       - When user asks to swap: FIRST send a message acknowledging the request and mentioning wallet confirmation may be needed, THEN use prepareSwapTool
-      - After prepareSwapTool returns: IMMEDIATELY send a message with swap summary (rate, gas, network details) BEFORE using triggerSwapExecutionTool
-      - After triggerSwapExecutionTool: Say "I've initiated the swap. Please check your wallet to approve and sign the transaction(s)."
+      - After prepareSwapTool returns: The UI will automatically handle swap execution
+      - You should send a message with swap summary (rate, gas, network details) after prepareSwapTool completes
       - Never use tools without first communicating what you're doing to the user
 
     📋 Simple Examples:
@@ -112,7 +102,6 @@ export const shapeshiftAgent = new Agent({
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
-    triggerSwapExecutionTool,
     getAssetsTool,
     mathCalculatorTool,
     portfolioTool,
