@@ -1,7 +1,9 @@
-import { inflate } from 'pako'
+import { ungzip } from 'pako'
 
 function decompressTransactionData(compressedData: string): string {
-  return inflate(Buffer.from(compressedData, 'base64'), { to: 'string' })
+  const binary = atob(compressedData)
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0))
+  return ungzip(bytes, { to: 'string' })
 }
 
 export function decompressSwapTransactionData<

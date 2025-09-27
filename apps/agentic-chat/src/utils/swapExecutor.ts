@@ -1,5 +1,6 @@
 import type { executeSwapOutput } from '@shapeshiftoss/agentic-server'
 import { getWalletClient } from '@wagmi/core'
+import { hexToBigInt } from 'viem'
 import type { z } from 'zod'
 
 import { wagmiConfig } from '@/lib/wagmi-config'
@@ -25,7 +26,12 @@ async function executeTransaction(tx: TransactionData) {
     from: tx.from,
     to: tx.to,
     value: tx.value,
-    ...(tx.gasLimit && { gasLimit: parseInt(tx.gasLimit, 10) }),
+    ...(tx.gasLimit && {
+      gasLimit:
+        typeof tx.gasLimit === 'string' && tx.gasLimit.startsWith('0x')
+          ? Number(hexToBigInt(tx.gasLimit as `0x${string}`))
+          : Number(tx.gasLimit),
+    }),
   }
 
   return sendTransaction({

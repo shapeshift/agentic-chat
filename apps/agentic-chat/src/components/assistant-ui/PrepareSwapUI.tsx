@@ -1,12 +1,8 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { prepareSwapInput, prepareSwapOutput } from '@shapeshiftoss/agentic-server'
-import type { z } from 'zod'
+import type { PrepareSwapInput, PrepareSwapOutput } from '@shapeshiftoss/agentic-server'
 
 import { TextShimmer } from '@/components/TextShimmer'
-
-type PrepareSwapInput = z.infer<typeof prepareSwapInput>
-type PrepareSwapOutput = z.infer<typeof prepareSwapOutput>
 
 type PrepareSwapContentProps = Omit<ToolCallMessagePartProps<PrepareSwapInput, PrepareSwapOutput>, 'args'> & {
   args: Partial<PrepareSwapInput>
