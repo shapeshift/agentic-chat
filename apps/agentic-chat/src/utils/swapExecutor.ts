@@ -1,12 +1,11 @@
-import type { executeSwapOutput } from '@shapeshiftoss/agentic-server'
+import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { getWalletClient } from '@wagmi/core'
 import { hexToBigInt } from 'viem'
-import type { z } from 'zod'
 
 import { wagmiConfig } from '@/lib/wagmi-config'
 import { sendTransaction } from '@/utils/sendTransaction'
 
-type SwapData = z.infer<typeof executeSwapOutput>
+type SwapData = InitiateSwapOutput
 type TransactionData = SwapData['swapTx']
 
 async function getWallet() {

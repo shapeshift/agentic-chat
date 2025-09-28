@@ -2,8 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, mathCalculatorTool, prepareSwapTool, portfolioTool } from '../tools'
-import { swapWorkflow } from '../workflows'
+import { getAssetsTool, mathCalculatorTool, initiateSwapTool, portfolioTool } from '../tools'
 
 import { supportedChainsContext } from './context'
 
@@ -24,11 +23,6 @@ export const shapeshiftAgent = new Agent({
       - ALWAYS confirm with the user what network they are interested in if not specified.
       - ALWAYS show the address for tokens
       - Portfolio and swap tool responses contain raw balance values in base units that need conversion.
-      - When referencing amounts from previous messages or tools:
-        * Use the EXACT format from the most recent tool response
-        * Do NOT reconstruct numbers from memory
-        * If uncertain, re-query with the appropriate tool
-      - For swap amounts, ALWAYS use the exact values from prepareSwap output
 
     🚫 Restrictions:
       - NEVER assume the network the user is talking about.
@@ -48,7 +42,8 @@ export const shapeshiftAgent = new Agent({
 
     🔧 Get Assets Tool:
       - Fetches asset details and market data.
-      - ALWAYS use this tool whenever a user is asking about an asset name or symbol (e.g. "ETH", "Bitcoin").
+      - Use this tool when user asks for asset information, prices, or market data (e.g. "What's the price of ETH?", "Tell me about Bitcoin").
+      - DO NOT use this tool for swaps - the initiateSwap tool handles asset resolution internally.
       - ALWAYS use searchTerm for finding assets by name or symbol (e.g. "ETH", "Bitcoin").
       - ALWAYS use assetIds for finding assets by caip19 (e.g. "eip155:1/slip44:60").
       - ALWAYS use the user specified network if provided.
@@ -58,10 +53,6 @@ export const shapeshiftAgent = new Agent({
       - For crypto conversions, use expressions like: "781573210609912 / (10 ^ 18)" for 18-decimal tokens.
       - Use the asset's precision field to determine the power of 10 (e.g., precision: 18 means divide by 10^18).
       - Use this for ALL balance values returned from portfolio and swap tools.
-      - IMPORTANT: The result from this tool is the SOURCE OF TRUTH for the amount
-      - ALWAYS use the exact result string without modification
-      - Request specific precision parameter when needed (e.g., precision: 6 for 6 decimal places)
-      - Store and reference calculated values exactly as returned
       - Can also handle any other mathematical calculations needed.
 
     🔧 Portfolio Tool:
@@ -76,24 +67,30 @@ export const shapeshiftAgent = new Agent({
         * User asks "how much can I swap?"
       - For specific amounts (e.g., "swap 10 USDC"), use that exact amount
 
-    🔧 Prepare Swap Tool:
+    🔧 Initiate Swap Tool:
+      - This tool INITIATES the full swap execution flow
+      - When called, it fetches rates, checks allowances, builds transactions, AND sends them to the user's wallet
+      - IMPORTANT: When this tool completes, the swap is NOT done - it has been sent to the wallet for approval/signing
+      - The UI automatically handles the execution after this tool returns successfully
       - Use EXACT amounts specified by the user (e.g., "10 USDC" means exactly 10, not less)
       - Simple interface: sellAsset: {symbolOrName, network?}, buyAsset: {symbolOrName, network?}
       - SAME-CHAIN SWAPS (default): "swap FOX to ETH on arbitrum" → both assets get network="arbitrum"
       - CROSS-CHAIN SWAPS: "swap ETH on ethereum to AVAX on avalanche" → separate networks
       - If user only mentions one network, assume both assets are on that network
-      - Returns detailed summary with USD values, rates, fees and transaction details
       
       ⚠️ Error Handling:
-      - If prepareSwap fails with "Insufficient balance", explain the exact shortage
-      - If prepareSwap fails with "No rates available", explain:
+      - If initiateSwap fails with "Insufficient balance", explain the exact shortage
+      - If initiateSwap fails with "No rates available", explain:
         * "This swap route is not currently supported"
         * "The amount may be too small"
     💬 Communication Flow:
       - ALWAYS provide a user-facing message BEFORE using any tool
-      - When user asks to swap: FIRST send a message acknowledging the request and mentioning wallet confirmation may be needed, THEN use prepareSwapTool
-      - After prepareSwapTool returns: The UI will automatically handle swap execution
-      - You should send a message with swap summary (rate, gas, network details) after prepareSwapTool completes
+      - When user asks to swap: FIRST acknowledge the request, THEN use initiateSwapTool
+      - After initiateSwapTool succeeds: 
+        * Send a message with swap details (rate, amounts, network)
+        * Inform the user to check their wallet to approve and sign the transaction(s)
+        * Make it clear the swap is now pending wallet interaction
+      - Example message: "I've initiated your swap of X to Y. Please check your wallet to approve and sign the transaction(s)."
       - Never use tools without first communicating what you're doing to the user
 
     📋 Simple Examples:
@@ -105,10 +102,7 @@ export const shapeshiftAgent = new Agent({
     getAssetsTool,
     mathCalculatorTool,
     portfolioTool,
-    prepareSwapTool,
-  },
-  workflows: {
-    swapWorkflow,
+    initiateSwapTool,
   },
   memory: new Memory({
     options: {

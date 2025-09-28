@@ -1,10 +1,9 @@
-import type { executeSwapOutput } from '@shapeshiftoss/agentic-server'
+import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { useEffect, useReducer } from 'react'
-import type { z } from 'zod'
 
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
-type SwapData = z.infer<typeof executeSwapOutput>
+type SwapData = InitiateSwapOutput
 
 type SwapPhase = 'idle' | 'approving' | 'swapping' | 'success' | 'error'
 

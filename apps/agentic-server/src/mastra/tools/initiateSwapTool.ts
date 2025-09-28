@@ -92,22 +92,32 @@ async function fetchBestSwapRate(
   buyAsset: Asset,
   sellAmount: string
 ): Promise<SwapRate> {
-  const [bebopRate, relayRate] = await Promise.all([
-    getBebopRate({
-      address: userAddress,
-      sellAsset,
-      buyAsset,
-      sellAmountCryptoPrecision: sellAmount,
-    }).catch(() => null),
+  const isCrossChain = sellAsset.chainId !== buyAsset.chainId
+
+  const ratePromises = [
     getRelayRate({
       address: userAddress,
       sellAsset,
       buyAsset,
       sellAmountCryptoPrecision: sellAmount,
     }).catch(() => null),
-  ])
+  ]
 
-  const availableRates = [bebopRate, relayRate].filter((rate): rate is SwapRate => rate !== null)
+  // Only fetch Bebop rate for same-chain swaps
+  if (!isCrossChain) {
+    ratePromises.push(
+      getBebopRate({
+        address: userAddress,
+        sellAsset,
+        buyAsset,
+        sellAmountCryptoPrecision: sellAmount,
+      }).catch(() => null)
+    )
+  }
+
+  const rates = await Promise.all(ratePromises)
+
+  const availableRates = rates.filter((rate): rate is SwapRate => rate !== null)
 
   if (availableRates.length === 0) {
     throw new Error(
@@ -220,23 +230,24 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
   }
 }
 
-export const prepareSwapInput = z.object({
+export const initiateSwapInput = z.object({
   sellAsset: assetInputSchema.describe('Asset to sell'),
   buyAsset: assetInputSchema.describe('Asset to buy'),
   sellAmount: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
   userAddress: z.string().describe('User wallet address for the swap'),
 })
 
-export const prepareSwapOutput = swapPreparationSchema
+export const initiateSwapOutput = swapPreparationSchema
 
-export type PrepareSwapInput = z.infer<typeof prepareSwapInput>
-export type PrepareSwapOutput = z.infer<typeof prepareSwapOutput>
+export type InitiateSwapInput = z.infer<typeof initiateSwapInput>
+export type InitiateSwapOutput = z.infer<typeof initiateSwapOutput>
 
-export const prepareSwapTool = createTool({
-  id: 'prepareSwap',
-  description: 'Prepare a swap by fetching rates, checking allowances, and building unsigned transactions',
-  inputSchema: prepareSwapInput,
-  outputSchema: prepareSwapOutput,
+export const initiateSwapTool = createTool({
+  id: 'initiateSwap',
+  description:
+    "Initiate a swap by fetching rates, checking allowances, building transactions, and sending them to the user's wallet for approval and signing. When this tool completes, the swap is NOT finished - it has been sent to the wallet and the UI will handle the actual execution.",
+  inputSchema: initiateSwapInput,
+  outputSchema: initiateSwapOutput,
   execute: async ({ context, mastra, runtimeContext }) => {
     const logger = mastra?.getLogger()
     if (!mastra) {
