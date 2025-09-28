@@ -38,7 +38,7 @@
     "viem": "*",
     "wagmi": "^2.15.6",
     "zod": "*",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@ai-sdk/ui-utils": "^1.2.11",

@@ -1,16 +1,12 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { executeSwapInput, executeSwapOutput } from '@shapeshiftoss/agentic-server'
-import type { z } from 'zod'
+import type { InitiateSwapInput, InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 
 import { TextShimmer } from '@/components/TextShimmer'
 import { useLocalSwapExecution } from '@/hooks/useLocalSwapExecution'
 
-type ExecuteSwapInput = z.infer<typeof executeSwapInput>
-type ExecuteSwapOutput = z.infer<typeof executeSwapOutput>
-
-type ExecuteSwapContentProps = Omit<ToolCallMessagePartProps<ExecuteSwapInput, ExecuteSwapOutput>, 'args'> & {
-  args: Partial<ExecuteSwapInput>
+type InitiateSwapContentProps = Omit<ToolCallMessagePartProps<InitiateSwapInput, InitiateSwapOutput>, 'args'> & {
+  args: Partial<InitiateSwapInput>
 }
 
 const ApprovalStep: React.FC<{
@@ -88,26 +84,50 @@ const SwapProgress: React.FC<{
   )
 }
 
-const ExecuteSwapContent: React.FC<ExecuteSwapContentProps> = ({ status, result }) => {
-  const swapData = status.type === 'complete' && result ? result : null
+const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, result }) => {
+  const swapData =
+    status.type === 'complete' && result && !('code' in result)
+      ? {
+          ...result,
+          action: 'initiate_swap_execution' as const,
+          timestamp: Date.now(),
+        }
+      : null
   const { phase, error, progress } = useLocalSwapExecution(swapData)
 
   if (status.type === 'running') {
-    return <TextShimmer>Preparing swap transaction...</TextShimmer>
+    return <TextShimmer>Getting swap quote...</TextShimmer>
   }
 
-  if (phase === 'error') {
-    return <SwapError error={error} />
+  if (status.type === 'complete') {
+    if (!result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
+      return <div className="text-muted-foreground">❌ Failed to get swap quote</div>
+    }
+
+    // Show swap execution error if it occurred
+    if (phase === 'error') {
+      return <SwapError error={error} />
+    }
+
+    // Show quote info and execution progress
+    return (
+      <div className="space-y-2">
+        <div className="text-muted-foreground">
+          ✅ Quote found • Rate: 1 {result.swapData.sellAsset.symbol} ={' '}
+          {(
+            parseFloat(result.swapData.buyAmountCryptoPrecision) / parseFloat(result.swapData.sellAmountCryptoPrecision)
+          ).toFixed(6)}{' '}
+          {result.swapData.buyAsset.symbol}
+        </div>
+        <SwapProgress phase={phase} progress={progress} />
+      </div>
+    )
   }
 
-  if (swapData) {
-    return <SwapProgress phase={phase} progress={progress} />
-  }
-
-  return <div className="text-muted-foreground">⚠️ Swap execution failed</div>
+  return <div className="text-muted-foreground">Failed to get swap quote</div>
 }
 
-export const ExecuteSwapUI = makeAssistantToolUI<ExecuteSwapInput, ExecuteSwapOutput>({
-  toolName: 'triggerSwapExecutionTool',
-  render: ExecuteSwapContent,
+export const InitiateSwapUI = makeAssistantToolUI<InitiateSwapInput, InitiateSwapOutput>({
+  toolName: 'initiateSwapTool',
+  render: InitiateSwapContent,
 })
