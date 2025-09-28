@@ -10,7 +10,6 @@ import z from 'zod'
 import { getAllowance } from '../../utils'
 import { getBebopRate } from '../../utils/getBebopRate'
 import { getRelayRate } from '../../utils/getRelayRate'
-import { createCompressedTransaction } from '../../utils/transactionCompression'
 
 import { getAssetsTool } from './asset/getAssetsTool'
 import { getAccountTool } from './getAccountTool'
@@ -20,6 +19,24 @@ import type { AssetInput } from './schemas/swapSchemas'
 interface ResolvedAssets {
   sellAsset: Asset
   buyAsset: Asset
+}
+
+function createTransaction(tx: {
+  chainId: string | number
+  data: string
+  from: string
+  to: string
+  value: string
+  gasLimit?: string
+}) {
+  return {
+    chainId: String(tx.chainId),
+    data: tx.data || '',
+    from: tx.from,
+    to: tx.to,
+    value: tx.value,
+    ...(tx.gasLimit && { gasLimit: tx.gasLimit }),
+  }
 }
 
 type GetAssetsTool = typeof getAssetsTool
@@ -133,7 +150,7 @@ function buildApprovalTransaction(
 
   const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
 
-  return createCompressedTransaction({
+  return createTransaction({
     chainId: sellAsset.chainId,
     data,
     from: userAddress,
@@ -154,7 +171,7 @@ function buildSwapTransaction(bestRate: SwapRate) {
     }
   }
 
-  return createCompressedTransaction({
+  return createTransaction({
     chainId: originalSwapTx.chainId,
     data: swapCalldata,
     from: originalSwapTx.from,
