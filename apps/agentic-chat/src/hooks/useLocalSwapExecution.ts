@@ -3,7 +3,6 @@ import { useEffect, useReducer } from 'react'
 import type { z } from 'zod'
 
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
-import { decompressSwapTransactionData } from '@/utils/transactionDecompression'
 
 type SwapData = z.infer<typeof executeSwapOutput>
 
@@ -85,8 +84,8 @@ export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapEx
 
     const executeSwapFlow = async () => {
       try {
-        const decompressedData = decompressSwapTransactionData(swapData)
-        const { needsApproval, approvalTx, swapTx } = decompressedData
+        const data = swapData
+        const { needsApproval, approvalTx, swapTx } = data
 
         // Handle approval if needed
         if (needsApproval && approvalTx) {

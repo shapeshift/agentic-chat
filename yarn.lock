@@ -5205,7 +5205,6 @@ __metadata:
     "@tanstack/react-query": "npm:^5.75.5"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/react": "npm:16.1.0"
-    "@types/pako": "npm:^2.0.4"
     "@types/react": "npm:19.0.0"
     "@types/react-dom": "npm:19.0.0"
     "@vitejs/plugin-react": "npm:^5.0.2"
@@ -5214,7 +5213,6 @@ __metadata:
     class-variance-authority: "npm:^0.7.1"
     clsx: "npm:^2.1.1"
     lucide-react: "npm:^0.488.0"
-    pako: "npm:^2.1.0"
     postcss: "npm:*"
     react: "npm:19.1.1"
     react-dom: "npm:19.1.1"
@@ -6031,13 +6029,6 @@ __metadata:
   dependencies:
     "@types/node": "npm:*"
   checksum: 10/de4537f1718a03401d2726afb289cb9d3e421645b9024001458e8be626d6cdc01328c2c89f74c345e180506b334057915252221b15b253dcb0a60f337b5715fc
-  languageName: node
-  linkType: hard
-
-"@types/pako@npm:^2.0.4":
-  version: 2.0.4
-  resolution: "@types/pako@npm:2.0.4"
-  checksum: 10/9be5167f5cb45d405d92e8b320219e6d26f244880893425abb16b998cde0386185f048d60de609672f1e8654c44b77344e754138da3784460f4543fe8576fa62
   languageName: node
   linkType: hard
 
@@ -13076,13 +13067,6 @@ __metadata:
   version: 1.0.1
   resolution: "package-json-from-dist@npm:1.0.1"
   checksum: 10/58ee9538f2f762988433da00e26acc788036914d57c71c246bf0be1b60cdbd77dd60b6a3e1a30465f0b248aeb80079e0b34cb6050b1dfa18c06953bb1cbc7602
-  languageName: node
-  linkType: hard
-
-"pako@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "pako@npm:2.1.0"
-  checksum: 10/38a04991d0ec4f4b92794a68b8c92bf7340692c5d980255c92148da96eb3e550df7a86a7128b5ac0c65ecddfe5ef3bbe9c6dab13e1bc315086e759b18f7c1401
   languageName: node
   linkType: hard
 
