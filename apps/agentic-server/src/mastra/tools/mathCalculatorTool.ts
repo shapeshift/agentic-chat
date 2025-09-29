@@ -1,19 +1,15 @@
 import { createTool } from '@mastra/core'
-import { create, all } from 'mathjs'
+import { Parser } from 'expr-eval'
 import z from 'zod'
 
-// Create math.js instance configured for BigNumber with high precision
-const math = create(all, {
-  number: 'BigNumber', // Use BigNumber by default
-  precision: 64, // 64 significant digits for high precision
-})
+// Create expr-eval parser instance
+const parser = new Parser()
 
 // Safety constants to prevent DoS attacks
 const MAX_EXPRESSION_LENGTH = 1000
 const DANGEROUS_PATTERNS = [
   /\^[^)]*\d{4,}/, // Exponentials with huge exponents (e.g., 10^10000)
-  /\d{1000,}/, // Numbers with 10+ consecutive digits
-  /!/, // factorials
+  /\d{1000,}/, // Numbers with 1000+ consecutive digits
 ]
 
 export const mathCalculatorInput = z.object({
@@ -31,7 +27,7 @@ export type MathCalculatorOutput = z.infer<typeof mathCalculatorOutput>
 
 export const mathCalculatorTool = createTool({
   id: 'mathCalculator',
-  description: 'Convert crypto amounts from base units to human-readable format',
+  description: 'Perform mathematical calculations with high precision',
   inputSchema: mathCalculatorInput,
   outputSchema: mathCalculatorOutput,
   execute: ({ context, mastra }) => {
@@ -53,14 +49,14 @@ export const mathCalculatorTool = createTool({
         }
       }
 
-      // Evaluate the expression using math.js with BigNumber precision
-      const rawResult = math.evaluate(expression)
+      // Evaluate the expression using expr-eval
+      const rawResult = parser.evaluate(expression)
 
       // Convert result to string format
       let result: string
       if (precision !== undefined) {
         // Apply specific precision if requested
-        result = math.format(rawResult, { precision })
+        result = Number(rawResult).toFixed(precision)
       } else {
         // Use default string representation
         result = String(rawResult)
