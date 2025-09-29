@@ -1,0 +1,12 @@
+{
+  "buildCommand": "yarn workspace @shapeshiftoss/agentic-chat build",
+  "outputDirectory": "apps/agentic-chat/dist",
+  "installCommand": "yarn install",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
