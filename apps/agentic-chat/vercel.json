@@ -1,7 +1,0 @@
-{
-  "buildCommand": "cd ../.. && yarn install && yarn workspace @shapeshiftoss/agentic-chat build",
-  "outputDirectory": "dist",
-  "installCommand": "echo 'skipping install'",
-  "framework": "vite"
-}
-

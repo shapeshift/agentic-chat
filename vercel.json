@@ -1,5 +1,5 @@
 {
-  "buildCommand": "yarn workspace @shapeshiftoss/agentic-chat build",
+  "buildCommand": "yarn build:chat",
   "outputDirectory": "apps/agentic-chat/dist",
   "installCommand": "yarn install",
   "framework": "vite",

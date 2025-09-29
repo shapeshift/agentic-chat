@@ -36,7 +36,10 @@ export const portfolioTool = createTool({
   execute: async ({ context, mastra, runtimeContext }) => {
     const logger = mastra?.getLogger()
 
-    logger?.info('portfolioTool', { context })
+    logger?.info('portfolioTool.start', {
+      account: context.account,
+      chainId: context.chainId,
+    })
 
     // Step 1: Get account balances
     const { account, balances, chainId } = await getAccountTool.execute({
