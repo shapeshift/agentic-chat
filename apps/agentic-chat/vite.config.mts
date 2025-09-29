@@ -7,6 +7,7 @@ import { defineConfig } from 'vite'
 export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
   envDir: resolve(__dirname, '../..'),
+  cacheDir: resolve(__dirname, '../../node_modules/.vite/agentic-chat'),
   server: {
     port: 4200,
     host: 'localhost',

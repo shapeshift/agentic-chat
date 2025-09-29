@@ -45,11 +45,16 @@ testem.log
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
 test-output
-.env
+.env.local
 .eslintcache
 *.db*
 .mastra
 
+# Vite cache
+node_modules/.vite
+**/.vite
+
 # System Files
 .DS_Store
 Thumbs.db
+.vercel

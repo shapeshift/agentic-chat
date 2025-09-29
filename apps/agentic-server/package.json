@@ -11,7 +11,7 @@
     "build:mastra": "mastra build",
     "dev": "yarn run -T concurrently \"yarn dev:tsc\" \"yarn dev:mastra\"",
     "dev:tsc": "yarn run -T tsc --build --watch --preserveWatchOutput",
-    "dev:mastra": "NODE_OPTIONS=\"--import tsx/esm\" mastra dev --env ../../.env",
+    "dev:mastra": "NODE_OPTIONS=\"--import tsx/esm\" mastra dev --env ../../.env.local",
     "start": "mastra start -env ../../.env",
     "type-check": "yarn run -T tsc --noEmit"
   },
