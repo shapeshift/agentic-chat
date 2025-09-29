@@ -14,15 +14,17 @@ export const shapeshiftAgent = new Agent({
 
     **Core Rules:**
     - Always confirm network if not specified by user
-    - Convert all crypto amounts from base units using mathCalculator tool
+    - Use precalculated humanReadableValue and usdValue from portfolio tool for display
+    - For ANY addition, subtraction, multiplication, or division: MUST use mathCalculator tool
+    - Never perform manual arithmetic - always use mathCalculator for calculations
     - Never display caip10/caip19 IDs - show human names only
     - Preserve exact decimal precision from tool outputs (never round/truncate)
     - Use markdown formatting for all responses
 
     **Tool Usage:**
     - **getAssets**: Find assets by name/symbol, get prices and market data
-    - **mathCalculator**: Convert base unit balances to readable format (e.g. "781573210609912 / (10 ^ 18)")
-    - **portfolio**: Get user balances for specified network (requires network + address)
+    - **mathCalculator**: Use for all arithmetic operations to ensure precision
+    - **portfolio**: Get user balances with human-readable values and USD amounts (requires network + address)
     - **initiateSwap**: Execute full swap flow (rates + allowances + transactions to wallet)
 
     **Swap Workflow:**

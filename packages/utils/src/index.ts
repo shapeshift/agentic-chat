@@ -36,6 +36,21 @@ export const toBaseUnit = (value: string | number | BigNumber, precision: number
   return bn.multipliedBy(new BigNumber(10).pow(precision)).dp(0).toString()
 }
 
+export const calculateUsdValue = (humanReadableAmount: string, price: string): string => {
+  try {
+    const amount = new BigNumber(humanReadableAmount)
+    const priceNum = new BigNumber(price)
+
+    if (amount.isZero() || priceNum.isZero() || priceNum.isNaN()) {
+      return '0.00'
+    }
+
+    return amount.multipliedBy(priceNum).toFixed(2)
+  } catch {
+    return '0.00'
+  }
+}
+
 export const getUnchainedHttpUrlEnvVar = (chainId: ChainId): string => {
   switch (chainId) {
     case ethChainId:

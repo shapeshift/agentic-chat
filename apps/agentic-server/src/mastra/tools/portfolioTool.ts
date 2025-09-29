@@ -1,4 +1,5 @@
 import { createTool } from '@mastra/core'
+import { fromBaseUnit, calculateUsdValue } from '@shapeshiftoss/utils'
 import z from 'zod'
 
 import { getAssetsTool } from './asset'
@@ -19,8 +20,11 @@ const portfolioToolOutput = z.object({
         name: z.string(),
         symbol: z.string(),
         precision: z.number(),
+        price: z.string(),
       }),
-      value: z.string().describe('Asset balance value'),
+      value: z.string().describe('Asset balance value in base units'),
+      humanReadableValue: z.string().describe('Asset balance in human-readable format'),
+      usdValue: z.string().describe('Asset balance value in USD'),
     })
   ),
 })
@@ -30,7 +34,7 @@ export type PortfolioToolOutput = z.infer<typeof portfolioToolOutput>
 
 export const portfolioTool = createTool({
   id: 'portfolioTool',
-  description: 'Get user crypto balances for a specific network',
+  description: 'Get user crypto balances with human-readable values and USD amounts for a specific network',
   inputSchema: portfolioToolInput,
   outputSchema: portfolioToolOutput,
   execute: async ({ context, mastra, runtimeContext }) => {
@@ -52,19 +56,28 @@ export const portfolioTool = createTool({
       runtimeContext,
     })
 
-    // Step 3: Combine data
+    // Step 3: Combine data and calculate human-readable values
     return {
       account,
       chainId,
-      balances: assets.map(asset => ({
-        asset: {
-          assetId: asset.assetId,
-          name: asset.name,
-          symbol: asset.symbol,
-          precision: asset.precision,
-        },
-        value: balances[asset.assetId] || '0',
-      })),
+      balances: assets.map(asset => {
+        const baseUnitValue = balances[asset.assetId] || '0'
+        const humanReadableValue = fromBaseUnit(baseUnitValue, asset.precision)
+        const usdValue = calculateUsdValue(humanReadableValue, asset.price)
+
+        return {
+          asset: {
+            assetId: asset.assetId,
+            name: asset.name,
+            symbol: asset.symbol,
+            precision: asset.precision,
+            price: asset.price,
+          },
+          value: baseUnitValue,
+          humanReadableValue,
+          usdValue,
+        }
+      }),
     }
   },
 })
