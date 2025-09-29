@@ -22,7 +22,7 @@ export type GetAssetsOutput = z.infer<typeof getAssetsOutput>
 
 export const getAssetsTool = createTool({
   id: 'getAssets',
-  description: 'Fetch asset details and market data using searchTerm, assetIds, or network filters',
+  description: 'Find crypto assets by name/symbol with market data and prices',
   inputSchema: getAssetsInput,
   outputSchema: getAssetsOutput,
   execute: async ({ context, mastra }) => {

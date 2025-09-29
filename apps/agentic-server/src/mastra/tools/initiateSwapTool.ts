@@ -244,8 +244,7 @@ export type InitiateSwapOutput = z.infer<typeof initiateSwapOutput>
 
 export const initiateSwapTool = createTool({
   id: 'initiateSwap',
-  description:
-    "Initiate a swap by fetching rates, checking allowances, building transactions, and sending them to the user's wallet for approval and signing. When this tool completes, the swap is NOT finished - it has been sent to the wallet and the UI will handle the actual execution.",
+  description: 'Start a crypto swap transaction that requires user wallet approval',
   inputSchema: initiateSwapInput,
   outputSchema: initiateSwapOutput,
   execute: async ({ context, mastra, runtimeContext }) => {

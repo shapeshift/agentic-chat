@@ -30,7 +30,7 @@ export type PortfolioToolOutput = z.infer<typeof portfolioToolOutput>
 
 export const portfolioTool = createTool({
   id: 'portfolioTool',
-  description: 'Fetch account balances and enrich with asset data',
+  description: 'Get user crypto balances for a specific network',
   inputSchema: portfolioToolInput,
   outputSchema: portfolioToolOutput,
   execute: async ({ context, mastra, runtimeContext }) => {
