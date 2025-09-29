@@ -24,7 +24,7 @@ import {
 } from '@shapeshiftoss/caip'
 import BigNumber from 'bignumber.js'
 
-export * from './viem'
+export * from './viem.js'
 
 export const fromBaseUnit = (value: string | number | BigNumber, precision: number): string => {
   const bn = new BigNumber(value)

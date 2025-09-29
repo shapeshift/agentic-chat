@@ -5251,7 +5251,7 @@ __metadata:
   resolution: "@shapeshiftoss/agentic@workspace:."
   dependencies:
     "@shapeshiftoss/agentic-server": "workspace:^"
-    "@shapeshiftoss/caip": "npm:^8.16.0"
+    "@shapeshiftoss/caip": "patch:@shapeshiftoss/caip@npm%3A8.16.1#~/.yarn/patches/@shapeshiftoss-caip-npm-8.16.1-d1f4e24e79.patch"
     "@shapeshiftoss/types": "workspace:^"
     "@shapeshiftoss/utils": "workspace:^"
     "@types/eslint-plugin-jsx-a11y": "npm:^6.10.0"
@@ -5279,10 +5279,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@shapeshiftoss/caip@npm:^8.16.0":
+"@shapeshiftoss/caip@npm:8.16.1":
   version: 8.16.1
   resolution: "@shapeshiftoss/caip@npm:8.16.1"
   checksum: 10/8d7defe52fdf02757ac9d187cf6938778c5bca2afa17b3338ad7284c0f270299a5ec1c2f358e52d64e86f472912372566f6dca67004813367f42c31499141356
+  languageName: node
+  linkType: hard
+
+"@shapeshiftoss/caip@patch:@shapeshiftoss/caip@npm%3A8.16.1#~/.yarn/patches/@shapeshiftoss-caip-npm-8.16.1-d1f4e24e79.patch":
+  version: 8.16.1
+  resolution: "@shapeshiftoss/caip@patch:@shapeshiftoss/caip@npm%3A8.16.1#~/.yarn/patches/@shapeshiftoss-caip-npm-8.16.1-d1f4e24e79.patch::version=8.16.1&hash=be2672"
+  checksum: 10/0ffd29831e5d8dfa740e905e5ec02c58e218e9d91b7fc95c45bab338e84ab221034a31d9b4f3dc4538084afd7dec4b08ca9220a9d89dea3dfb00ba7b0c8713ab
   languageName: node
   linkType: hard
 

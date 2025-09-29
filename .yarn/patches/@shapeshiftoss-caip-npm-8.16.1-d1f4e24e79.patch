@@ -1,0 +1,10 @@
+diff --git a/dist/index.js b/dist/index.js
+index a5e34d13350fbc33a60c4d85f574e974d0a9dfb5..3f57992838b02a9cf367762e4f4dd2b30245ddbc 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1,4 +1,4 @@
+-export * as adapters from './adapters';
++export * as adapters from './adapters/index.js';
+ export * from './chainId/chainId';
+ export * from './accountId/accountId';
+ export * from './assetId/assetId';
