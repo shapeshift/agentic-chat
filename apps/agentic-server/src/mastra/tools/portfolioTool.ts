@@ -1,7 +1,8 @@
 import { createTool } from '@mastra/core'
 import z from 'zod'
-import { getAccountTool } from './getAccountTool'
+
 import { getAssetsTool } from './asset'
+import { getAccountTool } from './getAccountTool'
 
 const portfolioToolInput = z.object({
   account: z.string().describe('Account address or xpub'),

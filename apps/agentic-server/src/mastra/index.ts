@@ -10,8 +10,52 @@ export * from './agents'
 export * from './tools'
 export * from './workflows'
 
+// Environment detection
+const isDevelopment = process.env.NODE_ENV === 'development'
+const isProduction = process.env.NODE_ENV === 'production'
+
+// CORS configuration based on environment
+const getCorsOrigins = () => {
+  if (isProduction) {
+    return [
+      'https://shapeshift-agentic.vercel.app',
+      'https://shapeshift-agentic-shapeshift.vercel.app', // Vercel team subdomain
+    ]
+  }
+  if (isDevelopment) {
+    return [
+      'https://dev.shapeshift-agentic.vercel.app',
+      'https://shapeshift-agentic-dev-shapeshift.vercel.app', // Vercel team subdomain
+    ]
+  }
+  // Local development
+  return ['http://localhost:4200', 'http://localhost:4300']
+}
+
+// Storage configuration
+const getStorageConfig = () => {
+  // In cloud environments, Mastra Cloud will provide the database URL
+  const dbUrl = process.env.DATABASE_URL || process.env.MASTRA_DB_URL
+
+  if (dbUrl) {
+    return new LibSQLStore({ url: dbUrl })
+  }
+
+  // Local development fallback
+  return new LibSQLStore({
+    url: 'file:./mastra.db',
+  })
+}
+
 export const mastra = new Mastra({
   server: {
+    port: process.env.PORT ? parseInt(process.env.PORT) : 4111,
+    cors: {
+      origin: getCorsOrigins(),
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization', 'x-mastra-key'],
+      credentials: false,
+    },
     middleware: [
       {
         path: '/chat/*',
@@ -40,11 +84,9 @@ export const mastra = new Mastra({
     shapeshiftAgent,
   },
   workflows: { swapWorkflow },
-  storage: new LibSQLStore({
-    url: 'file:./mastra.db',
-  }),
+  storage: getStorageConfig(),
   logger: new PinoLogger({
-    name: 'Mastra',
-    level: 'info',
+    name: `Mastra-${isProduction ? 'Prod' : isDevelopment ? 'Dev' : 'Local'}`,
+    level: isProduction ? 'warn' : 'info',
   }),
 })

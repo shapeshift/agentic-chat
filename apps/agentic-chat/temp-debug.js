@@ -1,0 +1,1 @@
+console.log('VITE_AGENTIC_SERVER_BASE_URL:', import.meta.env.VITE_AGENTIC_SERVER_BASE_URL)
