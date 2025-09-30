@@ -4,11 +4,9 @@ import { LibSQLStore } from '@mastra/libsql'
 import { PinoLogger } from '@mastra/loggers'
 
 import { shapeshiftAgent } from './agents'
-import { swapWorkflow } from './workflows'
 
 export * from './agents'
 export * from './tools'
-export * from './workflows'
 
 // CORS configuration - simple localhost vs production detection
 const getCorsOrigins = () => {
@@ -100,7 +98,6 @@ export const mastra = new Mastra({
   agents: {
     shapeshiftAgent,
   },
-  workflows: { swapWorkflow },
   storage: getStorageConfig(),
   logger: new PinoLogger({
     name: `Mastra-${process.env.NODE_ENV === 'production' ? 'Prod' : 'Local'}`,

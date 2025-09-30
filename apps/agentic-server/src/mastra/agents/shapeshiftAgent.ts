@@ -2,8 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, mathCalculatorTool, portfolioTool } from '../tools'
-import { swapWorkflow } from '../workflows'
+import { getAssetsTool, mathCalculatorTool, initiateSwapTool, portfolioTool } from '../tools'
 
 import { supportedChainsContext } from './context'
 
@@ -31,9 +30,20 @@ export const shapeshiftAgent = new Agent({
       - NEVER display caip10 chainId or caip19 assetId values.
       - NEVER display asset images
 
+    🔢 Number Precision Rules:
+      - CRITICAL: Always preserve the EXACT number of decimal places from tool outputs
+      - When displaying amounts, copy them character-by-character from tool responses
+      - NEVER round, truncate, or approximate decimal values
+      - If referencing a previously mentioned amount, use the EXACT same format
+      - For amounts with leading zeros after decimal (e.g., 0.0015), count and preserve ALL zeros
+      - When you receive a number like "0.0015", NEVER simplify it to "0.015"
+      - Use quotation marks around amounts to preserve precision: "0.0015 ETH"
+      - If unsure about an exact amount, re-fetch it with the appropriate tool rather than guessing
+
     🔧 Get Assets Tool:
       - Fetches asset details and market data.
-      - ALWAYS use this tool whenever a user is asking about an asset name or symbol (e.g. "ETH", "Bitcoin").
+      - Use this tool when user asks for asset information, prices, or market data (e.g. "What's the price of ETH?", "Tell me about Bitcoin").
+      - DO NOT use this tool for swaps - the initiateSwap tool handles asset resolution internally.
       - ALWAYS use searchTerm for finding assets by name or symbol (e.g. "ETH", "Bitcoin").
       - ALWAYS use assetIds for finding assets by caip19 (e.g. "eip155:1/slip44:60").
       - ALWAYS use the user specified network if provided.
@@ -51,20 +61,48 @@ export const shapeshiftAgent = new Agent({
       - ALWAYS require the user to specify the network.
       - ONLY fetch details for the specified network.
       - Balances are always returned in base unit format.
+      - NEVER use the portfolio tool before swaps unless:
+        * User says "all my [token]" or "max [token]" 
+        * User explicitly asks to check their balance first
+        * User asks "how much can I swap?"
+      - For specific amounts (e.g., "swap 10 USDC"), use that exact amount
 
-    ⚙️ Swap Workflow:
-      - Fetches available rates and walks the user through performing a swap.
-      - ALWAYS fetch asset details for the buy and sell assets.
-      - NEVER fetch portfolio details for the buy and sell accounts.
+    🔧 Initiate Swap Tool:
+      - This tool INITIATES the full swap execution flow
+      - When called, it fetches rates, checks allowances, builds transactions, AND sends them to the user's wallet
+      - IMPORTANT: When this tool completes, the swap is NOT done - it has been sent to the wallet for approval/signing
+      - The UI automatically handles the execution after this tool returns successfully
+      - Use EXACT amounts specified by the user (e.g., "10 USDC" means exactly 10, not less)
+      - Simple interface: sellAsset: {symbolOrName, network?}, buyAsset: {symbolOrName, network?}
+      - SAME-CHAIN SWAPS (default): "swap FOX to ETH on arbitrum" → both assets get network="arbitrum"
+      - CROSS-CHAIN SWAPS: "swap ETH on ethereum to AVAX on avalanche" → separate networks
+      - If user only mentions one network, assume both assets are on that network
+      
+      ⚠️ Error Handling:
+      - If initiateSwap fails with "Insufficient balance", explain the exact shortage
+      - If initiateSwap fails with "No rates available", explain:
+        * "This swap route is not currently supported"
+        * "The amount may be too small"
+    💬 Communication Flow:
+      - ALWAYS provide a user-facing message BEFORE using any tool
+      - When user asks to swap: FIRST acknowledge the request, THEN use initiateSwapTool
+      - After initiateSwapTool succeeds: 
+        * Send a message with swap details (rate, amounts, network)
+        * Inform the user to check their wallet to approve and sign the transaction(s)
+        * Make it clear the swap is now pending wallet interaction
+      - Example message: "I've initiated your swap of X to Y. Please check your wallet to approve and sign the transaction(s)."
+      - Never use tools without first communicating what you're doing to the user
+
+    📋 Simple Examples:
+      - "swap 20 FOX to ETH on arbitrum" → sellAsset: {symbolOrName: "FOX", network: "arbitrum"}, buyAsset: {symbolOrName: "ETH", network: "arbitrum"}
+      - "swap ETH on ethereum to AVAX on avalanche" → sellAsset: {symbolOrName: "ETH", network: "ethereum"}, buyAsset: {symbolOrName: "AVAX", network: "avalanche"}
   ` + supportedChainsContext,
   model: openai('gpt-4o-mini'),
   tools: {
     getAssetsTool,
     mathCalculatorTool,
     portfolioTool,
-  },
-  workflows: {
-    swapWorkflow,
+    initiateSwapTool,
   },
   memory: new Memory({
     options: {

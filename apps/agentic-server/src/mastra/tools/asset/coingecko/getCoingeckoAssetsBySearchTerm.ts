@@ -96,7 +96,6 @@ export const getCoingeckoAssetsBySearchTerm = async ({
       })
     )
   )
-
   const coins = coinsResults.filter(result => result.status === 'fulfilled').map(result => result.value.data)
 
   // Check for native assets first - if we find any, return them with hardcoded details and price injection
