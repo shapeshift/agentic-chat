@@ -24,7 +24,7 @@ export type GetAccountOutput = z.infer<typeof getAccountOutput>
 
 export const getAccountTool = createTool({
   id: 'getAccount',
-  description: 'Get account information including balances and token details',
+  description: 'Get raw account balances in base units',
   inputSchema: getAccountInput,
   outputSchema: getAccountOutput,
   execute: async ({ context, mastra }) => {

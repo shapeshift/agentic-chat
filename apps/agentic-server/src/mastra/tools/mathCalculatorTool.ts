@@ -31,7 +31,7 @@ export type MathCalculatorOutput = z.infer<typeof mathCalculatorOutput>
 
 export const mathCalculatorTool = createTool({
   id: 'mathCalculator',
-  description: 'Perform precise mathematical calculations including big numbers, decimals, and scientific notation',
+  description: 'Convert crypto amounts from base units to human-readable format',
   inputSchema: mathCalculatorInput,
   outputSchema: mathCalculatorOutput,
   execute: ({ context, mastra }) => {
