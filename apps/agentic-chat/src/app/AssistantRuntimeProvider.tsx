@@ -42,7 +42,6 @@ export default function ({
                 [gnosisChainId]: account.address,
                 [bscChainId]: account.address,
                 [polygonChainId]: account.address,
-                [baseChainId]: account.address,
               },
             }),
           },

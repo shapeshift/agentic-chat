@@ -28,8 +28,7 @@ const getCorsOrigins = () => {
 
 // Storage configuration
 const getStorageConfig = () => {
-  // In cloud environments, Mastra Cloud will provide the database URL
-  const dbUrl = process.env.DATABASE_URL || process.env.MASTRA_DB_URL
+  const dbUrl = process.env.DATABASE_URL
 
   if (dbUrl) {
     return new LibSQLStore({ url: dbUrl })
@@ -43,6 +42,7 @@ const getStorageConfig = () => {
 
 export const mastra = new Mastra({
   server: {
+    host: '0.0.0.0',
     port: Number.isFinite(Number(process.env.PORT)) ? Number(process.env.PORT) : 4111,
     cors: {
       origin: getCorsOrigins(),
@@ -54,15 +54,24 @@ export const mastra = new Mastra({
       {
         path: '/chat/*',
         handler: async (c, next) => {
-          const body = await c.req.json()
+          try {
+            const contentType = c.req.header('content-type')
+            if (!contentType?.includes('application/json')) {
+              return next()
+            }
 
-          if ('state' in body && body.state == null) {
-            delete body.state
-            delete body.tools
+            const body = await c.req.json()
+
+            if ('state' in body && body.state == null) {
+              delete body.state
+              delete body.tools
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+            c.req.json = async () => Promise.resolve(body)
+          } catch (error) {
+            console.error('Error parsing request body:', error)
           }
-
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-          c.req.json = async () => Promise.resolve(body)
 
           return next()
         },
@@ -72,6 +81,20 @@ export const mastra = new Mastra({
       chatRoute({
         path: '/chat/:agentId',
       }),
+      {
+        method: 'GET',
+        path: '/ping',
+        handler: c => {
+          return c.json({ status: 'ok', timestamp: new Date().toISOString() })
+        },
+      },
+      {
+        method: 'GET',
+        path: '/health',
+        handler: c => {
+          return c.json({ status: 'healthy', timestamp: new Date().toISOString() })
+        },
+      },
     ],
   },
   agents: {

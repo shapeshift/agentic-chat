@@ -1,7 +1,7 @@
 import z from 'zod'
 
-import { asset } from './asset'
-import { unsignedTx } from './tx'
+import { asset } from './asset.js'
+import { unsignedTx } from './tx.js'
 
 export const getRateInput = z.object({
   address: z.string().describe('The address to get account details for'),

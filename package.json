@@ -15,8 +15,6 @@
     "dev:packages": "yarn workspaces foreach --all --include 'packages/*' --parallel run dev",
     "dev:backend": "yarn workspace @shapeshiftoss/agentic-server dev",
     "dev:frontend": "yarn workspace @shapeshiftoss/agentic-chat dev",
-    "deploy:backend:dev": "cd apps/agentic-server && mastra deploy --name dev-shapeshift-agentic",
-    "deploy:backend:prod": "cd apps/agentic-server && mastra deploy --name shapeshift-agentic",
     "test": "vitest",
     "lint": "eslint .",
     "lint:fix": "yarn lint --fix",
@@ -24,7 +22,7 @@
   },
   "dependencies": {
     "@shapeshiftoss/agentic-server": "workspace:^",
-    "@shapeshiftoss/caip": "^8.16.0",
+    "@shapeshiftoss/caip": "workspace:^",
     "@shapeshiftoss/types": "workspace:^",
     "@shapeshiftoss/utils": "workspace:^",
     "bignumber.js": "^9.3.0",

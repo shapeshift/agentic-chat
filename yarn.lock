@@ -5251,7 +5251,7 @@ __metadata:
   resolution: "@shapeshiftoss/agentic@workspace:."
   dependencies:
     "@shapeshiftoss/agentic-server": "workspace:^"
-    "@shapeshiftoss/caip": "npm:^8.16.0"
+    "@shapeshiftoss/caip": "workspace:^"
     "@shapeshiftoss/types": "workspace:^"
     "@shapeshiftoss/utils": "workspace:^"
     "@types/eslint-plugin-jsx-a11y": "npm:^6.10.0"
@@ -5279,12 +5279,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@shapeshiftoss/caip@npm:^8.16.0":
-  version: 8.16.1
-  resolution: "@shapeshiftoss/caip@npm:8.16.1"
-  checksum: 10/8d7defe52fdf02757ac9d187cf6938778c5bca2afa17b3338ad7284c0f270299a5ec1c2f358e52d64e86f472912372566f6dca67004813367f42c31499141356
-  languageName: node
-  linkType: hard
+"@shapeshiftoss/caip@workspace:^, @shapeshiftoss/caip@workspace:packages/caip":
+  version: 0.0.0-use.local
+  resolution: "@shapeshiftoss/caip@workspace:packages/caip"
+  languageName: unknown
+  linkType: soft
 
 "@shapeshiftoss/types@workspace:^, @shapeshiftoss/types@workspace:packages/types":
   version: 0.0.0-use.local
