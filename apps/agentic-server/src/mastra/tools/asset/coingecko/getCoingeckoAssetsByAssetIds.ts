@@ -65,7 +65,9 @@ export const getCoingeckoAssetsByAssetIds = async ({
       const isNativeAsset = token.attributes.address === zeroAddress
       try {
         const assetNamespace = isNativeAsset ? ASSET_NAMESPACE.slip44 : ASSET_NAMESPACE.erc20
-        const assetReference = isNativeAsset ? getNativeAssetReferenceByChainId(chainId) : token.attributes.address
+        const assetReference = isNativeAsset
+          ? getNativeAssetReferenceByChainId(chainId)
+          : token.attributes.address.toLowerCase()
         return toAssetId({ chainId, assetNamespace, assetReference })
       } catch {}
     })()
