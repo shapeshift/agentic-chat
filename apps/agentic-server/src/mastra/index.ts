@@ -72,6 +72,13 @@ export const mastra = new Mastra({
       chatRoute({
         path: '/chat/:agentId',
       }),
+      {
+        method: 'GET',
+        path: '/ping',
+        handler: async c => {
+          return c.json({ status: 'ok', timestamp: new Date().toISOString() })
+        },
+      },
     ],
   },
   agents: {
