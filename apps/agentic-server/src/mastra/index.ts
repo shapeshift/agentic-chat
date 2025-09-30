@@ -43,6 +43,7 @@ const getStorageConfig = () => {
 
 export const mastra = new Mastra({
   server: {
+    host: '0.0.0.0',
     port: Number.isFinite(Number(process.env.PORT)) ? Number(process.env.PORT) : 4111,
     cors: {
       origin: getCorsOrigins(),
