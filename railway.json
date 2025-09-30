@@ -6,7 +6,9 @@
     "watchPatterns": [
       "apps/agentic-server/**",
       "packages/utils/**",
-      "packages/types/**"
+      "packages/types/**",
+      "railway.json",
+      "package.json"
     ]
   },
   "deploy": {
