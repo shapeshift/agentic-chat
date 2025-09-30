@@ -59,12 +59,18 @@ export const portfolioTool = createTool({
       runtimeContext,
     })
 
-    // Step 3: Combine data and calculate human-readable values
+    // Step 3: Normalize balances object keys to lowercase for case-insensitive lookup
+    const normalizedBalances = Object.entries(balances).reduce<Record<string, string>>((acc, [key, value]) => {
+      acc[key.toLowerCase()] = value
+      return acc
+    }, {})
+
+    // Step 4: Combine data and calculate human-readable values
     return {
       account,
       chainId,
       balances: assets.map(asset => {
-        const baseUnitValue = balances[asset.assetId] || '0'
+        const baseUnitValue = normalizedBalances[asset.assetId.toLowerCase()] || '0'
         const humanReadableValue = fromBaseUnit(baseUnitValue, asset.precision)
         const usdValue = calculateUsdValue(humanReadableValue, asset.price)
 
