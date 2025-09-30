@@ -17,6 +17,8 @@
   },
   "deploy": {
     "startCommand": "node apps/agentic-server/.mastra/output/index.mjs",
-    "restartPolicyType": "ON_FAILURE"
+    "restartPolicyType": "ON_FAILURE",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 100
   }
 }

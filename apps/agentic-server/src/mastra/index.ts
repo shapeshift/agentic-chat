@@ -80,6 +80,13 @@ export const mastra = new Mastra({
           return c.json({ status: 'ok', timestamp: new Date().toISOString() })
         },
       },
+      {
+        method: 'GET',
+        path: '/health',
+        handler: async c => {
+          return c.json({ status: 'healthy', timestamp: new Date().toISOString() })
+        },
+      },
     ],
   },
   agents: {
