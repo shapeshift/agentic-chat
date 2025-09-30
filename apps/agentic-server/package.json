@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist .mastra",
-    "build": "yarn run -T concurrently \"yarn build:tsc\" \"yarn build:mastra\"",
+    "build": "yarn workspaces foreach --all --include 'packages/*' --parallel run build && yarn run -T concurrently \"yarn build:tsc\" \"yarn build:mastra\"",
     "build:tsc": "rm -rf dist && yarn run -T tsc --build",
     "build:mastra": "mastra build",
     "dev": "yarn run -T concurrently \"yarn dev:tsc\" \"yarn dev:mastra\"",

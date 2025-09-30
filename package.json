@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@shapeshiftoss/agentic-server": "workspace:^",
-    "@shapeshiftoss/caip": "^8.16.0",
+    "@shapeshiftoss/caip": "workspace:^",
     "@shapeshiftoss/types": "workspace:^",
     "@shapeshiftoss/utils": "workspace:^",
     "bignumber.js": "^9.3.0",
