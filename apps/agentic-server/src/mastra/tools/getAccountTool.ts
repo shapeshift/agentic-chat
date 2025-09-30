@@ -43,7 +43,11 @@ export const getAccountTool = createTool({
 
     const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
       if (['ERC20', 'BEP20'].includes(token.type)) {
-        const assetId = toAssetId({ chainId, assetNamespace: ASSET_NAMESPACE.erc20, assetReference: token.contract })
+        const assetId = toAssetId({
+          chainId,
+          assetNamespace: ASSET_NAMESPACE.erc20,
+          assetReference: token.contract.toLowerCase(),
+        })
         acc[assetId] = token.balance
       }
       return acc
