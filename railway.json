@@ -10,14 +10,13 @@
       "packages/types/**",
       "railway.json",
       "package.json",
-      "bun.lockb",
       "yarn.lock",
       ".yarnrc.yml",
       "tsconfig.json"
     ]
   },
   "deploy": {
-    "startCommand": "cd apps/agentic-server/.mastra/output && bun index.mjs",
+    "startCommand": "cd apps/agentic-server/.mastra/output && node index.mjs",
     "restartPolicyType": "ON_FAILURE"
   }
 }
