@@ -111,7 +111,7 @@ export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapEx
 
   const progress = {
     needsApproval,
-    approvalComplete: ['swapping', 'success'].includes(state.phase),
+    approvalComplete: needsApproval ? Boolean(state.approvalTxHash) : state.phase !== 'idle',
     approvalSkipped: !needsApproval && state.phase !== 'idle',
     swapComplete: state.phase === 'success',
   }

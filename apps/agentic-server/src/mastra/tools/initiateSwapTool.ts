@@ -257,6 +257,10 @@ export const initiateSwapTool = createTool({
 
     const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount, userAddress } = context
 
+    if (!Number.isFinite(parseFloat(sellAmount)) || parseFloat(sellAmount) <= 0) {
+      throw new Error('Sell amount must be a positive number')
+    }
+
     const { sellAsset, buyAsset } = await resolveSwapAssets(
       sellAssetInput,
       buyAssetInput,
