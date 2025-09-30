@@ -5,6 +5,7 @@
     "buildCommand": "yarn install && yarn workspaces foreach --all --include \"packages/*\" --parallel run build && yarn workspace @shapeshiftoss/agentic-server build",
     "watchPatterns": [
       "apps/agentic-server/**",
+      "packages/caip/**",
       "packages/utils/**",
       "packages/types/**",
       "railway.json",
