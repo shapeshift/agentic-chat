@@ -16,7 +16,7 @@
     ]
   },
   "deploy": {
-    "startCommand": "cd apps/agentic-server/.mastra/output && bun run --bun index.mjs",
+    "startCommand": "cd apps/agentic-server/.mastra/output && bun --import=./instrumentation.mjs index.mjs",
     "restartPolicyType": "ON_FAILURE"
   }
 }
