@@ -143,9 +143,9 @@ export const VALID_ASSET_NAMESPACE: Record<ChainNamespace, readonly string[]> = 
 })
 
 // TypeScript types
-export type ChainNamespace = typeof CHAIN_NAMESPACE[keyof typeof CHAIN_NAMESPACE]
-export type ChainReference = typeof CHAIN_REFERENCE[keyof typeof CHAIN_REFERENCE]
-export type AssetNamespace = typeof ASSET_NAMESPACE[keyof typeof ASSET_NAMESPACE]
-export type AssetReference = typeof ASSET_REFERENCE[keyof typeof ASSET_REFERENCE]
+export type ChainNamespace = (typeof CHAIN_NAMESPACE)[keyof typeof CHAIN_NAMESPACE]
+export type ChainReference = (typeof CHAIN_REFERENCE)[keyof typeof CHAIN_REFERENCE]
+export type AssetNamespace = (typeof ASSET_NAMESPACE)[keyof typeof ASSET_NAMESPACE]
+export type AssetReference = (typeof ASSET_REFERENCE)[keyof typeof ASSET_REFERENCE]
 export type ChainId = string
 export type AssetId = string

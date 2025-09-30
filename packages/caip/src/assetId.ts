@@ -74,21 +74,19 @@ export const toAssetId = (args: ToAssetIdArgs): AssetId => {
 
   const validAssetNamespaces = VALID_ASSET_NAMESPACE[chainNamespace]
   if (!validAssetNamespaces.includes(assetNamespace) || !isAssetNamespace(assetNamespace)) {
-    throw new Error(
-      `toAssetId: AssetNamespace ${assetNamespace} not supported for Chain Namespace ${chainNamespace}`,
-    )
+    throw new Error(`toAssetId: AssetNamespace ${assetNamespace} not supported for Chain Namespace ${chainNamespace}`)
   }
 
   if (assetNamespace === 'slip44' && !isValidSlip44(String(assetReference))) {
     throw new Error(`Invalid reference for namespace slip44`)
   }
 
-  return `${chainId}/${assetNamespace}:${assetReference}` as AssetId
+  return `${chainId}/${assetNamespace}:${assetReference}`
 }
 
 export const fromAssetId = (assetId: AssetId): FromAssetIdReturn => {
   const slashIdx = assetId.indexOf('/')
-  const chainId = assetId.substring(0, slashIdx) as ChainId
+  const chainId = assetId.substring(0, slashIdx)
   const assetParts = assetId.substring(slashIdx + 1)
 
   const { chainNamespace, chainReference } = fromChainId(chainId)

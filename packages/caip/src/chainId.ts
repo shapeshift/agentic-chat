@@ -13,7 +13,7 @@ export type FromChainIdReturn = {
 
 export const toChainId = (args: ToChainIdArgs): ChainId => {
   const { chainNamespace, chainReference } = args
-  const maybeChainId = `${chainNamespace}:${chainReference}` as ChainId
+  const maybeChainId = `${chainNamespace}:${chainReference}`
   assertIsChainId(maybeChainId)
   return maybeChainId
 }
