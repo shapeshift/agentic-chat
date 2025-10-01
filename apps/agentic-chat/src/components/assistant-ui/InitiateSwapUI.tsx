@@ -9,9 +9,39 @@ type InitiateSwapContentProps = Omit<ToolCallMessagePartProps<InitiateSwapInput,
   args: Partial<InitiateSwapInput>
 }
 
-const ApprovalStep: React.FC<{
-  phase: 'idle' | 'approving' | 'swapping' | 'success' | 'error'
+const NetworkSwitchStep: React.FC<{
+  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
   progress: {
+    networkSwitchNeeded: boolean
+    networkSwitchComplete: boolean
+    needsApproval: boolean
+    approvalComplete: boolean
+    approvalSkipped: boolean
+    swapComplete: boolean
+  }
+  networkName?: string
+}> = ({ phase, progress, networkName }) => {
+  if (!progress.networkSwitchNeeded && !progress.networkSwitchComplete) {
+    return null
+  }
+
+  if (progress.networkSwitchComplete) {
+    return <div className="loading-success">✅ Switched to {networkName}</div>
+  }
+
+  switch (phase) {
+    case 'switching':
+      return <TextShimmer>⏳ Switching to {networkName}...</TextShimmer>
+    default:
+      return <div>⏳ Switching to {networkName}...</div>
+  }
+}
+
+const ApprovalStep: React.FC<{
+  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
+  progress: {
+    networkSwitchNeeded: boolean
+    networkSwitchComplete: boolean
     needsApproval: boolean
     approvalComplete: boolean
     approvalSkipped: boolean
@@ -38,7 +68,7 @@ const ApprovalStep: React.FC<{
 }
 
 const SignatureStep: React.FC<{
-  phase: 'idle' | 'approving' | 'swapping' | 'success' | 'error'
+  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
 }> = ({ phase }) => {
   switch (phase) {
     case 'swapping':
@@ -46,6 +76,7 @@ const SignatureStep: React.FC<{
     case 'success':
       return <div className="loading-success">✅ Transaction signed</div>
     case 'idle':
+    case 'switching':
     case 'approving':
       return null
     default:
@@ -54,7 +85,7 @@ const SignatureStep: React.FC<{
 }
 
 const CompletionStep: React.FC<{
-  phase: 'idle' | 'approving' | 'swapping' | 'success' | 'error'
+  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
 }> = ({ phase }) => {
   if (phase === 'success') {
     return <div className="loading-success">🎉 Swap complete!</div>
@@ -67,16 +98,20 @@ const SwapError: React.FC<{ error?: string }> = ({ error }) => (
 )
 
 const SwapProgress: React.FC<{
-  phase: 'idle' | 'approving' | 'swapping' | 'success' | 'error'
+  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
   progress: {
+    networkSwitchNeeded: boolean
+    networkSwitchComplete: boolean
     needsApproval: boolean
     approvalComplete: boolean
     approvalSkipped: boolean
     swapComplete: boolean
   }
-}> = ({ phase, progress }) => {
+  networkName?: string
+}> = ({ phase, progress, networkName }) => {
   return (
     <div className="space-y-2 text-muted-foreground">
+      <NetworkSwitchStep phase={phase} progress={progress} networkName={networkName} />
       <ApprovalStep phase={phase} progress={progress} />
       <SignatureStep phase={phase} />
       <CompletionStep phase={phase} />
@@ -93,7 +128,7 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
           timestamp: Date.now(),
         }
       : null
-  const { phase, error, progress } = useLocalSwapExecution(swapData)
+  const { phase, error, progress, networkName } = useLocalSwapExecution(swapData)
 
   if (status.type === 'running') {
     return <TextShimmer>Getting swap quote...</TextShimmer>
@@ -119,7 +154,7 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
           ).toFixed(6)}{' '}
           {result.swapData.buyAsset.symbol}
         </div>
-        <SwapProgress phase={phase} progress={progress} />
+        <SwapProgress phase={phase} progress={progress} networkName={networkName} />
       </div>
     )
   }

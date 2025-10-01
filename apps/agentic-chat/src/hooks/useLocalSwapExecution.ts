@@ -1,11 +1,13 @@
+import { fromChainId } from '@shapeshiftoss/caip'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { useEffect, useReducer } from 'react'
+import { useChainId, useSwitchChain } from 'wagmi'
 
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
 type SwapData = InitiateSwapOutput
 
-type SwapPhase = 'idle' | 'approving' | 'swapping' | 'success' | 'error'
+type SwapPhase = 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
 
 interface SwapState {
   phase: SwapPhase
@@ -15,6 +17,8 @@ interface SwapState {
 }
 
 type SwapAction =
+  | { type: 'START_NETWORK_SWITCH' }
+  | { type: 'NETWORK_SWITCH_SUCCESS' }
   | { type: 'START_APPROVAL' }
   | { type: 'APPROVAL_SUCCESS'; txHash: string }
   | { type: 'START_SWAP' }
@@ -27,6 +31,17 @@ const initialState: SwapState = {
 
 function swapReducer(state: SwapState, action: SwapAction): SwapState {
   switch (action.type) {
+    case 'START_NETWORK_SWITCH':
+      return {
+        ...state,
+        phase: 'switching',
+        error: undefined,
+      }
+    case 'NETWORK_SWITCH_SUCCESS':
+      return {
+        ...state,
+        phase: 'idle',
+      }
     case 'START_APPROVAL':
       return {
         ...state,
@@ -66,15 +81,20 @@ interface UseLocalSwapExecutionResult {
   swapTxHash?: string
   error?: string
   progress: {
+    networkSwitchNeeded: boolean
+    networkSwitchComplete: boolean
     needsApproval: boolean
     approvalComplete: boolean
     approvalSkipped: boolean
     swapComplete: boolean
   }
+  networkName?: string
 }
 
 export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapExecutionResult => {
   const [state, dispatch] = useReducer(swapReducer, initialState)
+  const currentChainId = useChainId()
+  const { switchChain } = useSwitchChain()
 
   useEffect(() => {
     if (!swapData || state.phase !== 'idle') {
@@ -85,6 +105,17 @@ export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapEx
       try {
         const data = swapData
         const { needsApproval, approvalTx, swapTx } = data
+
+        const sellAssetChainId = data.swapData.sellAsset.chainId
+        const sellChainIdNumber = Number(fromChainId(sellAssetChainId).chainReference)
+
+        const needsNetworkSwitch = currentChainId !== sellChainIdNumber
+
+        if (needsNetworkSwitch) {
+          dispatch({ type: 'START_NETWORK_SWITCH' })
+          await switchChain({ chainId: sellChainIdNumber })
+          dispatch({ type: 'NETWORK_SWITCH_SUCCESS' })
+        }
 
         // Handle approval if needed
         if (needsApproval && approvalTx) {
@@ -105,14 +136,18 @@ export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapEx
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     executeSwapFlow()
-  }, [swapData, state.phase])
+  }, [swapData, state.phase, currentChainId, switchChain])
 
   const needsApproval = swapData?.needsApproval ?? false
+  const sellAssetChainId = swapData ? Number(fromChainId(swapData.swapData.sellAsset.chainId).chainReference) : undefined
+  const needsNetworkSwitch = swapData && currentChainId !== sellAssetChainId
 
   const progress = {
+    networkSwitchNeeded: Boolean(needsNetworkSwitch),
+    networkSwitchComplete: needsNetworkSwitch ? state.phase !== 'idle' && state.phase !== 'switching' : true,
     needsApproval,
-    approvalComplete: needsApproval ? Boolean(state.approvalTxHash) : state.phase !== 'idle',
-    approvalSkipped: !needsApproval && state.phase !== 'idle',
+    approvalComplete: needsApproval ? Boolean(state.approvalTxHash) : state.phase !== 'idle' && state.phase !== 'switching',
+    approvalSkipped: !needsApproval && state.phase !== 'idle' && state.phase !== 'switching',
     swapComplete: state.phase === 'success',
   }
 
@@ -122,5 +157,6 @@ export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapEx
     swapTxHash: state.swapTxHash,
     error: state.error,
     progress,
+    networkName: swapData?.swapData.sellAsset.network,
   }
 }
