@@ -3,8 +3,7 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { GetAccountInput, GetAccountOutput } from '@shapeshiftoss/agentic-server'
 import { chainIdToNetwork } from '@shapeshiftoss/types'
 
-import { TextComplete } from '@/components/TextComplete'
-import { TextShimmer } from '@/components/TextShimmer'
+import { StatusText } from './StatusText'
 
 type GetAccountContentProps = Omit<ToolCallMessagePartProps<GetAccountInput, GetAccountOutput>, 'args'> & {
   args: Partial<GetAccountInput>
@@ -20,14 +19,14 @@ const GetAccountContent: React.FC<GetAccountContentProps> = ({ args, status, res
 
   switch (status.type) {
     case 'running': {
-      return <TextShimmer>{`Checking ${accountDetailsText}`}</TextShimmer>
+      return <StatusText.Loading>{`Checking ${accountDetailsText}`}</StatusText.Loading>
     }
     case 'complete': {
       if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
-        return <TextComplete>{`Failed to find ${accountDetailsText} ❌`}</TextComplete>
+        return <StatusText.Error>{`Failed to find ${accountDetailsText} ❌`}</StatusText.Error>
       }
 
-      return <TextComplete>{`Found ${accountDetailsText} ✅`}</TextComplete>
+      return <StatusText.Success>{`Found ${accountDetailsText} ✅`}</StatusText.Success>
     }
   }
 }

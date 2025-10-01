@@ -2,8 +2,9 @@ import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { InitiateSwapInput, InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 
-import { TextShimmer } from '@/components/TextShimmer'
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
+
+import { StatusText } from './StatusText'
 
 type InitiateSwapContentProps = Omit<ToolCallMessagePartProps<InitiateSwapInput, InitiateSwapOutput>, 'args'> & {
   args: Partial<InitiateSwapInput>
@@ -18,11 +19,11 @@ const NetworkSwitchStep: React.FC<{
   }
 
   if (status === StepStatus.COMPLETE) {
-    return <div className="loading-success">✅ Switched to {networkName}</div>
+    return <StatusText.Success>✅ Switched to {networkName}</StatusText.Success>
   }
 
   if (status === StepStatus.IN_PROGRESS) {
-    return <TextShimmer>⏳ Switching to {networkName}...</TextShimmer>
+    return <StatusText.Loading>⏳ Switching to {networkName}...</StatusText.Loading>
   }
 
   return null
@@ -32,15 +33,15 @@ const ApprovalStep: React.FC<{
   status: StepStatus
 }> = ({ status }) => {
   if (status === StepStatus.SKIPPED) {
-    return <div className="loading-success">✅ Token approval skipped</div>
+    return <StatusText.Success>✅ Token approval skipped</StatusText.Success>
   }
 
   if (status === StepStatus.COMPLETE) {
-    return <div className="loading-success">✅ Token approved</div>
+    return <StatusText.Success>✅ Token approved</StatusText.Success>
   }
 
   if (status === StepStatus.IN_PROGRESS) {
-    return <TextShimmer>⏳ Approving token spending...</TextShimmer>
+    return <StatusText.Loading>⏳ Approving token spending...</StatusText.Loading>
   }
 
   return null
@@ -50,11 +51,11 @@ const SignatureStep: React.FC<{
   status: StepStatus
 }> = ({ status }) => {
   if (status === StepStatus.COMPLETE) {
-    return <div className="loading-success">✅ Transaction signed</div>
+    return <StatusText.Success>✅ Transaction signed</StatusText.Success>
   }
 
   if (status === StepStatus.IN_PROGRESS) {
-    return <TextShimmer>⏳ Signing swap transaction...</TextShimmer>
+    return <StatusText.Loading>⏳ Signing swap transaction...</StatusText.Loading>
   }
 
   return null
@@ -64,13 +65,13 @@ const CompletionStep: React.FC<{
   status: StepStatus
 }> = ({ status }) => {
   if (status === StepStatus.COMPLETE) {
-    return <div className="loading-success">🎉 Swap complete!</div>
+    return <StatusText.Success>🎉 Swap complete!</StatusText.Success>
   }
   return null
 }
 
 const SwapError: React.FC<{ error?: string }> = ({ error }) => (
-  <div className="text-muted-foreground">⚠️ Swap execution failed: {error}</div>
+  <StatusText.Error>⚠️ Swap execution failed: {error}</StatusText.Error>
 )
 
 const SwapProgress: React.FC<{
@@ -96,12 +97,12 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
   const { error, steps, networkName } = useSwapExecution(toolCallId, swapData)
 
   if (status.type === 'running') {
-    return <TextShimmer>Getting swap quote...</TextShimmer>
+    return <StatusText.Loading>Getting swap quote...</StatusText.Loading>
   }
 
   if (status.type === 'complete') {
     if (!result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
-      return <div className="text-muted-foreground">❌ Failed to get swap quote</div>
+      return <StatusText.Error>❌ Failed to get swap quote</StatusText.Error>
     }
 
     // Show swap execution error if it occurred
@@ -124,7 +125,7 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
     )
   }
 
-  return <div className="text-muted-foreground">Failed to get swap quote</div>
+  return <StatusText.Error>Failed to get swap quote</StatusText.Error>
 }
 
 export const InitiateSwapUI = makeAssistantToolUI<InitiateSwapInput, InitiateSwapOutput>({

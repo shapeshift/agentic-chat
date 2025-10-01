@@ -3,10 +3,10 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { SwitchNetworkInput, SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import { ArrowRightLeft } from 'lucide-react'
 
-import { TextShimmer } from '@/components/TextShimmer'
 import { useNetworkSwitch } from '@/hooks/useNetworkSwitch'
 
 import { CollapsableDetails } from './CollapsableDetails'
+import { StatusText } from './StatusText'
 
 const Icon = ArrowRightLeft
 
@@ -20,7 +20,7 @@ const SwitchNetworkContent: React.FC<SwitchNetworkContentProps> = ({ status, res
   const { phase, error } = useNetworkSwitch(toolCallId, networkData)
 
   if (status.type === 'running') {
-    return <TextShimmer>Preparing network switch...</TextShimmer>
+    return <StatusText.Loading>Preparing network switch...</StatusText.Loading>
   }
 
   if (status.type === 'complete') {
@@ -44,27 +44,19 @@ const SwitchNetworkContent: React.FC<SwitchNetworkContentProps> = ({ status, res
     }
 
     if (phase === 'switching') {
-      return (
-        <div className="flex items-center gap-2">
-          <TextShimmer>Switching to {result.networkName}...</TextShimmer>
-        </div>
-      )
+      return <StatusText.Loading>Switching to {result.networkName}...</StatusText.Loading>
     }
 
     if (phase === 'success') {
       return (
-        <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-green-500" />
-          <p className="text-muted-foreground">Switched to {result.networkName}</p>
-        </div>
+        <StatusText.WithIcon>
+          <StatusText.Icon icon={Icon} className="text-green-500" />
+          <StatusText.Text>Switched to {result.networkName}</StatusText.Text>
+        </StatusText.WithIcon>
       )
     }
 
-    return (
-      <div className="flex items-center gap-2">
-        <TextShimmer>Switching to {result.networkName}...</TextShimmer>
-      </div>
-    )
+    return <StatusText.Loading>Switching to {result.networkName}...</StatusText.Loading>
   }
 
   return (

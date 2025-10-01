@@ -3,9 +3,8 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import { Send } from 'lucide-react'
 import z from 'zod'
 
-import { TextShimmer } from '@/components/TextShimmer'
-
 import { CollapsableDetails } from './CollapsableDetails'
+import { StatusText } from './StatusText'
 
 const Icon = Send
 
@@ -31,9 +30,9 @@ const SendTransactionContent: React.FC<SendTransactionContentProps> = ({ status,
     case 'running':
     case 'requires-action':
     case 'incomplete': {
-      if (!args.to) return <TextShimmer>Sending transaction</TextShimmer>
+      if (!args.to) return <StatusText.Loading>Sending transaction</StatusText.Loading>
 
-      return <TextShimmer>Sending transaction to {args.to}...</TextShimmer>
+      return <StatusText.Loading>Sending transaction to {args.to}...</StatusText.Loading>
     }
 
     case 'complete':
@@ -48,10 +47,10 @@ const SendTransactionContent: React.FC<SendTransactionContentProps> = ({ status,
         )
       }
       return (
-        <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-green-500" />
-          <p className="text-muted-foreground">Transaction sent: {result}</p>
-        </div>
+        <StatusText.WithIcon>
+          <StatusText.Icon icon={Icon} className="text-green-500" />
+          <StatusText.Text>Transaction sent: {result}</StatusText.Text>
+        </StatusText.WithIcon>
       )
   }
 }
