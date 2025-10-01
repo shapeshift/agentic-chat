@@ -5,7 +5,6 @@ import { GetCoingeckoAssets } from '@/components/assistant-ui/GetCoingeckoAssets
 import { GetPortalsAssets } from '@/components/assistant-ui/GetPortalsAssets'
 import { InitiateSwapUI } from '@/components/assistant-ui/InitiateSwapUI'
 import { Portfolio } from '@/components/assistant-ui/Portfolio'
-import SendTransactionUI from '@/components/assistant-ui/SendTransactionUI'
 import { SwitchNetworkUI } from '@/components/assistant-ui/SwitchNetworkUI'
 import { Thread } from '@/components/assistant-ui/thread'
 import { ConnectWallet } from '@/components/connect-wallet'
@@ -38,7 +37,6 @@ export const Dashboard = () => {
           <GetCoingeckoAssets />
           <GetPortalsAssets />
           <Portfolio />
-          <SendTransactionUI />
           <SwitchNetworkUI />
           <Thread />
         </div>

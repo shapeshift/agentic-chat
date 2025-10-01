@@ -21,10 +21,10 @@ const GetAllowanceContent: React.FC<GetAllowanceContentProps> = ({ status, resul
   if (isError || !result) {
     return (
       <CollapsableDetails
-        title={`An Error Occured with ${toolName}`}
+        title={`An Error Occurred with ${toolName}`}
         leftIcon={<AlertCircle className="w-4 h-4 text-red-500" />}
       >
-        {JSON.stringify(result || 'Failed to get allowance')}
+        <pre>{JSON.stringify(result ?? 'Failed to get allowance', null, 2)}</pre>
       </CollapsableDetails>
     )
   }

@@ -70,9 +70,12 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
     <div className="space-y-2">
       <div className="text-muted-foreground">
         ✅ Quote found • Rate: 1 {result.swapData.sellAsset.symbol} ={' '}
-        {(
-          parseFloat(result.swapData.buyAmountCryptoPrecision) / parseFloat(result.swapData.sellAmountCryptoPrecision)
-        ).toFixed(6)}{' '}
+        {(() => {
+          const buy = Number(result.swapData.buyAmountCryptoPrecision)
+          const sell = Number(result.swapData.sellAmountCryptoPrecision)
+          if (!Number.isFinite(buy) || !Number.isFinite(sell) || sell <= 0) return '—'
+          return (buy / sell).toFixed(6)
+        })()}{' '}
         {result.swapData.buyAsset.symbol}
       </div>
       <SwapProgress steps={steps} networkName={networkName} />

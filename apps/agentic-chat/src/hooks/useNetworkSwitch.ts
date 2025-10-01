@@ -1,12 +1,20 @@
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
-import { useEffect } from 'react'
 import { useSwitchChain } from 'wagmi'
 
-import { useToolExecutionStore } from '@/stores/toolExecutionStore'
+import { useToolExecutionEffect } from './useToolExecutionEffect'
 
 type NetworkSwitchData = SwitchNetworkOutput
 
 type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'
+
+interface NetworkSwitchState {
+  phase: NetworkSwitchPhase
+  error?: string
+}
+
+const initialNetworkState: NetworkSwitchState = {
+  phase: 'idle',
+}
 
 interface UseNetworkSwitchResult {
   phase: NetworkSwitchPhase
@@ -14,50 +22,35 @@ interface UseNetworkSwitchResult {
 }
 
 export const useNetworkSwitch = (toolCallId: string, networkData: NetworkSwitchData | null): UseNetworkSwitchResult => {
-  const state = useToolExecutionStore(s => s.getNetworkState(toolCallId))
-  const networkStartSwitch = useToolExecutionStore(s => s.networkStartSwitch)
-  const networkSwitchSuccess = useToolExecutionStore(s => s.networkSwitchSuccess)
-  const networkSetError = useToolExecutionStore(s => s.networkSetError)
-  const hasExecuted = useToolExecutionStore(s => s.hasExecuted(toolCallId))
-  const markExecuted = useToolExecutionStore(s => s.markExecuted)
   const { switchChain } = useSwitchChain()
 
-  useEffect(() => {
-    if (!networkData || state.phase !== 'idle' || !switchChain) {
-      return
-    }
-
-    if (hasExecuted) {
-      return
-    }
-
-    markExecuted(toolCallId)
-
-    const executeNetworkSwitch = () => {
-      try {
-        networkStartSwitch(toolCallId)
-
-        switchChain({ chainId: networkData.chainId })
-
-        networkSwitchSuccess(toolCallId)
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        networkSetError(toolCallId, errorMessage)
-      }
-    }
-
-    executeNetworkSwitch()
-  }, [
+  const { state } = useToolExecutionEffect(
     toolCallId,
     networkData,
-    state.phase,
-    switchChain,
-    hasExecuted,
-    markExecuted,
-    networkStartSwitch,
-    networkSwitchSuccess,
-    networkSetError,
-  ])
+    initialNetworkState,
+    (_data, state) => state.phase === 'idle' && !!switchChain,
+    (data, setState) => {
+      try {
+        setState(draft => {
+          draft.phase = 'switching'
+          draft.error = undefined
+        })
+
+        switchChain({ chainId: data.chainId })
+
+        setState(draft => {
+          draft.phase = 'success'
+        })
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        setState(draft => {
+          draft.phase = 'error'
+          draft.error = errorMessage
+        })
+      }
+    },
+    [switchChain]
+  )
 
   return {
     phase: state.phase,
