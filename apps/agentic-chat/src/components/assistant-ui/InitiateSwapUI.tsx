@@ -3,91 +3,67 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { InitiateSwapInput, InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 
 import { TextShimmer } from '@/components/TextShimmer'
-import { useLocalSwapExecution } from '@/hooks/useLocalSwapExecution'
+import { StepStatus, useLocalSwapExecution } from '@/hooks/useLocalSwapExecution'
 
 type InitiateSwapContentProps = Omit<ToolCallMessagePartProps<InitiateSwapInput, InitiateSwapOutput>, 'args'> & {
   args: Partial<InitiateSwapInput>
 }
 
 const NetworkSwitchStep: React.FC<{
-  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
-  progress: {
-    networkSwitchNeeded: boolean
-    networkSwitchComplete: boolean
-    needsApproval: boolean
-    approvalComplete: boolean
-    approvalSkipped: boolean
-    swapComplete: boolean
-  }
+  status: StepStatus
   networkName?: string
-}> = ({ phase, progress, networkName }) => {
-  if (!progress.networkSwitchNeeded && !progress.networkSwitchComplete) {
+}> = ({ status, networkName }) => {
+  if (status === StepStatus.SKIPPED) {
     return null
   }
 
-  if (progress.networkSwitchComplete) {
+  if (status === StepStatus.COMPLETE) {
     return <div className="loading-success">✅ Switched to {networkName}</div>
   }
 
-  switch (phase) {
-    case 'switching':
-      return <TextShimmer>⏳ Switching to {networkName}...</TextShimmer>
-    default:
-      return <div>⏳ Switching to {networkName}...</div>
+  if (status === StepStatus.IN_PROGRESS) {
+    return <TextShimmer>⏳ Switching to {networkName}...</TextShimmer>
   }
+
+  return null
 }
 
 const ApprovalStep: React.FC<{
-  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
-  progress: {
-    networkSwitchNeeded: boolean
-    networkSwitchComplete: boolean
-    needsApproval: boolean
-    approvalComplete: boolean
-    approvalSkipped: boolean
-    swapComplete: boolean
-  }
-}> = ({ phase, progress }) => {
-  if (progress.approvalSkipped) {
+  status: StepStatus
+}> = ({ status }) => {
+  if (status === StepStatus.SKIPPED) {
     return <div className="loading-success">✅ Token approval skipped</div>
   }
 
-  if (!progress.needsApproval) {
-    return null
+  if (status === StepStatus.COMPLETE) {
+    return <div className="loading-success">✅ Token approved</div>
   }
 
-  switch (phase) {
-    case 'approving':
-      return <TextShimmer>⏳ Approving token spending...</TextShimmer>
-    case 'swapping':
-    case 'success':
-      return <div className="loading-success">✅ Token approved</div>
-    default:
-      return <div>⏳ Approving token spending...</div>
+  if (status === StepStatus.IN_PROGRESS) {
+    return <TextShimmer>⏳ Approving token spending...</TextShimmer>
   }
+
+  return null
 }
 
 const SignatureStep: React.FC<{
-  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
-}> = ({ phase }) => {
-  switch (phase) {
-    case 'swapping':
-      return <TextShimmer>⏳ Signing swap transaction...</TextShimmer>
-    case 'success':
-      return <div className="loading-success">✅ Transaction signed</div>
-    case 'idle':
-    case 'switching':
-    case 'approving':
-      return null
-    default:
-      return <div>⏳ Signing swap transaction...</div>
+  status: StepStatus
+}> = ({ status }) => {
+  if (status === StepStatus.COMPLETE) {
+    return <div className="loading-success">✅ Transaction signed</div>
   }
+
+  if (status === StepStatus.IN_PROGRESS) {
+    return <TextShimmer>⏳ Signing swap transaction...</TextShimmer>
+  }
+
+  return null
 }
 
 const CompletionStep: React.FC<{
-  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
-}> = ({ phase }) => {
-  if (phase === 'success') {
+  status: StepStatus
+}> = ({ status }) => {
+  if (status === StepStatus.COMPLETE) {
     return <div className="loading-success">🎉 Swap complete!</div>
   }
   return null
@@ -98,23 +74,19 @@ const SwapError: React.FC<{ error?: string }> = ({ error }) => (
 )
 
 const SwapProgress: React.FC<{
-  phase: 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
-  progress: {
-    networkSwitchNeeded: boolean
-    networkSwitchComplete: boolean
-    needsApproval: boolean
-    approvalComplete: boolean
-    approvalSkipped: boolean
-    swapComplete: boolean
+  steps: {
+    networkSwitch: StepStatus
+    approval: StepStatus
+    swap: StepStatus
   }
   networkName?: string
-}> = ({ phase, progress, networkName }) => {
+}> = ({ steps, networkName }) => {
   return (
     <div className="space-y-2 text-muted-foreground">
-      <NetworkSwitchStep phase={phase} progress={progress} networkName={networkName} />
-      <ApprovalStep phase={phase} progress={progress} />
-      <SignatureStep phase={phase} />
-      <CompletionStep phase={phase} />
+      <NetworkSwitchStep status={steps.networkSwitch} networkName={networkName} />
+      <ApprovalStep status={steps.approval} />
+      <SignatureStep status={steps.swap} />
+      <CompletionStep status={steps.swap} />
     </div>
   )
 }
@@ -128,7 +100,7 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
           timestamp: Date.now(),
         }
       : null
-  const { phase, error, progress, networkName } = useLocalSwapExecution(swapData)
+  const { error, steps, networkName } = useLocalSwapExecution(swapData)
 
   if (status.type === 'running') {
     return <TextShimmer>Getting swap quote...</TextShimmer>
@@ -140,7 +112,7 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
     }
 
     // Show swap execution error if it occurred
-    if (phase === 'error') {
+    if (error) {
       return <SwapError error={error} />
     }
 
@@ -154,7 +126,7 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
           ).toFixed(6)}{' '}
           {result.swapData.buyAsset.symbol}
         </div>
-        <SwapProgress phase={phase} progress={progress} networkName={networkName} />
+        <SwapProgress steps={steps} networkName={networkName} />
       </div>
     )
   }

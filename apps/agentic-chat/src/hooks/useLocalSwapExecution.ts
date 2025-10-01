@@ -7,88 +7,99 @@ import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
 type SwapData = InitiateSwapOutput
 
-type SwapPhase = 'idle' | 'switching' | 'approving' | 'swapping' | 'success' | 'error'
+enum SwapStep {
+  NETWORK_SWITCH = 0,
+  APPROVAL = 1,
+  SWAP = 2,
+  COMPLETE = 3,
+}
+
+export enum StepStatus {
+  NOT_STARTED = 'not_started',
+  IN_PROGRESS = 'in_progress',
+  COMPLETE = 'complete',
+  SKIPPED = 'skipped',
+}
 
 interface SwapState {
-  phase: SwapPhase
+  currentStep: SwapStep
+  completedSteps: Set<SwapStep>
   approvalTxHash?: string
   swapTxHash?: string
   error?: string
 }
 
 type SwapAction =
-  | { type: 'START_NETWORK_SWITCH' }
-  | { type: 'NETWORK_SWITCH_SUCCESS' }
-  | { type: 'START_APPROVAL' }
-  | { type: 'APPROVAL_SUCCESS'; txHash: string }
-  | { type: 'START_SWAP' }
-  | { type: 'SWAP_SUCCESS'; txHash: string }
+  | { type: 'NEXT' }
+  | { type: 'SKIP' }
   | { type: 'ERROR'; error: string }
+  | { type: 'SET_APPROVAL_HASH'; txHash: string }
+  | { type: 'SET_SWAP_HASH'; txHash: string }
 
 const initialState: SwapState = {
-  phase: 'idle',
+  currentStep: SwapStep.NETWORK_SWITCH,
+  completedSteps: new Set(),
 }
 
 function swapReducer(state: SwapState, action: SwapAction): SwapState {
   switch (action.type) {
-    case 'START_NETWORK_SWITCH':
+    case 'NEXT':
       return {
         ...state,
-        phase: 'switching',
+        completedSteps: new Set([...state.completedSteps, state.currentStep]),
+        currentStep: (state.currentStep + 1) as SwapStep,
         error: undefined,
       }
-    case 'NETWORK_SWITCH_SUCCESS':
+    case 'SKIP':
       return {
         ...state,
-        phase: 'idle',
-      }
-    case 'START_APPROVAL':
-      return {
-        ...state,
-        phase: 'approving',
+        currentStep: (state.currentStep + 1) as SwapStep,
         error: undefined,
-      }
-    case 'APPROVAL_SUCCESS':
-      return {
-        ...state,
-        approvalTxHash: action.txHash,
-      }
-    case 'START_SWAP':
-      return {
-        ...state,
-        phase: 'swapping',
-      }
-    case 'SWAP_SUCCESS':
-      return {
-        ...state,
-        phase: 'success',
-        swapTxHash: action.txHash,
       }
     case 'ERROR':
       return {
         ...state,
-        phase: 'error',
         error: action.error,
+      }
+    case 'SET_APPROVAL_HASH':
+      return {
+        ...state,
+        approvalTxHash: action.txHash,
+      }
+    case 'SET_SWAP_HASH':
+      return {
+        ...state,
+        swapTxHash: action.txHash,
       }
     default:
       return state
   }
 }
 
+const isStepComplete = (step: SwapStep, state: SwapState) => state.completedSteps.has(step)
+
+const isStepSkipped = (step: SwapStep, state: SwapState) =>
+  state.currentStep > step && !state.completedSteps.has(step)
+
+const isCurrentStep = (step: SwapStep, state: SwapState) => state.currentStep === step
+
+const getStepStatus = (step: SwapStep, state: SwapState): StepStatus => {
+  if (state.currentStep < step) return StepStatus.NOT_STARTED
+  if (state.currentStep === step) return StepStatus.IN_PROGRESS
+  if (state.completedSteps.has(step)) return StepStatus.COMPLETE
+  return StepStatus.SKIPPED
+}
+
 interface UseLocalSwapExecutionResult {
-  phase: SwapPhase
-  approvalTxHash?: string
-  swapTxHash?: string
-  error?: string
-  progress: {
-    networkSwitchNeeded: boolean
-    networkSwitchComplete: boolean
-    needsApproval: boolean
-    approvalComplete: boolean
-    approvalSkipped: boolean
-    swapComplete: boolean
+  steps: {
+    networkSwitch: StepStatus
+    approval: StepStatus
+    swap: StepStatus
   }
   networkName?: string
+  error?: string
+  approvalTxHash?: string
+  swapTxHash?: string
 }
 
 export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapExecutionResult => {
@@ -97,7 +108,7 @@ export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapEx
   const { switchChain } = useSwitchChain()
 
   useEffect(() => {
-    if (!swapData || state.phase !== 'idle') {
+    if (!swapData || state.currentStep !== SwapStep.NETWORK_SWITCH) {
       return
     }
 
@@ -111,23 +122,27 @@ export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapEx
 
         const needsNetworkSwitch = currentChainId !== sellChainIdNumber
 
+        // Step 1: Network Switch
         if (needsNetworkSwitch) {
-          dispatch({ type: 'START_NETWORK_SWITCH' })
           await switchChain({ chainId: sellChainIdNumber })
-          dispatch({ type: 'NETWORK_SWITCH_SUCCESS' })
+          dispatch({ type: 'NEXT' })
+        } else {
+          dispatch({ type: 'SKIP' })
         }
 
-        // Handle approval if needed
+        // Step 2: Approval
         if (needsApproval && approvalTx) {
-          dispatch({ type: 'START_APPROVAL' })
           const approvalTxHash = await executeApproval(approvalTx)
-          dispatch({ type: 'APPROVAL_SUCCESS', txHash: approvalTxHash })
+          dispatch({ type: 'SET_APPROVAL_HASH', txHash: approvalTxHash })
+          dispatch({ type: 'NEXT' })
+        } else {
+          dispatch({ type: 'SKIP' })
         }
 
-        // Execute swap
-        dispatch({ type: 'START_SWAP' })
+        // Step 3: Swap
         const swapTxHash = await executeSwap(swapTx)
-        dispatch({ type: 'SWAP_SUCCESS', txHash: swapTxHash })
+        dispatch({ type: 'SET_SWAP_HASH', txHash: swapTxHash })
+        dispatch({ type: 'NEXT' })
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         dispatch({ type: 'ERROR', error: errorMessage })
@@ -136,27 +151,17 @@ export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapEx
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     executeSwapFlow()
-  }, [swapData, state.phase, currentChainId, switchChain])
-
-  const needsApproval = swapData?.needsApproval ?? false
-  const sellAssetChainId = swapData ? Number(fromChainId(swapData.swapData.sellAsset.chainId).chainReference) : undefined
-  const needsNetworkSwitch = swapData && currentChainId !== sellAssetChainId
-
-  const progress = {
-    networkSwitchNeeded: Boolean(needsNetworkSwitch),
-    networkSwitchComplete: needsNetworkSwitch ? state.phase !== 'idle' && state.phase !== 'switching' : true,
-    needsApproval,
-    approvalComplete: needsApproval ? Boolean(state.approvalTxHash) : state.phase !== 'idle' && state.phase !== 'switching',
-    approvalSkipped: !needsApproval && state.phase !== 'idle' && state.phase !== 'switching',
-    swapComplete: state.phase === 'success',
-  }
+  }, [swapData, state.currentStep, currentChainId, switchChain])
 
   return {
-    phase: state.phase,
+    steps: {
+      networkSwitch: getStepStatus(SwapStep.NETWORK_SWITCH, state),
+      approval: getStepStatus(SwapStep.APPROVAL, state),
+      swap: getStepStatus(SwapStep.SWAP, state),
+    },
+    networkName: swapData?.swapData.sellAsset.network,
+    error: state.error,
     approvalTxHash: state.approvalTxHash,
     swapTxHash: state.swapTxHash,
-    error: state.error,
-    progress,
-    networkName: swapData?.swapData.sellAsset.network,
   }
 }
