@@ -3,7 +3,7 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { InitiateSwapInput, InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 
 import { TextShimmer } from '@/components/TextShimmer'
-import { StepStatus, useLocalSwapExecution } from '@/hooks/useLocalSwapExecution'
+import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
 
 type InitiateSwapContentProps = Omit<ToolCallMessagePartProps<InitiateSwapInput, InitiateSwapOutput>, 'args'> & {
   args: Partial<InitiateSwapInput>
@@ -92,11 +92,8 @@ const SwapProgress: React.FC<{
 }
 
 const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, result, toolCallId }) => {
-  const swapData =
-    status.type === 'complete' && result && !('code' in result)
-      ? result
-      : null
-  const { error, steps, networkName } = useLocalSwapExecution(toolCallId, swapData)
+  const swapData = status.type === 'complete' && result && !('code' in result) ? result : null
+  const { error, steps, networkName } = useSwapExecution(toolCallId, swapData)
 
   if (status.type === 'running') {
     return <TextShimmer>Getting swap quote...</TextShimmer>

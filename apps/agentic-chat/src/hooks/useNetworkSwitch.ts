@@ -1,50 +1,12 @@
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
-import { useEffect, useReducer } from 'react'
+import { useEffect } from 'react'
 import { useSwitchChain } from 'wagmi'
 
-import { useExecutedToolCalls } from '@/stores/executedToolCalls'
+import { useToolExecutionStore } from '@/stores/toolExecutionStore'
 
 type NetworkSwitchData = SwitchNetworkOutput
 
 type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'
-
-interface NetworkSwitchState {
-  phase: NetworkSwitchPhase
-  error?: string
-}
-
-type NetworkSwitchAction =
-  | { type: 'START_SWITCH' }
-  | { type: 'SWITCH_SUCCESS' }
-  | { type: 'ERROR'; error: string }
-
-const initialState: NetworkSwitchState = {
-  phase: 'idle',
-}
-
-function networkSwitchReducer(state: NetworkSwitchState, action: NetworkSwitchAction): NetworkSwitchState {
-  switch (action.type) {
-    case 'START_SWITCH':
-      return {
-        ...state,
-        phase: 'switching',
-        error: undefined,
-      }
-    case 'SWITCH_SUCCESS':
-      return {
-        ...state,
-        phase: 'success',
-      }
-    case 'ERROR':
-      return {
-        ...state,
-        phase: 'error',
-        error: action.error,
-      }
-    default:
-      return state
-  }
-}
 
 interface UseNetworkSwitchResult {
   phase: NetworkSwitchPhase
@@ -52,36 +14,50 @@ interface UseNetworkSwitchResult {
 }
 
 export const useNetworkSwitch = (toolCallId: string, networkData: NetworkSwitchData | null): UseNetworkSwitchResult => {
-  const [state, dispatch] = useReducer(networkSwitchReducer, initialState)
+  const state = useToolExecutionStore(s => s.getNetworkState(toolCallId))
+  const networkStartSwitch = useToolExecutionStore(s => s.networkStartSwitch)
+  const networkSwitchSuccess = useToolExecutionStore(s => s.networkSwitchSuccess)
+  const networkSetError = useToolExecutionStore(s => s.networkSetError)
+  const hasExecuted = useToolExecutionStore(s => s.hasExecuted(toolCallId))
+  const markExecuted = useToolExecutionStore(s => s.markExecuted)
   const { switchChain } = useSwitchChain()
-  const { hasExecuted, markExecuted } = useExecutedToolCalls()
 
   useEffect(() => {
     if (!networkData || state.phase !== 'idle' || !switchChain) {
       return
     }
 
-    if (hasExecuted(toolCallId)) {
+    if (hasExecuted) {
       return
     }
 
     markExecuted(toolCallId)
 
-    const executeNetworkSwitch = async () => {
+    const executeNetworkSwitch = () => {
       try {
-        dispatch({ type: 'START_SWITCH' })
+        networkStartSwitch(toolCallId)
 
-        await switchChain({ chainId: networkData.chainId })
+        switchChain({ chainId: networkData.chainId })
 
-        dispatch({ type: 'SWITCH_SUCCESS' })
+        networkSwitchSuccess(toolCallId)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        dispatch({ type: 'ERROR', error: errorMessage })
+        networkSetError(toolCallId, errorMessage)
       }
     }
 
     executeNetworkSwitch()
-  }, [networkData, state.phase, switchChain])
+  }, [
+    toolCallId,
+    networkData,
+    state.phase,
+    switchChain,
+    hasExecuted,
+    markExecuted,
+    networkStartSwitch,
+    networkSwitchSuccess,
+    networkSetError,
+  ])
 
   return {
     phase: state.phase,

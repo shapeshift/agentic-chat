@@ -6,7 +6,8 @@ import type { SwitchNetworkInput, SwitchNetworkOutput } from './schemas/networkS
 
 export const switchNetworkTool = createTool({
   id: 'switchNetwork',
-  description: 'Switch the connected wallet to a different blockchain network. Supported networks: ethereum, optimism, arbitrum, polygon, avalanche, bsc, base, gnosis',
+  description:
+    'Switch the connected wallet to a different blockchain network. Supported networks: ethereum, optimism, arbitrum, polygon, avalanche, bsc, base, gnosis',
   inputSchema: switchNetworkInput,
   outputSchema: switchNetworkOutput,
   execute: async ({ context }) => {
@@ -21,7 +22,7 @@ export const switchNetworkTool = createTool({
       action: 'switch_network',
     }
 
-    return result
+    return Promise.resolve(result)
   },
 })
 

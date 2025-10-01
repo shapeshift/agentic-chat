@@ -1,19 +1,12 @@
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { fromChainId } from '@shapeshiftoss/caip'
-import { useEffect, useReducer } from 'react'
+import { useEffect } from 'react'
 import { useChainId, useSwitchChain } from 'wagmi'
 
-import { useExecutedToolCalls } from '@/stores/executedToolCalls'
+import { SwapStep, useToolExecutionStore } from '@/stores/toolExecutionStore'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
 type SwapData = InitiateSwapOutput
-
-enum SwapStep {
-  NETWORK_SWITCH = 0,
-  APPROVAL = 1,
-  SWAP = 2,
-  COMPLETE = 3,
-}
 
 export enum StepStatus {
   NOT_STARTED = 'not_started',
@@ -30,53 +23,6 @@ interface SwapState {
   error?: string
 }
 
-type SwapAction =
-  | { type: 'NEXT' }
-  | { type: 'SKIP' }
-  | { type: 'ERROR'; error: string }
-  | { type: 'SET_APPROVAL_HASH'; txHash: string }
-  | { type: 'SET_SWAP_HASH'; txHash: string }
-
-const initialState: SwapState = {
-  currentStep: SwapStep.NETWORK_SWITCH,
-  completedSteps: new Set(),
-}
-
-function swapReducer(state: SwapState, action: SwapAction): SwapState {
-  switch (action.type) {
-    case 'NEXT':
-      return {
-        ...state,
-        completedSteps: new Set([...state.completedSteps, state.currentStep]),
-        currentStep: (state.currentStep + 1) as SwapStep,
-        error: undefined,
-      }
-    case 'SKIP':
-      return {
-        ...state,
-        currentStep: (state.currentStep + 1) as SwapStep,
-        error: undefined,
-      }
-    case 'ERROR':
-      return {
-        ...state,
-        error: action.error,
-      }
-    case 'SET_APPROVAL_HASH':
-      return {
-        ...state,
-        approvalTxHash: action.txHash,
-      }
-    case 'SET_SWAP_HASH':
-      return {
-        ...state,
-        swapTxHash: action.txHash,
-      }
-    default:
-      return state
-  }
-}
-
 const getStepStatus = (step: SwapStep, state: SwapState): StepStatus => {
   if (state.currentStep < step) return StepStatus.NOT_STARTED
   if (state.currentStep === step) return StepStatus.IN_PROGRESS
@@ -84,7 +30,7 @@ const getStepStatus = (step: SwapStep, state: SwapState): StepStatus => {
   return StepStatus.SKIPPED
 }
 
-interface UseLocalSwapExecutionResult {
+interface UseSwapExecutionResult {
   steps: {
     networkSwitch: StepStatus
     approval: StepStatus
@@ -96,18 +42,24 @@ interface UseLocalSwapExecutionResult {
   swapTxHash?: string
 }
 
-export const useLocalSwapExecution = (toolCallId: string, swapData: SwapData | null): UseLocalSwapExecutionResult => {
-  const [state, dispatch] = useReducer(swapReducer, initialState)
+export const useSwapExecution = (toolCallId: string, swapData: SwapData | null): UseSwapExecutionResult => {
+  const state = useToolExecutionStore(s => s.getSwapState(toolCallId))
+  const swapNextStep = useToolExecutionStore(s => s.swapNextStep)
+  const swapSkipStep = useToolExecutionStore(s => s.swapSkipStep)
+  const swapSetApprovalHash = useToolExecutionStore(s => s.swapSetApprovalHash)
+  const swapSetSwapHash = useToolExecutionStore(s => s.swapSetSwapHash)
+  const swapSetError = useToolExecutionStore(s => s.swapSetError)
+  const hasExecuted = useToolExecutionStore(s => s.hasExecuted(toolCallId))
+  const markExecuted = useToolExecutionStore(s => s.markExecuted)
   const currentChainId = useChainId()
   const { switchChain } = useSwitchChain()
-  const { hasExecuted, markExecuted } = useExecutedToolCalls()
 
   useEffect(() => {
     if (!swapData || state.currentStep !== SwapStep.NETWORK_SWITCH) {
       return
     }
 
-    if (hasExecuted(toolCallId)) {
+    if (hasExecuted) {
       return
     }
 
@@ -125,34 +77,47 @@ export const useLocalSwapExecution = (toolCallId: string, swapData: SwapData | n
 
         // Step 1: Network Switch
         if (needsNetworkSwitch) {
-          await switchChain({ chainId: sellChainIdNumber })
-          dispatch({ type: 'NEXT' })
+          switchChain({ chainId: sellChainIdNumber })
+          swapNextStep(toolCallId)
         } else {
-          dispatch({ type: 'SKIP' })
+          swapSkipStep(toolCallId)
         }
 
         // Step 2: Approval
         if (needsApproval && approvalTx) {
           const approvalTxHash = await executeApproval(approvalTx)
-          dispatch({ type: 'SET_APPROVAL_HASH', txHash: approvalTxHash })
-          dispatch({ type: 'NEXT' })
+          swapSetApprovalHash(toolCallId, approvalTxHash)
+          swapNextStep(toolCallId)
         } else {
-          dispatch({ type: 'SKIP' })
+          swapSkipStep(toolCallId)
         }
 
         // Step 3: Swap
         const swapTxHash = await executeSwap(swapTx)
-        dispatch({ type: 'SET_SWAP_HASH', txHash: swapTxHash })
-        dispatch({ type: 'NEXT' })
+        swapSetSwapHash(toolCallId, swapTxHash)
+        swapNextStep(toolCallId)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        dispatch({ type: 'ERROR', error: errorMessage })
+        swapSetError(toolCallId, errorMessage)
       }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     executeSwapFlow()
-  }, [swapData, state.currentStep, currentChainId, switchChain])
+  }, [
+    toolCallId,
+    swapData,
+    state.currentStep,
+    currentChainId,
+    switchChain,
+    hasExecuted,
+    markExecuted,
+    swapNextStep,
+    swapSkipStep,
+    swapSetApprovalHash,
+    swapSetSwapHash,
+    swapSetError,
+  ])
 
   return {
     steps: {

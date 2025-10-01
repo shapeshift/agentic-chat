@@ -2,9 +2,11 @@ import { NETWORKS } from '@shapeshiftoss/types'
 import z from 'zod'
 
 export const switchNetworkInput = z.object({
-  network: z.enum(NETWORKS).describe(
-    'Network name to switch to. Must be one of: ethereum, optimism, arbitrum, polygon, avalanche, bsc, base, gnosis'
-  ),
+  network: z
+    .enum(NETWORKS)
+    .describe(
+      'Network name to switch to. Must be one of: ethereum, optimism, arbitrum, polygon, avalanche, bsc, base, gnosis'
+    ),
 })
 
 export const switchNetworkOutput = z.object({

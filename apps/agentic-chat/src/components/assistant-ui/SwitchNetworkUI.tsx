@@ -15,10 +15,7 @@ type SwitchNetworkContentProps = Omit<ToolCallMessagePartProps<SwitchNetworkInpu
 }
 
 const SwitchNetworkContent: React.FC<SwitchNetworkContentProps> = ({ status, result, toolCallId }) => {
-  const networkData =
-    status.type === 'complete' && result && !('code' in result)
-      ? result
-      : null
+  const networkData = status.type === 'complete' && result && !('code' in result) ? result : null
 
   const { phase, error } = useNetworkSwitch(toolCallId, networkData)
 
@@ -29,7 +26,10 @@ const SwitchNetworkContent: React.FC<SwitchNetworkContentProps> = ({ status, res
   if (status.type === 'complete') {
     if (!result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
       return (
-        <CollapsableDetails title="Failed to prepare network switch" leftIcon={<Icon className="w-4 h-4 text-red-500" />}>
+        <CollapsableDetails
+          title="Failed to prepare network switch"
+          leftIcon={<Icon className="w-4 h-4 text-red-500" />}
+        >
           {result && 'message' in result ? String(result.message) : 'Unknown error'}
         </CollapsableDetails>
       )
