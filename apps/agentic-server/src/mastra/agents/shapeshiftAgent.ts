@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, mathCalculatorTool, initiateSwapTool, portfolioTool } from '../tools'
+import { getAssetsTool, mathCalculatorTool, initiateSwapTool, portfolioTool, switchNetworkTool } from '../tools'
 
 import { supportedChainsContext } from './context'
 
@@ -26,6 +26,7 @@ export const shapeshiftAgent = new Agent({
     - **mathCalculator**: Use for all arithmetic operations to ensure precision
     - **portfolio**: Get user balances with human-readable values and USD amounts (requires network + address)
     - **initiateSwap**: Execute full swap flow (rates + allowances + transactions to wallet)
+    - **switchNetwork**: Switch the connected wallet to a different blockchain network
 
     **Swap Workflow:**
     1. Acknowledge swap request to user
@@ -56,6 +57,7 @@ export const shapeshiftAgent = new Agent({
     mathCalculatorTool,
     portfolioTool,
     initiateSwapTool,
+    switchNetworkTool,
   },
   memory: new Memory({
     options: {
