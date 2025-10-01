@@ -1,6 +1,7 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { InitiateSwapInput, InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
+import type { ReactNode } from 'react'
 
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
 
@@ -10,69 +11,17 @@ type InitiateSwapContentProps = Omit<ToolCallMessagePartProps<InitiateSwapInput,
   args: Partial<InitiateSwapInput>
 }
 
-const NetworkSwitchStep: React.FC<{
+const Step: React.FC<{
   status: StepStatus
-  networkName?: string
-}> = ({ status, networkName }) => {
-  if (status === StepStatus.SKIPPED) {
-    return null
-  }
-
-  if (status === StepStatus.COMPLETE) {
-    return <StatusText.Success>✅ Switched to {networkName}</StatusText.Success>
-  }
-
-  if (status === StepStatus.IN_PROGRESS) {
-    return <StatusText.Loading>⏳ Switching to {networkName}...</StatusText.Loading>
-  }
-
+  loading: ReactNode
+  complete: ReactNode
+  skipped?: ReactNode
+}> = ({ status, loading, complete, skipped }) => {
+  if (status === StepStatus.SKIPPED) return skipped || null
+  if (status === StepStatus.COMPLETE) return <StatusText.Success>{complete}</StatusText.Success>
+  if (status === StepStatus.IN_PROGRESS) return <StatusText.Loading>{loading}</StatusText.Loading>
   return null
 }
-
-const ApprovalStep: React.FC<{
-  status: StepStatus
-}> = ({ status }) => {
-  if (status === StepStatus.SKIPPED) {
-    return <StatusText.Success>✅ Token approval skipped</StatusText.Success>
-  }
-
-  if (status === StepStatus.COMPLETE) {
-    return <StatusText.Success>✅ Token approved</StatusText.Success>
-  }
-
-  if (status === StepStatus.IN_PROGRESS) {
-    return <StatusText.Loading>⏳ Approving token spending...</StatusText.Loading>
-  }
-
-  return null
-}
-
-const SignatureStep: React.FC<{
-  status: StepStatus
-}> = ({ status }) => {
-  if (status === StepStatus.COMPLETE) {
-    return <StatusText.Success>✅ Transaction signed</StatusText.Success>
-  }
-
-  if (status === StepStatus.IN_PROGRESS) {
-    return <StatusText.Loading>⏳ Signing swap transaction...</StatusText.Loading>
-  }
-
-  return null
-}
-
-const CompletionStep: React.FC<{
-  status: StepStatus
-}> = ({ status }) => {
-  if (status === StepStatus.COMPLETE) {
-    return <StatusText.Success>🎉 Swap complete!</StatusText.Success>
-  }
-  return null
-}
-
-const SwapError: React.FC<{ error?: string }> = ({ error }) => (
-  <StatusText.Error>⚠️ Swap execution failed: {error}</StatusText.Error>
-)
 
 const SwapProgress: React.FC<{
   steps: {
@@ -84,10 +33,19 @@ const SwapProgress: React.FC<{
 }> = ({ steps, networkName }) => {
   return (
     <div className="space-y-2 text-muted-foreground">
-      <NetworkSwitchStep status={steps.networkSwitch} networkName={networkName} />
-      <ApprovalStep status={steps.approval} />
-      <SignatureStep status={steps.swap} />
-      <CompletionStep status={steps.swap} />
+      <Step
+        status={steps.networkSwitch}
+        loading={`⏳ Switching to ${networkName}...`}
+        complete={`✅ Switched to ${networkName}`}
+      />
+      <Step
+        status={steps.approval}
+        loading="⏳ Approving token spending..."
+        complete="✅ Token approved"
+        skipped={<StatusText.Success>✅ Token approval skipped</StatusText.Success>}
+      />
+      <Step status={steps.swap} loading="⏳ Signing swap transaction..." complete="✅ Transaction signed" />
+      {steps.swap === StepStatus.COMPLETE && <StatusText.Success>🎉 Swap complete!</StatusText.Success>}
     </div>
   )
 }
@@ -100,32 +58,26 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
     return <StatusText.Loading>Getting swap quote...</StatusText.Loading>
   }
 
-  if (status.type === 'complete') {
-    if (!result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
-      return <StatusText.Error>❌ Failed to get swap quote</StatusText.Error>
-    }
-
-    // Show swap execution error if it occurred
-    if (error) {
-      return <SwapError error={error} />
-    }
-
-    // Show quote info and execution progress
-    return (
-      <div className="space-y-2">
-        <div className="text-muted-foreground">
-          ✅ Quote found • Rate: 1 {result.swapData.sellAsset.symbol} ={' '}
-          {(
-            parseFloat(result.swapData.buyAmountCryptoPrecision) / parseFloat(result.swapData.sellAmountCryptoPrecision)
-          ).toFixed(6)}{' '}
-          {result.swapData.buyAsset.symbol}
-        </div>
-        <SwapProgress steps={steps} networkName={networkName} />
-      </div>
-    )
+  if (!result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
+    return <StatusText.Error>❌ Failed to get swap quote</StatusText.Error>
   }
 
-  return <StatusText.Error>Failed to get swap quote</StatusText.Error>
+  if (error) {
+    return <StatusText.Error>⚠️ Swap execution failed: {error}</StatusText.Error>
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="text-muted-foreground">
+        ✅ Quote found • Rate: 1 {result.swapData.sellAsset.symbol} ={' '}
+        {(
+          parseFloat(result.swapData.buyAmountCryptoPrecision) / parseFloat(result.swapData.sellAmountCryptoPrecision)
+        ).toFixed(6)}{' '}
+        {result.swapData.buyAsset.symbol}
+      </div>
+      <SwapProgress steps={steps} networkName={networkName} />
+    </div>
+  )
 }
 
 export const InitiateSwapUI = makeAssistantToolUI<InitiateSwapInput, InitiateSwapOutput>({

@@ -3,8 +3,7 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { PortfolioToolInput, PortfolioToolOutput } from '@shapeshiftoss/agentic-server'
 import { chainIdToNetwork } from '@shapeshiftoss/types'
 
-import { TextComplete } from '@/components/TextComplete'
-import { TextShimmer } from '@/components/TextShimmer'
+import { StatusText } from './StatusText'
 
 type PortfolioContentProps = Omit<ToolCallMessagePartProps<PortfolioToolInput, PortfolioToolOutput>, 'args'> & {
   args: Partial<PortfolioToolInput>
@@ -18,18 +17,15 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({ status, result, arg
     return parts.join(' ')
   })()
 
-  switch (status.type) {
-    case 'running': {
-      return <TextShimmer>{`Fetching ${porfolioDetailsText}`}</TextShimmer>
-    }
-    case 'complete': {
-      if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
-        return <TextComplete>{`Failed to fetch ${porfolioDetailsText} ❌`}</TextComplete>
-      }
-
-      return <TextComplete>{`Fetch ${porfolioDetailsText} ✅`}</TextComplete>
-    }
+  if (status.type === 'running') {
+    return <StatusText.Loading>Fetching {porfolioDetailsText}</StatusText.Loading>
   }
+
+  if (isError || !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
+    return <StatusText.Error>Failed to fetch {porfolioDetailsText} ❌</StatusText.Error>
+  }
+
+  return <StatusText.Success>Fetched {porfolioDetailsText} ✅</StatusText.Success>
 }
 
 export const Portfolio = makeAssistantToolUI<PortfolioToolInput, PortfolioToolOutput>({

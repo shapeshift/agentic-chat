@@ -26,33 +26,30 @@ type SendTransactionContentProps = Omit<
 }
 
 const SendTransactionContent: React.FC<SendTransactionContentProps> = ({ status, result, args, isError, toolName }) => {
-  switch (status.type) {
-    case 'running':
-    case 'requires-action':
-    case 'incomplete': {
-      if (!args.to) return <StatusText.Loading>Sending transaction</StatusText.Loading>
+  const isLoading = ['running', 'requires-action', 'incomplete'].includes(status.type)
 
-      return <StatusText.Loading>Sending transaction to {args.to}...</StatusText.Loading>
-    }
-
-    case 'complete':
-      if (isError) {
-        return (
-          <CollapsableDetails
-            title={`An Error Occured with ${toolName}`}
-            leftIcon={<Icon className="w-4 h-4 text-red-500" />}
-          >
-            {result}
-          </CollapsableDetails>
-        )
-      }
-      return (
-        <StatusText.WithIcon>
-          <StatusText.Icon icon={Icon} className="text-green-500" />
-          <StatusText.Text>Transaction sent: {result}</StatusText.Text>
-        </StatusText.WithIcon>
-      )
+  if (isLoading) {
+    const message = args.to ? `Sending transaction to ${args.to}...` : 'Sending transaction'
+    return <StatusText.Loading>{message}</StatusText.Loading>
   }
+
+  if (isError) {
+    return (
+      <CollapsableDetails
+        title={`An Error Occured with ${toolName}`}
+        leftIcon={<Icon className="w-4 h-4 text-red-500" />}
+      >
+        {result}
+      </CollapsableDetails>
+    )
+  }
+
+  return (
+    <StatusText.WithIcon>
+      <StatusText.Icon icon={Icon} className="text-green-500" />
+      <StatusText.Text>Transaction sent: {result}</StatusText.Text>
+    </StatusText.WithIcon>
+  )
 }
 
 const SendTransactionUI = makeAssistantToolUI<SendTransactionParams, SendTransactionResult>({

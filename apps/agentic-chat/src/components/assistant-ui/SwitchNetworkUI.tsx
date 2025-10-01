@@ -14,55 +14,44 @@ type SwitchNetworkContentProps = Omit<ToolCallMessagePartProps<SwitchNetworkInpu
   args: Partial<SwitchNetworkInput>
 }
 
-const SwitchNetworkContent: React.FC<SwitchNetworkContentProps> = ({ status, result, toolCallId }) => {
-  const networkData = status.type === 'complete' && result && !('code' in result) ? result : null
+const isToolExecutionFailed = (
+  result: SwitchNetworkOutput | { code: string; message?: string } | null | undefined
+): boolean => {
+  return !result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')
+}
 
+const ErrorDetails: React.FC<{ title: string; message: string }> = ({ title, message }) => (
+  <CollapsableDetails title={title} leftIcon={<Icon className="w-4 h-4 text-red-500" />}>
+    {message}
+  </CollapsableDetails>
+)
+
+const SwitchNetworkContent: React.FC<SwitchNetworkContentProps> = ({ status, result, toolCallId }) => {
+  const networkData = status.type === 'complete' && result && !isToolExecutionFailed(result) ? result : null
   const { phase, error } = useNetworkSwitch(toolCallId, networkData)
 
   if (status.type === 'running') {
     return <StatusText.Loading>Preparing network switch...</StatusText.Loading>
   }
 
-  if (status.type === 'complete') {
-    if (!result || ('code' in result && result.code === 'TOOL_EXECUTION_FAILED')) {
-      return (
-        <CollapsableDetails
-          title="Failed to prepare network switch"
-          leftIcon={<Icon className="w-4 h-4 text-red-500" />}
-        >
-          {result && 'message' in result ? String(result.message) : 'Unknown error'}
-        </CollapsableDetails>
-      )
-    }
+  if (isToolExecutionFailed(result)) {
+    const message = result && 'message' in result ? String(result.message) : 'Unknown error'
+    return <ErrorDetails title="Failed to prepare network switch" message={message} />
+  }
 
-    if (phase === 'error') {
-      return (
-        <CollapsableDetails title="Network switch failed" leftIcon={<Icon className="w-4 h-4 text-red-500" />}>
-          {error || 'Unknown error'}
-        </CollapsableDetails>
-      )
-    }
+  if (phase === 'error') {
+    return <ErrorDetails title="Network switch failed" message={error || 'Unknown error'} />
+  }
 
-    if (phase === 'switching') {
-      return <StatusText.Loading>Switching to {result.networkName}...</StatusText.Loading>
-    }
-
-    if (phase === 'success') {
-      return (
-        <StatusText.WithIcon>
-          <StatusText.Icon icon={Icon} className="text-green-500" />
-          <StatusText.Text>Switched to {result.networkName}</StatusText.Text>
-        </StatusText.WithIcon>
-      )
-    }
-
-    return <StatusText.Loading>Switching to {result.networkName}...</StatusText.Loading>
+  if (phase === 'switching' || phase === 'idle') {
+    return <StatusText.Loading>Switching to {result!.networkName}...</StatusText.Loading>
   }
 
   return (
-    <CollapsableDetails title="Network switch failed" leftIcon={<Icon className="w-4 h-4 text-red-500" />}>
-      Unknown status
-    </CollapsableDetails>
+    <StatusText.WithIcon>
+      <StatusText.Icon icon={Icon} className="text-green-500" />
+      <StatusText.Text>Switched to {result!.networkName}</StatusText.Text>
+    </StatusText.WithIcon>
   )
 }
 

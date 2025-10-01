@@ -3,43 +3,37 @@ import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { GetAllowanceInput, GetAllowanceOutput } from '@shapeshiftoss/agentic-server'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
-import { TextShimmer } from '@/components/TextShimmer'
-
 import { CollapsableDetails } from './CollapsableDetails'
+import { StatusText } from './StatusText'
 
 type GetAllowanceContentProps = Omit<ToolCallMessagePartProps<GetAllowanceInput, GetAllowanceOutput>, 'args'> & {
   args: Partial<GetAllowanceInput>
 }
 
 const GetAllowanceContent: React.FC<GetAllowanceContentProps> = ({ status, result, args, isError, toolName }) => {
-  switch (status.type) {
-    case 'running':
-    case 'requires-action':
-    case 'incomplete': {
-      if (!args.asset) {
-        return <TextShimmer>Fetching allowance</TextShimmer>
-      }
+  const isLoading = ['running', 'requires-action', 'incomplete'].includes(status.type)
 
-      return <TextShimmer>Fetching allowance for {args.asset.symbol ?? ''}...</TextShimmer>
-    }
-    case 'complete': {
-      if (isError || !result) {
-        return (
-          <CollapsableDetails
-            title={`An Error Occured with ${toolName}`}
-            leftIcon={<AlertCircle className="w-4 h-4 text-red-500" />}
-          >
-            {JSON.stringify(result || 'Failed to get allowance')}
-          </CollapsableDetails>
-        )
-      }
-      return (
-        <CollapsableDetails title="Token allowance" leftIcon={<CheckCircle className="w-4 h-4 text-primary" />}>
-          <pre>{JSON.stringify(result)}</pre>
-        </CollapsableDetails>
-      )
-    }
+  if (isLoading) {
+    const message = args.asset ? `Fetching allowance for ${args.asset.symbol ?? ''}...` : 'Fetching allowance'
+    return <StatusText.Loading>{message}</StatusText.Loading>
   }
+
+  if (isError || !result) {
+    return (
+      <CollapsableDetails
+        title={`An Error Occured with ${toolName}`}
+        leftIcon={<AlertCircle className="w-4 h-4 text-red-500" />}
+      >
+        {JSON.stringify(result || 'Failed to get allowance')}
+      </CollapsableDetails>
+    )
+  }
+
+  return (
+    <CollapsableDetails title="Token allowance" leftIcon={<CheckCircle className="w-4 h-4 text-primary" />}>
+      <pre>{JSON.stringify(result)}</pre>
+    </CollapsableDetails>
+  )
 }
 export const GetAllowance = makeAssistantToolUI<GetAllowanceInput, GetAllowanceOutput>({
   toolName: 'getAllowance',
