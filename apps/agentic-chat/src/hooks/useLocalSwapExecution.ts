@@ -1,8 +1,9 @@
-import { fromChainId } from '@shapeshiftoss/caip'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
+import { fromChainId } from '@shapeshiftoss/caip'
 import { useEffect, useReducer } from 'react'
 import { useChainId, useSwitchChain } from 'wagmi'
 
+import { useExecutedToolCalls } from '@/stores/executedToolCalls'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
 type SwapData = InitiateSwapOutput
@@ -76,13 +77,6 @@ function swapReducer(state: SwapState, action: SwapAction): SwapState {
   }
 }
 
-const isStepComplete = (step: SwapStep, state: SwapState) => state.completedSteps.has(step)
-
-const isStepSkipped = (step: SwapStep, state: SwapState) =>
-  state.currentStep > step && !state.completedSteps.has(step)
-
-const isCurrentStep = (step: SwapStep, state: SwapState) => state.currentStep === step
-
 const getStepStatus = (step: SwapStep, state: SwapState): StepStatus => {
   if (state.currentStep < step) return StepStatus.NOT_STARTED
   if (state.currentStep === step) return StepStatus.IN_PROGRESS
@@ -102,15 +96,22 @@ interface UseLocalSwapExecutionResult {
   swapTxHash?: string
 }
 
-export const useLocalSwapExecution = (swapData: SwapData | null): UseLocalSwapExecutionResult => {
+export const useLocalSwapExecution = (toolCallId: string, swapData: SwapData | null): UseLocalSwapExecutionResult => {
   const [state, dispatch] = useReducer(swapReducer, initialState)
   const currentChainId = useChainId()
   const { switchChain } = useSwitchChain()
+  const { hasExecuted, markExecuted } = useExecutedToolCalls()
 
   useEffect(() => {
     if (!swapData || state.currentStep !== SwapStep.NETWORK_SWITCH) {
       return
     }
+
+    if (hasExecuted(toolCallId)) {
+      return
+    }
+
+    markExecuted(toolCallId)
 
     const executeSwapFlow = async () => {
       try {

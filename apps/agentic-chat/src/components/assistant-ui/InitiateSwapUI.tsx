@@ -91,16 +91,12 @@ const SwapProgress: React.FC<{
   )
 }
 
-const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, result }) => {
+const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, result, toolCallId }) => {
   const swapData =
     status.type === 'complete' && result && !('code' in result)
-      ? {
-          ...result,
-          action: 'initiate_swap_execution' as const,
-          timestamp: Date.now(),
-        }
+      ? result
       : null
-  const { error, steps, networkName } = useLocalSwapExecution(swapData)
+  const { error, steps, networkName } = useLocalSwapExecution(toolCallId, swapData)
 
   if (status.type === 'running') {
     return <TextShimmer>Getting swap quote...</TextShimmer>

@@ -14,17 +14,13 @@ type SwitchNetworkContentProps = Omit<ToolCallMessagePartProps<SwitchNetworkInpu
   args: Partial<SwitchNetworkInput>
 }
 
-const SwitchNetworkContent: React.FC<SwitchNetworkContentProps> = ({ status, result }) => {
+const SwitchNetworkContent: React.FC<SwitchNetworkContentProps> = ({ status, result, toolCallId }) => {
   const networkData =
     status.type === 'complete' && result && !('code' in result)
-      ? {
-          ...result,
-          action: 'switch_network' as const,
-          timestamp: Date.now(),
-        }
+      ? result
       : null
 
-  const { phase, error } = useNetworkSwitch(networkData)
+  const { phase, error } = useNetworkSwitch(toolCallId, networkData)
 
   if (status.type === 'running') {
     return <TextShimmer>Preparing network switch...</TextShimmer>

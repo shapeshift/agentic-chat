@@ -2,10 +2,9 @@ import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import { useEffect, useReducer } from 'react'
 import { useSwitchChain } from 'wagmi'
 
-type NetworkSwitchData = SwitchNetworkOutput & {
-  action: 'switch_network'
-  timestamp: number
-}
+import { useExecutedToolCalls } from '@/stores/executedToolCalls'
+
+type NetworkSwitchData = SwitchNetworkOutput
 
 type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'
 
@@ -52,14 +51,21 @@ interface UseNetworkSwitchResult {
   error?: string
 }
 
-export const useNetworkSwitch = (networkData: NetworkSwitchData | null): UseNetworkSwitchResult => {
+export const useNetworkSwitch = (toolCallId: string, networkData: NetworkSwitchData | null): UseNetworkSwitchResult => {
   const [state, dispatch] = useReducer(networkSwitchReducer, initialState)
   const { switchChain } = useSwitchChain()
+  const { hasExecuted, markExecuted } = useExecutedToolCalls()
 
   useEffect(() => {
     if (!networkData || state.phase !== 'idle' || !switchChain) {
       return
     }
+
+    if (hasExecuted(toolCallId)) {
+      return
+    }
+
+    markExecuted(toolCallId)
 
     const executeNetworkSwitch = async () => {
       try {
