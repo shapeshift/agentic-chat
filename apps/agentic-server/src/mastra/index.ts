@@ -92,6 +92,151 @@ export const mastra = new Mastra({
           return c.json({ status: 'healthy', timestamp: new Date().toISOString() })
         },
       },
+      {
+        method: 'GET',
+        path: '/api/threads',
+        handler: async c => {
+          const resourceId = c.req.query('resourceId')
+          if (!resourceId) {
+            return c.json({ error: 'resourceId is required' }, 400)
+          }
+
+          const storage = mastra.storage
+          if (!storage) {
+            return c.json({ error: 'Storage not configured' }, 500)
+          }
+
+          const threads = await storage.getThreadsByResourceId({
+            resourceId,
+            orderBy: 'updatedAt',
+            sortDirection: 'DESC',
+          })
+
+          return c.json({
+            threads: threads.map(thread => ({
+              remoteId: thread.id,
+              externalId: undefined,
+              title: thread.title ?? 'New Chat',
+              status: 'regular' as const,
+            })),
+          })
+        },
+      },
+      {
+        method: 'POST',
+        path: '/api/threads',
+        handler: async c => {
+          const body = await c.req.json()
+          const { resourceId, title, metadata } = body as {
+            resourceId: string
+            title?: string
+            metadata?: Record<string, unknown>
+          }
+
+          if (!resourceId) {
+            return c.json({ error: 'resourceId is required' }, 400)
+          }
+
+          const storage = mastra.storage
+          if (!storage) {
+            return c.json({ error: 'Storage not configured' }, 500)
+          }
+
+          const thread = await storage.saveThread({
+            thread: {
+              id: crypto.randomUUID(),
+              resourceId,
+              title: title ?? 'New Chat',
+              metadata: metadata ?? {},
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          })
+
+          return c.json({
+            remoteId: thread.id,
+            externalId: undefined,
+          })
+        },
+      },
+      {
+        method: 'PUT',
+        path: '/api/threads/:threadId',
+        handler: async c => {
+          const threadId = c.req.param('threadId')
+          const body = await c.req.json()
+          const { title, metadata } = body as {
+            title?: string
+            metadata?: Record<string, unknown>
+          }
+
+          if (!threadId) {
+            return c.json({ error: 'threadId is required' }, 400)
+          }
+
+          const storage = mastra.storage
+          if (!storage) {
+            return c.json({ error: 'Storage not configured' }, 500)
+          }
+
+          await storage.updateThread({
+            id: threadId,
+            title: title ?? 'New Chat',
+            metadata: metadata ?? {},
+          })
+
+          return c.json({ success: true })
+        },
+      },
+      {
+        method: 'DELETE',
+        path: '/api/threads/:threadId',
+        handler: async c => {
+          const threadId = c.req.param('threadId')
+
+          if (!threadId) {
+            return c.json({ error: 'threadId is required' }, 400)
+          }
+
+          const storage = mastra.storage
+          if (!storage) {
+            return c.json({ error: 'Storage not configured' }, 500)
+          }
+
+          await storage.deleteThread({ threadId })
+
+          return c.json({ success: true })
+        },
+      },
+      {
+        method: 'POST',
+        path: '/api/threads/:threadId/generate-title',
+        handler: async c => {
+          const threadId = c.req.param('threadId')
+          const body = await c.req.json()
+          const { messages } = body as { messages: Array<{ role: string; content: string }> }
+
+          if (!threadId || !messages || messages.length === 0) {
+            return c.json({ error: 'threadId and messages are required' }, 400)
+          }
+
+          const storage = mastra.storage
+          if (!storage) {
+            return c.json({ error: 'Storage not configured' }, 500)
+          }
+
+          const firstUserMessage = messages.find(m => m.role === 'user')?.content ?? 'New Chat'
+          const title = firstUserMessage.slice(0, 50) + (firstUserMessage.length > 50 ? '...' : '')
+
+          await storage.updateThread({
+            id: threadId,
+            title,
+            metadata: {},
+          })
+
+          return c.json({ title })
+        },
+      },
     ],
   },
   agents: {

@@ -64,6 +64,9 @@ export const shapeshiftAgent = new Agent({
       workingMemory: {
         enabled: true,
       },
+      threads: {
+        generateTitle: true,
+      },
     },
   }),
 })
