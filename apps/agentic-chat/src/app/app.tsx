@@ -24,6 +24,9 @@ if (import.meta.env.VITE_PROJECT_ID) {
     projectId: import.meta.env.VITE_PROJECT_ID,
     networks,
     metadata,
+    features: {
+      swaps: false,
+    },
   })
 }
 
