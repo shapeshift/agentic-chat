@@ -3,9 +3,22 @@ import type { ChainId } from '@shapeshiftoss/caip'
 import { getPublicClient } from '@wagmi/core'
 import { extractChain, getAddress } from 'viem'
 import type { Chain, Hex, WalletClient } from 'viem'
+import { mainnet, optimism, arbitrum, polygon, avalanche, bsc, base, gnosis } from 'viem/chains'
 
-import { networks } from '@/lib/appkit'
 import { wagmiConfig } from '@/lib/wagmi-config'
+
+// Convert your network names to viem Chain objects
+const networks: Chain[] = [
+  mainnet, // ethereum
+  optimism,
+  arbitrum,
+  polygon,
+  avalanche,
+  bsc,
+  base,
+  gnosis,
+  // Note: Solana isn't supported by viem as it's not an EVM chain
+]
 
 type SendTransactionParams = {
   chainId: ChainId
@@ -19,11 +32,10 @@ type SendTransactionParams = {
 
 export const sendTransaction = async (params: SendTransactionParams) => {
   const { walletClient } = params
-
   const chainId = Number(fromChainId(params.chainId).chainReference)
-  const chain = extractChain({ chains: networks as Chain[], id: chainId })
-
+  const chain = extractChain({ chains: networks, id: chainId })
   const publicClient = getPublicClient(wagmiConfig, { chainId })
+
   if (!publicClient) throw new Error('Public client not found for the specified chain')
 
   const account = getAddress(params.from)

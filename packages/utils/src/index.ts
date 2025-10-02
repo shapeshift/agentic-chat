@@ -8,6 +8,11 @@ import {
   optimismChainId,
   bscChainId,
   gnosisChainId,
+  btcChainId,
+  ltcChainId,
+  dogeChainId,
+  bchChainId,
+  solanaChainId,
   fromAssetId,
   arbitrumAssetId,
   avalancheAssetId,
@@ -17,6 +22,11 @@ import {
   gnosisAssetId,
   optimismAssetId,
   polygonAssetId,
+  btcAssetId,
+  ltcAssetId,
+  dogeAssetId,
+  bchAssetId,
+  solAssetId,
   fromChainId,
   CHAIN_NAMESPACE,
   CHAIN_REFERENCE,
@@ -69,6 +79,16 @@ export const getUnchainedHttpUrlEnvVar = (chainId: ChainId): string => {
       return 'UNCHAINED_ARBITRUM_HTTP_URL'
     case baseChainId:
       return 'UNCHAINED_BASE_HTTP_URL'
+    case btcChainId:
+      return 'UNCHAINED_BITCOIN_HTTP_URL'
+    case ltcChainId:
+      return 'UNCHAINED_LITECOIN_HTTP_URL'
+    case dogeChainId:
+      return 'UNCHAINED_DOGECOIN_HTTP_URL'
+    case bchChainId:
+      return 'UNCHAINED_BITCOINCASH_HTTP_URL'
+    case solanaChainId:
+      return 'UNCHAINED_SOLANA_HTTP_URL'
     default:
       throw new Error(`invalid chainId: ${chainId}`)
   }
@@ -115,15 +135,41 @@ export const getFeeAssetIdByChainId = (chainId: ChainId): string | undefined => 
       return avalancheAssetId
     case baseChainId:
       return baseAssetId
+    case btcChainId:
+      return btcAssetId
+    case ltcChainId:
+      return ltcAssetId
+    case dogeChainId:
+      return dogeAssetId
+    case bchChainId:
+      return bchAssetId
+    case solanaChainId:
+      return solAssetId
     default:
       return undefined
   }
 }
 
+export const isUtxoChainId = (chainId: ChainId): boolean =>
+  fromChainId(chainId).chainNamespace === CHAIN_NAMESPACE.Utxo
+
 export const getNativeAssetReferenceByChainId = (chainId: ChainId): string => {
   const { chainNamespace, chainReference } = fromChainId(chainId)
 
   switch (chainNamespace) {
+    case CHAIN_NAMESPACE.Utxo:
+      switch (chainReference) {
+        case CHAIN_REFERENCE.BitcoinMainnet:
+          return ASSET_REFERENCE.Bitcoin
+        case CHAIN_REFERENCE.LitecoinMainnet:
+          return ASSET_REFERENCE.Litecoin
+        case CHAIN_REFERENCE.DogecoinMainnet:
+          return ASSET_REFERENCE.Dogecoin
+        case CHAIN_REFERENCE.BitcoinCashMainnet:
+          return ASSET_REFERENCE.BitcoinCash
+        default:
+          throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
+      }
     case CHAIN_NAMESPACE.Evm:
       switch (chainReference) {
         case CHAIN_REFERENCE.AvalancheCChain:
@@ -144,6 +190,13 @@ export const getNativeAssetReferenceByChainId = (chainId: ChainId): string => {
           return ASSET_REFERENCE.ArbitrumNova
         case CHAIN_REFERENCE.BaseMainnet:
           return ASSET_REFERENCE.Base
+        default:
+          throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
+      }
+    case CHAIN_NAMESPACE.Solana:
+      switch (chainReference) {
+        case CHAIN_REFERENCE.SolanaMainnet:
+          return ASSET_REFERENCE.Solana
         default:
           throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
       }

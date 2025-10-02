@@ -95,3 +95,53 @@ export const base = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
   icon: 'https://rawcdn.githack.com/trustwallet/assets/32e51d582a890b3dd3135fe3ee7c20c2fd699a6d/blockchains/ethereum/info/logo.png',
   network: 'base',
 })
+
+export const bitcoin = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.btcAssetId,
+  chainId: caip.btcChainId,
+  name: 'Bitcoin',
+  symbol: 'BTC',
+  precision: 8,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/bitcoin/info/logo.png',
+  network: 'bitcoin',
+})
+
+export const litecoin = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.ltcAssetId,
+  chainId: caip.ltcChainId,
+  name: 'Litecoin',
+  symbol: 'LTC',
+  precision: 8,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/litecoin/info/logo.png',
+  network: 'litecoin',
+})
+
+export const dogecoin = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.dogeAssetId,
+  chainId: caip.dogeChainId,
+  name: 'Dogecoin',
+  symbol: 'DOGE',
+  precision: 8,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/doge/info/logo.png',
+  network: 'dogecoin',
+})
+
+export const bitcoincash = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.bchAssetId,
+  chainId: caip.bchChainId,
+  name: 'Bitcoin Cash',
+  symbol: 'BCH',
+  precision: 8,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/bitcoincash/info/logo.png',
+  network: 'bitcoincash',
+})
+
+export const solana = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.solAssetId,
+  chainId: caip.solanaChainId,
+  name: 'Solana',
+  symbol: 'SOL',
+  precision: 9,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/solana/info/logo.png',
+  network: 'solana',
+})

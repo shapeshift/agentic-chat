@@ -1,4 +1,4 @@
-import { asset } from '@shapeshiftoss/types'
+import { asset, NETWORKS } from '@shapeshiftoss/types'
 import z from 'zod'
 
 // Base transaction schema that's reused across swap tools
@@ -15,7 +15,7 @@ export const transactionSchema = z.object({
 export const assetInputSchema = z.object({
   symbolOrName: z.string().describe('Token symbol or name (e.g., "ETH", "USDC", "Bitcoin")'),
   network: z
-    .enum(['ethereum', 'optimism', 'arbitrum', 'polygon', 'avalanche', 'bsc', 'base', 'gnosis'])
+    .enum(NETWORKS)
     .optional()
     .describe('Network for this asset. If not specified, will search across all networks.'),
 })

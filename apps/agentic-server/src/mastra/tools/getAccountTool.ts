@@ -1,5 +1,5 @@
 import { createTool } from '@mastra/core'
-import { ASSET_NAMESPACE, toAssetId } from '@shapeshiftoss/caip'
+import { ASSET_NAMESPACE, toAssetId, fromChainId, CHAIN_NAMESPACE } from '@shapeshiftoss/caip'
 import type { Account } from '@shapeshiftoss/types'
 import { getFeeAssetIdByChainId, getUnchainedHttpUrlEnvVar } from '@shapeshiftoss/utils'
 import axios from 'axios'
@@ -40,6 +40,29 @@ export const getAccountTool = createTool({
 
     const baseUrl = process.env[getUnchainedHttpUrlEnvVar(chainId)]
     const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${account}`)
+
+    const { chainNamespace } = fromChainId(chainId)
+
+    if (chainNamespace === CHAIN_NAMESPACE.Utxo) {
+      throw new Error('UTXO chains are not supported for account queries')
+    }
+
+    if (chainNamespace === CHAIN_NAMESPACE.Solana) {
+      const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
+        if (!token.id) return acc
+        const assetId = toAssetId({
+          chainId,
+          assetNamespace: ASSET_NAMESPACE.splToken,
+          assetReference: token.id,
+        })
+        acc[assetId] = token.balance
+        return acc
+      }, {})
+
+      balances[feeAssetId] = data.balance
+
+      return { account, chainId, balances }
+    }
 
     const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
       if (['ERC20', 'BEP20'].includes(token.type)) {

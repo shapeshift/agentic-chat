@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 
 import AssistantRuntimeProvider from '@/app/AssistantRuntimeProvider'
-import { networks } from '@/lib/appkit'
+import { allNetworks } from '@/lib/appkit'
+import { solanaAdapter } from '@/lib/solana-config'
 import { wagmiConfig, wagmiAdapter } from '@/lib/wagmi-config'
 
 import { Dashboard } from './dashboard/page'
@@ -22,7 +23,7 @@ if (import.meta.env.VITE_PROJECT_ID) {
   createAppKit({
     adapters: [wagmiAdapter],
     projectId: import.meta.env.VITE_PROJECT_ID,
-    networks,
+    networks: allNetworks,
     metadata,
     features: {
       swaps: false,
