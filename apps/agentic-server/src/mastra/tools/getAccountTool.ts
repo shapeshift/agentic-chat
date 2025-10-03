@@ -1,13 +1,26 @@
 import { createTool } from '@mastra/core'
-import { ASSET_NAMESPACE, toAssetId } from '@shapeshiftoss/caip'
+import {
+  ASSET_NAMESPACE,
+  CHAIN_NAMESPACE,
+  ethChainId,
+  fromChainId,
+  solanaChainId,
+  toAssetId,
+} from '@shapeshiftoss/caip'
 import type { Account } from '@shapeshiftoss/types'
 import { getFeeAssetIdByChainId, getUnchainedHttpUrlEnvVar } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import z from 'zod'
 
+import { getSolanaAccount } from '../../utils/solana/index.js'
+
 export const getAccountInput = z.object({
   account: z.string().describe('The user address or xpub to get account details for'),
-  chainId: z.string().describe('The chainId for the account in caip-10 format (ex. eip155:1)'),
+  chainId: z
+    .string()
+    .describe(
+      'The FULL chainId in CAIP-2 format - MUST include complete chain reference. Examples: eip155:1 (Ethereum), solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp (Solana mainnet). NEVER abbreviate or truncate the chain reference part.'
+    ),
 })
 
 export const getAccountOutput = z.object({
@@ -34,27 +47,55 @@ export const getAccountTool = createTool({
 
     const { account, chainId } = context
 
+    logger?.info('getAccountTool - checking chainId:', {
+      chainId,
+      chainIdType: typeof chainId,
+      account,
+      accountType: typeof account,
+    })
+
     const feeAssetId = getFeeAssetIdByChainId(chainId)
 
-    if (!feeAssetId) throw new Error(`Invalid chainId: ${chainId}`)
+    if (!feeAssetId) {
+      logger?.error('getAccountTool - Invalid chainId:', {
+        chainId,
+        feeAssetId,
+        availableChainIds: {
+          solana: solanaChainId,
+          eth: ethChainId,
+        },
+      })
+      throw new Error(`Invalid chainId: ${chainId}`)
+    }
 
-    const baseUrl = process.env[getUnchainedHttpUrlEnvVar(chainId)]
-    const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${account}`)
+    const { chainNamespace } = fromChainId(chainId)
 
-    const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
-      if (['ERC20', 'BEP20'].includes(token.type)) {
-        const assetId = toAssetId({
-          chainId,
-          assetNamespace: ASSET_NAMESPACE.erc20,
-          assetReference: token.contract.toLowerCase(),
-        })
-        acc[assetId] = token.balance
-      }
-      return acc
-    }, {})
+    if (chainNamespace === CHAIN_NAMESPACE.Solana) {
+      const { balances } = await getSolanaAccount(account, chainId)
+      return { account, chainId, balances }
+    }
 
-    balances[feeAssetId] = data.balance
+    if (chainNamespace === CHAIN_NAMESPACE.Evm) {
+      const baseUrl = process.env[getUnchainedHttpUrlEnvVar(chainId)]
+      const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${account}`)
 
-    return { account, chainId, balances }
+      const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
+        if (['ERC20', 'BEP20'].includes(token.type)) {
+          const assetId = toAssetId({
+            chainId,
+            assetNamespace: ASSET_NAMESPACE.erc20,
+            assetReference: token.contract.toLowerCase(),
+          })
+          acc[assetId] = token.balance
+        }
+        return acc
+      }, {})
+
+      balances[feeAssetId] = data.balance
+
+      return { account, chainId, balances }
+    }
+
+    throw new Error(`Unsupported chain namespace: ${chainNamespace}`)
   },
 })

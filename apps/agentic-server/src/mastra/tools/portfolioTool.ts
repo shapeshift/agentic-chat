@@ -7,7 +7,11 @@ import { getAccountTool } from './getAccountTool'
 
 const portfolioToolInput = z.object({
   account: z.string().describe('Account address or xpub'),
-  chainId: z.string().describe('The chainId for the account in caip10 format (ex. eip155:1)'),
+  chainId: z
+    .string()
+    .describe(
+      'The FULL chainId in CAIP-2 format - MUST use the exact chainId from the wallet context without abbreviation. Examples: eip155:1, solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'
+    ),
 })
 
 const portfolioToolOutput = z.object({
@@ -52,11 +56,21 @@ export const portfolioTool = createTool({
       runtimeContext,
     })
 
+    logger?.info('portfolioTool.balances', {
+      balances,
+      assetIds: Object.keys(balances),
+    })
+
     // Step 2: Get asset details
     const { assets } = await getAssetsTool.execute({
       context: { assetIds: Object.keys(balances) },
       mastra,
       runtimeContext,
+    })
+
+    logger?.info('portfolioTool.assets', {
+      assets,
+      assetCount: assets.length,
     })
 
     // Step 3: Combine data and calculate human-readable values

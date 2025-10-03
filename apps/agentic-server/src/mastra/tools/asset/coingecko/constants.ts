@@ -1,4 +1,4 @@
-import { arbitrum, avax, base, bnbsmartchain, ethereum, gnosis, optimism, polygon } from '@shapeshiftoss/types'
+import { arbitrum, avax, base, bnbsmartchain, ethereum, gnosis, optimism, polygon, solana } from '@shapeshiftoss/types'
 import type { Network } from '@shapeshiftoss/types'
 
 export const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
@@ -13,6 +13,7 @@ export const networkToSearchPlatform: Record<Network, string> = {
   bsc: 'binance-smart-chain',
   base: 'base',
   gnosis: 'xdai',
+  solana: 'solana',
 }
 
 export const networkToOnchainNetwork: Record<Network, string> = {
@@ -24,6 +25,7 @@ export const networkToOnchainNetwork: Record<Network, string> = {
   bsc: 'bsc',
   base: 'base',
   gnosis: 'xdai',
+  solana: 'solana',
 }
 
 export const networkToNativeAsset = {
@@ -35,6 +37,7 @@ export const networkToNativeAsset = {
   avalanche: avax,
   bsc: bnbsmartchain,
   gnosis,
+  solana,
 } as const
 
 export const coingeckoIdToNativeNetworks: Record<string, Network[]> = {
@@ -43,4 +46,5 @@ export const coingeckoIdToNativeNetworks: Record<string, Network[]> = {
   'avalanche-2': ['avalanche'],
   binancecoin: ['bsc'],
   xdai: ['gnosis'],
+  solana: ['solana'],
 }

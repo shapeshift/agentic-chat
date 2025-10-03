@@ -5,7 +5,7 @@ export const switchNetworkInput = z.object({
   network: z
     .enum(NETWORKS)
     .describe(
-      'Network name to switch to. Must be one of: ethereum, optimism, arbitrum, polygon, avalanche, bsc, base, gnosis'
+      'Network name to switch to. Must be one of: ethereum, optimism, arbitrum, polygon, avalanche, bsc, base, gnosis, solana'
     ),
 })
 

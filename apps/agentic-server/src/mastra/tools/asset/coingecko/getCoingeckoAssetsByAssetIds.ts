@@ -34,11 +34,13 @@ export const getCoingeckoAssetsByAssetIds = async ({
     const { assetNamespace, assetReference } = fromAssetId(assetId)
     switch (assetNamespace) {
       case 'slip44':
-        // TODO: this doesn't work for gnosis and may not be applicable for non evm chains. Look at /coins/{id}.
-        acc.push(zeroAddress)
+        if (network !== 'solana') {
+          acc.push(zeroAddress)
+        }
         break
       case 'erc20':
       case 'bep20':
+      case 'token':
         acc.push(assetReference)
         break
     }
@@ -64,9 +66,14 @@ export const getCoingeckoAssetsByAssetIds = async ({
     const assetId = (() => {
       const isNativeAsset = token.attributes.address === zeroAddress
       try {
-        const assetNamespace = isNativeAsset ? ASSET_NAMESPACE.slip44 : ASSET_NAMESPACE.erc20
-        const assetReference = isNativeAsset ? getNativeAssetReferenceByChainId(chainId) : token.attributes.address
-        return toAssetId({ chainId, assetNamespace, assetReference })
+        if (isNativeAsset) {
+          const assetReference = getNativeAssetReferenceByChainId(chainId)
+          return toAssetId({ chainId, assetNamespace: ASSET_NAMESPACE.slip44, assetReference })
+        }
+
+        const isSolana = network === 'solana'
+        const assetNamespace = isSolana ? ASSET_NAMESPACE.splToken : ASSET_NAMESPACE.erc20
+        return toAssetId({ chainId, assetNamespace, assetReference: token.attributes.address })
       } catch {}
     })()
 

@@ -22,6 +22,8 @@
     "@mastra/libsql": "^0.14.2",
     "@mastra/loggers": "^0.10.12",
     "@mastra/memory": "^0.15.2",
+    "@solana/spl-token": "^0.4.0",
+    "@solana/web3.js": "^1.95.2",
     "axios": "^1.11.0",
     "expr-eval": "^2.0.2",
     "zod": "*"

@@ -8,6 +8,7 @@ import {
   optimismChainId,
   bscChainId,
   gnosisChainId,
+  solanaChainId,
   fromAssetId,
   arbitrumAssetId,
   avalancheAssetId,
@@ -17,6 +18,7 @@ import {
   gnosisAssetId,
   optimismAssetId,
   polygonAssetId,
+  solAssetId,
   fromChainId,
   CHAIN_NAMESPACE,
   CHAIN_REFERENCE,
@@ -25,6 +27,7 @@ import {
 import BigNumber from 'bignumber.js'
 
 export * from './viem.js'
+export * from './solana.js'
 
 export const fromBaseUnit = (value: string | number | BigNumber, precision: number): string => {
   const bn = new BigNumber(value)
@@ -115,6 +118,8 @@ export const getFeeAssetIdByChainId = (chainId: ChainId): string | undefined => 
       return avalancheAssetId
     case baseChainId:
       return baseAssetId
+    case solanaChainId:
+      return solAssetId
     default:
       return undefined
   }
@@ -147,7 +152,19 @@ export const getNativeAssetReferenceByChainId = (chainId: ChainId): string => {
         default:
           throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
       }
+    case CHAIN_NAMESPACE.Solana:
+      switch (chainReference) {
+        case CHAIN_REFERENCE.SolanaMainnet:
+          return ASSET_REFERENCE.Solana
+        default:
+          throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
+      }
     default:
       throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
   }
+}
+
+export const isNativeSolanaAsset = (assetId: AssetId): boolean => {
+  const { chainId } = fromAssetId(assetId)
+  return chainId === solanaChainId && assetId === solAssetId
 }

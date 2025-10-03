@@ -4,6 +4,7 @@ import { WagmiProvider } from 'wagmi'
 
 import AssistantRuntimeProvider from '@/app/AssistantRuntimeProvider'
 import { networks } from '@/lib/appkit'
+import { solanaAdapter } from '@/lib/solana-config'
 import { wagmiConfig, wagmiAdapter } from '@/lib/wagmi-config'
 
 import { Dashboard } from './dashboard/page'
@@ -20,7 +21,7 @@ const metadata = {
 // Initialize AppKit
 if (import.meta.env.VITE_PROJECT_ID) {
   createAppKit({
-    adapters: [wagmiAdapter],
+    adapters: [wagmiAdapter, solanaAdapter],
     projectId: import.meta.env.VITE_PROJECT_ID,
     networks,
     metadata,

@@ -1,7 +1,7 @@
 import { createTool } from '@mastra/core'
 import type { MastraUnion } from '@mastra/core/action'
 import type { RuntimeContext } from '@mastra/core/runtime-context'
-import { fromAssetId } from '@shapeshiftoss/caip'
+import { CHAIN_NAMESPACE, fromAssetId, fromChainId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
 import { toBaseUnit, fromBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
@@ -9,6 +9,7 @@ import z from 'zod'
 
 import { getAllowance } from '../../utils'
 import { getBebopRate } from '../../utils/getBebopRate'
+import { getJupiterRate } from '../../utils/jupiter'
 import { getRelayRate } from '../../utils/getRelayRate'
 
 import { getAssetsTool } from './asset/getAssetsTool'
@@ -93,26 +94,46 @@ async function fetchBestSwapRate(
   sellAmount: string
 ): Promise<SwapRate> {
   const isCrossChain = sellAsset.chainId !== buyAsset.chainId
+  const sellChainNamespace = fromChainId(sellAsset.chainId).chainNamespace
+  const buyChainNamespace = fromChainId(buyAsset.chainId).chainNamespace
 
-  const ratePromises = [
-    getRelayRate({
-      address: userAddress,
-      sellAsset,
-      buyAsset,
-      sellAmountCryptoPrecision: sellAmount,
-    }).catch(() => null),
-  ]
+  if (isCrossChain && (sellChainNamespace === CHAIN_NAMESPACE.Solana || buyChainNamespace === CHAIN_NAMESPACE.Solana)) {
+    throw new Error('Cross-chain swaps between Solana and EVM chains are not yet supported')
+  }
 
-  // Only fetch Bebop rate for same-chain swaps
-  if (!isCrossChain) {
+  const ratePromises: Array<Promise<SwapRate | null>> = []
+
+  if (sellChainNamespace === CHAIN_NAMESPACE.Solana && buyChainNamespace === CHAIN_NAMESPACE.Solana) {
     ratePromises.push(
-      getBebopRate({
+      getJupiterRate({
         address: userAddress,
         sellAsset,
         buyAsset,
         sellAmountCryptoPrecision: sellAmount,
       }).catch(() => null)
     )
+  } else if (sellChainNamespace === CHAIN_NAMESPACE.Evm && buyChainNamespace === CHAIN_NAMESPACE.Evm) {
+    ratePromises.push(
+      getRelayRate({
+        address: userAddress,
+        sellAsset,
+        buyAsset,
+        sellAmountCryptoPrecision: sellAmount,
+      }).catch(() => null)
+    )
+
+    if (!isCrossChain) {
+      ratePromises.push(
+        getBebopRate({
+          address: userAddress,
+          sellAsset,
+          buyAsset,
+          sellAmountCryptoPrecision: sellAmount,
+        }).catch(() => null)
+      )
+    }
+  } else {
+    throw new Error(`Unsupported chain combination: ${sellChainNamespace} to ${buyChainNamespace}`)
   }
 
   const rates = await Promise.all(ratePromises)
@@ -125,7 +146,6 @@ async function fetchBestSwapRate(
     )
   }
 
-  // Find the rate with the highest buy amount
   const bestRate = availableRates.reduce((best, current) =>
     parseFloat(current.buyAmountCryptoPrecision) > parseFloat(best.buyAmountCryptoPrecision) ? current : best
   )
@@ -149,6 +169,12 @@ function buildApprovalTransaction(
   userAddress: string
 ): TransactionData | undefined {
   if (!needsApproval) {
+    return undefined
+  }
+
+  const sellChainNamespace = fromChainId(sellAsset.chainId).chainNamespace
+
+  if (sellChainNamespace === CHAIN_NAMESPACE.Solana) {
     return undefined
   }
 
