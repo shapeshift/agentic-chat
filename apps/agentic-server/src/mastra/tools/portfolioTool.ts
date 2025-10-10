@@ -2,15 +2,16 @@ import { createTool } from '@mastra/core'
 import { fromBaseUnit, calculateUsdValue } from '@shapeshiftoss/utils'
 import z from 'zod'
 
+import { getAddressForChain } from '../../utils/walletContext'
+
 import { getAssetsTool } from './asset'
 import { getAccountTool } from './getAccountTool'
 
 const portfolioToolInput = z.object({
-  account: z.string().describe('Account address or xpub'),
   chainId: z
     .string()
     .describe(
-      'The FULL chainId in CAIP-2 format - MUST use the exact chainId from the wallet context without abbreviation. Examples: eip155:1, solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'
+      'The FULL chainId in CAIP-2 format. Examples: eip155:1 for Ethereum, solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp for Solana'
     ),
 })
 
@@ -44,14 +45,19 @@ export const portfolioTool = createTool({
   execute: async ({ context, mastra, runtimeContext }) => {
     const logger = mastra?.getLogger()
 
+    const { chainId } = context
+
+    // Extract wallet address from runtime context for the requested chain
+    const account = getAddressForChain(runtimeContext, chainId)
+
     logger?.info('portfolioTool.start', {
-      account: context.account,
-      chainId: context.chainId,
+      chainId,
+      account,
     })
 
     // Step 1: Get account balances
-    const { account, balances, chainId } = await getAccountTool.execute({
-      context,
+    const { balances } = await getAccountTool.execute({
+      context: { account, chainId },
       mastra,
       runtimeContext,
     })

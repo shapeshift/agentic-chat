@@ -1,55 +1,38 @@
-import { fromAssetId, isAssetReference, fromChainId } from '@shapeshiftoss/caip'
-import type { Asset, GetRateInput, GetRateOutput } from '@shapeshiftoss/types'
-import { fromBaseUnit, toBaseUnit, isNativeEvmAsset } from '@shapeshiftoss/utils'
+import type { GetRateInput, GetRateOutput } from '@shapeshiftoss/types'
+import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
-import type { Address } from 'viem'
-import { zeroAddress } from 'viem'
+
+import { getChainAdapter } from '../chains/relayAdapterRegistry'
 
 import type { RelayFetchQuoteParams, RelayQuote } from './types'
-
-const getRelayAssetAddress = (asset: Asset): Address => {
-  if (isNativeEvmAsset(asset.assetId)) return zeroAddress
-  const { assetReference } = fromAssetId(asset.assetId)
-  return isAssetReference(assetReference) ? zeroAddress : (assetReference as Address)
-}
+import { isRelayQuoteEvmItemData } from './types'
 
 export const getRelayRate = async ({
   address,
+  recipientAddress,
   buyAsset,
   sellAmountCryptoPrecision,
   sellAsset,
-}: GetRateInput): Promise<GetRateOutput> => {
-  const { chainNamespace: originChainNamespace, chainReference: originChainReference } = fromChainId(sellAsset.chainId)
-  const { chainNamespace: destinationChainNamespace, chainReference: destinationChainReference } = fromChainId(
-    buyAsset.chainId
-  )
+}: GetRateInput & { recipientAddress?: string }): Promise<GetRateOutput> => {
+  const sellAdapter = getChainAdapter(sellAsset.chainId)
+  const buyAdapter = getChainAdapter(buyAsset.chainId)
 
-  if (originChainNamespace !== 'eip155') {
-    throw new Error(`[getRelayRate] Unsupported origin chain namespace: ${originChainNamespace}`)
-  }
-  if (destinationChainNamespace !== 'eip155') {
-    throw new Error(`[getRelayRate] Unsupported destination chain namespace: ${destinationChainNamespace}`)
-  }
+  const originChainId = sellAdapter.getRelayChainId(sellAsset.chainId)
+  const destinationChainId = buyAdapter.getRelayChainId(buyAsset.chainId)
 
-  const originChainId = Number(originChainReference)
-  const destinationChainId = Number(destinationChainReference)
-
-  if (!Number.isFinite(originChainId)) {
-    throw new Error(`[getRelayRate] Invalid origin chain reference: ${originChainReference}`)
-  }
-  if (!Number.isFinite(destinationChainId)) {
-    throw new Error(`[getRelayRate] Invalid destination chain reference: ${destinationChainReference}`)
-  }
+  // For cross-chain swaps, use separate addresses. For same-chain, use the same address.
+  const sellAddress = address
+  const buyAddress = recipientAddress || address
 
   try {
     const { data } = await axios.post<RelayQuote>('https://api.relay.link/quote', {
-      user: address,
-      recipient: address,
-      refundTo: address,
+      user: sellAddress,
+      recipient: buyAddress,
+      refundTo: sellAddress,
       refundOnOrigin: true,
       originChainId,
-      originCurrency: getRelayAssetAddress(sellAsset),
-      destinationCurrency: getRelayAssetAddress(buyAsset),
+      originCurrency: sellAdapter.getRelayAssetAddress(sellAsset),
+      destinationCurrency: buyAdapter.getRelayAssetAddress(buyAsset),
       destinationChainId,
       tradeType: 'EXACT_INPUT',
       amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
@@ -66,25 +49,44 @@ export const getRelayRate = async ({
 
     const txData = swapSteps[0]?.items?.[0]?.data
     if (!txData) throw new Error('No transaction data found in Relay quote')
-    if (!txData.to) throw new Error('No "to" address found in Relay quote')
-    if (!txData.value) throw new Error('No "value" found in Relay quote')
-    if (!txData.data) throw new Error('No "data" found in Relay quote')
 
-    return {
-      approvalTarget: txData.to,
-      buyAsset,
-      buyAmountCryptoPrecision,
-      sellAsset,
-      sellAmountCryptoPrecision,
-      source: 'relay',
-      unsignedTx: {
-        chainId: sellAsset.chainId,
-        data: txData.data,
-        from: address,
-        to: txData.to,
-        value: txData.value,
-        ...(txData.gas && { gasLimit: Number(txData.gas) }),
-      },
+    if (isRelayQuoteEvmItemData(txData)) {
+      if (!txData.to) throw new Error('No "to" address found in Relay quote')
+      if (!txData.value) throw new Error('No "value" found in Relay quote')
+      if (!txData.data) throw new Error('No "data" found in Relay quote')
+
+      return {
+        approvalTarget: txData.to,
+        buyAsset,
+        buyAmountCryptoPrecision,
+        sellAsset,
+        sellAmountCryptoPrecision,
+        source: 'relay',
+        unsignedTx: {
+          chainId: sellAsset.chainId,
+          data: txData.data,
+          from: sellAddress,
+          to: txData.to,
+          value: txData.value,
+          ...(txData.gas && { gasLimit: Number(txData.gas) }),
+        },
+      }
+    } else {
+      return {
+        approvalTarget: '',
+        buyAsset,
+        buyAmountCryptoPrecision,
+        sellAsset,
+        sellAmountCryptoPrecision,
+        source: 'relay',
+        unsignedTx: {
+          chainId: sellAsset.chainId,
+          data: JSON.stringify(txData),
+          from: sellAddress,
+          to: '',
+          value: '0',
+        },
+      }
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {

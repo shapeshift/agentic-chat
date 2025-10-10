@@ -1,16 +1,18 @@
 import { createTool } from '@mastra/core'
 import type { MastraUnion } from '@mastra/core/action'
 import type { RuntimeContext } from '@mastra/core/runtime-context'
-import { CHAIN_NAMESPACE, fromAssetId, fromChainId } from '@shapeshiftoss/caip'
+import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
 import { toBaseUnit, fromBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
 import { getAllowance } from '../../utils'
+import { isEvmChain, isSolanaChain } from '../../utils/chains/helpers'
 import { getBebopRate } from '../../utils/getBebopRate'
-import { getJupiterRate } from '../../utils/jupiter'
 import { getRelayRate } from '../../utils/getRelayRate'
+import { getJupiterRate } from '../../utils/jupiter'
+import { getAddressForChain } from '../../utils/walletContext'
 
 import { getAssetsTool } from './asset/getAssetsTool'
 import { getAccountTool } from './getAccountTool'
@@ -88,52 +90,69 @@ async function resolveSwapAssets(
 type SwapRate = GetRateOutput
 
 async function fetchBestSwapRate(
-  userAddress: string,
+  sellAddress: string,
+  buyAddress: string,
   sellAsset: Asset,
   buyAsset: Asset,
   sellAmount: string
 ): Promise<SwapRate> {
   const isCrossChain = sellAsset.chainId !== buyAsset.chainId
-  const sellChainNamespace = fromChainId(sellAsset.chainId).chainNamespace
-  const buyChainNamespace = fromChainId(buyAsset.chainId).chainNamespace
-
-  if (isCrossChain && (sellChainNamespace === CHAIN_NAMESPACE.Solana || buyChainNamespace === CHAIN_NAMESPACE.Solana)) {
-    throw new Error('Cross-chain swaps between Solana and EVM chains are not yet supported')
-  }
+  const sellIsEvm = isEvmChain(sellAsset.chainId)
+  const sellIsSolana = isSolanaChain(sellAsset.chainId)
+  const buyIsEvm = isEvmChain(buyAsset.chainId)
+  const buyIsSolana = isSolanaChain(buyAsset.chainId)
 
   const ratePromises: Array<Promise<SwapRate | null>> = []
 
-  if (sellChainNamespace === CHAIN_NAMESPACE.Solana && buyChainNamespace === CHAIN_NAMESPACE.Solana) {
+  // Solana same-chain: Both Jupiter AND Relay compete
+  if (sellIsSolana && buyIsSolana && !isCrossChain) {
     ratePromises.push(
       getJupiterRate({
-        address: userAddress,
+        address: sellAddress,
+        sellAsset,
+        buyAsset,
+        sellAmountCryptoPrecision: sellAmount,
+      }).catch(() => null),
+      getRelayRate({
+        address: sellAddress,
+        recipientAddress: buyAddress,
         sellAsset,
         buyAsset,
         sellAmountCryptoPrecision: sellAmount,
       }).catch(() => null)
     )
-  } else if (sellChainNamespace === CHAIN_NAMESPACE.Evm && buyChainNamespace === CHAIN_NAMESPACE.Evm) {
+  }
+  // EVM same-chain: Both Bebop AND Relay compete
+  else if (sellIsEvm && buyIsEvm && !isCrossChain) {
+    ratePromises.push(
+      getBebopRate({
+        address: sellAddress,
+        sellAsset,
+        buyAsset,
+        sellAmountCryptoPrecision: sellAmount,
+      }).catch(() => null),
+      getRelayRate({
+        address: sellAddress,
+        recipientAddress: buyAddress,
+        sellAsset,
+        buyAsset,
+        sellAmountCryptoPrecision: sellAmount,
+      }).catch(() => null)
+    )
+  }
+  // Cross-chain (any combination): Relay only
+  else if (isCrossChain) {
     ratePromises.push(
       getRelayRate({
-        address: userAddress,
+        address: sellAddress,
+        recipientAddress: buyAddress,
         sellAsset,
         buyAsset,
         sellAmountCryptoPrecision: sellAmount,
       }).catch(() => null)
     )
-
-    if (!isCrossChain) {
-      ratePromises.push(
-        getBebopRate({
-          address: userAddress,
-          sellAsset,
-          buyAsset,
-          sellAmountCryptoPrecision: sellAmount,
-        }).catch(() => null)
-      )
-    }
   } else {
-    throw new Error(`Unsupported chain combination: ${sellChainNamespace} to ${buyChainNamespace}`)
+    throw new Error(`Unsupported chain combination`)
   }
 
   const rates = await Promise.all(ratePromises)
@@ -172,9 +191,7 @@ function buildApprovalTransaction(
     return undefined
   }
 
-  const sellChainNamespace = fromChainId(sellAsset.chainId).chainNamespace
-
-  if (sellChainNamespace === CHAIN_NAMESPACE.Solana) {
+  if (!isEvmChain(sellAsset.chainId)) {
     return undefined
   }
 
@@ -197,19 +214,10 @@ function buildApprovalTransaction(
 
 function buildSwapTransaction(bestRate: SwapRate) {
   const originalSwapTx = bestRate.unsignedTx
-  const swapCalldata = originalSwapTx.data || ''
-
-  // Validate transaction data
-  if (swapCalldata && typeof swapCalldata === 'string') {
-    // Ensure the data is a valid hex string
-    if (!swapCalldata.startsWith('0x')) {
-      throw new Error('Invalid transaction data: must start with 0x')
-    }
-  }
 
   return createTransaction({
     chainId: originalSwapTx.chainId,
-    data: swapCalldata,
+    data: originalSwapTx.data || '',
     from: originalSwapTx.from,
     to: originalSwapTx.to,
     value: originalSwapTx.value || '0',
@@ -260,7 +268,10 @@ export const initiateSwapInput = z.object({
   sellAsset: assetInputSchema.describe('Asset to sell'),
   buyAsset: assetInputSchema.describe('Asset to buy'),
   sellAmount: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-  userAddress: z.string().describe('User wallet address for the swap'),
+  destinationAddress: z
+    .string()
+    .optional()
+    .describe('Destination address when wallet lacks buy chain support. Format: 0x... for EVM, base58 for Solana.'),
 })
 
 export const initiateSwapOutput = swapPreparationSchema
@@ -280,7 +291,7 @@ export const initiateSwapTool = createTool({
     }
     logger?.info('🚀 [prepareSwapTool] STARTING execution:', { context })
 
-    const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount, userAddress } = context
+    const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount } = context
 
     if (!Number.isFinite(parseFloat(sellAmount)) || parseFloat(sellAmount) <= 0) {
       throw new Error('Sell amount must be a positive number')
@@ -309,12 +320,39 @@ export const initiateSwapTool = createTool({
       },
     })
 
-    const bestRate = await fetchBestSwapRate(userAddress, sellAsset, buyAsset, sellAmount)
+    // Extract sell address from connected wallet
+    const sellAddress = getAddressForChain(runtimeContext, sellAsset.chainId)
+
+    // Extract buy address - try wallet first, fallback to manual input
+    let buyAddress: string
+    try {
+      buyAddress = getAddressForChain(runtimeContext, buyAsset.chainId)
+    } catch {
+      if (!context.destinationAddress) {
+        throw new Error(
+          `Wallet doesn't support ${buyAsset.network}. Provide ${buyAsset.network} address to receive ${buyAsset.symbol}.`
+        )
+      }
+
+      // Basic validation
+      if (isEvmChain(buyAsset.chainId) && !context.destinationAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
+        throw new Error(`Invalid EVM address: ${context.destinationAddress}`)
+      }
+      if (isSolanaChain(buyAsset.chainId) && context.destinationAddress.startsWith('0x')) {
+        throw new Error(`Invalid Solana address: ${context.destinationAddress}`)
+      }
+
+      buyAddress = context.destinationAddress
+    }
+
+    logger?.info('📍 Extracted addresses:', { sellAddress, buyAddress })
+
+    const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmount)
 
     const allowanceData = await getAllowance({
       amount: toBaseUnit(sellAmount, sellAsset.precision),
       asset: sellAsset,
-      from: userAddress,
+      from: sellAddress,
       spender: bestRate.approvalTarget,
     })
 
@@ -331,7 +369,7 @@ export const initiateSwapTool = createTool({
 
     // Balance validation
     const accountData = await getAccountTool.execute({
-      context: { account: userAddress, chainId: sellAsset.chainId },
+      context: { account: sellAddress, chainId: sellAsset.chainId },
       mastra,
       runtimeContext,
     })
@@ -364,7 +402,7 @@ export const initiateSwapTool = createTool({
       sellAsset,
       bestRate.approvalTarget,
       sellAmount,
-      userAddress
+      sellAddress
     )
 
     const swapTx = buildSwapTransaction(bestRate)
@@ -377,8 +415,8 @@ export const initiateSwapTool = createTool({
       approvalTarget: bestRate.approvalTarget,
       sellAsset,
       buyAsset,
-      sellAccount: userAddress,
-      buyAccount: userAddress,
+      sellAccount: sellAddress,
+      buyAccount: buyAddress,
     }
 
     const result = {

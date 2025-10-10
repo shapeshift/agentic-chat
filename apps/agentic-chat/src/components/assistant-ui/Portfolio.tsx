@@ -12,8 +12,7 @@ type PortfolioContentProps = Omit<ToolCallMessagePartProps<PortfolioToolInput, P
 const PortfolioContent: React.FC<PortfolioContentProps> = ({ status, result, args, isError }) => {
   const porfolioDetailsText = (() => {
     const parts = ['portfolio details']
-    if (args.account) parts.push(`for ${args.account}`)
-    if (args.account && args.chainId) parts.push(`on ${chainIdToNetwork[args.chainId]}`)
+    if (args.chainId) parts.push(`on ${chainIdToNetwork[args.chainId]}`)
     return parts.join(' ')
   })()
 

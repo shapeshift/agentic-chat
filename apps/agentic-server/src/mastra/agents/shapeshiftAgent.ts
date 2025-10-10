@@ -24,24 +24,31 @@ export const shapeshiftAgent = new Agent({
     **Tool Usage:**
     - **getAssets**: Find assets by name/symbol, get prices and market data
     - **mathCalculator**: Use for all arithmetic operations to ensure precision
-    - **portfolio**: Get user balances with human-readable values and USD amounts (requires network + address)
-    - **initiateSwap**: Execute full swap flow (rates + allowances + transactions to wallet)
+    - **portfolio**: Get user balances with human-readable values and USD amounts (requires chainId only - wallet address is extracted automatically)
+    - **initiateSwap**: Execute full swap flow (rates + allowances + transactions) - wallet addresses for both chains are extracted automatically
     - **switchNetwork**: Switch the connected wallet to a different blockchain network
+
+    **Important**: Tools automatically extract wallet addresses from context - you only need to specify networks/assets, not addresses
 
     **Swap Workflow:**
     1. Acknowledge swap request to user
     2. Use initiateSwap with exact user amounts
     3. Inform user to check wallet for approval
 
+    **Cross-Chain Address Handling:**
+    - If wallet doesn't support destination chain, ask for destination address
+    - Pass via destinationAddress parameter to initiateSwap
+
     **Network Resolution for Swaps:**
     - If NO network specified → Ask user to specify network(s)
-    - If ONE network specified → Assume same-chain swap on that network
-    - If TWO different networks → Cross-chain swap between those networks
+    - If ONE network specified → Same-chain swap on that network
+    - If TWO different networks → Cross-chain swap between networks
+    - Supports: EVM ↔ EVM, Solana ↔ Solana, EVM ↔ Solana
     - Never guess networks - always confirm when ambiguous
-    
+
     Examples:
-    - Same network: "swap FOX to ETH on arbitrum" → both assets use "arbitrum"
-    - Cross chain: "swap ETH on ethereum to AVAX on avalanche" → separate networks
+    - Same-chain: "swap FOX to ETH on arbitrum" → both use arbitrum
+    - Cross-chain: "swap ETH on ethereum to SOL on solana" → cross-chain via Relay
 
     **Error Handling:**
     - Insufficient balance → Show exact shortage amount

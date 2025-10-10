@@ -1,24 +1,12 @@
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
-import { getWalletClient } from '@wagmi/core'
 import { hexToBigInt } from 'viem'
 
-import { wagmiConfig } from '@/lib/wagmi-config'
 import { sendTransaction } from '@/utils/sendTransaction'
 
 type SwapData = InitiateSwapOutput
 type TransactionData = SwapData['swapTx']
 
-async function getWallet() {
-  const walletClient = await getWalletClient(wagmiConfig)
-  if (!walletClient) {
-    throw new Error('No wallet connected')
-  }
-  return walletClient
-}
-
 async function executeTransaction(tx: TransactionData) {
-  const walletClient = await getWallet()
-
   const finalTx = {
     chainId: tx.chainId,
     data: tx.data,
@@ -33,10 +21,7 @@ async function executeTransaction(tx: TransactionData) {
     }),
   }
 
-  return sendTransaction({
-    ...finalTx,
-    walletClient,
-  })
+  return sendTransaction(finalTx)
 }
 
 export async function executeApproval(approvalTx: TransactionData): Promise<string> {

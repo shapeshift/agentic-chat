@@ -11,7 +11,17 @@ import {
   solanaChainId,
 } from '@shapeshiftoss/caip'
 
-export const NETWORKS = ['ethereum', 'optimism', 'arbitrum', 'polygon', 'avalanche', 'bsc', 'base', 'gnosis', 'solana'] as const
+export const NETWORKS = [
+  'ethereum',
+  'optimism',
+  'arbitrum',
+  'polygon',
+  'avalanche',
+  'bsc',
+  'base',
+  'gnosis',
+  'solana',
+] as const
 
 export type Network = (typeof NETWORKS)[number]
 

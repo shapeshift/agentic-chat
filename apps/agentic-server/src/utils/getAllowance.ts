@@ -4,6 +4,8 @@ import { fromBaseUnit, getFeeAssetIdByChainId, getViemClient } from '@shapeshift
 import { erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
+import { isSolanaChain } from './chains/helpers'
+
 export const getAllowanceInput = z.object({
   amount: z.string().optional().describe('The approval amount'),
   asset: zAsset.describe('The asset to check the allowance for. Use the asset agent to get the correct asset details.'),
@@ -26,6 +28,13 @@ export const getAllowance = async ({
   spender,
 }: GetAllowanceInput): Promise<GetAllowanceOutput> => {
   if (asset.assetId === getFeeAssetIdByChainId(asset.chainId)) {
+    return {
+      allowance: '0',
+      isApprovalRequired: false,
+    }
+  }
+
+  if (isSolanaChain(asset.chainId)) {
     return {
       allowance: '0',
       isApprovalRequired: false,

@@ -84,6 +84,9 @@ export const getCoingeckoAssetsBySearchTerm = async ({
     }
   )
 
+  console.log(data.coins)
+  console.log({ network })
+
   // Limit results for performance
   const limitedCoins = data.coins.slice(0, MAX_SEARCH_RESULTS)
 
@@ -134,9 +137,12 @@ export const getCoingeckoAssetsBySearchTerm = async ({
 
     if (!assetReference) return prev
 
+    const isSolana = targetNetwork === 'solana'
+    const assetNamespace = isSolana ? ASSET_NAMESPACE.splToken : ASSET_NAMESPACE.erc20
+
     const assetId = toAssetId({
       chainId,
-      assetNamespace: ASSET_NAMESPACE.erc20,
+      assetNamespace,
       assetReference,
     })
 

@@ -1,6 +1,7 @@
 import type { ChainId } from '@shapeshiftoss/caip'
 import { solanaChainId } from '@shapeshiftoss/caip'
-import { Connection, type Commitment } from '@solana/web3.js'
+import { Connection } from '@solana/web3.js'
+import type { Commitment } from '@solana/web3.js'
 
 const DEFAULT_COMMITMENT: Commitment = 'confirmed'
 

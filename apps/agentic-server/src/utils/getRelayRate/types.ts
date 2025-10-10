@@ -46,8 +46,35 @@ type RelayQuoteEvmItemData = {
   gas?: string
 }
 
+export type RelaySolanaInstruction = {
+  keys: {
+    pubkey: string
+    isSigner: boolean
+    isWritable: boolean
+  }[]
+  data: string
+  programId: string
+}
+
+type RelayQuoteSolanaItemData = {
+  instructions: RelaySolanaInstruction[]
+  addressLookupTableAddresses: string[]
+}
+
 type RelayQuoteItem = {
-  data?: RelayQuoteEvmItemData
+  data?: RelayQuoteEvmItemData | RelayQuoteSolanaItemData
+}
+
+export const isRelayQuoteEvmItemData = (
+  item: RelayQuoteEvmItemData | RelayQuoteSolanaItemData
+): item is RelayQuoteEvmItemData => {
+  return 'to' in item && 'data' in item && 'value' in item
+}
+
+export const isRelayQuoteSolanaItemData = (
+  item: RelayQuoteEvmItemData | RelayQuoteSolanaItemData
+): item is RelayQuoteSolanaItemData => {
+  return 'instructions' in item
 }
 
 type RelayQuoteStep = {

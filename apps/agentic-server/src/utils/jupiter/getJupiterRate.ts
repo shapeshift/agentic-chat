@@ -15,6 +15,8 @@ export const getJupiterRate = async ({
   sellAmountCryptoPrecision,
   sellAsset,
 }: GetRateInput): Promise<GetRateOutput> => {
+  // Jupiter only supports same-chain Solana swaps, so address is both seller and buyer
+  const userSolanaAddress = address
   const { assetReference: inputMint } = fromAssetId(sellAsset.assetId)
   const { assetReference: outputMint } = fromAssetId(buyAsset.assetId)
 
@@ -34,7 +36,7 @@ export const getJupiterRate = async ({
 
     const swapRequest: JupiterSwapRequest = {
       quoteResponse,
-      userPublicKey: address,
+      userPublicKey: userSolanaAddress,
       wrapAndUnwrapSol: true,
       prioritizationFeeLamports: 'auto',
       dynamicComputeUnitLimit: true,
@@ -58,14 +60,18 @@ export const getJupiterRate = async ({
       unsignedTx: {
         chainId: sellAsset.chainId,
         data: swapResponse.swapTransaction,
-        from: address,
+        from: userSolanaAddress,
         to: '',
         value: '0',
       },
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('[getJupiterRate] API request failed:', error.response?.status, error.response?.data || error.message)
+      console.error(
+        '[getJupiterRate] API request failed:',
+        error.response?.status,
+        error.response?.data || error.message
+      )
     } else {
       console.error('[getJupiterRate] Unexpected error:', error)
     }

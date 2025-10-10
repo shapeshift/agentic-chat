@@ -136,8 +136,9 @@ export const getAssetsTool = createTool({
         )
 
         const nativeAssets = nativeAssetResults
-          .filter((result): result is PromiseFulfilledResult<Asset> =>
-            result.status === 'fulfilled' && result.value !== undefined
+          .filter(
+            (result): result is PromiseFulfilledResult<Asset> =>
+              result.status === 'fulfilled' && result.value !== undefined
           )
           .map(result => result.value)
 

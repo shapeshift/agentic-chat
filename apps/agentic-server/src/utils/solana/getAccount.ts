@@ -1,4 +1,5 @@
-import { ASSET_NAMESPACE, type AssetId, type ChainId, toAssetId } from '@shapeshiftoss/caip'
+import { ASSET_NAMESPACE, toAssetId } from '@shapeshiftoss/caip'
+import type { AssetId, ChainId } from '@shapeshiftoss/caip'
 import { getFeeAssetIdByChainId, getSolanaConnection } from '@shapeshiftoss/utils'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { PublicKey } from '@solana/web3.js'

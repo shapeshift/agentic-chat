@@ -1,18 +1,9 @@
 'use client'
 
-import { useAppKitAccount } from '@reown/appkit/react'
 import { AssistantRuntimeProvider } from '@assistant-ui/react'
 import { AssistantChatTransport, useChatRuntime } from '@assistant-ui/react-ai-sdk'
-import {
-  arbitrumChainId,
-  baseChainId,
-  bscChainId,
-  ethChainId,
-  gnosisChainId,
-  optimismChainId,
-  polygonChainId,
-  solanaChainId,
-} from '@shapeshiftoss/caip'
+import { useAppKitAccount } from '@reown/appkit/react'
+import { useRef } from 'react'
 import { useAccount } from 'wagmi'
 
 const agentId = 'shapeshiftAgent'
@@ -23,47 +14,42 @@ export default function ({
   children: React.ReactNode
 }>) {
   const evmAccount = useAccount()
-  const { address: appKitAddress, caipAddress } = useAppKitAccount()
+  const { address: solanaAppKitAddress } = useAppKitAccount({ namespace: 'solana' })
 
-  const solanaAddress = caipAddress?.startsWith('solana:') ? appKitAddress : undefined
-
-  console.log('[AssistantRuntimeProvider] Debug:', {
-    evmAddress: evmAccount.address,
-    appKitAddress,
-    caipAddress,
-    solanaAddress,
-  })
+  const solanaAddress = solanaAppKitAddress
 
   const walletContext = {
-    [ethChainId]: evmAccount.address,
-    [arbitrumChainId]: evmAccount.address,
-    [optimismChainId]: evmAccount.address,
-    [baseChainId]: evmAccount.address,
-    [gnosisChainId]: evmAccount.address,
-    [bscChainId]: evmAccount.address,
-    [polygonChainId]: evmAccount.address,
-    [solanaChainId]: solanaAddress,
+    evmAddress: evmAccount.address,
+    solanaAddress,
   }
 
-  console.log('[AssistantRuntimeProvider] Wallet context:', walletContext)
+  const walletContextRef = useRef(walletContext)
+  walletContextRef.current = walletContext
+
+  // Create unique threadId based on connected wallet address
+  // This ensures switching wallets creates a new thread with fresh context
+  const connectedAddress = evmAccount.address || solanaAddress
+  const threadId = connectedAddress ? `${agentId}-${connectedAddress}` : agentId
+
+  // Store threadId in ref so body() always gets latest value
+  const threadIdRef = useRef(threadId)
+  threadIdRef.current = threadId
 
   const runtime = useChatRuntime({
-    id: evmAccount.address || solanaAddress,
+    id: connectedAddress,
     transport: new AssistantChatTransport({
       api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/chat/${agentId}`,
-      body: {
+      body: () => ({
         runId: agentId,
         resourceId: agentId,
-        threadId: agentId,
+        threadId: threadIdRef.current,
         context: [
           {
             role: 'user',
-            content: JSON.stringify({
-              wallet: walletContext,
-            }),
+            content: JSON.stringify(walletContextRef.current),
           },
         ],
-      },
+      }),
     }),
   })
 
