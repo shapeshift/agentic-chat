@@ -11,23 +11,30 @@ import type { TransactionParams } from '../types'
 export async function sendEvmTransaction(params: TransactionParams): Promise<string> {
   const walletClient = await getWalletClient(wagmiConfig)
   if (!walletClient) {
-    throw new Error('No EVM wallet connected')
+    throw new Error('No EVM wallet connected. Please connect your wallet first.')
   }
 
-  const chainId = Number(fromChainId(params.chainId).chainReference)
-  const chain = extractChain({ chains: networks as Chain[], id: chainId })
+  try {
+    const chainId = Number(fromChainId(params.chainId).chainReference)
+    const chain = extractChain({ chains: networks as Chain[], id: chainId })
 
-  const publicClient = getPublicClient(wagmiConfig, { chainId })
-  if (!publicClient) throw new Error('Public client not found for the specified chain')
+    const publicClient = getPublicClient(wagmiConfig, { chainId })
+    if (!publicClient) throw new Error('Public client not found for the specified chain')
 
-  const account = getAddress(params.from)
-  const to = getAddress(params.to)
-  const value = BigInt(params.value)
-  const data = params.data as Hex
-  const gasLimit = params.gasLimit
+    const account = getAddress(params.from)
+    const to = getAddress(params.to)
+    const value = BigInt(params.value)
+    const data = params.data as Hex
+    const gasLimit = params.gasLimit
 
-  const gasPrice = await publicClient.getGasPrice()
-  const gas = gasLimit ? BigInt(gasLimit) : await publicClient.estimateGas({ account, to, value, data })
+    const gasPrice = await publicClient.getGasPrice()
+    const gas = gasLimit ? BigInt(gasLimit) : await publicClient.estimateGas({ account, to, value, data })
 
-  return await walletClient.sendTransaction({ account, to, value, data, chain, gas, gasPrice })
+    return await walletClient.sendTransaction({ account, to, value, data, chain, gas, gasPrice })
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`EVM transaction failed: ${error.message}`)
+    }
+    throw new Error('EVM transaction failed: Unknown error')
+  }
 }

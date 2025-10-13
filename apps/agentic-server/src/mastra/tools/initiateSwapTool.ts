@@ -8,10 +8,9 @@ import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
 import { getAllowance } from '../../utils'
-import { isEvmChain, isSolanaChain } from '../../utils/chains/helpers'
+import { isEvmChain } from '../../utils/chains/helpers'
 import { getBebopRate } from '../../utils/getBebopRate'
 import { getRelayRate } from '../../utils/getRelayRate'
-import { getJupiterRate } from '../../utils/jupiter'
 import { getAddressForChain } from '../../utils/walletContext'
 
 import { getAssetsTool } from './asset/getAssetsTool'
@@ -97,66 +96,32 @@ async function fetchBestSwapRate(
   sellAmount: string
 ): Promise<SwapRate> {
   const isCrossChain = sellAsset.chainId !== buyAsset.chainId
-  const sellIsEvm = isEvmChain(sellAsset.chainId)
-  const sellIsSolana = isSolanaChain(sellAsset.chainId)
-  const buyIsEvm = isEvmChain(buyAsset.chainId)
-  const buyIsSolana = isSolanaChain(buyAsset.chainId)
-
   const ratePromises: Array<Promise<SwapRate | null>> = []
 
-  // Solana same-chain: Both Jupiter AND Relay compete
-  if (sellIsSolana && buyIsSolana && !isCrossChain) {
-    ratePromises.push(
-      getJupiterRate({
-        address: sellAddress,
-        sellAsset,
-        buyAsset,
-        sellAmountCryptoPrecision: sellAmount,
-      }).catch(() => null),
-      getRelayRate({
-        address: sellAddress,
-        recipientAddress: buyAddress,
-        sellAsset,
-        buyAsset,
-        sellAmountCryptoPrecision: sellAmount,
-      }).catch(() => null)
-    )
-  }
-  // EVM same-chain: Both Bebop AND Relay compete
-  else if (sellIsEvm && buyIsEvm && !isCrossChain) {
+  // Always try Relay (supports all chains and cross-chain swaps)
+  ratePromises.push(
+    getRelayRate({
+      address: sellAddress,
+      recipientAddress: buyAddress,
+      sellAsset,
+      buyAsset,
+      sellAmountCryptoPrecision: sellAmount,
+    }).catch(() => null)
+  )
+
+  // For same-chain EVM swaps, also try Bebop (EVM-specific DEX aggregator)
+  if (!isCrossChain && isEvmChain(sellAsset.chainId)) {
     ratePromises.push(
       getBebopRate({
         address: sellAddress,
         sellAsset,
         buyAsset,
         sellAmountCryptoPrecision: sellAmount,
-      }).catch(() => null),
-      getRelayRate({
-        address: sellAddress,
-        recipientAddress: buyAddress,
-        sellAsset,
-        buyAsset,
-        sellAmountCryptoPrecision: sellAmount,
       }).catch(() => null)
     )
-  }
-  // Cross-chain (any combination): Relay only
-  else if (isCrossChain) {
-    ratePromises.push(
-      getRelayRate({
-        address: sellAddress,
-        recipientAddress: buyAddress,
-        sellAsset,
-        buyAsset,
-        sellAmountCryptoPrecision: sellAmount,
-      }).catch(() => null)
-    )
-  } else {
-    throw new Error(`Unsupported chain combination`)
   }
 
   const rates = await Promise.all(ratePromises)
-
   const availableRates = rates.filter((rate): rate is SwapRate => rate !== null)
 
   if (availableRates.length === 0) {
@@ -165,11 +130,10 @@ async function fetchBestSwapRate(
     )
   }
 
-  const bestRate = availableRates.reduce((best, current) =>
+  // Pick the rate with the highest buy amount
+  return availableRates.reduce((best, current) =>
     parseFloat(current.buyAmountCryptoPrecision) > parseFloat(best.buyAmountCryptoPrecision) ? current : best
   )
-
-  return bestRate
 }
 
 type TransactionData = {
@@ -268,10 +232,6 @@ export const initiateSwapInput = z.object({
   sellAsset: assetInputSchema.describe('Asset to sell'),
   buyAsset: assetInputSchema.describe('Asset to buy'),
   sellAmount: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-  destinationAddress: z
-    .string()
-    .optional()
-    .describe('Destination address when wallet lacks buy chain support. Format: 0x... for EVM, base58 for Solana.'),
 })
 
 export const initiateSwapOutput = swapPreparationSchema
@@ -320,30 +280,9 @@ export const initiateSwapTool = createTool({
       },
     })
 
-    // Extract sell address from connected wallet
+    // Extract wallet addresses for both chains
     const sellAddress = getAddressForChain(runtimeContext, sellAsset.chainId)
-
-    // Extract buy address - try wallet first, fallback to manual input
-    let buyAddress: string
-    try {
-      buyAddress = getAddressForChain(runtimeContext, buyAsset.chainId)
-    } catch {
-      if (!context.destinationAddress) {
-        throw new Error(
-          `Wallet doesn't support ${buyAsset.network}. Provide ${buyAsset.network} address to receive ${buyAsset.symbol}.`
-        )
-      }
-
-      // Basic validation
-      if (isEvmChain(buyAsset.chainId) && !context.destinationAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
-        throw new Error(`Invalid EVM address: ${context.destinationAddress}`)
-      }
-      if (isSolanaChain(buyAsset.chainId) && context.destinationAddress.startsWith('0x')) {
-        throw new Error(`Invalid Solana address: ${context.destinationAddress}`)
-      }
-
-      buyAddress = context.destinationAddress
-    }
+    const buyAddress = getAddressForChain(runtimeContext, buyAsset.chainId)
 
     logger?.info('📍 Extracted addresses:', { sellAddress, buyAddress })
 

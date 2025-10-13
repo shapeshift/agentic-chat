@@ -1,4 +1,4 @@
-import { fromChainId } from '@shapeshiftoss/caip'
+import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 
 import { sendEvmTransaction } from './evm/transaction'
 import { sendSolanaTransaction } from './solana/transaction'
@@ -10,10 +10,10 @@ import type { ChainNamespace, ChainTransactionAdapter, TransactionParams } from 
  */
 
 const transactionAdapters: Record<ChainNamespace, ChainTransactionAdapter> = {
-  eip155: {
+  [CHAIN_NAMESPACE.Evm]: {
     sendTransaction: sendEvmTransaction,
   },
-  solana: {
+  [CHAIN_NAMESPACE.Solana]: {
     sendTransaction: sendSolanaTransaction,
   },
 }

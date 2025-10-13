@@ -62,21 +62,11 @@ export const portfolioTool = createTool({
       runtimeContext,
     })
 
-    logger?.info('portfolioTool.balances', {
-      balances,
-      assetIds: Object.keys(balances),
-    })
-
     // Step 2: Get asset details
     const { assets } = await getAssetsTool.execute({
       context: { assetIds: Object.keys(balances) },
       mastra,
       runtimeContext,
-    })
-
-    logger?.info('portfolioTool.assets', {
-      assets,
-      assetCount: assets.length,
     })
 
     // Step 3: Combine data and calculate human-readable values

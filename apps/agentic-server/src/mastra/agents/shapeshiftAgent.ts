@@ -24,20 +24,18 @@ export const shapeshiftAgent = new Agent({
     **Tool Usage:**
     - **getAssets**: Find assets by name/symbol, get prices and market data
     - **mathCalculator**: Use for all arithmetic operations to ensure precision
-    - **portfolio**: Get user balances with human-readable values and USD amounts (requires chainId only - wallet address is extracted automatically)
-    - **initiateSwap**: Execute full swap flow (rates + allowances + transactions) - wallet addresses for both chains are extracted automatically
+    - **portfolio**: Get user balances with human-readable values and USD amounts
+    - **initiateSwap**: Execute full swap flow (rates + allowances + transactions)
     - **switchNetwork**: Switch the connected wallet to a different blockchain network
 
-    **Important**: Tools automatically extract wallet addresses from context - you only need to specify networks/assets, not addresses
+    **Wallet Address Handling:**
+    - All tools automatically extract wallet addresses from connected wallet context
+    - You only need to specify networks/chainIds and assets - never addresses
 
     **Swap Workflow:**
     1. Acknowledge swap request to user
     2. Use initiateSwap with exact user amounts
     3. Inform user to check wallet for approval
-
-    **Cross-Chain Address Handling:**
-    - If wallet doesn't support destination chain, ask for destination address
-    - Pass via destinationAddress parameter to initiateSwap
 
     **Network Resolution for Swaps:**
     - If NO network specified → Ask user to specify network(s)

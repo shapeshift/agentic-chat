@@ -14,9 +14,7 @@ export default function ({
   children: React.ReactNode
 }>) {
   const evmAccount = useAccount()
-  const { address: solanaAppKitAddress } = useAppKitAccount({ namespace: 'solana' })
-
-  const solanaAddress = solanaAppKitAddress
+  const { address: solanaAddress } = useAppKitAccount({ namespace: 'solana' })
 
   const walletContext = {
     evmAddress: evmAccount.address,

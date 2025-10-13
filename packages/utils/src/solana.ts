@@ -8,9 +8,10 @@ const DEFAULT_COMMITMENT: Commitment = 'confirmed'
 let solanaConnection: Connection | undefined
 
 export const getSolanaRpcUrl = (): string => {
-  const rpcUrl = process.env.SOLANA_RPC_URL
+  // Try VITE_ prefixed first (primary), fallback to non-prefixed (backwards compat)
+  const rpcUrl = process.env.VITE_SOLANA_RPC_URL || process.env.SOLANA_RPC_URL
   if (!rpcUrl) {
-    throw new Error('SOLANA_RPC_URL environment variable is not set')
+    throw new Error('VITE_SOLANA_RPC_URL environment variable is not set')
   }
   return rpcUrl
 }

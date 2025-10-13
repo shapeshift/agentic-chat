@@ -1,12 +1,5 @@
 import { createTool } from '@mastra/core'
-import {
-  ASSET_NAMESPACE,
-  CHAIN_NAMESPACE,
-  ethChainId,
-  fromChainId,
-  solanaChainId,
-  toAssetId,
-} from '@shapeshiftoss/caip'
+import { ASSET_NAMESPACE, CHAIN_NAMESPACE, fromChainId, toAssetId } from '@shapeshiftoss/caip'
 import type { Account } from '@shapeshiftoss/types'
 import { getFeeAssetIdByChainId, getUnchainedHttpUrlEnvVar } from '@shapeshiftoss/utils'
 import axios from 'axios'
@@ -47,24 +40,9 @@ export const getAccountTool = createTool({
 
     const { account, chainId } = context
 
-    logger?.info('getAccountTool - checking chainId:', {
-      chainId,
-      chainIdType: typeof chainId,
-      account,
-      accountType: typeof account,
-    })
-
     const feeAssetId = getFeeAssetIdByChainId(chainId)
 
     if (!feeAssetId) {
-      logger?.error('getAccountTool - Invalid chainId:', {
-        chainId,
-        feeAssetId,
-        availableChainIds: {
-          solana: solanaChainId,
-          eth: ethChainId,
-        },
-      })
       throw new Error(`Invalid chainId: ${chainId}`)
     }
 

@@ -7,9 +7,9 @@ import {
   COINGECKO_API_KEY,
   API_TIMEOUT,
   networkToSearchPlatform,
-  networkToNativeAsset,
   coingeckoIdToNativeNetworks,
 } from './constants'
+import { getNativeAssetWithPrice } from './helpers'
 
 const MAX_SEARCH_RESULTS = 5
 
@@ -43,32 +43,6 @@ type CoinResponse = {
   }
 }
 
-async function getNativeAssetWithPrice(network: Network, coinId: string): Promise<Asset> {
-  const nativeAsset = networkToNativeAsset[network]
-
-  // Fetch current price from CoinGecko simple price endpoint
-  const { data } = await axios.get(
-    `https://pro-api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`,
-    {
-      headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
-      timeout: API_TIMEOUT,
-    }
-  )
-
-  const price = data[coinId]?.usd?.toString() ?? '0'
-
-  return {
-    assetId: nativeAsset.assetId,
-    chainId: nativeAsset.chainId,
-    name: nativeAsset.name,
-    network: nativeAsset.network,
-    precision: nativeAsset.precision,
-    price,
-    symbol: nativeAsset.symbol,
-    icon: nativeAsset.icon,
-  }
-}
-
 export const getCoingeckoAssetsBySearchTerm = async ({
   searchTerm,
   network,
@@ -83,9 +57,6 @@ export const getCoingeckoAssetsBySearchTerm = async ({
       timeout: API_TIMEOUT,
     }
   )
-
-  console.log(data.coins)
-  console.log({ network })
 
   // Limit results for performance
   const limitedCoins = data.coins.slice(0, MAX_SEARCH_RESULTS)

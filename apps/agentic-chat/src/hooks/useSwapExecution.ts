@@ -1,5 +1,5 @@
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
-import { fromChainId } from '@shapeshiftoss/caip'
+import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import { useChainId, useSwitchChain } from 'wagmi'
 
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
@@ -72,7 +72,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
 
         // Step 1: Network Switch
         // Non-EVM: no wallet network switch needed; skip step
-        if (chainNamespace !== 'eip155') {
+        if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
           setState(draft => {
             draft.currentStep = (draft.currentStep + 1) as SwapStep
             draft.error = undefined
