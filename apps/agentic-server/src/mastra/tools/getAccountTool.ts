@@ -1,19 +1,14 @@
 import { createTool } from '@mastra/core'
 import { ASSET_NAMESPACE, CHAIN_NAMESPACE, fromChainId, toAssetId } from '@shapeshiftoss/caip'
 import type { Account } from '@shapeshiftoss/types'
+import { NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
 import { getFeeAssetIdByChainId, getUnchainedHttpUrlEnvVar } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import z from 'zod'
 
-import { getSolanaAccount } from '../../utils/solana/index.js'
-
 export const getAccountInput = z.object({
   account: z.string().describe('The user address or xpub to get account details for'),
-  chainId: z
-    .string()
-    .describe(
-      'The FULL chainId in CAIP-2 format - MUST include complete chain reference. Examples: eip155:1 (Ethereum), solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp (Solana mainnet). NEVER abbreviate or truncate the chain reference part.'
-    ),
+  network: z.enum(NETWORKS).describe('Network name (e.g., ethereum, arbitrum, solana)'),
 })
 
 export const getAccountOutput = z.object({
@@ -38,7 +33,8 @@ export const getAccountTool = createTool({
 
     logger?.info('getAccountTool:', { context })
 
-    const { account, chainId } = context
+    const { account, network } = context
+    const chainId = networkToChainIdMap[network]
 
     const feeAssetId = getFeeAssetIdByChainId(chainId)
 
@@ -47,16 +43,28 @@ export const getAccountTool = createTool({
     }
 
     const { chainNamespace } = fromChainId(chainId)
+    const baseUrl = process.env[getUnchainedHttpUrlEnvVar(chainId)]
+    const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${account}`)
 
     if (chainNamespace === CHAIN_NAMESPACE.Solana) {
-      const { balances } = await getSolanaAccount(account, chainId)
+      const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
+        if (token.type === 'SPL' && token.id) {
+          const assetId = toAssetId({
+            chainId,
+            assetNamespace: ASSET_NAMESPACE.splToken,
+            assetReference: token.id,
+          })
+          acc[assetId] = token.balance
+        }
+        return acc
+      }, {})
+
+      balances[feeAssetId] = data.balance
+
       return { account, chainId, balances }
     }
 
     if (chainNamespace === CHAIN_NAMESPACE.Evm) {
-      const baseUrl = process.env[getUnchainedHttpUrlEnvVar(chainId)]
-      const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${account}`)
-
       const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
         if (['ERC20', 'BEP20'].includes(token.type)) {
           const assetId = toAssetId({

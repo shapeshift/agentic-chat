@@ -2,11 +2,33 @@
 
 import { AssistantRuntimeProvider } from '@assistant-ui/react'
 import { AssistantChatTransport, useChatRuntime } from '@assistant-ui/react-ai-sdk'
+import {
+  arbitrumChainId,
+  avalancheChainId,
+  baseChainId,
+  bscChainId,
+  ethChainId,
+  gnosisChainId,
+  optimismChainId,
+  polygonChainId,
+  solanaChainId,
+} from '@shapeshiftoss/caip'
 import { useAppKitAccount } from '@reown/appkit/react'
 import { useRef } from 'react'
 import { useAccount } from 'wagmi'
 
 const agentId = 'shapeshiftAgent'
+
+const EVM_CHAIN_IDS = [
+  ethChainId,
+  arbitrumChainId,
+  optimismChainId,
+  baseChainId,
+  polygonChainId,
+  avalancheChainId,
+  bscChainId,
+  gnosisChainId,
+]
 
 export default function ({
   children,
@@ -17,8 +39,12 @@ export default function ({
   const { address: solanaAddress } = useAppKitAccount({ namespace: 'solana' })
 
   const walletContext = {
-    evmAddress: evmAccount.address,
-    solanaAddress,
+    connectedWallets: {
+      ...Object.fromEntries(
+        evmAccount.address ? EVM_CHAIN_IDS.map(chainId => [chainId, { address: evmAccount.address }]) : []
+      ),
+      ...(solanaAddress && { [solanaChainId]: { address: solanaAddress } }),
+    },
   }
 
   const walletContextRef = useRef(walletContext)

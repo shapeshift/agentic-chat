@@ -27,7 +27,6 @@ import {
 import BigNumber from 'bignumber.js'
 
 export * from './viem.js'
-export * from './solana.js'
 
 export const fromBaseUnit = (value: string | number | BigNumber, precision: number): string => {
   const bn = new BigNumber(value)
@@ -72,6 +71,8 @@ export const getUnchainedHttpUrlEnvVar = (chainId: ChainId): string => {
       return 'UNCHAINED_ARBITRUM_HTTP_URL'
     case baseChainId:
       return 'UNCHAINED_BASE_HTTP_URL'
+    case solanaChainId:
+      return 'UNCHAINED_SOLANA_HTTP_URL'
     default:
       throw new Error(`invalid chainId: ${chainId}`)
   }

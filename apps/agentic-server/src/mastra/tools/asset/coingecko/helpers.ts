@@ -51,7 +51,7 @@ export async function getNativeAssetWithPrice(network: Network, coinId: string):
     precision: nativeAsset.precision,
     price,
     symbol: nativeAsset.symbol,
-    icon: nativeAsset.icon,
+    // icon: nativeAsset.icon,
   }
 }
 

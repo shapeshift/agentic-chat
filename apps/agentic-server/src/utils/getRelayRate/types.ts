@@ -65,18 +65,6 @@ type RelayQuoteItem = {
   data?: RelayQuoteEvmItemData | RelayQuoteSolanaItemData
 }
 
-export const isRelayQuoteEvmItemData = (
-  item: RelayQuoteEvmItemData | RelayQuoteSolanaItemData
-): item is RelayQuoteEvmItemData => {
-  return 'to' in item && 'data' in item && 'value' in item
-}
-
-export const isRelayQuoteSolanaItemData = (
-  item: RelayQuoteEvmItemData | RelayQuoteSolanaItemData
-): item is RelayQuoteSolanaItemData => {
-  return 'instructions' in item
-}
-
 type RelayQuoteStep = {
   id: string
   requestId: string

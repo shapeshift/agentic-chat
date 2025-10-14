@@ -7,14 +7,9 @@ import type { Context } from 'hono'
 
 import { shapeshiftAgent } from './agents'
 
-interface WalletContext {
-  evmAddress?: string
-  solanaAddress?: string
-}
-
 type MastraHonoContext = Context & {
   Variables: {
-    walletContext?: WalletContext
+    walletContext?: unknown
     mastra: Mastra
   }
 }

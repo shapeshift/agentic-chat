@@ -7,7 +7,7 @@ import axios from 'axios'
 import { zeroAddress } from 'viem'
 
 import { isSolanaChain } from '../../../../utils/chains/helpers'
-import { COINGECKO_API_KEY, API_TIMEOUT, networkToOnchainNetwork } from './constants'
+import { COINGECKO_API_KEY, API_TIMEOUT, networkToOnchainNetwork, networkToNativeAsset } from './constants'
 import { getNativeAssetAddress } from './helpers'
 
 type TokensResponse = {
@@ -71,7 +71,6 @@ function assetIdToCoinGeckoAddress(assetId: AssetId): string | null {
       return assetReference
 
     default:
-      console.warn(`Unsupported asset namespace for CoinGecko: ${assetNamespace}`)
       return null
   }
 }
@@ -86,34 +85,44 @@ function transformCoinGeckoToken(
   const chainId = networkToChainIdMap[network]
 
   if (!chainId) {
-    console.error(`No chain ID mapping found for network: ${network}`)
     return null
   }
 
   try {
     const isNativeAsset = token.attributes.address === zeroAddress
+    const nativeAssetAddress = getNativeAssetAddress(chainId)
+    const isNativeAssetByCoinGeckoAddress = token.attributes.address === nativeAssetAddress
 
     let assetId: AssetId
-    if (isNativeAsset) {
+    let name: string
+    let symbol: string
+
+    if (isNativeAsset || isNativeAssetByCoinGeckoAddress) {
       const assetReference = getNativeAssetReferenceByChainId(chainId)
       assetId = toAssetId({ chainId, assetNamespace: ASSET_NAMESPACE.slip44, assetReference })
+
+      // Use our native asset definitions instead of CoinGecko's naming
+      const nativeAsset = networkToNativeAsset[network]
+      name = nativeAsset.name
+      symbol = nativeAsset.symbol
     } else {
       const assetNamespace = isSolanaChain(chainId) ? ASSET_NAMESPACE.splToken : ASSET_NAMESPACE.erc20
       assetId = toAssetId({ chainId, assetNamespace, assetReference: token.attributes.address })
+      name = token.attributes.name
+      symbol = token.attributes.symbol
     }
 
     return {
       assetId,
       chainId,
-      name: token.attributes.name,
+      name,
       network,
       precision: token.attributes.decimals,
       price: token.attributes.price_usd,
-      symbol: token.attributes.symbol,
-      icon: token.attributes.image_url,
+      symbol,
+      // icon: token.attributes.image_url,
     }
-  } catch (error) {
-    console.error(`Failed to transform CoinGecko token ${token.attributes.symbol}:`, error)
+  } catch {
     return null
   }
 }
@@ -137,7 +146,6 @@ export const getCoingeckoAssetsByAssetIds = async ({
     .filter((address): address is string => address !== null)
 
   if (addresses.length === 0) {
-    console.warn('No valid addresses to query from CoinGecko')
     return { assets: [] }
   }
 

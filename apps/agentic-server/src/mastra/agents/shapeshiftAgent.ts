@@ -30,7 +30,7 @@ export const shapeshiftAgent = new Agent({
 
     **Wallet Address Handling:**
     - All tools automatically extract wallet addresses from connected wallet context
-    - You only need to specify networks/chainIds and assets - never addresses
+    - You only need to specify networks and assets - never addresses
 
     **Swap Workflow:**
     1. Acknowledge swap request to user

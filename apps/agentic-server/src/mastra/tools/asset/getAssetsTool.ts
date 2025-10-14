@@ -46,11 +46,10 @@ export const getAssetsTool = createTool({
       if (coingeckoResult && coingeckoResult.assets.length > 0) {
         assets = coingeckoResult.assets
       }
-    } catch (error) {
-      logger?.warn('getAssetsTool: CoinGecko failed', { error })
+    } catch {
+      // Continue to Portals fallback
     }
 
-    // If no assets found in CoinGecko, try Portals as fallback
     if (assets.length === 0) {
       try {
         const portalsResult = await getPortalsAssets({
@@ -62,8 +61,8 @@ export const getAssetsTool = createTool({
         if (portalsResult.assets.length > 0) {
           assets = portalsResult.assets
         }
-      } catch (error) {
-        logger?.warn('getAssetsTool: Portals failed', { error })
+      } catch {
+        // No assets found from either source
       }
     }
 

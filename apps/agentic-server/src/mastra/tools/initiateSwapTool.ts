@@ -3,6 +3,7 @@ import type { MastraUnion } from '@mastra/core/action'
 import type { RuntimeContext } from '@mastra/core/runtime-context'
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
+import { chainIdToNetwork } from '@shapeshiftoss/types'
 import { toBaseUnit, fromBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import z from 'zod'
@@ -98,7 +99,6 @@ async function fetchBestSwapRate(
   const isCrossChain = sellAsset.chainId !== buyAsset.chainId
   const ratePromises: Array<Promise<SwapRate | null>> = []
 
-  // Always try Relay (supports all chains and cross-chain swaps)
   ratePromises.push(
     getRelayRate({
       address: sellAddress,
@@ -109,7 +109,6 @@ async function fetchBestSwapRate(
     }).catch(() => null)
   )
 
-  // For same-chain EVM swaps, also try Bebop (EVM-specific DEX aggregator)
   if (!isCrossChain && isEvmChain(sellAsset.chainId)) {
     ratePromises.push(
       getBebopRate({
@@ -130,7 +129,6 @@ async function fetchBestSwapRate(
     )
   }
 
-  // Pick the rate with the highest buy amount
   return availableRates.reduce((best, current) =>
     parseFloat(current.buyAmountCryptoPrecision) > parseFloat(best.buyAmountCryptoPrecision) ? current : best
   )
@@ -196,7 +194,6 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
   ).toFixed(2)
   const exchangeRate = (parseFloat(bestRate.buyAmountCryptoPrecision) / parseFloat(sellAmount)).toFixed(8)
 
-  // Calculate price impact (difference in USD values)
   const priceImpact =
     sellValueUSD && buyEstimatedValueUSD
       ? (((parseFloat(buyEstimatedValueUSD) - parseFloat(sellValueUSD)) / parseFloat(sellValueUSD)) * 100).toFixed(2)
@@ -249,7 +246,7 @@ export const initiateSwapTool = createTool({
     if (!mastra) {
       throw Error('no mastra instance')
     }
-    logger?.info('🚀 [prepareSwapTool] STARTING execution:', { context })
+    logger?.info('initiateSwapTool', { context })
 
     const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount } = context
 
@@ -265,26 +262,8 @@ export const initiateSwapTool = createTool({
       runtimeContext
     )
 
-    logger?.info('📋 Resolved assets:', {
-      sellAsset: {
-        assetId: sellAsset.assetId,
-        symbol: sellAsset.symbol,
-        network: sellAsset.network,
-        chainId: sellAsset.chainId,
-      },
-      buyAsset: {
-        assetId: buyAsset.assetId,
-        symbol: buyAsset.symbol,
-        network: buyAsset.network,
-        chainId: buyAsset.chainId,
-      },
-    })
-
-    // Extract wallet addresses for both chains
     const sellAddress = getAddressForChain(runtimeContext, sellAsset.chainId)
     const buyAddress = getAddressForChain(runtimeContext, buyAsset.chainId)
-
-    logger?.info('📍 Extracted addresses:', { sellAddress, buyAddress })
 
     const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmount)
 
@@ -297,18 +276,8 @@ export const initiateSwapTool = createTool({
 
     const needsApproval = allowanceData.isApprovalRequired
 
-    logger?.info('🔍 Allowance check:', {
-      needsApproval,
-      sellAssetId: sellAsset.assetId,
-      sellAssetSymbol: sellAsset.symbol,
-      approvalTarget: bestRate.approvalTarget,
-      sellAmount,
-      sellAmountBaseUnit: toBaseUnit(sellAmount, sellAsset.precision),
-    })
-
-    // Balance validation
     const accountData = await getAccountTool.execute({
-      context: { account: sellAddress, chainId: sellAsset.chainId },
+      context: { account: sellAddress, network: chainIdToNetwork[sellAsset.chainId] },
       mastra,
       runtimeContext,
     })
@@ -323,19 +292,6 @@ export const initiateSwapTool = createTool({
       )
     }
 
-    logger?.info('✅ Balance check passed:', {
-      sellAssetSymbol: sellAsset.symbol,
-      required: sellAmount,
-      available: fromBaseUnit(userBalance, sellAsset.precision),
-    })
-
-    if (needsApproval) {
-      logger?.info('🔧 Building approval transaction:', {
-        sellAssetId: sellAsset.assetId,
-        sellAssetSymbol: sellAsset.symbol,
-        approvalTarget: bestRate.approvalTarget,
-      })
-    }
     const approvalTx = buildApprovalTransaction(
       needsApproval,
       sellAsset,
@@ -358,16 +314,12 @@ export const initiateSwapTool = createTool({
       buyAccount: buyAddress,
     }
 
-    const result = {
+    return {
       summary,
       needsApproval,
       approvalTx,
       swapTx,
       swapData: swapExecutionData,
     }
-
-    logger?.info('✅ [prepareSwapTool] COMPLETED execution:', { needsApproval })
-
-    return result
   },
 })

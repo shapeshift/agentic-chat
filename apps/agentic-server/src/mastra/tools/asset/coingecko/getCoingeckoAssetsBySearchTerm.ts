@@ -84,8 +84,8 @@ export const getCoingeckoAssetsBySearchTerm = async ({
         try {
           const nativeAsset = await getNativeAssetWithPrice(targetNetwork, coin.id)
           return { assets: [nativeAsset] }
-        } catch (error) {
-          console.warn(`Failed to fetch native asset price for ${targetNetwork}:`, error)
+        } catch {
+          // Continue to token search if native asset fetch fails
         }
       }
     }
@@ -127,7 +127,7 @@ export const getCoingeckoAssetsBySearchTerm = async ({
       precision,
       price: coin.market_data.current_price.usd?.toString() ?? '0',
       symbol: coin.symbol,
-      icon: coin.image.large,
+      // icon: coin.image.large,
     })
 
     return prev
