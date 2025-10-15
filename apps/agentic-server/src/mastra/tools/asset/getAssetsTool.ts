@@ -1,10 +1,15 @@
 import { createTool } from '@mastra/core'
+import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
-import { asset, NETWORKS } from '@shapeshiftoss/types'
+import { asset, chainIdToNetwork, NETWORKS } from '@shapeshiftoss/types'
 import z from 'zod'
 
+import { isCardanoChain, isCosmosChain, isTronChain, isUtxoChain } from '../../../utils/chains/helpers'
+
+import { coingeckoIdToNativeNetworks } from './coingecko/constants'
 import { getCoingeckoAssetsByAssetIds } from './coingecko/getCoingeckoAssetsByAssetIds'
 import { getCoingeckoAssetsBySearchTerm } from './coingecko/getCoingeckoAssetsBySearchTerm'
+import { getNativeAssetWithPrice } from './coingecko/getNativeAssetWithPrice'
 import { getPortalsAssets } from './getPortalsAssetsTool'
 
 const getAssetsInput = z.object({
@@ -22,7 +27,8 @@ export type GetAssetsOutput = z.infer<typeof getAssetsOutput>
 
 export const getAssetsTool = createTool({
   id: 'getAssets',
-  description: 'Find crypto assets by name/symbol with market data and prices',
+  description:
+    'Find crypto assets by name/symbol with market data and prices. Supports 18 networks including EVM chains (Ethereum, Arbitrum, etc), Solana, Sui, Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, and Cardano.',
   inputSchema: getAssetsInput,
   outputSchema: getAssetsOutput,
   execute: async ({ context, mastra }) => {
@@ -33,6 +39,32 @@ export const getAssetsTool = createTool({
     const { searchTerm, assetIds, network } = context
 
     let assets: Asset[] = []
+
+    // Handle native-only chains: UTXO (Bitcoin, Litecoin, Dogecoin, Bitcoin Cash),
+    // Cosmos SDK (Cosmos, THORChain), Tron, and Cardano
+    // These chains only have native assets (no tokens/contracts support for now)
+    if (assetIds) {
+      const firstAssetId = assetIds[0]
+      if (firstAssetId) {
+        const { chainId } = fromAssetId(firstAssetId)
+        if (isUtxoChain(chainId) || isCosmosChain(chainId) || isTronChain(chainId) || isCardanoChain(chainId)) {
+          const nativeOnlyNetwork = chainIdToNetwork[chainId]
+          const coinId = Object.entries(coingeckoIdToNativeNetworks).find(([, networks]) =>
+            networks.includes(nativeOnlyNetwork)
+          )?.[0]
+
+          if (coinId) {
+            try {
+              const asset = await getNativeAssetWithPrice(coinId, nativeOnlyNetwork)
+              return { assets: [asset] }
+            } catch (error) {
+              logger?.debug('Native-only chain fetch failed', { error, network: nativeOnlyNetwork, coinId })
+              return { assets: [] }
+            }
+          }
+        }
+      }
+    }
 
     try {
       // Try CoinGecko first (primary data source)

@@ -9,9 +9,10 @@ import type { ChainAdapter, ChainNamespace } from './types'
  * These adapters convert CAIP chain/asset IDs to Relay's expected format.
  */
 
-const chainAdapters: Record<ChainNamespace, ChainAdapter> = {
+const chainAdapters: Partial<Record<ChainNamespace, ChainAdapter>> = {
   eip155: evmAdapter,
   solana: solanaAdapter,
+  // Sui and UTXO chains (bip122) are not supported by Relay API for swaps
 }
 
 export function getChainAdapter(chainId: string): ChainAdapter {
@@ -20,7 +21,7 @@ export function getChainAdapter(chainId: string): ChainAdapter {
   const adapter = chainAdapters[chainNamespace as ChainNamespace]
 
   if (!adapter) {
-    throw new Error(`Unsupported chain namespace: ${chainNamespace}`)
+    throw new Error(`Unsupported chain namespace for Relay swaps: ${chainNamespace}`)
   }
 
   return adapter

@@ -93,11 +93,18 @@ export const getCoingeckoAssetsBySearchTerm = async ({
   const assets = coins.reduce<Asset[]>((prev, coin) => {
     // If no network is specified, pick the first available one in order specified by network list
     const targetNetwork =
-      network ?? NETWORKS.find(net => coin.detail_platforms[networkToSearchPlatform[net]] !== undefined)
+      network ??
+      NETWORKS.find(net => {
+        const platformId = networkToSearchPlatform[net]
+        return platformId !== undefined && coin.detail_platforms[platformId] !== undefined
+      })
 
     if (targetNetwork === undefined) return prev
 
-    const platformData = coin.detail_platforms?.[networkToSearchPlatform[targetNetwork]]
+    const platformId = networkToSearchPlatform[targetNetwork]
+    if (platformId === undefined) return prev
+
+    const platformData = coin.detail_platforms?.[platformId]
 
     // Skip if no platform data for tokens
     if (!platformData) return prev
@@ -111,6 +118,8 @@ export const getCoingeckoAssetsBySearchTerm = async ({
       switch (targetNetwork) {
         case 'solana':
           return ASSET_NAMESPACE.splToken
+        case 'sui':
+          return ASSET_NAMESPACE.suiToken
         case 'bsc':
           return ASSET_NAMESPACE.bep20
         default:

@@ -6,7 +6,7 @@ import { getNativeAssetReferenceByChainId } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import { zeroAddress } from 'viem'
 
-import { isSolanaChain } from '../../../../utils/chains/helpers'
+import { isSolanaChain, isSuiChain } from '../../../../utils/chains/helpers'
 
 import { COINGECKO_API_KEY, API_TIMEOUT, networkToOnchainNetwork, networkToNativeAsset } from './constants'
 import { getNativeAssetAddress } from './helpers'
@@ -69,6 +69,7 @@ function assetIdToCoinGeckoAddress(assetId: AssetId): string | null {
     case ASSET_NAMESPACE.erc20:
     case ASSET_NAMESPACE.bep20:
     case ASSET_NAMESPACE.splToken:
+    case ASSET_NAMESPACE.suiToken:
       return assetReference
 
     default:
@@ -104,7 +105,11 @@ function transformCoinGeckoToken(token: TokensResponse['data'][0], network: Netw
       name = nativeAsset.name
       symbol = nativeAsset.symbol
     } else {
-      const assetNamespace = isSolanaChain(chainId) ? ASSET_NAMESPACE.splToken : ASSET_NAMESPACE.erc20
+      const assetNamespace = (() => {
+        if (isSolanaChain(chainId)) return ASSET_NAMESPACE.splToken
+        if (isSuiChain(chainId)) return ASSET_NAMESPACE.suiToken
+        return ASSET_NAMESPACE.erc20
+      })()
       assetId = toAssetId({ chainId, assetNamespace, assetReference: token.attributes.address })
       name = token.attributes.name
       symbol = token.attributes.symbol

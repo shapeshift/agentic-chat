@@ -105,3 +105,93 @@ export const solana = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
   icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/solana/info/logo.png',
   network: 'solana',
 })
+
+export const sui = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.suiAssetId,
+  chainId: caip.suiChainId,
+  name: 'Sui',
+  symbol: 'SUI',
+  precision: 9,
+  icon: 'https://assets.coingecko.com/coins/images/26375/large/sui_asset.jpeg',
+  network: 'sui',
+})
+
+export const bitcoin = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.btcAssetId,
+  chainId: caip.btcChainId,
+  name: 'Bitcoin',
+  symbol: 'BTC',
+  precision: 8,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/bitcoin/info/logo.png',
+  network: 'bitcoin',
+})
+
+export const litecoin = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.ltcAssetId,
+  chainId: caip.ltcChainId,
+  name: 'Litecoin',
+  symbol: 'LTC',
+  precision: 8,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/litecoin/info/logo.png',
+  network: 'litecoin',
+})
+
+export const dogecoin = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.dogeAssetId,
+  chainId: caip.dogeChainId,
+  name: 'Dogecoin',
+  symbol: 'DOGE',
+  precision: 8,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/doge/info/logo.png',
+  network: 'dogecoin',
+})
+
+export const bitcoincash = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.bchAssetId,
+  chainId: caip.bchChainId,
+  name: 'Bitcoin Cash',
+  symbol: 'BCH',
+  precision: 8,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/bitcoincash/info/logo.png',
+  network: 'bitcoincash',
+})
+
+export const cosmos = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.cosmosAssetId,
+  chainId: caip.cosmosChainId,
+  name: 'Cosmos',
+  symbol: 'ATOM',
+  precision: 6,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/cosmos/info/logo.png',
+  network: 'cosmos',
+})
+
+export const thorchain = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.thorchainAssetId,
+  chainId: caip.thorchainChainId,
+  name: 'THORChain',
+  symbol: 'RUNE',
+  precision: 8,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/thorchain/info/logo.png',
+  network: 'thorchain',
+})
+
+export const tron = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.tronAssetId,
+  chainId: caip.tronChainId,
+  name: 'TRON',
+  symbol: 'TRX',
+  precision: 6,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/tron/info/logo.png',
+  network: 'tron',
+})
+
+export const cardano = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
+  assetId: caip.cardanoAssetId,
+  chainId: caip.cardanoChainId,
+  name: 'Cardano',
+  symbol: 'ADA',
+  precision: 6,
+  icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/cardano/info/logo.png',
+  network: 'cardano',
+})

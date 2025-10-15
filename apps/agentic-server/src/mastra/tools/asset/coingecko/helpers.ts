@@ -4,7 +4,7 @@ import type { Asset, Network } from '@shapeshiftoss/types'
 import axios from 'axios'
 import { zeroAddress } from 'viem'
 
-import { isEvmChain, isSolanaChain } from '../../../../utils/chains/helpers'
+import { isEvmChain, isSolanaChain, isSuiChain } from '../../../../utils/chains/helpers'
 
 import { COINGECKO_API_KEY, API_TIMEOUT, networkToNativeAsset } from './constants'
 
@@ -13,6 +13,7 @@ import { COINGECKO_API_KEY, API_TIMEOUT, networkToNativeAsset } from './constant
  *
  * - EVM chains: 0x0000000000000000000000000000000000000000 (zero address)
  * - Solana: So11111111111111111111111111111111111111112 (NATIVE_MINT/wrapped SOL)
+ * - Sui: 0x2::sui::SUI (Sui native coin type)
  *
  * @returns The on-chain address for CoinGecko API, or null if chain not supported
  */
@@ -22,6 +23,9 @@ export function getNativeAssetAddress(chainId: ChainId): string | null {
   }
   if (isEvmChain(chainId)) {
     return zeroAddress
+  }
+  if (isSuiChain(chainId)) {
+    return '0x2::sui::SUI'
   }
   return null
 }
