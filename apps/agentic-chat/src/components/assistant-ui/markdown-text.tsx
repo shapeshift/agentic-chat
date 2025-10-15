@@ -1,6 +1,7 @@
 'use client'
 
 import '@assistant-ui/react-markdown/styles/dot.css'
+import 'katex/dist/katex.min.css'
 
 import {
   MarkdownTextPrimitive,
@@ -11,14 +12,23 @@ import type { CodeHeaderProps } from '@assistant-ui/react-markdown'
 import { CheckIcon, CopyIcon } from 'lucide-react'
 import { memo, useState } from 'react'
 import type { FC } from 'react'
+import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
 
 import { cn } from '@/lib/utils'
 
 import { TooltipIconButton } from './tooltip-icon-button'
 
 const MarkdownTextImpl = () => {
-  return <MarkdownTextPrimitive remarkPlugins={[remarkGfm]} className="aui-md" components={defaultComponents} />
+  return (
+    <MarkdownTextPrimitive
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
+      className="aui-md"
+      components={defaultComponents}
+    />
+  )
 }
 
 export const MarkdownText = memo(MarkdownTextImpl)
