@@ -9,15 +9,6 @@ import {
 
 import type { TransactionParams } from '../types'
 
-const SOLANA_RPC_URL = (() => {
-  // Try VITE_ prefixed first (primary), fallback to non-prefixed (backwards compat)
-  const url = import.meta.env.VITE_SOLANA_RPC_URL || import.meta.env.SOLANA_RPC_URL
-  if (!url) {
-    throw new Error('VITE_SOLANA_RPC_URL environment variable is not set')
-  }
-  return url as string
-})()
-
 interface SolanaTransactionData {
   instructions: Array<{
     keys: Array<{ pubkey: string; isSigner: boolean; isWritable: boolean }>
@@ -41,7 +32,7 @@ export async function sendSolanaTransaction(params: TransactionParams): Promise<
     throw new Error('No Solana wallet connected. Please connect your wallet first.')
   }
 
-  const connection = new Connection(SOLANA_RPC_URL, 'confirmed')
+  const connection = new Connection(import.meta.env.VITE_SOLANA_RPC_URL as string, 'confirmed')
 
   try {
     const txData = JSON.parse(params.data) as unknown

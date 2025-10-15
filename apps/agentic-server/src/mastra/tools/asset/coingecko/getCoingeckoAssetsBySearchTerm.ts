@@ -77,7 +77,7 @@ export const getCoingeckoAssetsBySearchTerm = async ({
       // Only proceed if the target network is valid for this native asset
       if (nativeNetworks.includes(targetNetwork)) {
         try {
-          const nativeAsset = await getNativeAssetWithPrice(targetNetwork, coin.id)
+          const nativeAsset = await getNativeAssetWithPrice(coin.id, targetNetwork)
           return { assets: [nativeAsset] }
         } catch (error) {
           console.debug('Native asset fetch failed, continuing to token search', {

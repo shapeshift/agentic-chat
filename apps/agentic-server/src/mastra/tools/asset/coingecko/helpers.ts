@@ -30,11 +30,9 @@ export function getNativeAssetAddress(chainId: ChainId): string | null {
   return null
 }
 
-/**
- * Fetches a native asset with current price from CoinGecko's simple price endpoint.
- * Used when the multi endpoint can't be used (e.g., in search flow where coin has no contract address).
- */
-export async function getNativeAssetWithPrice(network: Network, coinId: string): Promise<Asset> {
+// Fetches native asset price using /simple/price endpoint (lightest-weight)
+// Uses hardcoded asset metadata + real-time price data
+export async function getNativeAssetWithPrice(coinId: string, network: Network): Promise<Asset> {
   const nativeAsset = networkToNativeAsset[network]
 
   const { data } = await axios.get(
