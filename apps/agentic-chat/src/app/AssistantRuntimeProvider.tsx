@@ -52,15 +52,13 @@ export default function ({
 
   // Create unique threadId based on connected wallet address
   // This ensures switching wallets creates a new thread with fresh context
-  const connectedAddress = evmAccount.address || solanaAddress
-  const threadId = connectedAddress ? `${agentId}-${connectedAddress}` : agentId
+  const threadId = evmAccount.address || solanaAddress ? `${agentId}-${evmAccount.address || solanaAddress}` : agentId
 
   // Store threadId in ref so body() always gets latest value
   const threadIdRef = useRef(threadId)
   threadIdRef.current = threadId
 
   const runtime = useChatRuntime({
-    id: connectedAddress,
     transport: new AssistantChatTransport({
       api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/chat/${agentId}`,
       body: () => ({
