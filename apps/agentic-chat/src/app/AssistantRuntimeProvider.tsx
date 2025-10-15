@@ -2,6 +2,7 @@
 
 import { AssistantRuntimeProvider } from '@assistant-ui/react'
 import { AssistantChatTransport, useChatRuntime } from '@assistant-ui/react-ai-sdk'
+import { useAppKitAccount } from '@reown/appkit/react'
 import {
   arbitrumChainId,
   avalancheChainId,
@@ -13,7 +14,6 @@ import {
   polygonChainId,
   solanaChainId,
 } from '@shapeshiftoss/caip'
-import { useAppKitAccount } from '@reown/appkit/react'
 import { useRef } from 'react'
 import { useAccount } from 'wagmi'
 

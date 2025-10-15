@@ -7,6 +7,7 @@ import axios from 'axios'
 import { zeroAddress } from 'viem'
 
 import { isSolanaChain } from '../../../../utils/chains/helpers'
+
 import { COINGECKO_API_KEY, API_TIMEOUT, networkToOnchainNetwork, networkToNativeAsset } from './constants'
 import { getNativeAssetAddress } from './helpers'
 
@@ -78,10 +79,7 @@ function assetIdToCoinGeckoAddress(assetId: AssetId): string | null {
 /**
  * Transforms a CoinGecko token response into our Asset format.
  */
-function transformCoinGeckoToken(
-  token: TokensResponse['data'][0],
-  network: Network
-): Asset | null {
+function transformCoinGeckoToken(token: TokensResponse['data'][0], network: Network): Asset | null {
   const chainId = networkToChainIdMap[network]
 
   if (!chainId) {
@@ -141,9 +139,7 @@ export const getCoingeckoAssetsByAssetIds = async ({
   }
 
   // Extract CoinGecko-compatible addresses
-  const addresses = assetIds
-    .map(assetIdToCoinGeckoAddress)
-    .filter((address): address is string => address !== null)
+  const addresses = assetIds.map(assetIdToCoinGeckoAddress).filter((address): address is string => address !== null)
 
   if (addresses.length === 0) {
     return { assets: [] }
@@ -151,6 +147,11 @@ export const getCoingeckoAssetsByAssetIds = async ({
 
   // Fetch token data from CoinGecko
   const onchainNetworkId = networkToOnchainNetwork[network]
+
+  if (!onchainNetworkId) {
+    throw new Error(`No onchain network mapping found for network: ${network}`)
+  }
+
   const { data } = await axios.get<TokensResponse>(
     `https://pro-api.coingecko.com/api/v3/onchain/networks/${onchainNetworkId}/tokens/multi/${addresses.join(',')}`,
     {

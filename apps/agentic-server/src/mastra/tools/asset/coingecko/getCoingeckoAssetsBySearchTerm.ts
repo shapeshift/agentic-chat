@@ -3,12 +3,7 @@ import { NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
 import type { Asset, Network } from '@shapeshiftoss/types'
 import axios from 'axios'
 
-import {
-  COINGECKO_API_KEY,
-  API_TIMEOUT,
-  networkToSearchPlatform,
-  coingeckoIdToNativeNetworks,
-} from './constants'
+import { COINGECKO_API_KEY, API_TIMEOUT, networkToSearchPlatform, coingeckoIdToNativeNetworks } from './constants'
 import { getNativeAssetWithPrice } from './helpers'
 
 const MAX_SEARCH_RESULTS = 5
@@ -84,8 +79,12 @@ export const getCoingeckoAssetsBySearchTerm = async ({
         try {
           const nativeAsset = await getNativeAssetWithPrice(targetNetwork, coin.id)
           return { assets: [nativeAsset] }
-        } catch {
-          // Continue to token search if native asset fetch fails
+        } catch (error) {
+          console.debug('Native asset fetch failed, continuing to token search', {
+            error,
+            targetNetwork,
+            coinId: coin.id,
+          })
         }
       }
     }
@@ -108,8 +107,16 @@ export const getCoingeckoAssetsBySearchTerm = async ({
 
     if (!assetReference) return prev
 
-    const isSolana = targetNetwork === 'solana'
-    const assetNamespace = isSolana ? ASSET_NAMESPACE.splToken : ASSET_NAMESPACE.erc20
+    const assetNamespace = (() => {
+      switch (targetNetwork) {
+        case 'solana':
+          return ASSET_NAMESPACE.splToken
+        case 'bsc':
+          return ASSET_NAMESPACE.bep20
+        default:
+          return ASSET_NAMESPACE.erc20
+      }
+    })()
 
     const assetId = toAssetId({
       chainId,

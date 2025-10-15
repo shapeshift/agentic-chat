@@ -1,4 +1,5 @@
 import { Mastra } from '@mastra/core'
+import type { MessageListInput } from '@mastra/core/agent/message-list'
 import { RuntimeContext } from '@mastra/core/runtime-context'
 import { registerApiRoute } from '@mastra/core/server'
 import { LibSQLStore } from '@mastra/libsql'
@@ -76,7 +77,8 @@ export const mastra = new Mastra({
             // Extract wallet context from context array
             if (body.context && Array.isArray(body.context) && body.context[0]?.content) {
               try {
-                const walletContext = JSON.parse(body.context[0].content)
+                const content = body.context[0].content as string
+                const walletContext = JSON.parse(content) as unknown
                 if (walletContext && typeof walletContext === 'object') {
                   c.set('walletContext', walletContext)
                 }
@@ -121,12 +123,16 @@ export const mastra = new Mastra({
             runtimeContext.set('walletContext', walletContext)
           }
 
-          const result = await agentObj.streamVNext(messages, {
-            ...rest,
-            format: 'aisdk',
-            runtimeContext,
-          })
+          const result = await agentObj.streamVNext(
+            messages as MessageListInput,
+            {
+              ...rest,
+              format: 'aisdk',
+              runtimeContext,
+            } as Parameters<typeof agentObj.streamVNext>[1]
+          )
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return
           return (result as any).toUIMessageStreamResponse()
         },
       }),

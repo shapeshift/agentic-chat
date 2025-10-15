@@ -1,7 +1,6 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { GetAccountInput, GetAccountOutput } from '@shapeshiftoss/agentic-server'
-import { chainIdToNetwork } from '@shapeshiftoss/types'
 
 import { StatusText } from './StatusText'
 
@@ -13,7 +12,7 @@ const GetAccountContent: React.FC<GetAccountContentProps> = ({ args, status, res
   const accountDetailsText = (() => {
     const parts = ['account details']
     if (args.account) parts.push(`for ${args.account}`)
-    if (args.chainId) parts.push(`on ${chainIdToNetwork[args.chainId]}`)
+    if (args.network) parts.push(`on ${args.network}`)
     return parts.join(' ')
   })()
 

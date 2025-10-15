@@ -5,11 +5,12 @@ import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
 import { chainIdToNetwork } from '@shapeshiftoss/types'
 import { toBaseUnit, fromBaseUnit } from '@shapeshiftoss/utils'
+import { PublicKey } from '@solana/web3.js'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
 import { getAllowance } from '../../utils'
-import { isEvmChain } from '../../utils/chains/helpers'
+import { isEvmChain, isSolanaChain } from '../../utils/chains/helpers'
 import { getBebopRate } from '../../utils/getBebopRate'
 import { getRelayRate } from '../../utils/getRelayRate'
 import { getAddressForChain } from '../../utils/walletContext'
@@ -264,6 +265,22 @@ export const initiateSwapTool = createTool({
 
     const sellAddress = getAddressForChain(runtimeContext, sellAsset.chainId)
     const buyAddress = getAddressForChain(runtimeContext, buyAsset.chainId)
+
+    if (isSolanaChain(sellAsset.chainId)) {
+      try {
+        new PublicKey(sellAddress)
+      } catch {
+        throw new Error(`Invalid Solana address for sell asset: ${sellAddress}`)
+      }
+    }
+
+    if (isSolanaChain(buyAsset.chainId)) {
+      try {
+        new PublicKey(buyAddress)
+      } catch {
+        throw new Error(`Invalid Solana address for buy asset: ${buyAddress}`)
+      }
+    }
 
     const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmount)
 

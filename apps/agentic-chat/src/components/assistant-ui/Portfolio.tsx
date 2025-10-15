@@ -1,7 +1,6 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
 import type { PortfolioToolInput, PortfolioToolOutput } from '@shapeshiftoss/agentic-server'
-import { chainIdToNetwork } from '@shapeshiftoss/types'
 
 import { StatusText } from './StatusText'
 
@@ -12,7 +11,9 @@ type PortfolioContentProps = Omit<ToolCallMessagePartProps<PortfolioToolInput, P
 const PortfolioContent: React.FC<PortfolioContentProps> = ({ status, result, args, isError }) => {
   const porfolioDetailsText = (() => {
     const parts = ['portfolio details']
-    if (args.chainId) parts.push(`on ${chainIdToNetwork[args.chainId]}`)
+    if (args.network) {
+      parts.push(`on ${args.network}`)
+    }
     return parts.join(' ')
   })()
 

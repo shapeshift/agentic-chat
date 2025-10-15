@@ -56,7 +56,7 @@ interface UseSwapExecutionResult {
 
 export const useSwapExecution = (toolCallId: string, swapData: SwapData | null): UseSwapExecutionResult => {
   const currentChainId = useChainId()
-  const { switchChain } = useSwitchChain()
+  const { switchChainAsync } = useSwitchChain()
 
   const { state } = useToolExecutionEffect(
     toolCallId,
@@ -83,7 +83,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
           const needsNetworkSwitch = currentChainId !== sellChainIdNumber
 
           if (needsNetworkSwitch) {
-            switchChain({ chainId: sellChainIdNumber })
+            await switchChainAsync({ chainId: sellChainIdNumber })
             setState(draft => {
               draft.completedSteps.add(draft.currentStep)
               draft.currentStep = (draft.currentStep + 1) as SwapStep
@@ -132,7 +132,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
         })
       }
     },
-    [currentChainId, switchChain]
+    [currentChainId, switchChainAsync]
   )
 
   return {

@@ -22,9 +22,7 @@ export function getAddressForChain(runtimeContext: RuntimeContext<unknown>, chai
 
   if (!wallet?.address) {
     const availableChains = Object.keys(walletContext.connectedWallets)
-    throw new Error(
-      `No wallet connected for chain ${chainId}. Available chains: ${availableChains.join(', ')}`
-    )
+    throw new Error(`No wallet connected for chain ${chainId}. Available chains: ${availableChains.join(', ')}`)
   }
 
   return wallet.address

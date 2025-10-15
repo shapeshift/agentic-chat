@@ -15,7 +15,7 @@ const SOLANA_RPC_URL = (() => {
   if (!url) {
     throw new Error('VITE_SOLANA_RPC_URL environment variable is not set')
   }
-  return url
+  return url as string
 })()
 
 interface SolanaTransactionData {
@@ -44,7 +44,7 @@ export async function sendSolanaTransaction(params: TransactionParams): Promise<
   const connection = new Connection(SOLANA_RPC_URL, 'confirmed')
 
   try {
-    const txData = JSON.parse(params.data)
+    const txData = JSON.parse(params.data) as unknown
 
     if (!isSolanaTransactionData(txData)) {
       throw new Error('Invalid Solana transaction data structure')

@@ -1,4 +1,4 @@
-import { fromChainId } from '@shapeshiftoss/caip'
+import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import { getPublicClient, getWalletClient } from '@wagmi/core'
 import { extractChain, getAddress } from 'viem'
 import type { Chain, Hex } from 'viem'
@@ -9,13 +9,19 @@ import { wagmiConfig } from '@/lib/wagmi-config'
 import type { TransactionParams } from '../types'
 
 export async function sendEvmTransaction(params: TransactionParams): Promise<string> {
+  const { chainNamespace, chainReference } = fromChainId(params.chainId)
+
+  if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
+    throw new Error(`Unsupported chain namespace for EVM transaction: ${chainNamespace}`)
+  }
+
   const walletClient = await getWalletClient(wagmiConfig)
   if (!walletClient) {
     throw new Error('No EVM wallet connected. Please connect your wallet first.')
   }
 
   try {
-    const chainId = Number(fromChainId(params.chainId).chainReference)
+    const chainId = Number(chainReference)
     const chain = extractChain({ chains: networks as Chain[], id: chainId })
 
     const publicClient = getPublicClient(wagmiConfig, { chainId })
