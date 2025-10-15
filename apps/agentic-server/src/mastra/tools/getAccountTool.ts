@@ -48,7 +48,8 @@ export const getAccountTool = createTool({
 
     if (chainNamespace === CHAIN_NAMESPACE.Solana) {
       const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
-        if (token.type === 'SPL' && token.id) {
+        // Accept both 'SPL' and 'FungibleToken' types for Solana tokens
+        if ((token.type === 'SPL' || token.type === 'FungibleToken') && token.id) {
           const assetId = toAssetId({
             chainId,
             assetNamespace: ASSET_NAMESPACE.splToken,
