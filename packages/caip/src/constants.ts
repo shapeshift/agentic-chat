@@ -13,6 +13,9 @@ export const arbitrumAssetId = 'eip155:42161/slip44:60'
 export const arbitrumNovaAssetId = 'eip155:42170/slip44:60'
 export const baseAssetId = 'eip155:8453/slip44:60'
 export const solAssetId = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501'
+export const suiAssetId = 'sui:mainnet/slip44:784'
+export const tronAssetId = 'tron:0x2b6653dc/slip44:195'
+export const cardanoAssetId = 'cardano:1/slip44:1815'
 export const cosmosAssetId = 'cosmos:cosmoshub-4/slip44:118'
 export const thorchainAssetId = 'cosmos:thorchain-1/slip44:931'
 export const mayachainAssetId = 'cosmos:mayachain-mainnet-v1/slip44:931'
@@ -35,6 +38,9 @@ export const cosmosChainId = 'cosmos:cosmoshub-4'
 export const thorchainChainId = 'cosmos:thorchain-1'
 export const mayachainChainId = 'cosmos:mayachain-mainnet-v1'
 export const solanaChainId = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'
+export const suiChainId = 'sui:mainnet'
+export const tronChainId = 'tron:0x2b6653dc'
+export const cardanoChainId = 'cardano:1'
 
 // Chain Namespace enum
 export const CHAIN_NAMESPACE = {
@@ -42,6 +48,9 @@ export const CHAIN_NAMESPACE = {
   Utxo: 'bip122',
   CosmosSdk: 'cosmos',
   Solana: 'solana',
+  Sui: 'sui',
+  Tron: 'tron',
+  Cardano: 'cardano',
 } as const
 
 // Chain Reference enum
@@ -63,6 +72,9 @@ export const CHAIN_REFERENCE = {
   ArbitrumNovaMainnet: '42170',
   BaseMainnet: '8453',
   SolanaMainnet: '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+  SuiMainnet: 'mainnet',
+  TronMainnet: '0x2b6653dc',
+  CardanoMainnet: '1',
 } as const
 
 // Asset Namespace enum
@@ -76,6 +88,10 @@ export const ASSET_NAMESPACE = {
   slip44: 'slip44',
   ibc: 'ibc',
   splToken: 'token',
+  suiToken: 'token',
+  trc10: 'trc10',
+  trc20: 'trc20',
+  cardanoToken: 'token',
 } as const
 
 // Asset Reference enum
@@ -97,6 +113,9 @@ export const ASSET_REFERENCE = {
   ArbitrumNova: '60',
   Base: '60',
   Solana: '501',
+  Sui: '784',
+  Tron: '195',
+  Cardano: '1815',
 } as const
 
 // Valid Chain IDs by namespace
@@ -124,6 +143,9 @@ export const VALID_CHAIN_IDS: Record<ChainNamespace, readonly string[]> = Object
     CHAIN_REFERENCE.MayachainMainnet,
   ],
   [CHAIN_NAMESPACE.Solana]: [CHAIN_REFERENCE.SolanaMainnet],
+  [CHAIN_NAMESPACE.Sui]: [CHAIN_REFERENCE.SuiMainnet],
+  [CHAIN_NAMESPACE.Tron]: [CHAIN_REFERENCE.TronMainnet],
+  [CHAIN_NAMESPACE.Cardano]: [CHAIN_REFERENCE.CardanoMainnet],
 })
 
 // Valid Asset Namespaces by chain namespace
@@ -140,6 +162,9 @@ export const VALID_ASSET_NAMESPACE: Record<ChainNamespace, readonly string[]> = 
   ],
   [CHAIN_NAMESPACE.CosmosSdk]: [ASSET_NAMESPACE.ibc, ASSET_NAMESPACE.slip44],
   [CHAIN_NAMESPACE.Solana]: [ASSET_NAMESPACE.splToken, ASSET_NAMESPACE.slip44],
+  [CHAIN_NAMESPACE.Sui]: [ASSET_NAMESPACE.suiToken, ASSET_NAMESPACE.slip44],
+  [CHAIN_NAMESPACE.Tron]: [ASSET_NAMESPACE.trc10, ASSET_NAMESPACE.trc20, ASSET_NAMESPACE.slip44],
+  [CHAIN_NAMESPACE.Cardano]: [ASSET_NAMESPACE.cardanoToken, ASSET_NAMESPACE.slip44],
 })
 
 // TypeScript types

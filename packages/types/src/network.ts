@@ -9,6 +9,15 @@ import {
   bscChainId,
   gnosisChainId,
   solanaChainId,
+  suiChainId,
+  btcChainId,
+  ltcChainId,
+  dogeChainId,
+  bchChainId,
+  cosmosChainId,
+  thorchainChainId,
+  tronChainId,
+  cardanoChainId,
 } from '@shapeshiftoss/caip'
 
 export const NETWORKS = [
@@ -21,6 +30,15 @@ export const NETWORKS = [
   'base',
   'gnosis',
   'solana',
+  'sui',
+  'bitcoin',
+  'litecoin',
+  'dogecoin',
+  'bitcoincash',
+  'cosmos',
+  'thorchain',
+  'tron',
+  'cardano',
 ] as const
 
 export type Network = (typeof NETWORKS)[number]
@@ -35,6 +53,15 @@ export const networkToChainIdMap: Record<Network, ChainId> = {
   bsc: bscChainId,
   gnosis: gnosisChainId,
   solana: solanaChainId,
+  sui: suiChainId,
+  bitcoin: btcChainId,
+  litecoin: ltcChainId,
+  dogecoin: dogeChainId,
+  bitcoincash: bchChainId,
+  cosmos: cosmosChainId,
+  thorchain: thorchainChainId,
+  tron: tronChainId,
+  cardano: cardanoChainId,
 }
 
 export const chainIdToNetwork = Object.fromEntries(

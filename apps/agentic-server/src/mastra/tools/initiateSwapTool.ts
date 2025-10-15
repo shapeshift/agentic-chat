@@ -239,7 +239,8 @@ export type InitiateSwapOutput = z.infer<typeof initiateSwapOutput>
 
 export const initiateSwapTool = createTool({
   id: 'initiateSwap',
-  description: 'Start a crypto swap transaction that requires user wallet approval',
+  description:
+    'Start a crypto swap transaction that requires user wallet approval. ONLY supports EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, Gnosis) and Solana. NOT supported for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, or Sui.',
   inputSchema: initiateSwapInput,
   outputSchema: initiateSwapOutput,
   execute: async ({ context, mastra, runtimeContext }) => {
