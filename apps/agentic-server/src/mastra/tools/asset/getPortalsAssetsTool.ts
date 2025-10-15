@@ -112,7 +112,7 @@ export const getPortalsAssets = async ({
       precision: token.decimals,
       price: String(token.price),
       symbol: token.symbol,
-      icon: token.image,
+      // icon: token.image,
     })
 
     return prev

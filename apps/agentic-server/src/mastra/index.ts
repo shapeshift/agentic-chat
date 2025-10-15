@@ -1,9 +1,19 @@
-import { chatRoute } from '@mastra/ai-sdk'
 import { Mastra } from '@mastra/core'
+import type { MessageListInput } from '@mastra/core/agent/message-list'
+import { RuntimeContext } from '@mastra/core/runtime-context'
+import { registerApiRoute } from '@mastra/core/server'
 import { LibSQLStore } from '@mastra/libsql'
 import { PinoLogger } from '@mastra/loggers'
+import type { Context } from 'hono'
 
 import { shapeshiftAgent } from './agents'
+
+type MastraHonoContext = Context & {
+  Variables: {
+    walletContext?: unknown
+    mastra: Mastra
+  }
+}
 
 export * from './agents'
 export * from './tools'
@@ -64,10 +74,23 @@ export const mastra = new Mastra({
               delete body.tools
             }
 
+            // Extract wallet context from context array
+            if (body.context && Array.isArray(body.context) && body.context[0]?.content) {
+              try {
+                const content = body.context[0].content as string
+                const walletContext = JSON.parse(content) as unknown
+                if (walletContext && typeof walletContext === 'object') {
+                  c.set('walletContext', walletContext)
+                }
+              } catch (parseError) {
+                console.error('[Middleware] Failed to parse wallet context from context:', parseError)
+              }
+            }
+
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             c.req.json = async () => Promise.resolve(body)
           } catch (error) {
-            console.error('Error parsing request body:', error)
+            console.error('[Middleware] Error parsing request body:', error)
           }
 
           return next()
@@ -75,8 +98,43 @@ export const mastra = new Mastra({
       },
     ],
     apiRoutes: [
-      chatRoute({
-        path: '/chat/:agentId',
+      registerApiRoute('/chat/:agentId', {
+        method: 'POST',
+        handler: async c => {
+          const { messages, ...rest } = await c.req.json()
+          const mastra = c.get('mastra')
+          const agentId = c.req.param('agentId')
+
+          if (!agentId) {
+            throw new Error('Agent ID is required')
+          }
+
+          const agentObj = mastra.getAgent(agentId)
+          if (!agentObj) {
+            throw new Error(`Agent ${agentId} not found`)
+          }
+
+          // Extract wallet context from Hono context (set by middleware)
+          const walletContext = (c as MastraHonoContext).get('walletContext')
+
+          // Create runtime context with wallet context
+          const runtimeContext = new RuntimeContext()
+          if (walletContext) {
+            runtimeContext.set('walletContext', walletContext)
+          }
+
+          const result = await agentObj.streamVNext(
+            messages as MessageListInput,
+            {
+              ...rest,
+              format: 'aisdk',
+              runtimeContext,
+            } as Parameters<typeof agentObj.streamVNext>[1]
+          )
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return
+          return (result as any).toUIMessageStreamResponse()
+        },
       }),
       {
         method: 'GET',

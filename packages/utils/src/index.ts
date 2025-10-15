@@ -8,6 +8,7 @@ import {
   optimismChainId,
   bscChainId,
   gnosisChainId,
+  solanaChainId,
   fromAssetId,
   arbitrumAssetId,
   avalancheAssetId,
@@ -17,6 +18,7 @@ import {
   gnosisAssetId,
   optimismAssetId,
   polygonAssetId,
+  solAssetId,
   fromChainId,
   CHAIN_NAMESPACE,
   CHAIN_REFERENCE,
@@ -69,6 +71,8 @@ export const getUnchainedHttpUrlEnvVar = (chainId: ChainId): string => {
       return 'UNCHAINED_ARBITRUM_HTTP_URL'
     case baseChainId:
       return 'UNCHAINED_BASE_HTTP_URL'
+    case solanaChainId:
+      return 'UNCHAINED_SOLANA_HTTP_URL'
     default:
       throw new Error(`invalid chainId: ${chainId}`)
   }
@@ -115,6 +119,8 @@ export const getFeeAssetIdByChainId = (chainId: ChainId): string | undefined => 
       return avalancheAssetId
     case baseChainId:
       return baseAssetId
+    case solanaChainId:
+      return solAssetId
     default:
       return undefined
   }
@@ -147,7 +153,19 @@ export const getNativeAssetReferenceByChainId = (chainId: ChainId): string => {
         default:
           throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
       }
+    case CHAIN_NAMESPACE.Solana:
+      switch (chainReference) {
+        case CHAIN_REFERENCE.SolanaMainnet:
+          return ASSET_REFERENCE.Solana
+        default:
+          throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
+      }
     default:
       throw new Error(`Chain namespace ${chainNamespace} on ${chainReference} not supported.`)
   }
+}
+
+export const isNativeSolanaAsset = (assetId: AssetId): boolean => {
+  const { chainId } = fromAssetId(assetId)
+  return chainId === solanaChainId && assetId === solAssetId
 }

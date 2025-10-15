@@ -8,9 +8,20 @@ import {
   optimismChainId,
   bscChainId,
   gnosisChainId,
+  solanaChainId,
 } from '@shapeshiftoss/caip'
 
-export const NETWORKS = ['ethereum', 'optimism', 'arbitrum', 'polygon', 'avalanche', 'bsc', 'base', 'gnosis'] as const
+export const NETWORKS = [
+  'ethereum',
+  'optimism',
+  'arbitrum',
+  'polygon',
+  'avalanche',
+  'bsc',
+  'base',
+  'gnosis',
+  'solana',
+] as const
 
 export type Network = (typeof NETWORKS)[number]
 
@@ -23,6 +34,7 @@ export const networkToChainIdMap: Record<Network, ChainId> = {
   optimism: optimismChainId,
   bsc: bscChainId,
   gnosis: gnosisChainId,
+  solana: solanaChainId,
 }
 
 export const chainIdToNetwork = Object.fromEntries(

@@ -1,5 +1,5 @@
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
-import { fromChainId } from '@shapeshiftoss/caip'
+import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import { useChainId, useSwitchChain } from 'wagmi'
 
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
@@ -56,7 +56,7 @@ interface UseSwapExecutionResult {
 
 export const useSwapExecution = (toolCallId: string, swapData: SwapData | null): UseSwapExecutionResult => {
   const currentChainId = useChainId()
-  const { switchChain } = useSwitchChain()
+  const { switchChainAsync } = useSwitchChain()
 
   const { state } = useToolExecutionEffect(
     toolCallId,
@@ -70,31 +70,31 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
         const sellAssetChainId = data.swapData.sellAsset.chainId
         const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
 
-        // Non-EVM: no wallet network switch; skip step
-        if (chainNamespace !== 'eip155') {
-          setState(draft => {
-            draft.currentStep = (draft.currentStep + 1) as SwapStep
-            draft.error = undefined
-          })
-          return
-        }
-
-        const sellChainIdNumber = Number(chainReference)
-        const needsNetworkSwitch = currentChainId !== sellChainIdNumber
-
         // Step 1: Network Switch
-        if (needsNetworkSwitch) {
-          switchChain({ chainId: sellChainIdNumber })
+        // Non-EVM: no wallet network switch needed; skip step
+        if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
           setState(draft => {
-            draft.completedSteps.add(draft.currentStep)
             draft.currentStep = (draft.currentStep + 1) as SwapStep
             draft.error = undefined
           })
         } else {
-          setState(draft => {
-            draft.currentStep = (draft.currentStep + 1) as SwapStep
-            draft.error = undefined
-          })
+          // EVM: check if network switch is needed
+          const sellChainIdNumber = Number(chainReference)
+          const needsNetworkSwitch = currentChainId !== sellChainIdNumber
+
+          if (needsNetworkSwitch) {
+            await switchChainAsync({ chainId: sellChainIdNumber })
+            setState(draft => {
+              draft.completedSteps.add(draft.currentStep)
+              draft.currentStep = (draft.currentStep + 1) as SwapStep
+              draft.error = undefined
+            })
+          } else {
+            setState(draft => {
+              draft.currentStep = (draft.currentStep + 1) as SwapStep
+              draft.error = undefined
+            })
+          }
         }
 
         // Step 2: Approval
@@ -132,7 +132,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
         })
       }
     },
-    [currentChainId, switchChain]
+    [currentChainId, switchChainAsync]
   )
 
   return {
@@ -141,7 +141,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
       approval: getStepStatus(SwapStep.APPROVAL, state),
       swap: getStepStatus(SwapStep.SWAP, state),
     },
-    networkName: swapData?.swapData.sellAsset.network,
+    networkName: swapData?.swapData?.sellAsset?.network,
     error: state.error,
     approvalTxHash: state.approvalTxHash,
     swapTxHash: state.swapTxHash,

@@ -44,6 +44,8 @@ export const getBebopRate = async ({
   sellAmountCryptoPrecision,
   sellAsset,
 }: GetRateInput): Promise<GetRateOutput> => {
+  // Bebop only supports same-chain EVM swaps, so address is both seller and buyer
+  const userAddress = address
   const bebopNetwork = bebopChainsMap[sellAsset.chainId]
   const buyTokenAddress = getBebopAssetAddress(buyAsset)
   const sellTokenAddress = getBebopAssetAddress(sellAsset)
@@ -53,7 +55,7 @@ export const getBebopRate = async ({
     sell_tokens: sellTokenAddress,
     buy_tokens: buyTokenAddress,
     sell_amounts: sellAmountBaseUnit,
-    taker_address: address,
+    taker_address: userAddress,
     approval_type: 'Standard',
     skip_validation: 'true',
     gasless: 'false',

@@ -13,9 +13,9 @@ export const transactionSchema = z.object({
 
 // Asset input schema for swap operations
 export const assetInputSchema = z.object({
-  symbolOrName: z.string().describe('Token symbol or name (e.g., "ETH", "USDC", "Bitcoin")'),
+  symbolOrName: z.string().describe('Token symbol or name (e.g., "ETH", "USDC", "SOL")'),
   network: z
-    .enum(['ethereum', 'optimism', 'arbitrum', 'polygon', 'avalanche', 'bsc', 'base', 'gnosis'])
+    .enum(['ethereum', 'optimism', 'arbitrum', 'polygon', 'avalanche', 'bsc', 'base', 'gnosis', 'solana'])
     .optional()
     .describe('Network for this asset. If not specified, will search across all networks.'),
 })

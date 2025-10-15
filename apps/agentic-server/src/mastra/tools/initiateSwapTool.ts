@@ -3,13 +3,17 @@ import type { MastraUnion } from '@mastra/core/action'
 import type { RuntimeContext } from '@mastra/core/runtime-context'
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
+import { chainIdToNetwork } from '@shapeshiftoss/types'
 import { toBaseUnit, fromBaseUnit } from '@shapeshiftoss/utils'
+import { PublicKey } from '@solana/web3.js'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
 import { getAllowance } from '../../utils'
+import { isEvmChain, isSolanaChain } from '../../utils/chains/helpers'
 import { getBebopRate } from '../../utils/getBebopRate'
 import { getRelayRate } from '../../utils/getRelayRate'
+import { getAddressForChain } from '../../utils/walletContext'
 
 import { getAssetsTool } from './asset/getAssetsTool'
 import { getAccountTool } from './getAccountTool'
@@ -87,27 +91,29 @@ async function resolveSwapAssets(
 type SwapRate = GetRateOutput
 
 async function fetchBestSwapRate(
-  userAddress: string,
+  sellAddress: string,
+  buyAddress: string,
   sellAsset: Asset,
   buyAsset: Asset,
   sellAmount: string
 ): Promise<SwapRate> {
   const isCrossChain = sellAsset.chainId !== buyAsset.chainId
+  const ratePromises: Array<Promise<SwapRate | null>> = []
 
-  const ratePromises = [
+  ratePromises.push(
     getRelayRate({
-      address: userAddress,
+      address: sellAddress,
+      recipientAddress: buyAddress,
       sellAsset,
       buyAsset,
       sellAmountCryptoPrecision: sellAmount,
-    }).catch(() => null),
-  ]
+    }).catch(() => null)
+  )
 
-  // Only fetch Bebop rate for same-chain swaps
-  if (!isCrossChain) {
+  if (!isCrossChain && isEvmChain(sellAsset.chainId)) {
     ratePromises.push(
       getBebopRate({
-        address: userAddress,
+        address: sellAddress,
         sellAsset,
         buyAsset,
         sellAmountCryptoPrecision: sellAmount,
@@ -116,7 +122,6 @@ async function fetchBestSwapRate(
   }
 
   const rates = await Promise.all(ratePromises)
-
   const availableRates = rates.filter((rate): rate is SwapRate => rate !== null)
 
   if (availableRates.length === 0) {
@@ -125,12 +130,9 @@ async function fetchBestSwapRate(
     )
   }
 
-  // Find the rate with the highest buy amount
-  const bestRate = availableRates.reduce((best, current) =>
+  return availableRates.reduce((best, current) =>
     parseFloat(current.buyAmountCryptoPrecision) > parseFloat(best.buyAmountCryptoPrecision) ? current : best
   )
-
-  return bestRate
 }
 
 type TransactionData = {
@@ -149,6 +151,10 @@ function buildApprovalTransaction(
   userAddress: string
 ): TransactionData | undefined {
   if (!needsApproval) {
+    return undefined
+  }
+
+  if (!isEvmChain(sellAsset.chainId)) {
     return undefined
   }
 
@@ -171,19 +177,10 @@ function buildApprovalTransaction(
 
 function buildSwapTransaction(bestRate: SwapRate) {
   const originalSwapTx = bestRate.unsignedTx
-  const swapCalldata = originalSwapTx.data || ''
-
-  // Validate transaction data
-  if (swapCalldata && typeof swapCalldata === 'string') {
-    // Ensure the data is a valid hex string
-    if (!swapCalldata.startsWith('0x')) {
-      throw new Error('Invalid transaction data: must start with 0x')
-    }
-  }
 
   return createTransaction({
     chainId: originalSwapTx.chainId,
-    data: swapCalldata,
+    data: originalSwapTx.data || '',
     from: originalSwapTx.from,
     to: originalSwapTx.to,
     value: originalSwapTx.value || '0',
@@ -198,7 +195,6 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
   ).toFixed(2)
   const exchangeRate = (parseFloat(bestRate.buyAmountCryptoPrecision) / parseFloat(sellAmount)).toFixed(8)
 
-  // Calculate price impact (difference in USD values)
   const priceImpact =
     sellValueUSD && buyEstimatedValueUSD
       ? (((parseFloat(buyEstimatedValueUSD) - parseFloat(sellValueUSD)) / parseFloat(sellValueUSD)) * 100).toFixed(2)
@@ -234,7 +230,6 @@ export const initiateSwapInput = z.object({
   sellAsset: assetInputSchema.describe('Asset to sell'),
   buyAsset: assetInputSchema.describe('Asset to buy'),
   sellAmount: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-  userAddress: z.string().describe('User wallet address for the swap'),
 })
 
 export const initiateSwapOutput = swapPreparationSchema
@@ -252,9 +247,9 @@ export const initiateSwapTool = createTool({
     if (!mastra) {
       throw Error('no mastra instance')
     }
-    logger?.info('🚀 [prepareSwapTool] STARTING execution:', { context })
+    logger?.info('initiateSwapTool', { context })
 
-    const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount, userAddress } = context
+    const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount } = context
 
     if (!Number.isFinite(parseFloat(sellAmount)) || parseFloat(sellAmount) <= 0) {
       throw new Error('Sell amount must be a positive number')
@@ -268,44 +263,38 @@ export const initiateSwapTool = createTool({
       runtimeContext
     )
 
-    logger?.info('📋 Resolved assets:', {
-      sellAsset: {
-        assetId: sellAsset.assetId,
-        symbol: sellAsset.symbol,
-        network: sellAsset.network,
-        chainId: sellAsset.chainId,
-      },
-      buyAsset: {
-        assetId: buyAsset.assetId,
-        symbol: buyAsset.symbol,
-        network: buyAsset.network,
-        chainId: buyAsset.chainId,
-      },
-    })
+    const sellAddress = getAddressForChain(runtimeContext, sellAsset.chainId)
+    const buyAddress = getAddressForChain(runtimeContext, buyAsset.chainId)
 
-    const bestRate = await fetchBestSwapRate(userAddress, sellAsset, buyAsset, sellAmount)
+    if (isSolanaChain(sellAsset.chainId)) {
+      try {
+        new PublicKey(sellAddress)
+      } catch {
+        throw new Error(`Invalid Solana address for sell asset: ${sellAddress}`)
+      }
+    }
+
+    if (isSolanaChain(buyAsset.chainId)) {
+      try {
+        new PublicKey(buyAddress)
+      } catch {
+        throw new Error(`Invalid Solana address for buy asset: ${buyAddress}`)
+      }
+    }
+
+    const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmount)
 
     const allowanceData = await getAllowance({
       amount: toBaseUnit(sellAmount, sellAsset.precision),
       asset: sellAsset,
-      from: userAddress,
+      from: sellAddress,
       spender: bestRate.approvalTarget,
     })
 
     const needsApproval = allowanceData.isApprovalRequired
 
-    logger?.info('🔍 Allowance check:', {
-      needsApproval,
-      sellAssetId: sellAsset.assetId,
-      sellAssetSymbol: sellAsset.symbol,
-      approvalTarget: bestRate.approvalTarget,
-      sellAmount,
-      sellAmountBaseUnit: toBaseUnit(sellAmount, sellAsset.precision),
-    })
-
-    // Balance validation
     const accountData = await getAccountTool.execute({
-      context: { account: userAddress, chainId: sellAsset.chainId },
+      context: { account: sellAddress, network: chainIdToNetwork[sellAsset.chainId] },
       mastra,
       runtimeContext,
     })
@@ -320,25 +309,12 @@ export const initiateSwapTool = createTool({
       )
     }
 
-    logger?.info('✅ Balance check passed:', {
-      sellAssetSymbol: sellAsset.symbol,
-      required: sellAmount,
-      available: fromBaseUnit(userBalance, sellAsset.precision),
-    })
-
-    if (needsApproval) {
-      logger?.info('🔧 Building approval transaction:', {
-        sellAssetId: sellAsset.assetId,
-        sellAssetSymbol: sellAsset.symbol,
-        approvalTarget: bestRate.approvalTarget,
-      })
-    }
     const approvalTx = buildApprovalTransaction(
       needsApproval,
       sellAsset,
       bestRate.approvalTarget,
       sellAmount,
-      userAddress
+      sellAddress
     )
 
     const swapTx = buildSwapTransaction(bestRate)
@@ -351,20 +327,16 @@ export const initiateSwapTool = createTool({
       approvalTarget: bestRate.approvalTarget,
       sellAsset,
       buyAsset,
-      sellAccount: userAddress,
-      buyAccount: userAddress,
+      sellAccount: sellAddress,
+      buyAccount: buyAddress,
     }
 
-    const result = {
+    return {
       summary,
       needsApproval,
       approvalTx,
       swapTx,
       swapData: swapExecutionData,
     }
-
-    logger?.info('✅ [prepareSwapTool] COMPLETED execution:', { needsApproval })
-
-    return result
   },
 })

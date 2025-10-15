@@ -1,13 +1,14 @@
 import { createTool } from '@mastra/core'
-import { ASSET_NAMESPACE, toAssetId } from '@shapeshiftoss/caip'
+import { ASSET_NAMESPACE, CHAIN_NAMESPACE, fromChainId, toAssetId } from '@shapeshiftoss/caip'
 import type { Account } from '@shapeshiftoss/types'
+import { NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
 import { getFeeAssetIdByChainId, getUnchainedHttpUrlEnvVar } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import z from 'zod'
 
 export const getAccountInput = z.object({
   account: z.string().describe('The user address or xpub to get account details for'),
-  chainId: z.string().describe('The chainId for the account in caip-10 format (ex. eip155:1)'),
+  network: z.enum(NETWORKS).describe('Network name (e.g., ethereum, arbitrum, solana)'),
 })
 
 export const getAccountOutput = z.object({
@@ -32,29 +33,55 @@ export const getAccountTool = createTool({
 
     logger?.info('getAccountTool:', { context })
 
-    const { account, chainId } = context
+    const { account, network } = context
+    const chainId = networkToChainIdMap[network]
 
     const feeAssetId = getFeeAssetIdByChainId(chainId)
 
-    if (!feeAssetId) throw new Error(`Invalid chainId: ${chainId}`)
+    if (!feeAssetId) {
+      throw new Error(`Invalid chainId: ${chainId}`)
+    }
 
+    const { chainNamespace } = fromChainId(chainId)
     const baseUrl = process.env[getUnchainedHttpUrlEnvVar(chainId)]
     const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${account}`)
 
-    const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
-      if (['ERC20', 'BEP20'].includes(token.type)) {
-        const assetId = toAssetId({
-          chainId,
-          assetNamespace: ASSET_NAMESPACE.erc20,
-          assetReference: token.contract.toLowerCase(),
-        })
-        acc[assetId] = token.balance
-      }
-      return acc
-    }, {})
+    if (chainNamespace === CHAIN_NAMESPACE.Solana) {
+      const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
+        if (token.type === 'SPL' && token.id) {
+          const assetId = toAssetId({
+            chainId,
+            assetNamespace: ASSET_NAMESPACE.splToken,
+            assetReference: token.id,
+          })
+          acc[assetId] = token.balance
+        }
+        return acc
+      }, {})
 
-    balances[feeAssetId] = data.balance
+      balances[feeAssetId] = data.balance
 
-    return { account, chainId, balances }
+      return { account, chainId, balances }
+    }
+
+    if (chainNamespace === CHAIN_NAMESPACE.Evm) {
+      const balances = data.tokens.reduce<z.infer<typeof getAccountOutput>['balances']>((acc, token) => {
+        if (['ERC20', 'BEP20'].includes(token.type)) {
+          const assetId = toAssetId({
+            chainId,
+            assetNamespace: ASSET_NAMESPACE.erc20,
+            assetReference: token.contract.toLowerCase(),
+          })
+          acc[assetId] = token.balance
+        }
+        return acc
+      }, {})
+
+      balances[feeAssetId] = data.balance
+
+      return { account, chainId, balances }
+    }
+
+    throw new Error(`Unsupported chain namespace: ${chainNamespace}`)
   },
 })

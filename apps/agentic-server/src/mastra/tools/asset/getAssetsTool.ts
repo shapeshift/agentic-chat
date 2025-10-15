@@ -45,13 +45,11 @@ export const getAssetsTool = createTool({
 
       if (coingeckoResult && coingeckoResult.assets.length > 0) {
         assets = coingeckoResult.assets
-        //logger?.info('getAssetsTool: Found assets from CoinGecko', { count: assets.length })
       }
-    } catch {
-      //logger?.warn('getAssetsTool: CoinGecko failed', { error })
+    } catch (error) {
+      logger?.debug('CoinGecko fetch failed, trying Portals fallback', { error, searchTerm, assetIds, network })
     }
 
-    // If no assets found in CoinGecko, try Portals
     if (assets.length === 0) {
       try {
         const portalsResult = await getPortalsAssets({
@@ -62,21 +60,17 @@ export const getAssetsTool = createTool({
 
         if (portalsResult.assets.length > 0) {
           assets = portalsResult.assets
-          //logger?.info('getAssetsTool: Found assets from Portals', { count: assets.length })
         }
-      } catch {
-        //logger?.warn('getAssetsTool: Portals failed', { error })
+      } catch (error) {
+        logger?.debug('Portals fetch also failed, no assets found', { error, searchTerm, assetIds, network })
       }
     }
 
-    // If we have multiple assets, just take the first (most relevant) result
+    // If we have multiple assets from search, take the first (most relevant) result
     if (!assetIds && searchTerm && assets.length > 1) {
       assets = [assets[0]]
     }
 
-    const response = { assets }
-    //logger?.info('getAssetsTool: Final response', { response })
-
-    return response
+    return { assets }
   },
 })

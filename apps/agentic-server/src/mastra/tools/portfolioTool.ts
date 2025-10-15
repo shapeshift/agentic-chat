@@ -1,13 +1,15 @@
 import { createTool } from '@mastra/core'
+import { NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
 import { fromBaseUnit, calculateUsdValue } from '@shapeshiftoss/utils'
 import z from 'zod'
+
+import { getAddressForNetwork } from '../../utils/walletContext'
 
 import { getAssetsTool } from './asset'
 import { getAccountTool } from './getAccountTool'
 
 const portfolioToolInput = z.object({
-  account: z.string().describe('Account address or xpub'),
-  chainId: z.string().describe('The chainId for the account in caip10 format (ex. eip155:1)'),
+  network: z.enum(NETWORKS).describe('Network name (e.g., ethereum, arbitrum, solana)'),
 })
 
 const portfolioToolOutput = z.object({
@@ -40,26 +42,24 @@ export const portfolioTool = createTool({
   execute: async ({ context, mastra, runtimeContext }) => {
     const logger = mastra?.getLogger()
 
-    logger?.info('portfolioTool.start', {
-      account: context.account,
-      chainId: context.chainId,
-    })
+    const { network } = context
+    const chainId = networkToChainIdMap[network]
+    const account = getAddressForNetwork(runtimeContext, network)
 
-    // Step 1: Get account balances
-    const { account, balances, chainId } = await getAccountTool.execute({
-      context,
+    logger?.info('portfolioTool', { context })
+
+    const { balances } = await getAccountTool.execute({
+      context: { account, network },
       mastra,
       runtimeContext,
     })
 
-    // Step 2: Get asset details
     const { assets } = await getAssetsTool.execute({
       context: { assetIds: Object.keys(balances) },
       mastra,
       runtimeContext,
     })
 
-    // Step 3: Combine data and calculate human-readable values
     return {
       account,
       chainId,

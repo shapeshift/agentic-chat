@@ -3,13 +3,8 @@ import { NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
 import type { Asset, Network } from '@shapeshiftoss/types'
 import axios from 'axios'
 
-import {
-  COINGECKO_API_KEY,
-  API_TIMEOUT,
-  networkToSearchPlatform,
-  networkToNativeAsset,
-  coingeckoIdToNativeNetworks,
-} from './constants'
+import { COINGECKO_API_KEY, API_TIMEOUT, networkToSearchPlatform, coingeckoIdToNativeNetworks } from './constants'
+import { getNativeAssetWithPrice } from './helpers'
 
 const MAX_SEARCH_RESULTS = 5
 
@@ -40,32 +35,6 @@ type CoinResponse = {
   }
   market_data: {
     current_price: Record<string, number>
-  }
-}
-
-async function getNativeAssetWithPrice(network: Network, coinId: string): Promise<Asset> {
-  const nativeAsset = networkToNativeAsset[network]
-
-  // Fetch current price from CoinGecko simple price endpoint
-  const { data } = await axios.get(
-    `https://pro-api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`,
-    {
-      headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
-      timeout: API_TIMEOUT,
-    }
-  )
-
-  const price = data[coinId]?.usd?.toString() ?? '0'
-
-  return {
-    assetId: nativeAsset.assetId,
-    chainId: nativeAsset.chainId,
-    name: nativeAsset.name,
-    network: nativeAsset.network,
-    precision: nativeAsset.precision,
-    price,
-    symbol: nativeAsset.symbol,
-    icon: nativeAsset.icon,
   }
 }
 
@@ -111,7 +80,11 @@ export const getCoingeckoAssetsBySearchTerm = async ({
           const nativeAsset = await getNativeAssetWithPrice(targetNetwork, coin.id)
           return { assets: [nativeAsset] }
         } catch (error) {
-          console.warn(`Failed to fetch native asset price for ${targetNetwork}:`, error)
+          console.debug('Native asset fetch failed, continuing to token search', {
+            error,
+            targetNetwork,
+            coinId: coin.id,
+          })
         }
       }
     }
@@ -134,9 +107,20 @@ export const getCoingeckoAssetsBySearchTerm = async ({
 
     if (!assetReference) return prev
 
+    const assetNamespace = (() => {
+      switch (targetNetwork) {
+        case 'solana':
+          return ASSET_NAMESPACE.splToken
+        case 'bsc':
+          return ASSET_NAMESPACE.bep20
+        default:
+          return ASSET_NAMESPACE.erc20
+      }
+    })()
+
     const assetId = toAssetId({
       chainId,
-      assetNamespace: ASSET_NAMESPACE.erc20,
+      assetNamespace,
       assetReference,
     })
 
@@ -150,7 +134,7 @@ export const getCoingeckoAssetsBySearchTerm = async ({
       precision,
       price: coin.market_data.current_price.usd?.toString() ?? '0',
       symbol: coin.symbol,
-      icon: coin.image.large,
+      // icon: coin.image.large,
     })
 
     return prev
