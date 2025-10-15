@@ -8,6 +8,9 @@ export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
   envDir: resolve(__dirname, '../..'),
   cacheDir: resolve(__dirname, '../../node_modules/.vite/agentic-chat'),
+  define: {
+    global: 'globalThis',
+  },
   server: {
     port: 4200,
     host: 'localhost',
@@ -19,6 +22,7 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      buffer: 'buffer/',
     },
   },
   build: {
