@@ -11,8 +11,8 @@ type GetAssetsContentProps = Omit<ToolCallMessagePartProps<GetAssetsInput, GetAs
 const GetAssetsContent: React.FC<GetAssetsContentProps> = ({ args, status, result, isError }) => {
   const assetDetailsText = (() => {
     const parts = ['asset details']
-    if (args.searchTerm) parts.push(`for ${args.searchTerm}`)
-    if (args.network) parts.push(`on ${args.network}`)
+    if (args.searchTerm !== undefined) parts.push(`for ${args.searchTerm}`)
+    if (args.network !== undefined) parts.push(`on ${args.network}`)
     return parts.join(' ')
   })()
 
