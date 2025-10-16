@@ -2,7 +2,7 @@
 
 import { AssistantRuntimeProvider } from '@assistant-ui/react'
 import { AssistantChatTransport, useChatRuntime } from '@assistant-ui/react-ai-sdk'
-import { useAppKitAccount } from '@reown/appkit/react'
+import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react'
 import {
   arbitrumChainId,
   avalancheChainId,
@@ -16,6 +16,8 @@ import {
 } from '@shapeshiftoss/caip'
 import { useRef } from 'react'
 import { useAccount } from 'wagmi'
+
+import { useAutoNetworkSwitch } from '@/hooks/useAutoNetworkSwitch'
 
 const agentId = 'shapeshiftAgent'
 
@@ -36,7 +38,18 @@ export default function ({
   children: React.ReactNode
 }>) {
   const evmAccount = useAccount()
-  const { address: solanaAddress } = useAppKitAccount({ namespace: 'solana' })
+  const { address: solanaAddress, isConnected: isSolanaConnected } = useAppKitAccount({ namespace: 'solana' })
+  const { address: evmAddress, isConnected: isEvmConnected } = useAppKitAccount({ namespace: 'eip155' })
+  const { caipNetwork } = useAppKitNetwork()
+
+  const evmConnected = (isEvmConnected && !!evmAddress) || !!evmAccount.address
+  const solanaConnected = isSolanaConnected && !!solanaAddress
+
+  useAutoNetworkSwitch({
+    chainNamespace: caipNetwork?.chainNamespace,
+    evmConnected,
+    solanaConnected,
+  })
 
   const walletContext = {
     connectedWallets: {
