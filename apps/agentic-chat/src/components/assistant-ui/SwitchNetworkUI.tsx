@@ -44,13 +44,13 @@ const SwitchNetworkContent: React.FC<SwitchNetworkContentProps> = ({ status, res
   }
 
   if (phase === 'switching' || phase === 'idle') {
-    return <StatusText.Loading>Switching to {result!.networkName}...</StatusText.Loading>
+    return <StatusText.Loading>Switching to {result!.network}...</StatusText.Loading>
   }
 
   return (
     <StatusText.WithIcon>
       <StatusText.Icon icon={Icon} className="text-green-500" />
-      <StatusText.Text>Switched to {result!.networkName}</StatusText.Text>
+      <StatusText.Text>Switched to {result!.network}</StatusText.Text>
     </StatusText.WithIcon>
   )
 }

@@ -2,16 +2,11 @@ import { NETWORKS } from '@shapeshiftoss/types'
 import z from 'zod'
 
 export const switchNetworkInput = z.object({
-  network: z
-    .enum(NETWORKS)
-    .describe(
-      'Network name to switch to. Must be one of: ethereum, optimism, arbitrum, polygon, avalanche, bsc, base, gnosis, solana'
-    ),
+  network: z.enum(NETWORKS).describe('Network name to switch to'),
 })
 
 export const switchNetworkOutput = z.object({
-  chainId: z.number().describe('The chain ID to switch to'),
-  networkName: z.string().describe('The human-readable network name'),
+  network: z.string().describe('The network name to switch to'),
   action: z.literal('switch_network').describe('Action identifier for frontend execution'),
 })
 

@@ -1,5 +1,7 @@
+import type { AppKitNetwork } from '@reown/appkit/networks'
+import { arbitrum, avalanche, base, bsc, gnosis, mainnet, optimism, polygon, solana } from '@reown/appkit/networks'
+import { modal } from '@reown/appkit/react'
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
-import { useSwitchChain } from 'wagmi'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 
@@ -21,35 +23,55 @@ interface UseNetworkSwitchResult {
   error?: string
 }
 
-export const useNetworkSwitch = (toolCallId: string, networkData: NetworkSwitchData | null): UseNetworkSwitchResult => {
-  const { switchChain } = useSwitchChain()
+const networkMap: Record<string, AppKitNetwork> = {
+  ethereum: mainnet,
+  arbitrum,
+  polygon,
+  optimism,
+  base,
+  avalanche,
+  bsc,
+  gnosis,
+  solana,
+}
 
+export const useNetworkSwitch = (toolCallId: string, networkData: NetworkSwitchData | null): UseNetworkSwitchResult => {
   const { state } = useToolExecutionEffect(
     toolCallId,
     networkData,
     initialNetworkState,
-    (_data, state) => state.phase === 'idle' && !!switchChain,
+    (_data, state) => state.phase === 'idle' && !!modal,
     (data, setState) => {
-      try {
-        setState(draft => {
-          draft.phase = 'switching'
-          draft.error = undefined
-        })
+      const targetNetwork = networkMap[data.network]
 
-        switchChain({ chainId: data.chainId })
-
-        setState(draft => {
-          draft.phase = 'success'
-        })
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
+      if (!targetNetwork) {
         setState(draft => {
           draft.phase = 'error'
-          draft.error = errorMessage
+          draft.error = `Network "${data.network}" not found`
         })
+        return
       }
+
+      setState(draft => {
+        draft.phase = 'switching'
+        draft.error = undefined
+      })
+
+      modal
+        ?.switchNetwork(targetNetwork)
+        .then(() => {
+          setState(draft => {
+            draft.phase = 'success'
+          })
+        })
+        .catch((error: Error) => {
+          setState(draft => {
+            draft.phase = 'error'
+            draft.error = error.message
+          })
+        })
     },
-    [switchChain]
+    [modal]
   )
 
   return {
