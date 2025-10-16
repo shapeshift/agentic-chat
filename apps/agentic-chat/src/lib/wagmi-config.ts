@@ -11,7 +11,7 @@ const storage = createStorage({ storage: cookieStorage })
 // Create the Wagmi adapter instance
 export const wagmiAdapter = new WagmiAdapter({
   storage,
-  ssr: true,
+  ssr: false,
   projectId,
   networks,
 })
