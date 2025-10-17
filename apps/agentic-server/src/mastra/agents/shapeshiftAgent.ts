@@ -2,7 +2,14 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { openai } from '../models'
-import { getAssetsTool, mathCalculatorTool, initiateSwapTool, portfolioTool, switchNetworkTool } from '../tools'
+import {
+  getAssetsTool,
+  getTransactionHistoryTool,
+  mathCalculatorTool,
+  initiateSwapTool,
+  portfolioTool,
+  switchNetworkTool,
+} from '../tools'
 
 import { supportedChainsContext } from './context'
 
@@ -24,6 +31,7 @@ export const shapeshiftAgent = new Agent({
 
     **Tool Usage:**
     - **getAssets**: Find assets by name/symbol, get prices and market data (supports 18 networks)
+    - **getTransactionHistory**: Get recent transaction history for the connected wallet on a specific network
     - **mathCalculator**: Use for all arithmetic operations to ensure precision
     - **portfolio**: Get user balances with human-readable values and USD amounts
     - **initiateSwap**: Execute full swap flow - ONLY for EVM and Solana chains
@@ -68,6 +76,7 @@ export const shapeshiftAgent = new Agent({
   model: openai('gpt-4o-mini'),
   tools: {
     getAssetsTool,
+    getTransactionHistoryTool,
     mathCalculatorTool,
     portfolioTool,
     initiateSwapTool,
