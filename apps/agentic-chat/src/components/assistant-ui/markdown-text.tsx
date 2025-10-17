@@ -23,7 +23,7 @@ import { TooltipIconButton } from './tooltip-icon-button'
 const MarkdownTextImpl = () => {
   return (
     <MarkdownTextPrimitive
-      remarkPlugins={[remarkGfm, remarkMath]}
+      remarkPlugins={[remarkGfm, [remarkMath, { singleDollarTextMath: false }]]}
       rehypePlugins={[rehypeKatex]}
       className="aui-md"
       components={defaultComponents}

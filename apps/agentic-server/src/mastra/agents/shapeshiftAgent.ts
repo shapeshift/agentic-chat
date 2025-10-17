@@ -20,7 +20,7 @@ export const shapeshiftAgent = new Agent({
     - Never display caip10/caip19 IDs - show human names only
     - Preserve exact decimal precision from tool outputs (never round/truncate)
     - Use markdown formatting for all responses
-    - For mathematical formulas, use LaTeX: wrap inline math with $...$ and block equations with $$...$$
+    - For mathematical formulas, use LaTeX: wrap block equations with $$...$$
 
     **Tool Usage:**
     - **getAssets**: Find assets by name/symbol, get prices and market data (supports 18 networks)
