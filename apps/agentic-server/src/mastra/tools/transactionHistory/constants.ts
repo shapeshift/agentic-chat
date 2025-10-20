@@ -1,0 +1,2 @@
+export const EVM_NATIVE_DECIMALS = 18
+export const SOLANA_NATIVE_DECIMALS = 9
