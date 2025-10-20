@@ -65,6 +65,11 @@ export const shapeshiftAgent = new Agent({
     - Cross-chain: "swap ETH on ethereum to SOL on solana" → cross-chain via Relay
     - Unsupported request: "swap Bitcoin to Ethereum" → Politely explain Bitcoin swaps not supported, suggest looking up BTC price instead
 
+    **Cross-Chain Terminology:**
+    - "Bridge" = Same asset cross-chain (ETH to Arbitrum = ETH→ETH, not ETH→ARB token)
+    - Native L2 tokens (ARB, OP, etc.) are distinct from bridged assets
+    - Ask for clarification if ambiguous between native token vs bridged asset
+
     **Error Handling:**
     - Insufficient balance → Show exact shortage amount
     - No rates available → "Route not supported or amount too small"
