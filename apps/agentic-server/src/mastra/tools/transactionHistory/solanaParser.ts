@@ -1,54 +1,26 @@
 import { fromBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
-import z from 'zod'
+import { z } from 'zod'
 
 import { SOLANA_NATIVE_DECIMALS } from './constants'
 import { solanaTxSchema } from './schemas'
 import type { SolanaTx } from './schemas'
 import type { ParsedTransaction, TokenTransfer } from './types'
 
-function filterUserTokenTransfers(
-  transfers: SolanaTx['tokenTransfers'],
-  userAddress: string
-): TokenTransfer[] | undefined {
-  if (!transfers || transfers.length === 0) return undefined
-
-  const normalizedUserAddress = userAddress.toLowerCase()
-
-  const filtered = transfers
-    .filter(transfer => {
-      const fromUser = transfer.fromUserAccount?.toLowerCase()
-      const toUser = transfer.toUserAccount?.toLowerCase()
-      const isUserInvolved = fromUser === normalizedUserAddress || toUser === normalizedUserAddress
-      const hasValidAmount = transfer.amount !== undefined && transfer.amount !== null
-      return isUserInvolved && hasValidAmount
-    })
-    .map(transfer => ({
-      symbol: transfer.token?.symbol || 'Unknown',
-      amount: fromBaseUnit(transfer.amount!.toString(), transfer.token?.decimals || 9),
-      from: transfer.fromUserAccount || '',
-      to: transfer.toUserAccount || '',
-    }))
-
-  return filtered.length > 0 ? filtered : undefined
-}
-
 function determineTransactionType(
   nativeTransfer: SolanaTx['nativeTransfers'] extends (infer U)[] | undefined ? U | undefined : never,
   userAddress: string,
-  tokenTransfers?: TokenTransfer[]
+  tokenTransfersCount: number
 ): ParsedTransaction['type'] {
-  const normalizedUserAddress = userAddress.toLowerCase()
-
-  if (tokenTransfers && tokenTransfers.length > 1) {
+  if (tokenTransfersCount > 1) {
     return 'swap'
   }
 
   if (nativeTransfer) {
-    if (nativeTransfer.fromUserAccount.toLowerCase() === normalizedUserAddress) {
+    if (nativeTransfer.fromUserAccount === userAddress) {
       return 'send'
     }
-    if (nativeTransfer.toUserAccount.toLowerCase() === normalizedUserAddress) {
+    if (nativeTransfer.toUserAccount === userAddress) {
       return 'receive'
     }
   }
@@ -57,9 +29,19 @@ function determineTransactionType(
 }
 
 export function parseSolanaTransaction(tx: SolanaTx, userAddress: string): ParsedTransaction {
-  const normalizedUserAddress = userAddress.toLowerCase()
   const nativeTransfer = tx.nativeTransfers?.[0]
-  const tokenTransfers = filterUserTokenTransfers(tx.tokenTransfers, userAddress)
+
+  const tokenTransfers: TokenTransfer[] | undefined =
+    tx.tokenTransfers && tx.tokenTransfers.length > 0
+      ? tx.tokenTransfers
+          .filter(transfer => transfer.amount !== undefined && transfer.amount !== null)
+          .map(transfer => ({
+            symbol: transfer.token?.symbol || 'Unknown',
+            amount: fromBaseUnit(transfer.amount!.toString(), transfer.token?.decimals || 9),
+            from: transfer.fromUserAccount || '',
+            to: transfer.toUserAccount || '',
+          }))
+      : undefined
 
   let from = tx.feePayer
   let to = tx.feePayer
@@ -71,7 +53,7 @@ export function parseSolanaTransaction(tx: SolanaTx, userAddress: string): Parse
     value = fromBaseUnit(nativeTransfer.amount.toString(), SOLANA_NATIVE_DECIMALS)
   }
 
-  const type = determineTransactionType(nativeTransfer, normalizedUserAddress, tokenTransfers)
+  const type = determineTransactionType(nativeTransfer, userAddress, tokenTransfers?.length || 0)
 
   const baseTransaction = {
     txid: tx.txid,

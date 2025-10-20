@@ -32,7 +32,7 @@ async function fetchTransactionHistory(
 }
 
 export const getTransactionHistoryTool = createTool({
-  id: 'getTransactionHistory',
+  id: 'getTransactionHistoryTool',
   description:
     'Get transaction history for the connected wallet on a specific network. Returns recent transactions with details about sends, receives, swaps, and contract interactions.',
   inputSchema: getTransactionHistoryInput,
@@ -46,6 +46,10 @@ export const getTransactionHistoryTool = createTool({
     const chainId = networkToChainIdMap[network]
     const address = getAddressForNetwork(runtimeContext, network)
     const { chainNamespace } = fromChainId(chainId)
+
+    if (chainNamespace !== CHAIN_NAMESPACE.Evm && chainNamespace !== CHAIN_NAMESPACE.Solana) {
+      throw new Error(`Transaction history not supported for network: ${network} (${chainNamespace})`)
+    }
 
     const baseUrl = process.env[getUnchainedHttpUrlEnvVar(chainId)]
 
@@ -63,7 +67,9 @@ export const getTransactionHistoryTool = createTool({
 
     const url = `${baseUrl}/api/v1/account/${address}/txs?${params.toString()}`
 
-    logger?.info('Fetching transaction history:', { url })
+    const maskedAddress = address.length > 12 ? `${address.slice(0, 5)}...${address.slice(-6)}` : address
+    const safeUrl = url.replace(address, maskedAddress)
+    logger?.info('Fetching transaction history:', { url: safeUrl })
 
     const { transactions, cursor: responseCursor } = await fetchTransactionHistory(chainNamespace, url, address)
 

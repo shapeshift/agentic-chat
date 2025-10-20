@@ -7,41 +7,13 @@ import { evmTxSchema } from './schemas'
 import type { EvmTx } from './schemas'
 import type { ParsedTransaction, TokenTransfer } from './types'
 
-function filterUserTokenTransfers(
-  transfers: EvmTx['tokenTransfers'],
-  userAddress: string
-): TokenTransfer[] | undefined {
-  if (!transfers || transfers.length === 0) return undefined
-
-  const normalizedUserAddress = userAddress.toLowerCase()
-
-  const filtered = transfers
-    .filter(transfer => {
-      const from = transfer.from.toLowerCase()
-      const to = transfer.to.toLowerCase()
-      return from === normalizedUserAddress || to === normalizedUserAddress
-    })
-    .map(transfer => ({
-      symbol: transfer.symbol,
-      amount: fromBaseUnit(transfer.value, transfer.decimals),
-      from: transfer.from,
-      to: transfer.to,
-    }))
-
-  return filtered.length > 0 ? filtered : undefined
-}
-
-function determineTransactionType(
-  tx: EvmTx,
-  userAddress: string,
-  tokenTransfers?: TokenTransfer[]
-): ParsedTransaction['type'] {
+function determineTransactionType(tx: EvmTx, userAddress: string): ParsedTransaction['type'] {
   const normalizedUserAddress = userAddress.toLowerCase()
   const normalizedFrom = tx.from.toLowerCase()
   const normalizedTo = tx.to.toLowerCase()
 
-  if (tokenTransfers && tokenTransfers.length > 0) {
-    const uniqueTokens = new Set(tx.tokenTransfers?.map(t => t.contract) || [])
+  if (tx.tokenTransfers && tx.tokenTransfers.length > 0) {
+    const uniqueTokens = new Set(tx.tokenTransfers.map(t => t.contract))
     if (uniqueTokens.size > 1) {
       return 'swap'
     }
@@ -63,8 +35,17 @@ function determineTransactionType(
 }
 
 export function parseEvmTransaction(tx: EvmTx, userAddress: string): ParsedTransaction {
-  const tokenTransfers = filterUserTokenTransfers(tx.tokenTransfers, userAddress)
-  const type = determineTransactionType(tx, userAddress, tokenTransfers)
+  const tokenTransfers: TokenTransfer[] | undefined =
+    tx.tokenTransfers && tx.tokenTransfers.length > 0
+      ? tx.tokenTransfers.map(transfer => ({
+          symbol: transfer.symbol,
+          amount: fromBaseUnit(transfer.value, transfer.decimals),
+          from: transfer.from,
+          to: transfer.to,
+        }))
+      : undefined
+
+  const type = determineTransactionType(tx, userAddress)
 
   const baseTransaction = {
     txid: tx.txid,
