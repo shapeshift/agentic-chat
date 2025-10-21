@@ -53,17 +53,17 @@ export const shapeshiftAgent = new Agent({
 
     **Network Resolution for Swaps:**
     - ONLY EVM chains and Solana support swaps
-    - If NO network specified → Ask user to specify network(s)
-    - If ONE network specified → Same-chain swap on that network
-    - If TWO different networks → Cross-chain swap between networks
-    - Supported swap routes: EVM ↔ EVM, Solana ↔ Solana, EVM ↔ Solana
+    - Native tokens (SOL, ETH, AVAX, MATIC, BNB, OP, ARB) imply their network
+    - If one network specified → use for both assets (same-chain swap)
+    - If two networks specified → cross-chain swap
+    - If no network specified and no native token → ask for clarification
+    - Supported routes: EVM ↔ EVM, Solana ↔ Solana, EVM ↔ Solana
     - Unsupported: Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, Sui
-    - Never guess networks - always confirm when ambiguous
 
     Examples:
-    - Same-chain: "swap FOX to ETH on arbitrum" → both use arbitrum
-    - Cross-chain: "swap ETH on ethereum to SOL on solana" → cross-chain via Relay
-    - Unsupported request: "swap Bitcoin to Ethereum" → Politely explain Bitcoin swaps not supported, suggest looking up BTC price instead
+    - "swap SOL to USDC" → solana (SOL is native)
+    - "swap USDC to USDT" → ask which network
+    - "swap ETH on ethereum to SOL on solana" → cross-chain
 
     **Cross-Chain Terminology:**
     - "Bridge" = Same asset cross-chain (ETH to Arbitrum = ETH→ETH, not ETH→ARB token)
