@@ -1,12 +1,17 @@
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { hexToBigInt } from 'viem'
 
+import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { sendTransaction } from '@/utils/sendTransaction'
 
 type SwapData = InitiateSwapOutput
 type TransactionData = SwapData['swapTx']
 
-async function executeTransaction(tx: TransactionData) {
+interface ExecuteTransactionOptions {
+  solanaProvider?: SolanaWalletProvider
+}
+
+async function executeTransaction(tx: TransactionData, options?: ExecuteTransactionOptions) {
   const finalTx = {
     chainId: tx.chainId,
     data: tx.data,
@@ -19,14 +24,18 @@ async function executeTransaction(tx: TransactionData) {
           ? Number(hexToBigInt(tx.gasLimit as `0x${string}`))
           : Number(tx.gasLimit),
     }),
+    ...(options?.solanaProvider && { solanaProvider: options.solanaProvider }),
   }
 
   return sendTransaction(finalTx)
 }
 
-export async function executeApproval(approvalTx: TransactionData): Promise<string> {
+export async function executeApproval(
+  approvalTx: TransactionData,
+  options?: ExecuteTransactionOptions
+): Promise<string> {
   try {
-    return await executeTransaction(approvalTx)
+    return await executeTransaction(approvalTx, options)
   } catch (error) {
     const message =
       error instanceof Error && error.message?.includes('User rejected')
@@ -36,9 +45,9 @@ export async function executeApproval(approvalTx: TransactionData): Promise<stri
   }
 }
 
-export async function executeSwap(swapTx: TransactionData): Promise<string> {
+export async function executeSwap(swapTx: TransactionData, options?: ExecuteTransactionOptions): Promise<string> {
   try {
-    return await executeTransaction(swapTx)
+    return await executeTransaction(swapTx, options)
   } catch (error) {
     const message =
       error instanceof Error && error.message?.includes('User rejected')
