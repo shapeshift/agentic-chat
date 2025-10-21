@@ -28,10 +28,6 @@ const isSolanaTransactionData = (data: unknown): data is SolanaTransactionData =
 }
 
 export async function sendSolanaTransaction(params: TransactionParams): Promise<string> {
-  if (!window.solana) {
-    throw new Error('No Solana wallet connected. Please connect your wallet first.')
-  }
-
   const connection = new Connection(import.meta.env.VITE_SOLANA_RPC_URL as string, 'confirmed')
 
   try {
@@ -39,6 +35,12 @@ export async function sendSolanaTransaction(params: TransactionParams): Promise<
 
     if (!isSolanaTransactionData(txData)) {
       throw new Error('Invalid Solana transaction data structure')
+    }
+
+    const provider = params.solanaProvider || window.solana
+
+    if (!provider) {
+      throw new Error('No Solana wallet connected. Please connect your wallet first.')
     }
 
     const instructions = txData.instructions.map(
@@ -74,7 +76,7 @@ export async function sendSolanaTransaction(params: TransactionParams): Promise<
 
     const transaction = new VersionedTransaction(messageV0)
 
-    const signedTx = await window.solana.signTransaction(transaction)
+    const signedTx = await provider.signTransaction<VersionedTransaction>(transaction)
     const signature = await connection.sendRawTransaction(signedTx.serialize(), {
       skipPreflight: false,
       preflightCommitment: 'confirmed',

@@ -1,7 +1,9 @@
+import { useAppKitProvider } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import { useChainId, useSwitchChain } from 'wagmi'
 
+import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
@@ -57,6 +59,8 @@ interface UseSwapExecutionResult {
 export const useSwapExecution = (toolCallId: string, swapData: SwapData | null): UseSwapExecutionResult => {
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
+  const { walletProvider } = useAppKitProvider('solana')
+  const solanaProvider = walletProvider as SolanaWalletProvider | undefined
 
   const { state } = useToolExecutionEffect(
     toolCallId,
@@ -99,7 +103,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
 
         // Step 2: Approval
         if (needsApproval && approvalTx) {
-          const approvalTxHash = await executeApproval(approvalTx)
+          const approvalTxHash = await executeApproval(approvalTx, { solanaProvider })
           setState(draft => {
             draft.approvalTxHash = approvalTxHash
           })
@@ -116,7 +120,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
         }
 
         // Step 3: Swap
-        const swapTxHash = await executeSwap(swapTx)
+        const swapTxHash = await executeSwap(swapTx, { solanaProvider })
         setState(draft => {
           draft.swapTxHash = swapTxHash
         })
@@ -132,7 +136,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
         })
       }
     },
-    [currentChainId, switchChainAsync]
+    [currentChainId, switchChainAsync, solanaProvider]
   )
 
   return {
