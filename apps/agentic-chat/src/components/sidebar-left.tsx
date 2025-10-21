@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 
-import { ThreadList } from './assistant-ui/thread-list'
+import { ThreadSidebar } from './ThreadSidebar'
 import { Sidebar, SidebarContent, SidebarHeader, SidebarRail } from './ui/sidebar'
 
 export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }) => {
@@ -14,7 +14,7 @@ export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ..
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2 pt-2">
-        <ThreadList />
+        <ThreadSidebar />
         {/* <NavWallets wallets={data.wallets} /> */}
       </SidebarContent>
       <SidebarRail />

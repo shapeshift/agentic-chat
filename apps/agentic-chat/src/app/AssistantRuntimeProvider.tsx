@@ -14,10 +14,12 @@ import {
   polygonChainId,
   solanaChainId,
 } from '@shapeshiftoss/caip'
-import { useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useAccount } from 'wagmi'
 
 import { useAutoNetworkSwitch } from '@/hooks/useAutoNetworkSwitch'
+import { useSessionId } from '@/hooks/useSessionId'
+import { useThreadStore } from '@/stores/threadStore'
 
 const agentId = 'shapeshiftAgent'
 
@@ -51,6 +53,9 @@ export default function ({
     solanaConnected,
   })
 
+  const sessionId = useSessionId()
+  const { currentThreadId, fetchThreads, setThreadTitle } = useThreadStore()
+
   const walletContext = {
     connectedWallets: {
       ...Object.fromEntries(
@@ -63,30 +68,90 @@ export default function ({
   const walletContextRef = useRef(walletContext)
   walletContextRef.current = walletContext
 
-  // Create unique threadId based on connected wallet address
-  // This ensures switching wallets creates a new thread with fresh context
-  const threadId = evmAccount.address || solanaAddress ? `${agentId}-${evmAccount.address || solanaAddress}` : agentId
+  useEffect(() => {
+    void fetchThreads(sessionId)
+  }, [sessionId, fetchThreads])
 
-  // Store threadId in ref so body() always gets latest value
-  const threadIdRef = useRef(threadId)
-  threadIdRef.current = threadId
+  const transport = useMemo(
+    () =>
+      new AssistantChatTransport({
+        api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/chat/${agentId}`,
+        body: () => {
+          const threadId = currentThreadId || sessionId
+
+          console.log('[AssistantRuntimeProvider] Sending message with:', {
+            threadId,
+            resourceId: sessionId,
+            usingCurrentThread: !!currentThreadId,
+          })
+
+          return {
+            runId: agentId,
+            resourceId: sessionId,
+            threadId,
+            context: [
+              {
+                role: 'user',
+                content: JSON.stringify(walletContextRef.current),
+              },
+            ],
+          }
+        },
+      }),
+    [sessionId, currentThreadId]
+  )
 
   const runtime = useChatRuntime({
-    transport: new AssistantChatTransport({
-      api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/chat/${agentId}`,
-      body: () => ({
-        runId: agentId,
-        resourceId: agentId,
-        threadId: threadIdRef.current,
-        context: [
-          {
-            role: 'user',
-            content: JSON.stringify(walletContextRef.current),
-          },
-        ],
-      }),
-    }),
+    transport,
   })
+
+  useEffect(() => {
+    if (currentThreadId) {
+      runtime.switchToThread(currentThreadId)
+    }
+  }, [currentThreadId, runtime])
+
+  useEffect(() => {
+    // Watch for first user message to generate title
+    const effectiveThreadId = currentThreadId || sessionId
+
+    console.log('[AssistantRuntimeProvider] Setting up message listener for thread:', effectiveThreadId)
+    const unsubscribe = runtime.thread.subscribe(() => {
+      const messages = runtime.thread.getState().messages
+      const userMessages = messages.filter(m => m.role === 'user')
+
+      if (userMessages.length === 1) {
+        // First user message - generate title
+        const firstMessage = userMessages[0]
+        const messageText =
+          firstMessage.content
+            .filter((c): c is { type: 'text'; text: string } => c.type === 'text')
+            .map(c => c.text)
+            .join(' ') || 'New Chat'
+
+        console.log('[AssistantRuntimeProvider] First message detected, generating title:', messageText)
+
+        // Call title generation endpoint
+        fetch(`${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/generate-title`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: messageText }),
+        })
+          .then(res => res.json())
+          .then((data: { title: string }) => {
+            console.log('[AssistantRuntimeProvider] Generated title:', data.title)
+            setThreadTitle(effectiveThreadId, data.title)
+          })
+          .catch(error => {
+            console.error('[AssistantRuntimeProvider] Error generating title:', error)
+          })
+
+        unsubscribe()
+      }
+    })
+
+    return unsubscribe
+  }, [currentThreadId, sessionId, runtime, setThreadTitle])
 
   return <AssistantRuntimeProvider runtime={runtime}>{children}</AssistantRuntimeProvider>
 }

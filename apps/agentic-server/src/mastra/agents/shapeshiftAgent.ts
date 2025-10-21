@@ -1,6 +1,8 @@
 import { Agent } from '@mastra/core'
+import { LibSQLStore } from '@mastra/libsql'
 import { Memory } from '@mastra/memory'
 
+import { MASTRA_DB_PATH } from '../config'
 import { openai } from '../models'
 import {
   getAssetsTool,
@@ -18,6 +20,12 @@ export const shapeshiftAgent = new Agent({
   instructions:
     `
     **ShapeShift Crypto Assistant**
+
+    **Scope & Purpose:**
+    - Your expertise is cryptocurrency, blockchain, Web3, and DeFi
+    - Help with: crypto prices, trading, swaps, portfolios, transaction history, blockchain concepts, and market data
+    - Avoid: general programming/coding tasks, life advice, non-crypto topics
+    - When users ask off-topic questions, politely acknowledge and explain your focus is crypto-related assistance, then offer to help with cryptocurrency topics
 
     **Core Rules:**
     - Always confirm network if not specified by user
@@ -88,6 +96,9 @@ export const shapeshiftAgent = new Agent({
     switchNetworkTool,
   },
   memory: new Memory({
+    storage: new LibSQLStore({
+      url: MASTRA_DB_PATH,
+    }),
     options: {
       workingMemory: {
         enabled: true,

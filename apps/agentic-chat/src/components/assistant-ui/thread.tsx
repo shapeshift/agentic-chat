@@ -17,6 +17,7 @@ import {
   SendHorizontalIcon,
 } from 'lucide-react'
 import type { FC } from 'react'
+import { useAccount } from 'wagmi'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -24,8 +25,11 @@ import { cn } from '@/lib/utils'
 import { MarkdownText } from './markdown-text'
 import { ToolFallback } from './tool-fallback'
 import { TooltipIconButton } from './tooltip-icon-button'
+import { WalletMismatchBanner } from './wallet-mismatch-banner'
 
 export const Thread: FC = () => {
+  const { address } = useAccount()
+
   return (
     <ThreadPrimitive.Root
       className="bg-background box-border flex h-full flex-col overflow-hidden"
@@ -34,6 +38,10 @@ export const Thread: FC = () => {
       }}
     >
       <ThreadPrimitive.Viewport className="flex h-full flex-col items-center overflow-y-auto scroll-smooth bg-inherit px-4 pt-8">
+        <ThreadPrimitive.If empty={false}>
+          <WalletMismatchBanner currentAddress={address} />
+        </ThreadPrimitive.If>
+
         <ThreadWelcome />
 
         <ThreadPrimitive.Messages

@@ -7,6 +7,7 @@ import { PinoLogger } from '@mastra/loggers'
 import type { Context } from 'hono'
 
 import { shapeshiftAgent } from './agents'
+import { MASTRA_DB_PATH } from './config'
 
 type MastraHonoContext = Context & {
   Variables: {
@@ -36,15 +37,8 @@ const getCorsOrigins = () => {
 
 // Storage configuration
 const getStorageConfig = () => {
-  const dbUrl = process.env.DATABASE_URL
-
-  if (dbUrl) {
-    return new LibSQLStore({ url: dbUrl })
-  }
-
-  // Local development fallback
   return new LibSQLStore({
-    url: 'file:./mastra.db',
+    url: MASTRA_DB_PATH,
   })
 }
 
@@ -101,9 +95,16 @@ export const mastra = new Mastra({
       registerApiRoute('/chat/:agentId', {
         method: 'POST',
         handler: async c => {
-          const { messages, ...rest } = await c.req.json()
+          const { messages, threadId, resourceId, ...rest } = await c.req.json()
           const mastra = c.get('mastra')
           const agentId = c.req.param('agentId')
+
+          console.log('[Chat Endpoint] Request received:', {
+            agentId,
+            threadId,
+            resourceId,
+            messageCount: messages?.length || 0,
+          })
 
           if (!agentId) {
             throw new Error('Agent ID is required')
@@ -114,6 +115,12 @@ export const mastra = new Mastra({
             throw new Error(`Agent ${agentId} not found`)
           }
 
+          // Log agent memory configuration
+          const agentMemory = await agentObj.getMemory({ runtimeContext: new RuntimeContext() })
+          console.log('[Chat Endpoint] Agent memory config:', {
+            hasMemory: !!agentMemory,
+          })
+
           // Extract wallet context from Hono context (set by middleware)
           const walletContext = (c as MastraHonoContext).get('walletContext')
 
@@ -123,14 +130,46 @@ export const mastra = new Mastra({
             runtimeContext.set('walletContext', walletContext)
           }
 
+          console.log('[Chat Endpoint] Calling streamVNext with memory config:', {
+            thread: threadId,
+            resource: resourceId,
+          })
+
           const result = await agentObj.streamVNext(
             messages as MessageListInput,
             {
               ...rest,
+              memory: {
+                thread: threadId,
+                resource: resourceId,
+              },
               format: 'aisdk',
               runtimeContext,
             } as Parameters<typeof agentObj.streamVNext>[1]
           )
+
+          console.log('[Chat Endpoint] Stream created successfully')
+
+          // Check thread title multiple times to catch title generation
+          const checkTitle = async (attempt: number) => {
+            try {
+              const storage = mastra.storage
+              if (storage) {
+                const thread = await storage.getThreadById({ threadId })
+                console.log(`[Chat Endpoint] Thread check ${attempt}:`, {
+                  threadId,
+                  title: thread?.title,
+                  startsWithNewThread: thread?.title?.startsWith('New Thread'),
+                })
+              }
+            } catch (error) {
+              console.error(`[Chat Endpoint] Error checking thread (attempt ${attempt}):`, error)
+            }
+          }
+
+          setTimeout(() => void checkTitle(1), 2000)
+          setTimeout(() => void checkTitle(2), 5000)
+          setTimeout(() => void checkTitle(3), 10000)
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return
           return (result as any).toUIMessageStreamResponse()
@@ -148,6 +187,118 @@ export const mastra = new Mastra({
         path: '/health',
         handler: c => {
           return c.json({ status: 'healthy', timestamp: new Date().toISOString() })
+        },
+      },
+      {
+        method: 'GET',
+        path: '/api/threads',
+        handler: async c => {
+          const resourceId = c.req.query('resourceId')
+          if (!resourceId) {
+            return c.json({ error: 'resourceId query parameter is required' }, 400)
+          }
+
+          const mastra = c.get('mastra')
+          const storage = mastra.storage
+
+          if (!storage) {
+            return c.json({ error: 'Storage not configured' }, 500)
+          }
+
+          try {
+            const threads = await storage.getThreadsByResourceId({ resourceId })
+            console.log('[GET /api/threads] Fetched threads:', {
+              resourceId,
+              count: threads.length,
+              titles: threads.map((t: { id: string; title: string }) => ({ id: t.id, title: t.title })),
+            })
+            return c.json({ threads })
+          } catch (error) {
+            console.error('[GET /api/threads] Error fetching threads:', error)
+            return c.json({ error: 'Failed to fetch threads' }, 500)
+          }
+        },
+      },
+      {
+        method: 'POST',
+        path: '/api/generate-title',
+        handler: async c => {
+          const body = await c.req.json()
+          const { message } = body
+
+          if (!message) {
+            return c.json({ error: 'message is required' }, 400)
+          }
+
+          try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              },
+              body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [
+                  {
+                    role: 'user',
+                    content: `Generate a concise 3-5 word title for this user message. Return ONLY the title text, nothing else.\n\nMessage: ${message}`,
+                  },
+                ],
+                temperature: 0.7,
+                max_tokens: 20,
+              }),
+            })
+
+            const data = (await response.json()) as { choices: Array<{ message: { content: string } }> }
+            const title = data.choices[0]?.message?.content?.trim() || 'New Chat'
+            console.log('[POST /api/generate-title] Generated title:', { message, title })
+
+            return c.json({ title })
+          } catch (error) {
+            console.error('[POST /api/generate-title] Error generating title:', error)
+            return c.json({ error: 'Failed to generate title' }, 500)
+          }
+        },
+      },
+      {
+        method: 'PATCH',
+        path: '/api/threads/:threadId',
+        handler: async c => {
+          const threadId = c.req.param('threadId')
+          const body = await c.req.json()
+          const { title, metadata } = body
+
+          if (!threadId) {
+            return c.json({ error: 'threadId is required' }, 400)
+          }
+
+          const mastra = c.get('mastra')
+          const storage = mastra.storage
+
+          if (!storage) {
+            return c.json({ error: 'Storage not configured' }, 500)
+          }
+
+          try {
+            const existingThread = await storage.getThreadById({ threadId })
+            if (!existingThread) {
+              return c.json({ error: 'Thread not found' }, 404)
+            }
+
+            const updatedThread = {
+              ...existingThread,
+              ...(title !== undefined && { title }),
+              ...(metadata !== undefined && { metadata: JSON.stringify(metadata) }),
+              updatedAt: new Date().toISOString(),
+            }
+
+            await storage.saveThread(updatedThread)
+            return c.json({ thread: updatedThread })
+          } catch (error) {
+            console.error('[PATCH /api/threads/:threadId] Error updating thread:', error)
+            return c.json({ error: 'Failed to update thread' }, 500)
+          }
         },
       },
     ],
