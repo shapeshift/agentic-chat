@@ -2,7 +2,6 @@ import { createAppKit } from '@reown/appkit/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 
-import AssistantRuntimeProvider from '@/app/AssistantRuntimeProvider'
 import { networks } from '@/lib/appkit'
 import { solanaAdapter } from '@/lib/solana-config'
 import { wagmiConfig, wagmiAdapter } from '@/lib/wagmi-config'
@@ -35,9 +34,7 @@ function App() {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <AssistantRuntimeProvider>
-          <Dashboard />
-        </AssistantRuntimeProvider>
+        <Dashboard />
       </QueryClientProvider>
     </WagmiProvider>
   )

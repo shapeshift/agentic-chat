@@ -1,4 +1,4 @@
-import type { Transaction, VersionedTransaction } from '@solana/web3.js'
+import type { Connection, Transaction, VersionedTransaction } from '@solana/web3.js'
 
 declare global {
   interface Window {
@@ -7,7 +7,7 @@ declare global {
       signAllTransactions<T extends Transaction | VersionedTransaction>(transactions: T[]): Promise<T[]>
       sendTransaction<T extends Transaction | VersionedTransaction>(
         transaction: T,
-        connection: any
+        connection: Connection
       ): Promise<string>
     }
   }

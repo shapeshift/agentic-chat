@@ -1,11 +1,10 @@
 import type { AppKitNetwork } from '@reown/appkit/networks'
 import { arbitrum, avalanche, base, bsc, gnosis, mainnet, optimism, polygon, solana } from '@reown/appkit/networks'
 import { modal } from '@reown/appkit/react'
-import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 
-type NetworkSwitchData = SwitchNetworkOutput
+type NetworkSwitchData = any
 
 type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'
 
