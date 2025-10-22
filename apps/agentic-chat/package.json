@@ -11,10 +11,8 @@
     "type-check": "yarn run -T tsc --noEmit"
   },
   "dependencies": {
-    "@assistant-ui/react": "^0.11.8",
-    "@assistant-ui/react-ai-sdk": "^1.1.0",
-    "@assistant-ui/react-markdown": "^0.11.0",
-    "@mastra/client-js": "^0.13.0",
+    "@ai-sdk/react": "^2.0.76",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.4",
     "@radix-ui/react-collapsible": "^1.1.4",
     "@radix-ui/react-dialog": "^1.1.7",
@@ -30,6 +28,7 @@
     "@solana/web3.js": "^1.95.8",
     "@tanstack/react-query": "^5.75.5",
     "@wagmi/core": "^2.17.2",
+    "ai": "^5.0.76",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -37,6 +36,7 @@
     "lucide-react": "^0.488.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "7.8.2",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",

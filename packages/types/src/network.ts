@@ -43,6 +43,20 @@ export const NETWORKS = [
 
 export type Network = (typeof NETWORKS)[number]
 
+export const EVM_SOLANA_NETWORKS = [
+  'ethereum',
+  'optimism',
+  'arbitrum',
+  'polygon',
+  'avalanche',
+  'bsc',
+  'base',
+  'gnosis',
+  'solana',
+] as const
+
+export type EvmSolanaNetwork = (typeof EVM_SOLANA_NETWORKS)[number]
+
 export const networkToChainIdMap: Record<Network, ChainId> = {
   ethereum: ethChainId,
   polygon: polygonChainId,

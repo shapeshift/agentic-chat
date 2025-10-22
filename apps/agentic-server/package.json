@@ -2,33 +2,31 @@
   "name": "@shapeshiftoss/agentic-server",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "clean": "rm -rf dist .mastra",
-    "build": "yarn build:tsc && yarn build:mastra",
-    "build:tsc": "rm -rf dist && yarn run -T tsc --build",
-    "build:mastra": "mastra build",
-    "dev": "yarn run -T concurrently \"yarn dev:tsc\" \"yarn dev:mastra\"",
-    "dev:tsc": "yarn run -T tsc --build --watch --preserveWatchOutput",
-    "dev:mastra": "NODE_OPTIONS=\"--import tsx/esm\" mastra dev --env ../../.env.local",
-    "start": "mastra start -env ../../.env",
+    "clean": "rm -rf dist",
+    "build": "tsup",
+    "build:tsc": "tsup && yarn run -T tsc --emitDeclarationOnly",
+    "dev": "NODE_OPTIONS=\"--import tsx/esm\" DOTENV_CONFIG_PATH=../../.env.local tsx --watch --require dotenv/config src/server.ts",
+    "start": "node dist/server.js",
     "type-check": "yarn run -T tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.32",
-    "@mastra/ai-sdk": "^0.0.3",
-    "@mastra/core": "patch:@mastra/core@npm%3A0.17.0#~/.yarn/patches/@mastra-core-npm-0.17.0-e90ee9bf9b.patch",
-    "@mastra/libsql": "^0.14.2",
-    "@mastra/loggers": "^0.10.12",
-    "@mastra/memory": "^0.15.2",
+    "@hono/node-server": "^1.19.5",
     "@solana/spl-token": "^0.4.0",
     "@solana/web3.js": "^1.95.2",
+    "ai": "^5.0.76",
     "axios": "^1.11.0",
+    "dotenv": "^17.2.3",
     "expr-eval": "^2.0.2",
+    "hono": "^4.10.2",
     "zod": "*"
   },
   "devDependencies": {
-    "mastra": "^0.13.0"
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.6"
   }
 }
