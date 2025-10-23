@@ -1,6 +1,11 @@
 import type { ToolCallMessagePartProps } from '@assistant-ui/react'
 import { makeAssistantToolUI } from '@assistant-ui/react'
-import type { InitiateSwapInput, InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
+import type {
+  InitiateSwapInput,
+  InitiateSwapOutput,
+  InitiateSwapUsdInput,
+  InitiateSwapUsdOutput,
+} from '@shapeshiftoss/agentic-server'
 import type { ReactNode } from 'react'
 
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
@@ -85,5 +90,10 @@ const InitiateSwapContent: React.FC<InitiateSwapContentProps> = ({ status, resul
 
 export const InitiateSwapUI = makeAssistantToolUI<InitiateSwapInput, InitiateSwapOutput>({
   toolName: 'initiateSwapTool',
+  render: InitiateSwapContent,
+})
+
+export const InitiateSwapUsdUI = makeAssistantToolUI<InitiateSwapUsdInput, InitiateSwapUsdOutput>({
+  toolName: 'initiateSwapUsdTool',
   render: InitiateSwapContent,
 })

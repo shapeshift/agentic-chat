@@ -226,10 +226,115 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
   }
 }
 
+async function executeSwapInternal({
+  sellAssetInput,
+  buyAssetInput,
+  sellAmountCrypto,
+  mastra,
+  runtimeContext,
+}: {
+  sellAssetInput: AssetInput
+  buyAssetInput: AssetInput
+  sellAmountCrypto: string
+  mastra: MastraUnion
+  runtimeContext: RuntimeContext<unknown>
+}) {
+  const logger = mastra?.getLogger()
+  logger?.info('executeSwapInternal', { sellAssetInput, buyAssetInput, sellAmountCrypto })
+
+  if (!Number.isFinite(parseFloat(sellAmountCrypto)) || parseFloat(sellAmountCrypto) <= 0) {
+    throw new Error('Sell amount must be a positive number')
+  }
+
+  const { sellAsset, buyAsset } = await resolveSwapAssets(
+    sellAssetInput,
+    buyAssetInput,
+    getAssetsTool,
+    mastra,
+    runtimeContext
+  )
+
+  const sellAddress = getAddressForChain(runtimeContext, sellAsset.chainId)
+  const buyAddress = getAddressForChain(runtimeContext, buyAsset.chainId)
+
+  if (isSolanaChain(sellAsset.chainId)) {
+    try {
+      new PublicKey(sellAddress)
+    } catch {
+      throw new Error(`Invalid Solana address for sell asset: ${sellAddress}`)
+    }
+  }
+
+  if (isSolanaChain(buyAsset.chainId)) {
+    try {
+      new PublicKey(buyAddress)
+    } catch {
+      throw new Error(`Invalid Solana address for buy asset: ${buyAddress}`)
+    }
+  }
+
+  const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmountCrypto)
+
+  const allowanceData = await getAllowance({
+    amount: toBaseUnit(sellAmountCrypto, sellAsset.precision),
+    asset: sellAsset,
+    from: sellAddress,
+    spender: bestRate.approvalTarget,
+  })
+
+  const needsApproval = allowanceData.isApprovalRequired
+
+  const accountData = await getAccountTool.execute({
+    context: { account: sellAddress, network: chainIdToNetwork[sellAsset.chainId] },
+    mastra,
+    runtimeContext,
+  })
+
+  const userBalance = accountData.balances[sellAsset.assetId] || '0'
+  const sellAmountBaseUnit = toBaseUnit(sellAmountCrypto, sellAsset.precision)
+
+  if (BigInt(userBalance) < BigInt(sellAmountBaseUnit)) {
+    const availableAmount = fromBaseUnit(userBalance, sellAsset.precision)
+    throw new Error(
+      `Insufficient ${sellAsset.symbol} balance. Required: ${sellAmountCrypto}, Available: ${availableAmount}`
+    )
+  }
+
+  const approvalTx = buildApprovalTransaction(
+    needsApproval,
+    sellAsset,
+    bestRate.approvalTarget,
+    sellAmountCrypto,
+    sellAddress
+  )
+
+  const swapTx = buildSwapTransaction(bestRate)
+
+  const summary = createSwapSummary(sellAsset, buyAsset, sellAmountCrypto, bestRate)
+
+  const swapExecutionData = {
+    sellAmountCryptoPrecision: sellAmountCrypto,
+    buyAmountCryptoPrecision: bestRate.buyAmountCryptoPrecision,
+    approvalTarget: bestRate.approvalTarget,
+    sellAsset,
+    buyAsset,
+    sellAccount: sellAddress,
+    buyAccount: buyAddress,
+  }
+
+  return {
+    summary,
+    needsApproval,
+    approvalTx,
+    swapTx,
+    swapData: swapExecutionData,
+  }
+}
+
 export const initiateSwapInput = z.object({
   sellAsset: assetInputSchema.describe('Asset to sell'),
   buyAsset: assetInputSchema.describe('Asset to buy'),
-  sellAmount: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
+  sellAmount: z.string().describe('Amount to sell in crypto tokens, e.g. 1 for 1 ETH, 0.5 for 0.5 SOL'),
 })
 
 export const initiateSwapOutput = swapPreparationSchema
@@ -240,104 +345,91 @@ export type InitiateSwapOutput = z.infer<typeof initiateSwapOutput>
 export const initiateSwapTool = createTool({
   id: 'initiateSwap',
   description:
-    'Start a crypto swap transaction that requires user wallet approval. ONLY supports EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, Gnosis) and Solana. NOT supported for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, or Sui.',
+    'Start a crypto swap using CRYPTO TOKEN amounts. ONLY supports EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, Gnosis) and Solana. NOT supported for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, or Sui. Use initiateSwapUsd for USD-denominated amounts.',
   inputSchema: initiateSwapInput,
   outputSchema: initiateSwapOutput,
+  execute: async ({ context, mastra, runtimeContext }) => {
+    if (!mastra) {
+      throw Error('no mastra instance')
+    }
+
+    return executeSwapInternal({
+      sellAssetInput: context.sellAsset,
+      buyAssetInput: context.buyAsset,
+      sellAmountCrypto: context.sellAmount,
+      mastra,
+      runtimeContext,
+    })
+  },
+})
+
+export const initiateSwapUsdInput = z.object({
+  sellAsset: assetInputSchema.describe('Asset to sell'),
+  buyAsset: assetInputSchema.describe('Asset to buy'),
+  sellAmountUsd: z.string().describe('USD value to swap, e.g. "100" for $100 worth, "1.50" for $1.50 worth'),
+})
+
+export const initiateSwapUsdOutput = swapPreparationSchema
+
+export type InitiateSwapUsdInput = z.infer<typeof initiateSwapUsdInput>
+export type InitiateSwapUsdOutput = z.infer<typeof initiateSwapUsdOutput>
+
+export const initiateSwapUsdTool = createTool({
+  id: 'initiateSwapUsd',
+  description:
+    'Start a crypto swap using USD VALUE amounts (e.g., $100 worth of ETH). Fetches current price and converts to token amount. ONLY supports EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, Gnosis) and Solana. NOT supported for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, or Sui.',
+  inputSchema: initiateSwapUsdInput,
+  outputSchema: initiateSwapUsdOutput,
   execute: async ({ context, mastra, runtimeContext }) => {
     const logger = mastra?.getLogger()
     if (!mastra) {
       throw Error('no mastra instance')
     }
-    logger?.info('initiateSwapTool', { context })
+    logger?.info('initiateSwapUsdTool', { context })
 
-    const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount } = context
+    const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmountUsd } = context
 
-    if (!Number.isFinite(parseFloat(sellAmount)) || parseFloat(sellAmount) <= 0) {
-      throw new Error('Sell amount must be a positive number')
+    if (!Number.isFinite(parseFloat(sellAmountUsd)) || parseFloat(sellAmountUsd) <= 0) {
+      throw new Error('USD amount must be a positive number')
     }
 
-    const { sellAsset, buyAsset } = await resolveSwapAssets(
-      sellAssetInput,
-      buyAssetInput,
-      getAssetsTool,
-      mastra,
-      runtimeContext
-    )
-
-    const sellAddress = getAddressForChain(runtimeContext, sellAsset.chainId)
-    const buyAddress = getAddressForChain(runtimeContext, buyAsset.chainId)
-
-    if (isSolanaChain(sellAsset.chainId)) {
-      try {
-        new PublicKey(sellAddress)
-      } catch {
-        throw new Error(`Invalid Solana address for sell asset: ${sellAddress}`)
-      }
-    }
-
-    if (isSolanaChain(buyAsset.chainId)) {
-      try {
-        new PublicKey(buyAddress)
-      } catch {
-        throw new Error(`Invalid Solana address for buy asset: ${buyAddress}`)
-      }
-    }
-
-    const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmount)
-
-    const allowanceData = await getAllowance({
-      amount: toBaseUnit(sellAmount, sellAsset.precision),
-      asset: sellAsset,
-      from: sellAddress,
-      spender: bestRate.approvalTarget,
-    })
-
-    const needsApproval = allowanceData.isApprovalRequired
-
-    const accountData = await getAccountTool.execute({
-      context: { account: sellAddress, network: chainIdToNetwork[sellAsset.chainId] },
+    const sellAssetsResult = await getAssetsTool.execute({
+      context: { searchTerm: sellAssetInput.symbolOrName, network: sellAssetInput.network },
       mastra,
       runtimeContext,
     })
 
-    const userBalance = accountData.balances[sellAsset.assetId] || '0'
-    const sellAmountBaseUnit = toBaseUnit(sellAmount, sellAsset.precision)
-
-    if (BigInt(userBalance) < BigInt(sellAmountBaseUnit)) {
-      const availableAmount = fromBaseUnit(userBalance, sellAsset.precision)
+    if (sellAssetsResult.assets.length === 0) {
       throw new Error(
-        `Insufficient ${sellAsset.symbol} balance. Required: ${sellAmount}, Available: ${availableAmount}`
+        `No asset found for "${sellAssetInput.symbolOrName}"${sellAssetInput.network ? ` on ${sellAssetInput.network}` : ''}`
       )
     }
-
-    const approvalTx = buildApprovalTransaction(
-      needsApproval,
-      sellAsset,
-      bestRate.approvalTarget,
-      sellAmount,
-      sellAddress
-    )
-
-    const swapTx = buildSwapTransaction(bestRate)
-
-    const summary = createSwapSummary(sellAsset, buyAsset, sellAmount, bestRate)
-
-    const swapExecutionData = {
-      sellAmountCryptoPrecision: sellAmount,
-      buyAmountCryptoPrecision: bestRate.buyAmountCryptoPrecision,
-      approvalTarget: bestRate.approvalTarget,
-      sellAsset,
-      buyAsset,
-      sellAccount: sellAddress,
-      buyAccount: buyAddress,
+    if (sellAssetsResult.assets.length > 1) {
+      throw new Error(`Multiple assets found for "${sellAssetInput.symbolOrName}". Please specify network.`)
     }
 
-    return {
-      summary,
-      needsApproval,
-      approvalTx,
-      swapTx,
-      swapData: swapExecutionData,
+    const sellAsset = sellAssetsResult.assets[0]
+    const sellAssetPrice = parseFloat(sellAsset.price || '0')
+
+    if (sellAssetPrice <= 0) {
+      throw new Error(`Unable to fetch price for ${sellAsset.symbol}. Price data may be unavailable.`)
     }
+
+    const sellAmountCrypto = (parseFloat(sellAmountUsd) / sellAssetPrice).toString()
+
+    logger?.info('USD to crypto conversion', {
+      sellAmountUsd,
+      sellAssetPrice,
+      sellAmountCrypto,
+      asset: sellAsset.symbol,
+    })
+
+    return executeSwapInternal({
+      sellAssetInput,
+      buyAssetInput,
+      sellAmountCrypto,
+      mastra,
+      runtimeContext,
+    })
   },
 })

@@ -4,7 +4,7 @@ import { GetAssets } from '@/components/assistant-ui/GetAssets'
 import { GetCoingeckoAssets } from '@/components/assistant-ui/GetCoingeckoAssets'
 import { GetPortalsAssets } from '@/components/assistant-ui/GetPortalsAssets'
 import { GetTransactionHistoryUI } from '@/components/assistant-ui/GetTransactionHistoryUI'
-import { InitiateSwapUI } from '@/components/assistant-ui/InitiateSwapUI'
+import { InitiateSwapUI, InitiateSwapUsdUI } from '@/components/assistant-ui/InitiateSwapUI'
 import { Portfolio } from '@/components/assistant-ui/Portfolio'
 import { SwitchNetworkUI } from '@/components/assistant-ui/SwitchNetworkUI'
 import { Thread } from '@/components/assistant-ui/thread'
@@ -32,6 +32,7 @@ export const Dashboard = () => {
         </header>
         <div className="overflow-hidden h-full">
           <InitiateSwapUI />
+          <InitiateSwapUsdUI />
           <GetAssets />
           <GetAccount />
           <GetAllowance />
