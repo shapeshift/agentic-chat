@@ -208,22 +208,18 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
   }
 }
 
-export const initiateSwapSchema = z.object({
-  sellAsset: assetInputSchema.describe('Asset to sell'),
-  buyAsset: assetInputSchema.describe('Asset to buy'),
-  sellAmount: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
-})
-
-export type InitiateSwapInput = z.infer<typeof initiateSwapSchema>
-export type InitiateSwapOutput = z.infer<typeof swapPreparationSchema>
-
-export async function executeInitiateSwap(
-  input: InitiateSwapInput,
+async function executeSwapInternal({
+  sellAssetInput,
+  buyAssetInput,
+  sellAmountCrypto,
+  walletContext,
+}: {
+  sellAssetInput: AssetInput
+  buyAssetInput: AssetInput
+  sellAmountCrypto: string
   walletContext?: WalletContext
-): Promise<InitiateSwapOutput> {
-  const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmount } = input
-
-  if (!Number.isFinite(parseFloat(sellAmount)) || parseFloat(sellAmount) <= 0) {
+}): Promise<z.infer<typeof swapPreparationSchema>> {
+  if (!Number.isFinite(parseFloat(sellAmountCrypto)) || parseFloat(sellAmountCrypto) <= 0) {
     throw new Error('Sell amount must be a positive number')
   }
 
@@ -248,10 +244,10 @@ export async function executeInitiateSwap(
     }
   }
 
-  const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmount)
+  const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmountCrypto)
 
   const allowanceData = await getAllowance({
-    amount: toBaseUnit(sellAmount, sellAsset.precision),
+    amount: toBaseUnit(sellAmountCrypto, sellAsset.precision),
     asset: sellAsset,
     from: sellAddress,
     spender: bestRate.approvalTarget,
@@ -265,27 +261,29 @@ export async function executeInitiateSwap(
   })
 
   const userBalance = accountData.balances[sellAsset.assetId] || '0'
-  const sellAmountBaseUnit = toBaseUnit(sellAmount, sellAsset.precision)
+  const sellAmountBaseUnit = toBaseUnit(sellAmountCrypto, sellAsset.precision)
 
   if (BigInt(userBalance) < BigInt(sellAmountBaseUnit)) {
     const availableAmount = fromBaseUnit(userBalance, sellAsset.precision)
-    throw new Error(`Insufficient ${sellAsset.symbol} balance. Required: ${sellAmount}, Available: ${availableAmount}`)
+    throw new Error(
+      `Insufficient ${sellAsset.symbol} balance. Required: ${sellAmountCrypto}, Available: ${availableAmount}`
+    )
   }
 
   const approvalTx = buildApprovalTransaction(
     needsApproval,
     sellAsset,
     bestRate.approvalTarget,
-    sellAmount,
+    sellAmountCrypto,
     sellAddress
   )
 
   const swapTx = buildSwapTransaction(bestRate)
 
-  const summary = createSwapSummary(sellAsset, buyAsset, sellAmount, bestRate)
+  const summary = createSwapSummary(sellAsset, buyAsset, sellAmountCrypto, bestRate)
 
   const swapExecutionData = {
-    sellAmountCryptoPrecision: sellAmount,
+    sellAmountCryptoPrecision: sellAmountCrypto,
     buyAmountCryptoPrecision: bestRate.buyAmountCryptoPrecision,
     approvalTarget: bestRate.approvalTarget,
     sellAsset,
@@ -303,9 +301,87 @@ export async function executeInitiateSwap(
   }
 }
 
+export const initiateSwapSchema = z.object({
+  sellAsset: assetInputSchema.describe('Asset to sell'),
+  buyAsset: assetInputSchema.describe('Asset to buy'),
+  sellAmount: z.string().describe('Amount to sell in crypto tokens, e.g. 1 for 1 ETH, 0.5 for 0.5 SOL'),
+})
+
+export type InitiateSwapInput = z.infer<typeof initiateSwapSchema>
+export type InitiateSwapOutput = z.infer<typeof swapPreparationSchema>
+
+export async function executeInitiateSwap(
+  input: InitiateSwapInput,
+  walletContext?: WalletContext
+): Promise<InitiateSwapOutput> {
+  return executeSwapInternal({
+    sellAssetInput: input.sellAsset,
+    buyAssetInput: input.buyAsset,
+    sellAmountCrypto: input.sellAmount,
+    walletContext,
+  })
+}
+
 export const initiateSwapTool = {
   description:
-    'Start a crypto swap transaction that requires user wallet approval. ONLY supports EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, Gnosis) and Solana. NOT supported for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, or Sui.',
+    'Start a crypto swap using CRYPTO TOKEN amounts. ONLY supports EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, Gnosis) and Solana. NOT supported for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, or Sui. Use initiateSwapUsd for USD-denominated amounts.',
   inputSchema: initiateSwapSchema,
   execute: executeInitiateSwap,
+}
+
+export const initiateSwapUsdSchema = z.object({
+  sellAsset: assetInputSchema.describe('Asset to sell'),
+  buyAsset: assetInputSchema.describe('Asset to buy'),
+  sellAmountUsd: z.string().describe('USD value to swap, e.g. "100" for $100 worth, "1.50" for $1.50 worth'),
+})
+
+export type InitiateSwapUsdInput = z.infer<typeof initiateSwapUsdSchema>
+export type InitiateSwapUsdOutput = z.infer<typeof swapPreparationSchema>
+
+export async function executeInitiateSwapUsd(
+  input: InitiateSwapUsdInput,
+  walletContext?: WalletContext
+): Promise<InitiateSwapUsdOutput> {
+  const { sellAsset: sellAssetInput, buyAsset: buyAssetInput, sellAmountUsd } = input
+
+  if (!Number.isFinite(parseFloat(sellAmountUsd)) || parseFloat(sellAmountUsd) <= 0) {
+    throw new Error('USD amount must be a positive number')
+  }
+
+  const sellAssetsResult = await executeGetAssets({
+    searchTerm: sellAssetInput.symbolOrName,
+    network: sellAssetInput.network,
+  })
+
+  if (sellAssetsResult.assets.length === 0) {
+    throw new Error(
+      `No asset found for "${sellAssetInput.symbolOrName}"${sellAssetInput.network ? ` on ${sellAssetInput.network}` : ''}`
+    )
+  }
+  if (sellAssetsResult.assets.length > 1) {
+    throw new Error(`Multiple assets found for "${sellAssetInput.symbolOrName}". Please specify network.`)
+  }
+
+  const sellAsset = sellAssetsResult.assets[0]
+  const sellAssetPrice = parseFloat(sellAsset.price || '0')
+
+  if (sellAssetPrice <= 0) {
+    throw new Error(`Unable to fetch price for ${sellAsset.symbol}. Price data may be unavailable.`)
+  }
+
+  const sellAmountCrypto = (parseFloat(sellAmountUsd) / sellAssetPrice).toString()
+
+  return executeSwapInternal({
+    sellAssetInput,
+    buyAssetInput,
+    sellAmountCrypto,
+    walletContext,
+  })
+}
+
+export const initiateSwapUsdTool = {
+  description:
+    'Start a crypto swap using USD VALUE amounts (e.g., $100 worth of ETH). Fetches current price and converts to token amount. ONLY supports EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, Gnosis) and Solana. NOT supported for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, or Sui.',
+  inputSchema: initiateSwapUsdSchema,
+  execute: executeInitiateSwapUsd,
 }

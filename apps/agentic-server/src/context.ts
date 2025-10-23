@@ -9,12 +9,17 @@ export const supportedChainsContext = `
     - Cosmos SDK: cosmos, thorchain
     - Other L1s: tron, cardano
 
-    **Swaps & Trading (EVM + Solana ONLY):**
-    - SUPPORTED for swaps: EVM chains (ethereum, arbitrum, optimism, base, polygon, avalanche, bsc, gnosis) and solana
-    - NOT SUPPORTED for swaps: bitcoin, litecoin, dogecoin, bitcoincash, cosmos, thorchain, tron, cardano, sui
+    **Swaps & Trading:**
+    - SUPPORTED: EVM chains (ethereum, arbitrum, optimism, base, polygon, avalanche, bsc, gnosis) and solana
+    - SUPPORTED routes: EVM ↔ EVM, Solana ↔ Solana, EVM ↔ Solana (both directions)
+    - Cross-chain swaps between Solana and any EVM chain ARE supported - always attempt the swap
+    - The tool will return an error if the specific route is unavailable
+    - NOT SUPPORTED: bitcoin, litecoin, dogecoin, bitcoincash, cosmos, thorchain, tron, cardano, sui
+    - Note: Some pairs/amounts may be unavailable; if no route found, report "Route not supported or amount too small"
 
-    **Important:**
-    - Use getAssets tool for price lookups on ANY network
-    - Use initiateSwap tool ONLY for EVM and Solana networks
-    - If user requests swap on unsupported network, politely explain swaps are only available on EVM chains and Solana
+    **Tool Usage:**
+    - getAssets: Price lookups on ANY network (all 18 networks above)
+    - portfolio: Get balances on EVM chains and Solana only
+    - initiateSwap/initiateSwapUsd: For swaps involving EVM chains and/or Solana (same-chain or cross-chain)
+    - If user requests swap with unsupported assets (Bitcoin, Cardano, etc.), explain swaps only support EVM and Solana
 `

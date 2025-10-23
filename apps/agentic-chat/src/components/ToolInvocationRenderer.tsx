@@ -22,6 +22,7 @@ export function ToolInvocationRenderer({ toolPart }: ToolInvocationRendererProps
   // Switch based on tool name
   switch (toolName) {
     case 'initiateSwapTool':
+    case 'initiateSwapUsdTool':
       return <InitiateSwapUI toolPart={dynamicToolPart} />
 
     case 'switchNetworkTool':

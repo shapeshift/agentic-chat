@@ -38,6 +38,10 @@ export {
   executeInitiateSwap,
   type InitiateSwapInput,
   type InitiateSwapOutput,
+  initiateSwapUsdTool,
+  executeInitiateSwapUsd,
+  type InitiateSwapUsdInput,
+  type InitiateSwapUsdOutput,
 } from './tools/initiateSwap'
 export {
   switchNetworkTool,
