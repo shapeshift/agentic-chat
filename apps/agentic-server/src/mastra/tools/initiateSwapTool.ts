@@ -195,9 +195,11 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
   ).toFixed(2)
   const exchangeRate = (parseFloat(bestRate.buyAmountCryptoPrecision) / parseFloat(sellAmount)).toFixed(8)
 
+  const sellUSD = parseFloat(sellValueUSD)
+  const buyUSD = parseFloat(buyEstimatedValueUSD)
   const priceImpact =
-    sellValueUSD && buyEstimatedValueUSD
-      ? (((parseFloat(buyEstimatedValueUSD) - parseFloat(sellValueUSD)) / parseFloat(sellValueUSD)) * 100).toFixed(2)
+    Number.isFinite(sellUSD) && sellUSD > 0 && Number.isFinite(buyUSD)
+      ? (((buyUSD - sellUSD) / sellUSD) * 100).toFixed(2)
       : '0.00'
 
   return {

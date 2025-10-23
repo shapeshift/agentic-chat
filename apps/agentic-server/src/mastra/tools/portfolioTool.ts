@@ -1,5 +1,5 @@
 import { createTool } from '@mastra/core'
-import { NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
+import { EVM_SOLANA_NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
 import { fromBaseUnit, calculateUsdValue } from '@shapeshiftoss/utils'
 import z from 'zod'
 
@@ -9,7 +9,7 @@ import { getAssetsTool } from './asset'
 import { getAccountTool } from './getAccountTool'
 
 const portfolioToolInput = z.object({
-  network: z.enum(NETWORKS).describe('Network name (e.g., ethereum, arbitrum, solana)'),
+  network: z.enum(EVM_SOLANA_NETWORKS).describe('Network name (e.g., ethereum, arbitrum, solana)'),
 })
 
 const portfolioToolOutput = z.object({

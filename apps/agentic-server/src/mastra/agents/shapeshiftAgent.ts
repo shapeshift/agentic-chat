@@ -40,7 +40,7 @@ export const shapeshiftAgent = new Agent({
     - **getAssets**: Find assets by name/symbol, get prices and market data
     - **getTransactionHistory**: Get recent transaction history for the connected wallet on a specific network
     - **mathCalculator**: Use for all arithmetic operations to ensure precision
-    - **portfolio**: Get user balances with human-readable values and USD amounts
+    - **portfolio**: Get user balances with human-readable values and USD amounts (EVM chains and Solana only)
     - **initiateSwap**: Execute swap with crypto token amounts (e.g., 1 ETH, 0.5 SOL)
     - **initiateSwapUsd**: Execute swap with USD value amounts (e.g., $100 worth, $1.50 worth)
     - **switchNetwork**: Switch the connected wallet to a different blockchain network
