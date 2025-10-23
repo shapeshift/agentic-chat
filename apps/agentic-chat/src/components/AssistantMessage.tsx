@@ -1,4 +1,5 @@
-import type { DynamicToolUIPart, UIMessage } from 'ai'
+import type { UIMessage } from 'ai'
+import { isToolOrDynamicToolUIPart } from 'ai'
 
 import { Markdown } from './Markdown'
 import { ToolInvocationRenderer } from './ToolInvocationRenderer'
@@ -16,12 +17,11 @@ export function AssistantMessage({ message }: AssistantMessageProps) {
             return <Markdown key={index}>{part.text}</Markdown>
           }
 
-          if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
+          if (isToolOrDynamicToolUIPart(part)) {
             const toolCallId = 'toolCallId' in part ? part.toolCallId : `tool-${index}`
-            return <ToolInvocationRenderer key={toolCallId} toolPart={part as DynamicToolUIPart} />
+            return <ToolInvocationRenderer key={toolCallId} toolPart={part} />
           }
 
-          // Ignore step-start and other internal message types
           return null
         })}
       </div>
