@@ -70,7 +70,7 @@ export function InitiateSwapUI({ toolPart }: InitiateSwapUIProps) {
 
   return (
     <div className="space-y-2 rounded-lg border border-border bg-background p-3">
-      <div className="text-sm text-muted-foreground">
+      <div className="text-base text-muted-foreground">
         ✅ Quote found • Rate: 1 {swapOutput.swapData.sellAsset.symbol} ={' '}
         {(() => {
           const buy = Number(swapOutput.swapData.buyAmountCryptoPrecision)

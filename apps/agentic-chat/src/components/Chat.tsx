@@ -4,6 +4,7 @@ import { useChatContext } from '../providers/ChatProvider'
 
 import { AssistantMessage } from './AssistantMessage'
 import { Composer } from './Composer'
+import { LoadingIndicator } from './LoadingIndicator'
 import { UserMessage } from './UserMessage'
 
 const WELCOME_SUGGESTIONS = [
@@ -14,7 +15,7 @@ const WELCOME_SUGGESTIONS = [
 ]
 
 export function Chat() {
-  const { messages, sendMessage } = useChatContext()
+  const { messages, sendMessage, isLoading } = useChatContext()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
 
@@ -64,6 +65,8 @@ export function Chat() {
 
             return null
           })}
+
+          {isLoading && <LoadingIndicator />}
 
           <div ref={messagesEndRef} />
         </div>

@@ -1,9 +1,17 @@
 import { useChat } from '@ai-sdk/react'
 import { useAppKitAccount } from '@reown/appkit/react'
 import { DefaultChatTransport } from 'ai'
-import { createContext, useContext, useId, useRef, useState } from 'react'
+import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useAccount as useEvmAccount } from 'wagmi'
+
+import type { Conversation } from '@/types'
+import {
+  generateConversationId,
+  getConversations,
+  saveConversation,
+  deleteConversation as deleteConversationUtil,
+} from '@/utils/conversationStorage'
 
 interface ChatContextValue {
   messages: ReturnType<typeof useChat>['messages']
@@ -15,6 +23,11 @@ interface ChatContextValue {
   setInput: (input: string) => void
   status: ReturnType<typeof useChat>['status']
   stop: ReturnType<typeof useChat>['stop']
+  conversations: Conversation[]
+  activeConversationId: string | null
+  createNewConversation: () => void
+  switchConversation: (conversationId: string) => void
+  deleteConversation: (conversationId: string) => void
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null)
@@ -36,30 +49,44 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const { address: solanaAddress } = useAppKitAccount({ namespace: 'solana' })
   const [input, setInput] = useState('')
 
-  // Use refs to track latest wallet addresses for body function closure
-  const evmAddressRef = useRef<string | undefined>(evmAccount.address)
-  const solanaAddressRef = useRef<string | undefined>(solanaAddress)
+  const walletAddress = evmAccount.address || solanaAddress
 
-  // Update refs when wallet addresses change
-  evmAddressRef.current = evmAccount.address
-  solanaAddressRef.current = solanaAddress
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
+  const isLoadingRef = useRef(false)
 
-  // Generate stable unique ID for this chat instance
-  const chatId = useId()
+  const reloadConversations = useCallback(() => {
+    const loaded = getConversations(walletAddress)
+    setConversations(loaded)
+    return loaded
+  }, [walletAddress])
 
-  // Create transport once with dynamic body function
-  // This function is called on every request to get fresh wallet addresses from refs
-  const transport = new DefaultChatTransport({
-    api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/chat`,
-    body: () => ({
-      evmAddress: evmAddressRef.current,
-      solanaAddress: solanaAddressRef.current,
-    }),
-  })
+  useEffect(() => {
+    const loaded = reloadConversations()
+
+    if (loaded.length > 0) {
+      const mostRecent = loaded.sort((a, b) => Number(b.updatedAt) - Number(a.updatedAt))[0]
+      setActiveConversationId(mostRecent.id)
+    } else {
+      setActiveConversationId(null)
+    }
+  }, [walletAddress, reloadConversations])
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/chat`,
+        body: () => ({
+          evmAddress: evmAccount.address,
+          solanaAddress: solanaAddress,
+        }),
+      }),
+    [evmAccount.address, solanaAddress]
+  )
 
   const chat = useChat({
     transport,
-    id: chatId,
+    id: activeConversationId || 'temp',
     onError: error => {
       console.error('[Chat] Error during chat:', error)
     },
@@ -68,30 +95,141 @@ export function ChatProvider({ children }: ChatProviderProps) {
     },
   })
 
+  // Load messages when switching conversations
+  useEffect(() => {
+    const conversationId = activeConversationId || 'temp'
+    const storedMessages = localStorage.getItem(`ai-chat-messages-${conversationId}`)
+
+    isLoadingRef.current = true
+    if (storedMessages) {
+      try {
+        const parsed = JSON.parse(storedMessages) as typeof chat.messages
+        console.log('[ChatProvider] Loading messages from localStorage:', conversationId, parsed.length)
+        chat.setMessages(parsed)
+      } catch (error) {
+        console.error('[ChatProvider] Failed to load messages:', error)
+        chat.setMessages([])
+      }
+    } else {
+      console.log('[ChatProvider] No stored messages for:', conversationId)
+      chat.setMessages([])
+    }
+    setTimeout(() => {
+      isLoadingRef.current = false
+    }, 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConversationId])
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (isLoadingRef.current) {
+      console.log('[ChatProvider] Skipping save during load')
+      return
+    }
+
+    if (activeConversationId && activeConversationId !== 'temp' && chat.messages.length > 0) {
+      localStorage.setItem(`ai-chat-messages-${activeConversationId}`, JSON.stringify(chat.messages))
+      console.log('[ChatProvider] Saved messages to localStorage:', activeConversationId, chat.messages.length)
+    }
+  }, [chat.messages, activeConversationId])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value)
   }
+
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!input.trim()) return
 
-    await chat.sendMessage({
-      text: input,
-    })
+    const messageToSend = input
     setInput('')
+
+    if (!activeConversationId) {
+      const newId = generateConversationId(walletAddress)
+      const newConv: Conversation = {
+        id: newId,
+        name: 'New Conversation',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        messages: [],
+        walletAddress,
+      }
+      saveConversation(newConv)
+      setConversations(prev => [...prev, newConv])
+      setActiveConversationId(newId)
+      setPendingMessage(messageToSend)
+    } else {
+      const conv = conversations.find(c => c.id === activeConversationId)
+      if (conv) {
+        saveConversation({ ...conv, updatedAt: new Date().toISOString() })
+      }
+
+      await chat.sendMessage({
+        text: messageToSend,
+      })
+    }
   }
+
+  useEffect(() => {
+    if (pendingMessage && activeConversationId && activeConversationId !== 'temp') {
+      void chat.sendMessage({
+        text: pendingMessage,
+      })
+      setPendingMessage(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingMessage, activeConversationId])
+
+  useEffect(() => {
+    if (chat.messages.length > 0 && activeConversationId && activeConversationId !== 'temp') {
+      reloadConversations()
+    }
+  }, [chat.messages.length, activeConversationId, reloadConversations])
+
+  const createNewConversation = useCallback(() => {
+    setActiveConversationId(null)
+  }, [])
+
+  const switchConversation = useCallback((conversationId: string) => {
+    setActiveConversationId(conversationId)
+  }, [])
+
+  const deleteConversation = useCallback(
+    (conversationId: string) => {
+      deleteConversationUtil(conversationId)
+      setConversations(prev => prev.filter(c => c.id !== conversationId))
+
+      if (conversationId === activeConversationId) {
+        const remaining = conversations.filter(c => c.id !== conversationId)
+        if (remaining.length > 0) {
+          setActiveConversationId(remaining[0].id)
+        } else {
+          setActiveConversationId(null)
+        }
+      }
+    },
+    [activeConversationId, conversations]
+  )
 
   const value: ChatContextValue = {
     messages: chat.messages,
     input,
     handleInputChange,
-    handleSubmit,
-    isLoading: chat.status === 'streaming',
+    handleSubmit: (e: React.FormEvent<HTMLFormElement>) => {
+      void handleSubmit(e)
+    },
+    isLoading: chat.status === 'submitted',
     sendMessage: chat.sendMessage,
     setInput,
     status: chat.status,
     stop: chat.stop,
+    conversations,
+    activeConversationId,
+    createNewConversation,
+    switchConversation,
+    deleteConversation,
   }
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

@@ -12,7 +12,7 @@ export function CollapsableDetails({
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div className="border rounded-lg p-3">
+    <div className="border rounded-lg p-3 text-base">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full text-left font-medium"

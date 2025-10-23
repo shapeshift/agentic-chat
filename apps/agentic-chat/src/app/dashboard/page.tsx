@@ -1,6 +1,6 @@
 import { Chat } from '@/components/Chat'
 import { ConnectWallet } from '@/components/connect-wallet'
-// import { SidebarLeft } from '@/components/sidebar-left' - removed
+import { SidebarLeft } from '@/components/sidebar-left'
 import { SidebarRight } from '@/components/sidebar-right'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { ChatProvider } from '@/providers/ChatProvider'
@@ -12,7 +12,7 @@ export const Dashboard = () => {
   return (
     <ChatProvider>
       <SidebarProvider>
-        {/* {isSidebarLeftEnabled && <SidebarLeft /> } */}
+        {isSidebarLeftEnabled && <SidebarLeft />}
         <SidebarInset className="h-screen">
           <header className="top-0 flex gap-2 bg-background z-10 px-2 pt-2 items-center">
             <div className="flex items-center gap-2">{isSidebarLeftEnabled && <SidebarTrigger />}</div>

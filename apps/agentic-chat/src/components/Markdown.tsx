@@ -54,10 +54,11 @@ function CodeHeader({ language, code }: CodeHeaderProps) {
 
 export function Markdown({ children }: MarkdownProps) {
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm, [remarkMath, { singleDollarTextMath: false }]]}
-      rehypePlugins={[rehypeKatex]}
-      components={{
+    <div className="text-base">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, [remarkMath, { singleDollarTextMath: false }]]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
         h1: ({ className, ...props }) => (
           <h1
             className={cn('mb-8 scroll-m-20 text-4xl font-extrabold tracking-tight last:mb-0', className)}
@@ -174,8 +175,9 @@ export function Markdown({ children }: MarkdownProps) {
           return <code className={className} {...props} />
         },
       }}
-    >
-      {children}
-    </ReactMarkdown>
+      >
+        {children}
+      </ReactMarkdown>
+    </div>
   )
 }

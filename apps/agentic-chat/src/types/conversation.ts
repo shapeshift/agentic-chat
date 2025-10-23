@@ -6,4 +6,5 @@ export type Conversation = {
   createdAt: string
   updatedAt: string
   messages: Message[]
+  walletAddress?: string
 }

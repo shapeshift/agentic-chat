@@ -40,6 +40,10 @@ export function Composer() {
           maxHeight: '160px',
         }}
         autoFocus
+        autoComplete="off"
+        data-form-type="other"
+        data-lpignore="true"
+        data-1p-ignore="true"
       />
 
       {isLoading ? (

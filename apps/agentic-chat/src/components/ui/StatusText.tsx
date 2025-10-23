@@ -1,21 +1,21 @@
 function StatusTextComponent({ children }: { children: React.ReactNode }) {
-  return <div className="text-sm text-gray-600">{children}</div>
+  return <div className="text-base text-gray-600">{children}</div>
 }
 
 StatusTextComponent.Loading = function Loading({ children }: { children: React.ReactNode }) {
-  return <div className="text-sm text-blue-600">⏳ {children}</div>
+  return <div className="text-base text-blue-600">{children}</div>
 }
 
 StatusTextComponent.Error = function Error({ children }: { children: React.ReactNode }) {
-  return <div className="text-sm text-red-600">❌ {children}</div>
+  return <div className="text-base text-red-600">{children}</div>
 }
 
 StatusTextComponent.Success = function Success({ children }: { children: React.ReactNode }) {
-  return <div className="text-sm text-green-600">✓ {children}</div>
+  return <div className="text-base text-green-600">{children}</div>
 }
 
 StatusTextComponent.WithIcon = function WithIcon({ children }: { children: React.ReactNode }) {
-  return <div className="flex items-center gap-2 text-sm">{children}</div>
+  return <div className="flex items-center gap-2 text-base">{children}</div>
 }
 
 StatusTextComponent.Icon = function Icon({
