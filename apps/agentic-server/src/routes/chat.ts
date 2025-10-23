@@ -135,31 +135,73 @@ export async function handleChatRequest(c: Context) {
       system: SYSTEM_PROMPT,
       stopWhen: stepCountIs(5),
       tools: {
-        mathCalculatorTool: mathCalculator,
-        getAssetsTool: getAssetsTool,
-        getAccountTool: getAccountTool,
-        getAllowanceTool: getAllowanceTool,
+        mathCalculatorTool: {
+          ...mathCalculator,
+          execute: async args => {
+            console.log('[Tool] mathCalculatorTool:', JSON.stringify(args, null, 2))
+            return mathCalculator.execute(args)
+          },
+        },
+        getAssetsTool: {
+          ...getAssetsTool,
+          execute: async args => {
+            console.log('[Tool] getAssetsTool:', JSON.stringify(args, null, 2))
+            return getAssetsTool.execute(args)
+          },
+        },
+        getAccountTool: {
+          ...getAccountTool,
+          execute: async args => {
+            console.log('[Tool] getAccountTool:', JSON.stringify(args, null, 2))
+            return getAccountTool.execute(args)
+          },
+        },
+        getAllowanceTool: {
+          ...getAllowanceTool,
+          execute: async args => {
+            console.log('[Tool] getAllowanceTool:', JSON.stringify(args, null, 2))
+            return getAllowanceTool.execute(args)
+          },
+        },
         getTransactionHistoryTool: {
           description: getTransactionHistoryTool.description,
           inputSchema: getTransactionHistoryTool.inputSchema,
-          execute: args => getTransactionHistoryTool.execute(args, walletContext),
+          execute: async args => {
+            console.log('[Tool] getTransactionHistoryTool:', JSON.stringify(args, null, 2))
+            return getTransactionHistoryTool.execute(args, walletContext)
+          },
         },
         portfolioTool: {
           description: portfolioTool.description,
           inputSchema: portfolioTool.inputSchema,
-          execute: args => portfolioTool.execute(args, walletContext),
+          execute: async args => {
+            console.log('[Tool] portfolioTool:', JSON.stringify(args, null, 2))
+            return portfolioTool.execute(args, walletContext)
+          },
         },
         initiateSwapTool: {
           description: initiateSwapTool.description,
           inputSchema: initiateSwapTool.inputSchema,
-          execute: args => initiateSwapTool.execute(args, walletContext),
+          execute: async args => {
+            console.log('[Tool] initiateSwapTool:', JSON.stringify(args, null, 2))
+            return initiateSwapTool.execute(args, walletContext)
+          },
         },
         initiateSwapUsdTool: {
           description: initiateSwapUsdTool.description,
           inputSchema: initiateSwapUsdTool.inputSchema,
-          execute: args => initiateSwapUsdTool.execute(args, walletContext),
+          execute: async args => {
+            console.log('[Tool] initiateSwapUsdTool:', JSON.stringify(args, null, 2))
+            return initiateSwapUsdTool.execute(args, walletContext)
+          },
         },
-        switchNetworkTool: switchNetworkTool,
+        switchNetworkTool: {
+          ...switchNetworkTool,
+          execute: async args => {
+            console.log('[Tool] switchNetworkTool:', JSON.stringify(args, null, 2))
+            return switchNetworkTool.execute(args)
+          },
+        },
       },
     })
 

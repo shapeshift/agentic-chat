@@ -1,5 +1,6 @@
 import { PlusIcon, Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useChatContext } from '@/providers/ChatProvider'
 import { getConversationTitle } from '@/utils/conversationStorage'
@@ -26,8 +27,7 @@ import {
 } from './ui/sidebar'
 
 export function ConversationList() {
-  const { conversations, activeConversationId, createNewConversation, switchConversation, deleteConversation } =
-    useChatContext()
+  const { conversations, activeConversationId, deleteConversation } = useChatContext()
 
   const sortedConversations = useMemo(() => {
     return [...conversations].sort((a, b) => Number(b.updatedAt) - Number(a.updatedAt))
@@ -36,13 +36,14 @@ export function ConversationList() {
   return (
     <SidebarGroup>
       <div className="pb-2">
-        <Button
-          onClick={createNewConversation}
-          className="flex w-full items-center justify-start gap-2 rounded-md px-3 py-2.5 text-start hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          variant="ghost"
-        >
-          <PlusIcon className="h-4 w-4" />
-          New Chat
+        <Button asChild className="w-full" variant="ghost">
+          <Link
+            to="/chats"
+            className="flex w-full items-center justify-start gap-2 rounded-md px-3 py-2.5 text-start hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <PlusIcon className="h-4 w-4" />
+            New Chat
+          </Link>
         </Button>
       </div>
 
@@ -54,13 +55,10 @@ export function ConversationList() {
 
             return (
               <SidebarMenuItem key={conv.id}>
-                <SidebarMenuButton
-                  onClick={() => switchConversation(conv.id)}
-                  isActive={isActive}
-                  tooltip={title}
-                  className="px-3 py-2.5"
-                >
-                  <span className="truncate">{title}</span>
+                <SidebarMenuButton asChild isActive={isActive} tooltip={title} className="px-3 py-2.5">
+                  <Link to={`/chats/${conv.id}`}>
+                    <span className="truncate">{title}</span>
+                  </Link>
                 </SidebarMenuButton>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

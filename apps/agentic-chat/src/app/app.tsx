@@ -1,5 +1,6 @@
 import { createAppKit } from '@reown/appkit/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { WagmiProvider } from 'wagmi'
 
 import { networks } from '@/lib/appkit'
@@ -34,7 +35,11 @@ function App() {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <Dashboard />
+        <Routes>
+          <Route path="/" element={<Navigate to="/chats" replace />} />
+          <Route path="/chats" element={<Dashboard />} />
+          <Route path="/chats/:conversationId" element={<Dashboard />} />
+        </Routes>
       </QueryClientProvider>
     </WagmiProvider>
   )

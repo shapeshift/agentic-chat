@@ -2,12 +2,10 @@ import type { Conversation } from '@/types'
 
 const CONVERSATIONS_KEY = 'shapeshift-conversations'
 
-export function getConversations(walletAddress?: string): Conversation[] {
+export function getConversations(): Conversation[] {
   try {
     const stored = localStorage.getItem(CONVERSATIONS_KEY)
-    const all: Conversation[] = stored ? JSON.parse(stored) : []
-
-    return walletAddress ? all.filter(c => c.walletAddress === walletAddress) : all
+    return stored ? JSON.parse(stored) : []
   } catch {
     return []
   }
@@ -34,11 +32,10 @@ export function deleteConversation(conversationId: string): void {
   localStorage.removeItem(`ai-chat-messages-${conversationId}`)
 }
 
-export function generateConversationId(walletAddress?: string): string {
+export function generateConversationId(): string {
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 9)
-  const prefix = walletAddress ? `shapeshift-${walletAddress.slice(0, 8)}` : 'shapeshift'
-  return `${prefix}-${timestamp}-${random}`
+  return `shapeshift-${timestamp}-${random}`
 }
 
 interface MessagePart {

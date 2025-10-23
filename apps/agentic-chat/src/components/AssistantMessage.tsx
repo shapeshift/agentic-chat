@@ -13,11 +13,7 @@ export function AssistantMessage({ message }: AssistantMessageProps) {
       <div className="max-w-[80%] space-y-2">
         {message.parts.map((part, index) => {
           if (part.type === 'text') {
-            return (
-              <div key={index} className="rounded-2xl bg-background px-4 py-2">
-                <Markdown>{part.text}</Markdown>
-              </div>
-            )
+            return <Markdown key={index}>{part.text}</Markdown>
           }
 
           if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {

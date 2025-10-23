@@ -3,6 +3,7 @@ import { useAppKitAccount } from '@reown/appkit/react'
 import { DefaultChatTransport } from 'ai'
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAccount as useEvmAccount } from 'wagmi'
 
 import type { Conversation } from '@/types'
@@ -47,30 +48,37 @@ interface ChatProviderProps {
 export function ChatProvider({ children }: ChatProviderProps) {
   const evmAccount = useEvmAccount()
   const { address: solanaAddress } = useAppKitAccount({ namespace: 'solana' })
+  const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
+  const navigate = useNavigate()
   const [input, setInput] = useState('')
-
-  const walletAddress = evmAccount.address || solanaAddress
 
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
   const isLoadingRef = useRef(false)
 
   const reloadConversations = useCallback(() => {
-    const loaded = getConversations(walletAddress)
+    const loaded = getConversations()
     setConversations(loaded)
     return loaded
-  }, [walletAddress])
+  }, [])
 
   useEffect(() => {
-    const loaded = reloadConversations()
+    reloadConversations()
+  }, [reloadConversations])
 
-    if (loaded.length > 0) {
-      const mostRecent = loaded.sort((a, b) => Number(b.updatedAt) - Number(a.updatedAt))[0]
-      setActiveConversationId(mostRecent.id)
+  useEffect(() => {
+    if (urlConversationId) {
+      const conversations = getConversations()
+      const exists = conversations.some(c => c.id === urlConversationId)
+      if (exists) {
+        setActiveConversationId(urlConversationId)
+      } else {
+        setActiveConversationId(null)
+      }
     } else {
       setActiveConversationId(null)
     }
-  }, [walletAddress, reloadConversations])
+  }, [urlConversationId])
 
   const transport = useMemo(
     () =>
@@ -147,18 +155,17 @@ export function ChatProvider({ children }: ChatProviderProps) {
     setInput('')
 
     if (!activeConversationId) {
-      const newId = generateConversationId(walletAddress)
+      const newId = generateConversationId()
       const newConv: Conversation = {
         id: newId,
         name: 'New Conversation',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         messages: [],
-        walletAddress,
       }
       saveConversation(newConv)
       setConversations(prev => [...prev, newConv])
-      setActiveConversationId(newId)
+      navigate(`/chats/${newId}`)
       setPendingMessage(messageToSend)
     } else {
       const conv = conversations.find(c => c.id === activeConversationId)
@@ -189,12 +196,15 @@ export function ChatProvider({ children }: ChatProviderProps) {
   }, [chat.messages.length, activeConversationId, reloadConversations])
 
   const createNewConversation = useCallback(() => {
-    setActiveConversationId(null)
-  }, [])
+    navigate('/chats')
+  }, [navigate])
 
-  const switchConversation = useCallback((conversationId: string) => {
-    setActiveConversationId(conversationId)
-  }, [])
+  const switchConversation = useCallback(
+    (conversationId: string) => {
+      navigate(`/chats/${conversationId}`)
+    },
+    [navigate]
+  )
 
   const deleteConversation = useCallback(
     (conversationId: string) => {
@@ -202,15 +212,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
       setConversations(prev => prev.filter(c => c.id !== conversationId))
 
       if (conversationId === activeConversationId) {
-        const remaining = conversations.filter(c => c.id !== conversationId)
-        if (remaining.length > 0) {
-          setActiveConversationId(remaining[0].id)
-        } else {
-          setActiveConversationId(null)
-        }
+        navigate('/chats')
       }
     },
-    [activeConversationId, conversations]
+    [activeConversationId, navigate]
   )
 
   const value: ChatContextValue = {
