@@ -1,25 +1,32 @@
+import type { Asset } from '@shapeshiftoss/types'
 import { ChevronRight } from 'lucide-react'
 
-import { TransactionButton } from './transaction-button'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible'
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem } from './ui/sidebar'
+import { WalletAsset } from './WalletAsset'
 
 const data = {
-  history: [
+  balances: [
     {
-      name: 'Swap ETH to BTC',
-      transactionHash: '0x1234567890123456789012345678901234567890',
-      date: '2024-01-01',
-      amount: 1000,
-      status: 'success',
-      type: 'swap',
-      from: '0x1234567890123456789012345678901234567890',
-      to: '0x1234567890123456789012345678901234567890',
+      name: 'ETH',
+      icon: 'https://assets.coingecko.com/coins/images/279/standard/ethereum.png?1696501628',
+      fiatAmount: 1000,
+      price: 1000,
+      balance: 1000,
+      change: 0.02,
+    },
+    {
+      name: 'BTC',
+      icon: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png?1747033579',
+      fiatAmount: 1000,
+      price: 1000,
+      balance: 1000,
+      change: 0.02,
     },
   ],
 }
 
-export const TransactionHistory = () => {
+export const WalletBalances = () => {
   return (
     <SidebarGroup className="py-0">
       <Collapsible className="group/collapsible">
@@ -28,16 +35,16 @@ export const TransactionHistory = () => {
           className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
         >
           <CollapsibleTrigger>
-            Transaction History
+            Balances
             <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
           </CollapsibleTrigger>
         </SidebarGroupLabel>
         <CollapsibleContent>
           <SidebarGroupContent>
             <SidebarMenu>
-              {data.history.map(transaction => (
-                <SidebarMenuItem key={transaction.name}>
-                  <TransactionButton {...transaction} />
+              {data.balances.map(balance => (
+                <SidebarMenuItem key={'42'}>
+                  <WalletAsset asset={balance as unknown as Asset} />
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

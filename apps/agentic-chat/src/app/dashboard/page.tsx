@@ -1,7 +1,7 @@
 import { Chat } from '@/components/Chat'
-import { ConnectWallet } from '@/components/connect-wallet'
-import { SidebarLeft } from '@/components/sidebar-left'
-import { SidebarRight } from '@/components/sidebar-right'
+import { ConnectWallet } from '@/components/ConnectWallet'
+import { SidebarLeft } from '@/components/SidebarLeft'
+import { SidebarRight } from '@/components/SidebarRight'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { ChatProvider } from '@/providers/ChatProvider'
 

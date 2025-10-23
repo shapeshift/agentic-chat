@@ -1,8 +1,8 @@
 import * as React from 'react'
 
-import { TransactionHistory } from './transaction-history'
+import { TransactionHistory } from './TransactionHistory'
 import { Sidebar, SidebarContent, SidebarInput, SidebarSeparator } from './ui/sidebar'
-import { WalletBalances } from './wallet-balances'
+import { WalletBalances } from './WalletBalances'
 
 type SidebarRightProps = React.ComponentProps<typeof Sidebar>
 
