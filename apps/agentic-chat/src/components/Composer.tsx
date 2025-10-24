@@ -41,7 +41,7 @@ export function Composer() {
           fieldSizing: 'content',
         } as React.CSSProperties}
         autoFocus
-        autoComplete="off"
+        autoComplete="new-password"
         data-form-type="other"
         data-lpignore="true"
         data-1p-ignore="true"

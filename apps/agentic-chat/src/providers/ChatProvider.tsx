@@ -1,7 +1,7 @@
 import { useChat } from '@ai-sdk/react'
 import { useAppKitAccount } from '@reown/appkit/react'
 import { DefaultChatTransport } from 'ai'
-import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAccount as useEvmAccount } from 'wagmi'
@@ -53,8 +53,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const [input, setInput] = useState('')
 
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
-  const isLoadingRef = useRef(false)
 
   const reloadConversations = useCallback(() => {
     const loaded = getConversations()
@@ -66,19 +64,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
     reloadConversations()
   }, [reloadConversations])
 
-  useEffect(() => {
-    if (urlConversationId) {
-      const conversations = getConversations()
-      const exists = conversations.some(c => c.id === urlConversationId)
-      if (exists) {
-        setActiveConversationId(urlConversationId)
-      } else {
-        setActiveConversationId(null)
-      }
-    } else {
-      setActiveConversationId(null)
-    }
-  }, [urlConversationId])
+  // Compute activeConversationId from URL and conversations list
+  const activeConversationId = useMemo(() => {
+    if (!urlConversationId) return null
+    const exists = conversations.some(c => c.id === urlConversationId)
+    return exists ? urlConversationId : null
+  }, [urlConversationId, conversations])
 
   const transport = useMemo(
     () =>
@@ -98,8 +89,15 @@ export function ChatProvider({ children }: ChatProviderProps) {
     onError: error => {
       console.error('[Chat] Error during chat:', error)
     },
-    onFinish: message => {
-      console.log('[Chat] Message finished:', message)
+    onFinish: ({ messages }) => {
+      console.log('[Chat] Message finished, messages count:', messages.length)
+      // Save messages using the onFinish parameter (not chat.messages which is always empty)
+      if (activeConversationId && activeConversationId !== 'temp' && messages && messages.length > 0) {
+        localStorage.setItem(`ai-chat-messages-${activeConversationId}`, JSON.stringify(messages))
+        console.log('[ChatProvider] Saved messages to localStorage:', activeConversationId, messages.length)
+        // Reload conversation metadata to update sidebar (e.g., timestamps)
+        reloadConversations()
+      }
     },
   })
 
@@ -108,7 +106,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
     const conversationId = activeConversationId || 'temp'
     const storedMessages = localStorage.getItem(`ai-chat-messages-${conversationId}`)
 
-    isLoadingRef.current = true
     if (storedMessages) {
       try {
         const parsed = JSON.parse(storedMessages) as typeof chat.messages
@@ -122,24 +119,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
       console.log('[ChatProvider] No stored messages for:', conversationId)
       chat.setMessages([])
     }
-    setTimeout(() => {
-      isLoadingRef.current = false
-    }, 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConversationId])
 
-  // Save messages to localStorage whenever they change
-  useEffect(() => {
-    if (isLoadingRef.current) {
-      console.log('[ChatProvider] Skipping save during load')
-      return
-    }
-
-    if (activeConversationId && activeConversationId !== 'temp' && chat.messages.length > 0) {
-      localStorage.setItem(`ai-chat-messages-${activeConversationId}`, JSON.stringify(chat.messages))
-      console.log('[ChatProvider] Saved messages to localStorage:', activeConversationId, chat.messages.length)
-    }
-  }, [chat.messages, activeConversationId])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value)
@@ -189,11 +171,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingMessage, activeConversationId])
 
-  useEffect(() => {
-    if (chat.messages.length > 0 && activeConversationId && activeConversationId !== 'temp') {
-      reloadConversations()
-    }
-  }, [chat.messages.length, activeConversationId, reloadConversations])
 
   const createNewConversation = useCallback(() => {
     navigate('/chats')
