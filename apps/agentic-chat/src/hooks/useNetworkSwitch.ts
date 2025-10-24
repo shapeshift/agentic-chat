@@ -1,10 +1,9 @@
+import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import type { AppKitNetwork } from '@reown/appkit/networks'
 import { arbitrum, avalanche, base, bsc, gnosis, mainnet, optimism, polygon, solana } from '@reown/appkit/networks'
 import { modal } from '@reown/appkit/react'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
-
-type NetworkSwitchData = any
 
 type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'
 
@@ -34,7 +33,7 @@ const networkMap: Record<string, AppKitNetwork> = {
   solana,
 }
 
-export const useNetworkSwitch = (toolCallId: string, networkData: NetworkSwitchData | null): UseNetworkSwitchResult => {
+export const useNetworkSwitch = (toolCallId: string, networkData: SwitchNetworkOutput | null): UseNetworkSwitchResult => {
   const { state } = useToolExecutionEffect(
     toolCallId,
     networkData,

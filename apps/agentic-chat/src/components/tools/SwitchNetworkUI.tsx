@@ -1,3 +1,4 @@
+import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import type { DynamicToolUIPart } from 'ai'
 import { ArrowRightLeft } from 'lucide-react'
 
@@ -20,7 +21,7 @@ interface SwitchNetworkUIProps {
 
 export function SwitchNetworkUI({ toolPart }: SwitchNetworkUIProps) {
   const { state, output, toolCallId, errorText } = toolPart
-  const networkOutput = output as Record<string, unknown> | undefined
+  const networkOutput = output as SwitchNetworkOutput | undefined
 
   const networkData = state === 'output-available' && networkOutput ? networkOutput : null
   const { phase, error } = useNetworkSwitch(toolCallId, networkData)
@@ -39,13 +40,13 @@ export function SwitchNetworkUI({ toolPart }: SwitchNetworkUIProps) {
   }
 
   if (phase === 'switching' || phase === 'idle') {
-    return <StatusText.Loading>Switching to {String(networkOutput?.network ?? '')}...</StatusText.Loading>
+    return <StatusText.Loading>Switching to {networkOutput?.network ?? ''}...</StatusText.Loading>
   }
 
   return (
     <StatusText.WithIcon>
       <StatusText.Icon icon={Icon} className="text-green-500" />
-      <StatusText.Text>Switched to {String(networkOutput?.network ?? '')}</StatusText.Text>
+      <StatusText.Text>Switched to {networkOutput?.network ?? ''}</StatusText.Text>
     </StatusText.WithIcon>
   )
 }

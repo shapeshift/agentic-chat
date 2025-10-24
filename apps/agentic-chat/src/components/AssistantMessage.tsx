@@ -1,8 +1,8 @@
-import type { UIMessage } from 'ai'
-import { isToolOrDynamicToolUIPart } from 'ai'
+import type { DynamicToolUIPart, UIMessage } from 'ai'
+import { getToolOrDynamicToolName, isToolOrDynamicToolUIPart } from 'ai'
 
 import { Markdown } from './Markdown'
-import { ToolInvocationRenderer } from './ToolInvocationRenderer'
+import { getToolUIComponent } from './toolUIRegistry'
 
 interface AssistantMessageProps {
   message: UIMessage
@@ -19,7 +19,14 @@ export function AssistantMessage({ message }: AssistantMessageProps) {
 
           if (isToolOrDynamicToolUIPart(part)) {
             const toolCallId = 'toolCallId' in part ? part.toolCallId : `tool-${index}`
-            return <ToolInvocationRenderer key={toolCallId} toolPart={part} />
+            const toolName = getToolOrDynamicToolName(part)
+            const ToolUIComponent = getToolUIComponent(toolName)
+
+            if (!ToolUIComponent) {
+              return null
+            }
+
+            return <ToolUIComponent key={toolCallId} toolPart={part as DynamicToolUIPart} />
           }
 
           return null
