@@ -36,44 +36,51 @@ export function Chat() {
     <div className="flex h-full flex-col">
       {/* Messages viewport */}
       <div ref={viewportRef} className="flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
-          {isEmpty && (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <div className="text-lg text-muted-foreground">How can I help you today?</div>
-              <div className="flex flex-wrap justify-center gap-2">
-                {WELCOME_SUGGESTIONS.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="rounded-lg border border-border bg-background px-4 py-2 text-sm hover:bg-muted"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        {isEmpty ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-lg text-foreground">How can I help you today?</div>
+          </div>
+        ) : (
+          <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
+            {messages.map(message => {
+              if (message.role === 'user') {
+                return <UserMessage key={message.id} message={message} />
+              }
 
-          {messages.map(message => {
-            if (message.role === 'user') {
-              return <UserMessage key={message.id} message={message} />
-            }
+              if (message.role === 'assistant') {
+                return <AssistantMessage key={message.id} message={message} />
+              }
 
-            if (message.role === 'assistant') {
-              return <AssistantMessage key={message.id} message={message} />
-            }
+              return null
+            })}
 
-            return null
-          })}
+            {isLoading && <LoadingIndicator />}
 
-          {isLoading && <LoadingIndicator />}
-
-          <div ref={messagesEndRef} />
-        </div>
+            <div ref={messagesEndRef} />
+          </div>
+        )}
       </div>
 
+      {/* Suggestions above composer - only shown when empty */}
+      {isEmpty && (
+        <div className="bg-background">
+          <div className="mx-auto flex max-w-2xl gap-2 px-4 py-3">
+            {WELCOME_SUGGESTIONS.map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => handleSuggestionClick(suggestion)}
+                title={suggestion}
+                className="min-w-0 flex-1 rounded-lg border border-border bg-background px-4 py-2 text-sm hover:bg-muted h-[52px] line-clamp-2"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Composer */}
-      <div className="border-t border-border bg-background">
+      <div className="bg-background">
         <div className="mx-auto max-w-2xl p-4">
           <Composer />
         </div>

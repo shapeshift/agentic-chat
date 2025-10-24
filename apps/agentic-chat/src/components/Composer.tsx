@@ -37,8 +37,9 @@ export function Composer() {
         className="flex-1 resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         style={{
           minHeight: '48px',
-          maxHeight: '160px',
-        }}
+          maxHeight: '140px',
+          fieldSizing: 'content',
+        } as React.CSSProperties}
         autoFocus
         autoComplete="off"
         data-form-type="other"
