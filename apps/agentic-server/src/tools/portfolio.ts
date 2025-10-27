@@ -31,8 +31,11 @@ export type PortfolioOutput = {
   }>
 }
 
-export async function executePortfolio(input: PortfolioInput, walletContext?: WalletContext): Promise<PortfolioOutput> {
-  console.log('[portfolio]:', input)
+export async function executeGetPortfolio(
+  input: PortfolioInput,
+  walletContext?: WalletContext
+): Promise<PortfolioOutput> {
+  console.log('[getPortfolio]:', input)
 
   const { network } = input
   const chainId = networkToChainIdMap[network]
@@ -40,34 +43,45 @@ export async function executePortfolio(input: PortfolioInput, walletContext?: Wa
 
   const { balances } = await executeGetAccount({ account, network })
 
-  const { assets } = await executeGetAssets({ assetIds: Object.keys(balances) })
+  const assetIds = Object.keys(balances)
+  const { assets } = await executeGetAssets({ assetIds })
+
+  const assetMap = new Map(assets.map(asset => [asset.assetId, asset]))
 
   return {
     account,
     chainId,
-    balances: assets.map(asset => {
-      const baseUnitValue = balances[asset.assetId] || '0'
-      const humanReadableValue = fromBaseUnit(baseUnitValue, asset.precision)
-      const usdValue = calculateUsdValue(humanReadableValue, asset.price)
+    balances: assetIds
+      .map(assetId => {
+        const baseUnitValue = balances[assetId] || '0'
+        const asset = assetMap.get(assetId)
 
-      return {
-        asset: {
-          assetId: asset.assetId,
-          name: asset.name,
-          symbol: asset.symbol,
-          precision: asset.precision,
-          price: asset.price,
-        },
-        value: baseUnitValue,
-        humanReadableValue,
-        usdValue,
-      }
-    }),
+        if (!asset) {
+          return null
+        }
+
+        const humanReadableValue = fromBaseUnit(baseUnitValue, asset.precision)
+        const usdValue = calculateUsdValue(humanReadableValue, asset.price)
+
+        return {
+          asset: {
+            assetId: asset.assetId,
+            name: asset.name,
+            symbol: asset.symbol,
+            precision: asset.precision,
+            price: asset.price,
+          },
+          value: baseUnitValue,
+          humanReadableValue,
+          usdValue,
+        }
+      })
+      .filter((balance): balance is NonNullable<typeof balance> => balance !== null),
   }
 }
 
 export const portfolioTool = {
   description: 'Get user crypto balances with human-readable values and USD amounts for a specific network',
   inputSchema: portfolioSchema,
-  execute: executePortfolio,
+  execute: executeGetPortfolio,
 }

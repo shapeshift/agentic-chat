@@ -1,4 +1,4 @@
-import { SendHorizonal, Square } from 'lucide-react'
+import { SendHorizontal, Square } from 'lucide-react'
 import type { FormEvent, KeyboardEvent } from 'react'
 
 import { useChatContext } from '../providers/ChatProvider'
@@ -65,7 +65,7 @@ export function Composer() {
           className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Send"
         >
-          <SendHorizonal className="h-5 w-5" />
+          <SendHorizontal className="h-5 w-5" />
         </button>
       )}
     </form>

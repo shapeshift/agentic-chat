@@ -157,10 +157,16 @@ export async function handleChatRequest(c: Context) {
           },
         },
         getAllowanceTool: {
-          ...getAllowanceTool,
+          description: getAllowanceTool.description,
+          inputSchema: getAllowanceTool.inputSchema,
           execute: async args => {
             console.log('[Tool] getAllowanceTool:', JSON.stringify(args, null, 2))
-            return getAllowanceTool.execute(args)
+            const chainId = args?.asset?.chainId
+            const from = args?.from ?? (chainId ? walletContext.connectedWallets?.[chainId]?.address : undefined)
+            if (!from) {
+              throw new Error('Missing `from` address. Connect a wallet or specify `from`.')
+            }
+            return getAllowanceTool.execute({ ...args, from })
           },
         },
         getTransactionHistoryTool: {

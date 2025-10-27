@@ -171,16 +171,18 @@ function buildSwapTransaction(bestRate: SwapRate) {
 }
 
 function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string, bestRate: SwapRate) {
-  const sellValueUSD = (parseFloat(sellAmount) * parseFloat(sellAsset.price || '0')).toFixed(2)
-  const buyEstimatedValueUSD = (
-    parseFloat(bestRate.buyAmountCryptoPrecision) * parseFloat(buyAsset.price || '0')
-  ).toFixed(2)
+  const sellPrice = parseFloat(sellAsset.price || '0')
+  const buyPrice = parseFloat(buyAsset.price || '0')
+
+  const sellValueUSD = sellPrice > 0 ? (parseFloat(sellAmount) * sellPrice).toFixed(2) : null
+  const buyEstimatedValueUSD =
+    buyPrice > 0 ? (parseFloat(bestRate.buyAmountCryptoPrecision) * buyPrice).toFixed(2) : null
   const exchangeRate = (parseFloat(bestRate.buyAmountCryptoPrecision) / parseFloat(sellAmount)).toFixed(8)
 
   const priceImpact =
     sellValueUSD && buyEstimatedValueUSD
       ? (((parseFloat(buyEstimatedValueUSD) - parseFloat(sellValueUSD)) / parseFloat(sellValueUSD)) * 100).toFixed(2)
-      : '0.00'
+      : null
 
   return {
     sellAsset: {
@@ -188,21 +190,21 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
       amount: sellAmount,
       network: sellAsset.network,
       chainName: sellAsset.name || 'Unknown Chain',
-      valueUSD: `$${sellValueUSD}`,
-      priceUSD: `$${parseFloat(sellAsset.price || '0').toFixed(4)}`,
+      valueUSD: sellValueUSD ? `$${sellValueUSD}` : 'N/A',
+      priceUSD: sellPrice > 0 ? `$${sellPrice.toFixed(4)}` : 'N/A',
     },
     buyAsset: {
       symbol: buyAsset.symbol.toUpperCase(),
       estimatedAmount: parseFloat(bestRate.buyAmountCryptoPrecision).toFixed(8),
       network: buyAsset.network,
       chainName: buyAsset.name || 'Unknown Chain',
-      estimatedValueUSD: `$${buyEstimatedValueUSD}`,
-      priceUSD: `$${parseFloat(buyAsset.price || '0').toFixed(2)}`,
+      estimatedValueUSD: buyEstimatedValueUSD ? `$${buyEstimatedValueUSD}` : 'N/A',
+      priceUSD: buyPrice > 0 ? `$${buyPrice.toFixed(2)}` : 'N/A',
     },
     exchange: {
       provider: bestRate.source || 'Unknown',
       rate: `1 ${sellAsset.symbol.toUpperCase()} = ${exchangeRate} ${buyAsset.symbol.toUpperCase()}`,
-      priceImpact: `${priceImpact}%`,
+      priceImpact: priceImpact ? `${priceImpact}%` : 'N/A',
     },
     isCrossChain: sellAsset.network !== buyAsset.network,
   }

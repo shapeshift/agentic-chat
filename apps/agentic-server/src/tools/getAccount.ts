@@ -32,7 +32,19 @@ export async function executeGetAccount(input: GetAccountInput): Promise<GetAcco
 
   const { chainNamespace } = fromChainId(chainId)
   const baseUrl = process.env[getUnchainedHttpUrlEnvVar(chainId)]
-  const { data } = await axios.get<Account>(`${baseUrl}/api/v1/account/${account}`)
+
+  let data: Account
+  try {
+    const response = await axios.get<Account>(`${baseUrl}/api/v1/account/${account}`, {
+      timeout: 30000,
+    })
+    data = response.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Failed to fetch account data: ${error.response?.statusText || error.message}`)
+    }
+    throw error
+  }
 
   if (chainNamespace === CHAIN_NAMESPACE.Solana) {
     const balances = data.tokens.reduce<Record<string, string>>((acc, token) => {
@@ -57,7 +69,7 @@ export async function executeGetAccount(input: GetAccountInput): Promise<GetAcco
       if (['ERC20', 'BEP20'].includes(token.type)) {
         const assetId = toAssetId({
           chainId,
-          assetNamespace: ASSET_NAMESPACE.erc20,
+          assetNamespace: token.type === 'BEP20' ? ASSET_NAMESPACE.bep20 : ASSET_NAMESPACE.erc20,
           assetReference: token.contract.toLowerCase(),
         })
         acc[assetId] = token.balance

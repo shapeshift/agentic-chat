@@ -10,7 +10,12 @@ const app = new Hono()
 app.use(
   '/*',
   cors({
-    origin: ['http://localhost:4200', 'http://localhost:5173'],
+    origin: [
+      'http://localhost:4200',
+      'http://localhost:5173',
+      'https://shapeshift-agentic.vercel.app',
+      'https://agent.shapeshift.com',
+    ],
     credentials: true,
   })
 )

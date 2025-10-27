@@ -14,7 +14,7 @@ export function AssistantMessage({ message }: AssistantMessageProps) {
       <div className="max-w-[80%] space-y-2">
         {message.parts.map((part, index) => {
           if (part.type === 'text') {
-            return <Markdown key={index}>{part.text}</Markdown>
+            return <Markdown key={`text-${index}`}>{part.text}</Markdown>
           }
 
           if (isToolOrDynamicToolUIPart(part)) {
@@ -26,7 +26,7 @@ export function AssistantMessage({ message }: AssistantMessageProps) {
               return null
             }
 
-            return <ToolUIComponent key={toolCallId} toolPart={part as DynamicToolUIPart} />
+            return <ToolUIComponent key={`tool-${toolCallId}`} toolPart={part as DynamicToolUIPart} />
           }
 
           return null
