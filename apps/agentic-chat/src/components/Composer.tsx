@@ -35,11 +35,13 @@ export function Composer() {
         placeholder="Write a message..."
         rows={1}
         className="flex-1 resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        style={{
-          minHeight: '48px',
-          maxHeight: '140px',
-          fieldSizing: 'content',
-        } as React.CSSProperties}
+        style={
+          {
+            minHeight: '48px',
+            maxHeight: '140px',
+            fieldSizing: 'content',
+          } as React.CSSProperties
+        }
         autoFocus
         autoComplete="new-password"
         data-form-type="other"

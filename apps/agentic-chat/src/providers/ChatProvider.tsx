@@ -1,18 +1,14 @@
 import { useChat } from '@ai-sdk/react'
 import { useAppKitAccount } from '@reown/appkit/react'
 import { DefaultChatTransport } from 'ai'
-import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAccount as useEvmAccount } from 'wagmi'
 
+import { useChatPersistence } from '@/hooks/useChatPersistence'
 import type { Conversation } from '@/types'
-import {
-  generateConversationId,
-  getConversations,
-  saveConversation,
-  deleteConversation as deleteConversationUtil,
-} from '@/utils/conversationStorage'
+import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
 interface ChatContextValue {
   messages: ReturnType<typeof useChat>['messages']
@@ -52,24 +48,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
 
-  const [conversations, setConversations] = useState<Conversation[]>([])
-
-  const reloadConversations = useCallback(() => {
-    const loaded = getConversations()
-    setConversations(loaded)
-    return loaded
-  }, [])
-
-  useEffect(() => {
-    reloadConversations()
-  }, [reloadConversations])
-
-  // Compute activeConversationId from URL and conversations list
-  const activeConversationId = useMemo(() => {
-    if (!urlConversationId) return null
-    const exists = conversations.some(c => c.id === urlConversationId)
-    return exists ? urlConversationId : null
-  }, [urlConversationId, conversations])
+  const { savedChats, saveConversation, loadConversation, deleteConversation } = useChatPersistence()
 
   const transport = useMemo(
     () =>
@@ -84,50 +63,37 @@ export function ChatProvider({ children }: ChatProviderProps) {
   )
 
   const chat = useChat({
+    id: urlConversationId,
     transport,
-    id: activeConversationId || 'temp',
-    onError: error => {
-      console.error('[Chat] Error during chat:', error)
-    },
     onFinish: ({ messages }) => {
-      console.log('[Chat] Message finished, messages count:', messages.length)
-      // Save messages using the onFinish parameter (not chat.messages which is always empty)
-      if (activeConversationId && activeConversationId !== 'temp' && messages && messages.length > 0) {
-        localStorage.setItem(`ai-chat-messages-${activeConversationId}`, JSON.stringify(messages))
-        console.log('[ChatProvider] Saved messages to localStorage:', activeConversationId, messages.length)
-        // Reload conversation metadata to update sidebar (e.g., timestamps)
-        reloadConversations()
-      }
+      if (!messages || messages.length === 0 || !urlConversationId) return
+
+      const title = extractTitleFromMessages(messages, savedChats, urlConversationId)
+      saveConversation(urlConversationId, title, messages)
     },
   })
 
-  // Load messages when switching conversations
+  const lastLoadedIdRef = useRef<string | undefined>(undefined)
+
+  // Auto-redirect to new conversation if at /chats with no ID
   useEffect(() => {
-    const conversationId = activeConversationId || 'temp'
-    const storedMessages = localStorage.getItem(`ai-chat-messages-${conversationId}`)
-
-    if (storedMessages) {
-      try {
-        const parsed = JSON.parse(storedMessages) as typeof chat.messages
-        console.log('[ChatProvider] Loading messages from localStorage:', conversationId, parsed.length)
-        chat.setMessages(parsed)
-      } catch (error) {
-        console.error('[ChatProvider] Failed to load messages:', error)
-        chat.setMessages([])
-      }
-    } else {
-      console.log('[ChatProvider] No stored messages for:', conversationId)
-      chat.setMessages([])
+    if (!urlConversationId) {
+      const newId = generateConversationId()
+      void navigate(`/chats/${newId}`, { replace: true })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeConversationId])
+  }, [urlConversationId, navigate])
 
+  useEffect(() => {
+    if (urlConversationId && urlConversationId !== lastLoadedIdRef.current) {
+      const messages = loadConversation(urlConversationId)
+      chat.setMessages(messages)
+      lastLoadedIdRef.current = urlConversationId
+    }
+  }, [urlConversationId, loadConversation, chat])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value)
   }
-
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -136,63 +102,33 @@ export function ChatProvider({ children }: ChatProviderProps) {
     const messageToSend = input
     setInput('')
 
-    if (!activeConversationId) {
-      const newId = generateConversationId()
-      const newConv: Conversation = {
-        id: newId,
-        name: 'New Conversation',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        messages: [],
-      }
-      saveConversation(newConv)
-      setConversations(prev => [...prev, newConv])
-      navigate(`/chats/${newId}`)
-      setPendingMessage(messageToSend)
-    } else {
-      const conv = conversations.find(c => c.id === activeConversationId)
-      if (conv) {
-        saveConversation({ ...conv, updatedAt: new Date().toISOString() })
-      }
-
-      await chat.sendMessage({
-        text: messageToSend,
-      })
-    }
+    await chat.sendMessage({
+      text: messageToSend,
+    })
   }
 
-  useEffect(() => {
-    if (pendingMessage && activeConversationId && activeConversationId !== 'temp') {
-      void chat.sendMessage({
-        text: pendingMessage,
-      })
-      setPendingMessage(null)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingMessage, activeConversationId])
-
-
   const createNewConversation = useCallback(() => {
-    navigate('/chats')
+    const newId = generateConversationId()
+    void navigate(`/chats/${newId}`)
   }, [navigate])
 
   const switchConversation = useCallback(
     (conversationId: string) => {
-      navigate(`/chats/${conversationId}`)
+      void navigate(`/chats/${conversationId}`)
     },
     [navigate]
   )
 
-  const deleteConversation = useCallback(
+  const handleDeleteConversation = useCallback(
     (conversationId: string) => {
-      deleteConversationUtil(conversationId)
-      setConversations(prev => prev.filter(c => c.id !== conversationId))
+      deleteConversation(conversationId)
 
-      if (conversationId === activeConversationId) {
-        navigate('/chats')
+      if (conversationId === urlConversationId) {
+        const newId = generateConversationId()
+        void navigate(`/chats/${newId}`)
       }
     },
-    [activeConversationId, navigate]
+    [urlConversationId, navigate, deleteConversation]
   )
 
   const value: ChatContextValue = {
@@ -207,11 +143,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
     setInput,
     status: chat.status,
     stop: chat.stop,
-    conversations,
-    activeConversationId,
+    conversations: savedChats,
+    activeConversationId: urlConversationId || null,
     createNewConversation,
     switchConversation,
-    deleteConversation,
+    deleteConversation: handleDeleteConversation,
   }
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

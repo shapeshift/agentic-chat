@@ -3,7 +3,6 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useChatContext } from '@/providers/ChatProvider'
-import { getConversationTitle } from '@/utils/conversationStorage'
 
 import {
   AlertDialog,
@@ -30,19 +29,19 @@ export function ConversationList() {
   const { conversations, activeConversationId, deleteConversation } = useChatContext()
 
   const sortedConversations = useMemo(() => {
-    return [...conversations].sort((a, b) => Number(b.updatedAt) - Number(a.updatedAt))
+    return [...conversations].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
   }, [conversations])
 
   return (
     <SidebarGroup>
       <div className="pb-2">
-        <Button asChild className="w-full" variant="ghost">
+        <Button asChild className="w-full" variant="outline">
           <Link
             to="/chats"
-            className="flex w-full items-center justify-start gap-2 rounded-md px-3 py-2.5 text-start hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="flex w-full items-center justify-center gap-2 rounded-md px-3 py-2.5 hover:bg-sidebar-accent"
           >
-            <PlusIcon className="h-4 w-4" />
-            New Chat
+            <PlusIcon className="h-4 w-4 stroke-[2.5]" />
+            <span className="font-medium">New Chat</span>
           </Link>
         </Button>
       </div>
@@ -51,18 +50,17 @@ export function ConversationList() {
         <SidebarMenu>
           {sortedConversations.map(conv => {
             const isActive = conv.id === activeConversationId
-            const title = getConversationTitle(conv.id)
 
             return (
-              <SidebarMenuItem key={conv.id}>
-                <SidebarMenuButton asChild isActive={isActive} tooltip={title} className="px-3 py-2.5">
+              <SidebarMenuItem key={conv.id} className="hover:bg-sidebar-accent rounded-md">
+                <SidebarMenuButton asChild isActive={isActive} tooltip={conv.title} className="px-3 py-2.5">
                   <Link to={`/chats/${conv.id}`}>
-                    <span className="truncate">{title}</span>
+                    <span className="truncate">{conv.title}</span>
                   </Link>
                 </SidebarMenuButton>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <SidebarMenuAction showOnHover>
+                    <SidebarMenuAction showOnHover className="cursor-pointer hover:bg-sidebar-accent">
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Delete</span>
                     </SidebarMenuAction>
@@ -71,7 +69,7 @@ export function ConversationList() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete conversation</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete "{title}"? This action cannot be undone.
+                        Are you sure you want to delete "{conv.title}"? This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

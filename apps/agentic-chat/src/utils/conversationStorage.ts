@@ -1,36 +1,8 @@
+import type { useChat } from '@ai-sdk/react'
+
 import type { Conversation } from '@/types'
 
-const CONVERSATIONS_KEY = 'shapeshift-conversations'
-
-export function getConversations(): Conversation[] {
-  try {
-    const stored = localStorage.getItem(CONVERSATIONS_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
-  }
-}
-
-export function saveConversation(conversation: Conversation): void {
-  const conversations = getConversations()
-  const existingIndex = conversations.findIndex(c => c.id === conversation.id)
-
-  if (existingIndex >= 0) {
-    conversations[existingIndex] = conversation
-  } else {
-    conversations.push(conversation)
-  }
-
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations))
-}
-
-export function deleteConversation(conversationId: string): void {
-  const conversations = getConversations()
-  const filtered = conversations.filter(c => c.id !== conversationId)
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(filtered))
-
-  localStorage.removeItem(`ai-chat-messages-${conversationId}`)
-}
+type ChatMessage = ReturnType<typeof useChat>['messages'][number]
 
 export function generateConversationId(): string {
   const timestamp = Date.now()
@@ -38,38 +10,24 @@ export function generateConversationId(): string {
   return `shapeshift-${timestamp}-${random}`
 }
 
-interface MessagePart {
-  type: string
-  text?: string
-}
+export function extractTitleFromMessages(
+  messages: ChatMessage[],
+  savedChats: Conversation[],
+  sessionId: string
+): string {
+  const existing = savedChats.find(c => c.id === sessionId)
 
-interface StoredMessage {
-  role: string
-  parts?: MessagePart[]
-}
-
-export function getConversationTitle(conversationId: string): string {
-  try {
-    const messages = localStorage.getItem(`ai-chat-messages-${conversationId}`)
-    if (!messages) {
-      console.log('[getConversationTitle] No messages found for:', conversationId)
-      return 'New Conversation'
-    }
-
-    const parsed = JSON.parse(messages) as StoredMessage[]
-    console.log('[getConversationTitle] Parsed messages:', conversationId, parsed)
-
-    const firstUserMessage = parsed.find(m => m.role === 'user')
-    console.log('[getConversationTitle] First user message:', firstUserMessage)
-
-    if (firstUserMessage?.parts?.[0]?.text) {
-      const text = firstUserMessage.parts[0].text
-      return text.length > 50 ? text.substring(0, 50) + '...' : text
-    }
-
-    return 'New Conversation'
-  } catch (error) {
-    console.error('[getConversationTitle] Error:', error)
-    return 'New Conversation'
+  if (existing && existing.title !== 'New Conversation') {
+    return existing.title
   }
+
+  const firstUserMessage = messages.find(m => m.role === 'user')
+
+  const titleText: string =
+    firstUserMessage?.parts
+      .filter(part => part.type === 'text')
+      .map(part => ('text' in part ? part.text : ''))
+      .join('') || ''
+
+  return titleText ? (titleText.length > 50 ? titleText.substring(0, 50) + '...' : titleText) : 'New Conversation'
 }
