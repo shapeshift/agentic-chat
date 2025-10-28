@@ -12,8 +12,14 @@ export function GetAssetsUI({ toolPart }: GetAssetsUIProps) {
 
   const assetDetailsText = (() => {
     const parts = ['asset details']
-    if (input?.searchTerm !== undefined) parts.push(`for ${input.searchTerm}`)
-    if (input?.network !== undefined) parts.push(`on ${input.network}`)
+    if (input?.searchTerm !== undefined) {
+      const searchTerm = String(input.searchTerm as string)
+      parts.push(`for ${searchTerm}`)
+    }
+    if (input?.network !== undefined) {
+      const network = String(input.network as string)
+      parts.push(`on ${network}`)
+    }
     return parts.join(' ')
   })()
 

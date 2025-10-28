@@ -19,7 +19,7 @@ interface ChatContextValue {
   sendMessage: ReturnType<typeof useChat>['sendMessage']
   setInput: (input: string) => void
   status: ReturnType<typeof useChat>['status']
-  stop: ReturnType<typeof useChat>['stop']
+  stop: () => void
   conversations: Conversation[]
   activeConversationId: string | null
   createNewConversation: () => void
@@ -50,16 +50,24 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   const { savedChats, saveConversation, loadConversation, deleteConversation } = useChatPersistence()
 
+  // Use refs to avoid closure capture in transport body function
+  const evmAddressRef = useRef(evmAccount.address)
+  const solanaAddressRef = useRef(solanaAddress)
+
+  // Keep refs up-to-date
+  evmAddressRef.current = evmAccount.address
+  solanaAddressRef.current = solanaAddress
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/chat`,
         body: () => ({
-          evmAddress: evmAccount.address,
-          solanaAddress: solanaAddress,
+          evmAddress: evmAddressRef.current,
+          solanaAddress: solanaAddressRef.current,
         }),
       }),
-    [evmAccount.address, solanaAddress]
+    []
   )
 
   const chat = useChat({
@@ -73,6 +81,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     },
   })
 
+  const { setMessages } = chat
   const lastLoadedIdRef = useRef<string | undefined>(undefined)
 
   // Auto-redirect to new conversation if at /chats with no ID
@@ -86,10 +95,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
   useEffect(() => {
     if (urlConversationId && urlConversationId !== lastLoadedIdRef.current) {
       const messages = loadConversation(urlConversationId)
-      chat.setMessages(messages)
+      setMessages(messages)
       lastLoadedIdRef.current = urlConversationId
     }
-  }, [urlConversationId, loadConversation, chat])
+  }, [urlConversationId, loadConversation, setMessages])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value)
@@ -142,7 +151,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
     sendMessage: chat.sendMessage,
     setInput,
     status: chat.status,
-    stop: chat.stop,
+    stop: () => {
+      void chat.stop()
+    },
     conversations: savedChats,
     activeConversationId: urlConversationId || null,
     createNewConversation,

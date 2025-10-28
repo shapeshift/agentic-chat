@@ -2,15 +2,14 @@
   "name": "@shapeshiftoss/agentic-server",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "yarn build:tsc",
-    "build:tsc": "rm -rf dist && yarn run -T tsc --build",
-    "dev": "yarn run -T concurrently \"yarn dev:tsc\" \"yarn dev:server\"",
-    "dev:tsc": "yarn run -T tsc --build --watch --preserveWatchOutput",
-    "dev:server": "NODE_OPTIONS=\"--import tsx/esm\" DOTENV_CONFIG_PATH=../../.env.local tsx --watch --require dotenv/config src/server.ts",
+    "build": "tsup",
+    "build:tsc": "tsup && yarn run -T tsc --emitDeclarationOnly",
+    "dev": "NODE_OPTIONS=\"--import tsx/esm\" DOTENV_CONFIG_PATH=../../.env.local tsx --watch --require dotenv/config src/server.ts",
     "start": "node dist/server.js",
     "type-check": "yarn run -T tsc --noEmit"
   },
@@ -27,6 +26,7 @@
     "zod": "*"
   },
   "devDependencies": {
+    "tsup": "^8.5.0",
     "tsx": "^4.20.6"
   }
 }

@@ -24,8 +24,8 @@ export function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSuggestionClick = async (suggestion: string) => {
-    await sendMessage({
+  const handleSuggestionClick = (suggestion: string) => {
+    void sendMessage({
       text: suggestion,
     })
   }

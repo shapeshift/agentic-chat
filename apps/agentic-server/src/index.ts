@@ -28,7 +28,7 @@ export {
 } from './tools/getTransactionHistory'
 export {
   portfolioTool,
-  executePortfolio,
+  executeGetPortfolio,
   type PortfolioInput,
   type PortfolioInput as PortfolioToolInput,
   type PortfolioOutput,

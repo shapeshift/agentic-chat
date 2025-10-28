@@ -14,7 +14,8 @@ export function GetTransactionHistoryUI({ toolPart }: GetTransactionHistoryUIPro
   const output = toolPart.output as Record<string, unknown> | undefined
   const { state } = toolPart
 
-  const network = String(input?.network ?? 'network')
+  const networkValue = input?.network
+  const network = networkValue !== undefined ? String(networkValue as string) : 'network'
 
   if (state === 'input-streaming' || state === 'input-available') {
     return <StatusText.Loading>Fetching transaction history for {network}...</StatusText.Loading>

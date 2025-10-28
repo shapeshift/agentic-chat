@@ -15,7 +15,8 @@ export function GetAllowanceUI({ toolPart }: GetAllowanceUIProps) {
 
   if (state === 'input-streaming' || state === 'input-available') {
     const asset = input?.asset as Record<string, unknown> | undefined
-    const message = asset ? `Fetching allowance for ${asset.symbol ?? ''}...` : 'Fetching allowance'
+    const symbol = asset ? String((asset.symbol as string) ?? '') : ''
+    const message = symbol ? `Fetching allowance for ${symbol}...` : 'Fetching allowance'
     return <StatusText.Loading>{message}</StatusText.Loading>
   }
 

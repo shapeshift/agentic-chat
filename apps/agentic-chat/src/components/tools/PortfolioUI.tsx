@@ -13,7 +13,8 @@ export function PortfolioUI({ toolPart }: PortfolioUIProps) {
   const portfolioDetailsText = (() => {
     const parts = ['portfolio details']
     if (input?.network !== undefined) {
-      parts.push(`on ${input.network}`)
+      const network = String(input.network as string)
+      parts.push(`on ${network}`)
     }
     return parts.join(' ')
   })()

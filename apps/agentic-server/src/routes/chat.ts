@@ -53,6 +53,84 @@ function buildWalletContext(evmAddress?: string, solanaAddress?: string): Wallet
   return { connectedWallets }
 }
 
+function buildTools(walletContext: WalletContext) {
+  return {
+    mathCalculatorTool: {
+      ...mathCalculator,
+      execute: (args: Parameters<typeof mathCalculator.execute>[0]) => {
+        console.log('[Tool] mathCalculatorTool:', JSON.stringify(args, null, 2))
+        return mathCalculator.execute(args)
+      },
+    },
+    getAssetsTool: {
+      ...getAssetsTool,
+      execute: (args: Parameters<typeof getAssetsTool.execute>[0]) => {
+        console.log('[Tool] getAssetsTool:', JSON.stringify(args, null, 2))
+        return getAssetsTool.execute(args)
+      },
+    },
+    getAccountTool: {
+      ...getAccountTool,
+      execute: (args: Parameters<typeof getAccountTool.execute>[0]) => {
+        console.log('[Tool] getAccountTool:', JSON.stringify(args, null, 2))
+        return getAccountTool.execute(args)
+      },
+    },
+    getAllowanceTool: {
+      description: getAllowanceTool.description,
+      inputSchema: getAllowanceTool.inputSchema,
+      execute: async (args: Parameters<typeof getAllowanceTool.execute>[0]) => {
+        console.log('[Tool] getAllowanceTool:', JSON.stringify(args, null, 2))
+        const chainId = args?.asset?.chainId
+        const from = args?.from ?? (chainId ? walletContext.connectedWallets?.[chainId]?.address : undefined)
+        if (!from) {
+          throw new Error('Missing `from` address. Connect a wallet or specify `from`.')
+        }
+        return getAllowanceTool.execute({ ...args, from })
+      },
+    },
+    getTransactionHistoryTool: {
+      description: getTransactionHistoryTool.description,
+      inputSchema: getTransactionHistoryTool.inputSchema,
+      execute: async (args: Parameters<typeof getTransactionHistoryTool.execute>[0]) => {
+        console.log('[Tool] getTransactionHistoryTool:', JSON.stringify(args, null, 2))
+        return getTransactionHistoryTool.execute(args, walletContext)
+      },
+    },
+    portfolioTool: {
+      description: portfolioTool.description,
+      inputSchema: portfolioTool.inputSchema,
+      execute: async (args: Parameters<typeof portfolioTool.execute>[0]) => {
+        console.log('[Tool] portfolioTool:', JSON.stringify(args, null, 2))
+        return portfolioTool.execute(args, walletContext)
+      },
+    },
+    initiateSwapTool: {
+      description: initiateSwapTool.description,
+      inputSchema: initiateSwapTool.inputSchema,
+      execute: async (args: Parameters<typeof initiateSwapTool.execute>[0]) => {
+        console.log('[Tool] initiateSwapTool:', JSON.stringify(args, null, 2))
+        return initiateSwapTool.execute(args, walletContext)
+      },
+    },
+    initiateSwapUsdTool: {
+      description: initiateSwapUsdTool.description,
+      inputSchema: initiateSwapUsdTool.inputSchema,
+      execute: async (args: Parameters<typeof initiateSwapUsdTool.execute>[0]) => {
+        console.log('[Tool] initiateSwapUsdTool:', JSON.stringify(args, null, 2))
+        return initiateSwapUsdTool.execute(args, walletContext)
+      },
+    },
+    switchNetworkTool: {
+      ...switchNetworkTool,
+      execute: (args: Parameters<typeof switchNetworkTool.execute>[0]) => {
+        console.log('[Tool] switchNetworkTool:', JSON.stringify(args, null, 2))
+        return switchNetworkTool.execute(args)
+      },
+    },
+  }
+}
+
 const SYSTEM_PROMPT =
   `
 **ShapeShift Crypto Assistant**
@@ -121,94 +199,24 @@ Examples:
 export async function handleChatRequest(c: Context) {
   try {
     const body = await c.req.json()
-    const { messages, evmAddress, solanaAddress } = body
+    const { messages, evmAddress, solanaAddress } = body as {
+      messages: unknown
+      evmAddress?: string
+      solanaAddress?: string
+    }
 
     // Build wallet context from addresses
     const walletContext = buildWalletContext(evmAddress, solanaAddress)
 
     // Convert UIMessages to ModelMessages
-    const modelMessages = convertToModelMessages(messages)
+    const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
 
     const result = streamText({
       model: openai('gpt-4o-mini'),
       messages: modelMessages,
       system: SYSTEM_PROMPT,
       stopWhen: stepCountIs(5),
-      tools: {
-        mathCalculatorTool: {
-          ...mathCalculator,
-          execute: async args => {
-            console.log('[Tool] mathCalculatorTool:', JSON.stringify(args, null, 2))
-            return mathCalculator.execute(args)
-          },
-        },
-        getAssetsTool: {
-          ...getAssetsTool,
-          execute: async args => {
-            console.log('[Tool] getAssetsTool:', JSON.stringify(args, null, 2))
-            return getAssetsTool.execute(args)
-          },
-        },
-        getAccountTool: {
-          ...getAccountTool,
-          execute: async args => {
-            console.log('[Tool] getAccountTool:', JSON.stringify(args, null, 2))
-            return getAccountTool.execute(args)
-          },
-        },
-        getAllowanceTool: {
-          description: getAllowanceTool.description,
-          inputSchema: getAllowanceTool.inputSchema,
-          execute: async args => {
-            console.log('[Tool] getAllowanceTool:', JSON.stringify(args, null, 2))
-            const chainId = args?.asset?.chainId
-            const from = args?.from ?? (chainId ? walletContext.connectedWallets?.[chainId]?.address : undefined)
-            if (!from) {
-              throw new Error('Missing `from` address. Connect a wallet or specify `from`.')
-            }
-            return getAllowanceTool.execute({ ...args, from })
-          },
-        },
-        getTransactionHistoryTool: {
-          description: getTransactionHistoryTool.description,
-          inputSchema: getTransactionHistoryTool.inputSchema,
-          execute: async args => {
-            console.log('[Tool] getTransactionHistoryTool:', JSON.stringify(args, null, 2))
-            return getTransactionHistoryTool.execute(args, walletContext)
-          },
-        },
-        portfolioTool: {
-          description: portfolioTool.description,
-          inputSchema: portfolioTool.inputSchema,
-          execute: async args => {
-            console.log('[Tool] portfolioTool:', JSON.stringify(args, null, 2))
-            return portfolioTool.execute(args, walletContext)
-          },
-        },
-        initiateSwapTool: {
-          description: initiateSwapTool.description,
-          inputSchema: initiateSwapTool.inputSchema,
-          execute: async args => {
-            console.log('[Tool] initiateSwapTool:', JSON.stringify(args, null, 2))
-            return initiateSwapTool.execute(args, walletContext)
-          },
-        },
-        initiateSwapUsdTool: {
-          description: initiateSwapUsdTool.description,
-          inputSchema: initiateSwapUsdTool.inputSchema,
-          execute: async args => {
-            console.log('[Tool] initiateSwapUsdTool:', JSON.stringify(args, null, 2))
-            return initiateSwapUsdTool.execute(args, walletContext)
-          },
-        },
-        switchNetworkTool: {
-          ...switchNetworkTool,
-          execute: async args => {
-            console.log('[Tool] switchNetworkTool:', JSON.stringify(args, null, 2))
-            return switchNetworkTool.execute(args)
-          },
-        },
-      },
+      tools: buildTools(walletContext),
     })
 
     return result.toUIMessageStreamResponse()

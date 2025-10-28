@@ -12,8 +12,14 @@ export function GetAccountUI({ toolPart }: GetAccountUIProps) {
 
   const accountDetailsText = (() => {
     const parts = ['account details']
-    if (input?.account) parts.push(`for ${input.account}`)
-    if (input?.network) parts.push(`on ${input.network}`)
+    if (input?.account) {
+      const account = String(input.account as string)
+      parts.push(`for ${account}`)
+    }
+    if (input?.network) {
+      const network = String(input.network as string)
+      parts.push(`on ${network}`)
+    }
     return parts.join(' ')
   })()
 
