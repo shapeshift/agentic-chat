@@ -10,6 +10,8 @@ import remarkMath from 'remark-math'
 
 import { cn } from '@/lib/utils'
 
+import { IconButton } from './ui/icon-button'
+
 interface MarkdownProps {
   children: string
 }
@@ -44,10 +46,13 @@ function CodeHeader({ language, code }: CodeHeaderProps) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-t-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white">
       <span className="lowercase">{language || 'code'}</span>
-      <button onClick={onCopy} className="rounded p-1 hover:bg-zinc-800" aria-label="Copy code">
-        {!isCopied && <CopyIcon className="h-4 w-4" />}
-        {isCopied && <CheckIcon className="h-4 w-4" />}
-      </button>
+      <IconButton
+        onClick={onCopy}
+        size="sm"
+        variant="code"
+        icon={isCopied ? <CheckIcon className="h-4 w-4" /> : <CopyIcon className="h-4 w-4" />}
+        label="Copy code"
+      />
     </div>
   )
 }
@@ -102,7 +107,12 @@ export function Markdown({ children }: MarkdownProps) {
             <p className={cn('mb-5 mt-5 leading-7 first:mt-0 last:mb-0', className)} {...props} />
           ),
           a: ({ className, ...props }) => (
-            <a className={cn('text-primary font-medium underline underline-offset-4', className)} {...props} />
+            <a
+              className={cn('text-primary font-medium underline underline-offset-4', className)}
+              target="_blank"
+              rel="noopener noreferrer"
+              {...props}
+            />
           ),
           blockquote: ({ className, ...props }) => (
             <blockquote className={cn('border-l-2 pl-6 italic', className)} {...props} />
