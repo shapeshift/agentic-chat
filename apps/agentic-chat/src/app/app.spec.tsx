@@ -3,6 +3,24 @@ import { BrowserRouter } from 'react-router-dom'
 
 import App from './app'
 
+// Mock AppKit hooks
+vi.mock('@reown/appkit/react', () => ({
+  createAppKit: vi.fn(),
+  useAppKit: () => ({
+    open: vi.fn(),
+  }),
+  useAppKitAccount: () => ({
+    address: undefined,
+    isConnected: false,
+  }),
+  useAppKitNetwork: () => ({
+    caipNetwork: undefined,
+  }),
+  useWalletInfo: () => ({
+    walletInfo: undefined,
+  }),
+}))
+
 declare global {
   interface Window {
     matchMedia: (query: string) => MediaQueryList
