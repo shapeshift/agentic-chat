@@ -5,6 +5,7 @@ import { useChatContext } from '../providers/ChatProvider'
 import { AssistantMessage } from './AssistantMessage'
 import { Composer } from './Composer'
 import { LoadingIndicator } from './LoadingIndicator'
+import { Button } from './ui/button'
 import { UserMessage } from './UserMessage'
 
 const WELCOME_SUGGESTIONS = [
@@ -66,14 +67,15 @@ export function Chat() {
         <div className="bg-background">
           <div className="mx-auto flex max-w-2xl gap-2 px-4 py-3">
             {WELCOME_SUGGESTIONS.map((suggestion, index) => (
-              <button
+              <Button
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
                 title={suggestion}
-                className="min-w-0 flex-1 rounded-lg border border-border bg-background px-4 py-2 text-sm hover:bg-muted h-[52px] line-clamp-2"
+                variant="outline"
+                className="min-w-0 flex-1 h-[52px] line-clamp-2 whitespace-normal"
               >
                 {suggestion}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

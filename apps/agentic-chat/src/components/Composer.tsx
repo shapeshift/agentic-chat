@@ -3,6 +3,8 @@ import type { FormEvent, KeyboardEvent } from 'react'
 
 import { useChatContext } from '../providers/ChatProvider'
 
+import { IconButton } from './ui/icon-button'
+
 export function Composer() {
   const { input, handleInputChange, handleSubmit, isLoading, stop } = useChatContext()
 
@@ -50,23 +52,23 @@ export function Composer() {
       />
 
       {isLoading ? (
-        <button
+        <IconButton
           type="button"
           onClick={stop}
-          className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-          aria-label="Stop"
-        >
-          <Square className="h-5 w-5" />
-        </button>
+          size="xl"
+          variant="default"
+          icon={<Square className="h-5 w-5" />}
+          label="Stop"
+        />
       ) : (
-        <button
+        <IconButton
           type="submit"
           disabled={!input.trim()}
-          className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Send"
-        >
-          <SendHorizontal className="h-5 w-5" />
-        </button>
+          size="xl"
+          variant="default"
+          icon={<SendHorizontal className="h-5 w-5" />}
+          label="Send"
+        />
       )}
     </form>
   )

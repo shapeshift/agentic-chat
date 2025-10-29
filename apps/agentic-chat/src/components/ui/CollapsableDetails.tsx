@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { Button } from './button'
+
 export function CollapsableDetails({
   title,
   children,
@@ -13,16 +15,18 @@ export function CollapsableDetails({
 
   return (
     <div className="border rounded-lg p-3 text-base">
-      <button
+      <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full text-left font-medium"
+        variant="ghost"
+        className="w-full justify-between h-auto p-0 font-medium"
+        aria-expanded={isOpen}
       >
         <div className="flex items-center gap-2">
           {leftIcon}
           {title}
         </div>
         <span className="ml-2">{isOpen ? '▼' : '▶'}</span>
-      </button>
+      </Button>
       {isOpen && <div className="mt-2 pt-2 border-t">{children}</div>}
     </div>
   )
