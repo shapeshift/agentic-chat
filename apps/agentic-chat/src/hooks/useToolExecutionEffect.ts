@@ -16,8 +16,13 @@ export function useToolExecutionEffect<TData, TState>(
   execute: (data: TData, setState: (updater: (draft: TState) => void) => void) => void | Promise<void>,
   deps: DependencyList
 ): UseToolExecutionEffectResult<TState> {
-  const { getState, setState, hasExecuted, markExecuted, initializeState } = useToolExecutionStore()
-  const state = getState(toolCallId, initialState)
+  const { setState, hasExecuted, markExecuted, initializeState } = useToolExecutionStore()
+
+  // Use a selector to reactively subscribe to this tool's state
+  const state = useToolExecutionStore(store => {
+    const toolState = store.toolStates.get(toolCallId)
+    return toolState !== undefined ? (toolState as TState) : initialState
+  })
 
   const wrappedSetState = (updater: (draft: TState) => void) => {
     setState(toolCallId, updater)
@@ -36,10 +41,8 @@ export function useToolExecutionEffect<TData, TState>(
     // Initialize state in store if this is the first time
     initializeState(toolCallId, initialState)
 
-    // Get fresh state after initialization
-    const currentState = getState(toolCallId, initialState)
-
-    if (!shouldExecute(data, currentState)) {
+    // Use the reactive state
+    if (!shouldExecute(data, state)) {
       return
     }
 
@@ -52,7 +55,7 @@ export function useToolExecutionEffect<TData, TState>(
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     executeWrapper()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toolCallId, data, hasExecuted, markExecuted, getState, setState, initializeState, ...deps])
+  }, [toolCallId, data, state, hasExecuted, markExecuted, setState, initializeState, ...deps])
 
   return {
     state,

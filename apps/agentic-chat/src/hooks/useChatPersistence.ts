@@ -1,6 +1,7 @@
 import type { useChat } from '@ai-sdk/react'
 import { useCallback } from 'react'
 
+import type { SerializedStoreState } from '@/stores/toolExecutionStore'
 import type { Conversation } from '@/types'
 
 import { useLocalStorage } from './useLocalStorage'
@@ -11,7 +12,7 @@ export function useChatPersistence() {
   const [savedChats, setSavedChats] = useLocalStorage<Conversation[]>('shapeshift-conversations', [])
 
   const saveConversation = useCallback(
-    (id: string, title: string, messages: ChatMessage[]) => {
+    (id: string, title: string, messages: ChatMessage[], toolStates?: SerializedStoreState) => {
       setSavedChats(prev => {
         const index = prev.findIndex(c => c.id === id)
         const existing = index >= 0 ? prev[index] : undefined
@@ -27,6 +28,10 @@ export function useChatPersistence() {
       })
 
       localStorage.setItem(`ai-chat-messages-${id}`, JSON.stringify(messages))
+
+      if (toolStates) {
+        localStorage.setItem(`ai-chat-tool-states-${id}`, JSON.stringify(toolStates))
+      }
     },
     [setSavedChats]
   )
@@ -40,13 +45,23 @@ export function useChatPersistence() {
     }
   }, [])
 
+  const loadToolStates = useCallback((id: string): SerializedStoreState | null => {
+    try {
+      const stored = localStorage.getItem(`ai-chat-tool-states-${id}`)
+      return stored ? (JSON.parse(stored) as SerializedStoreState) : null
+    } catch {
+      return null
+    }
+  }, [])
+
   const deleteConversation = useCallback(
     (id: string) => {
       setSavedChats(prev => prev.filter(c => c.id !== id))
       localStorage.removeItem(`ai-chat-messages-${id}`)
+      localStorage.removeItem(`ai-chat-tool-states-${id}`)
     },
     [setSavedChats]
   )
 
-  return { savedChats, saveConversation, loadConversation, deleteConversation }
+  return { savedChats, saveConversation, loadConversation, loadToolStates, deleteConversation }
 }

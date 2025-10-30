@@ -31,12 +31,10 @@ export async function sendEvmTransaction(params: TransactionParams): Promise<str
     const to = getAddress(params.to)
     const value = BigInt(params.value)
     const data = params.data as Hex
-    const gasLimit = params.gasLimit
+    const gas = params.gasLimit ? BigInt(params.gasLimit) : undefined
 
-    const gasPrice = await publicClient.getGasPrice()
-    const gas = gasLimit ? BigInt(gasLimit) : await publicClient.estimateGas({ account, to, value, data })
-
-    return await walletClient.sendTransaction({ account, to, value, data, chain, gas, gasPrice })
+    const txHash = await walletClient.sendTransaction({ account, to, value, data, chain, ...(gas && { gas }) })
+    return txHash
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`EVM transaction failed: ${error.message}`)

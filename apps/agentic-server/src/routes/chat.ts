@@ -212,7 +212,7 @@ export async function handleChatRequest(c: Context) {
     const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
 
     const result = streamText({
-      model: openai('gpt-4o-mini'),
+      model: openai('gpt-4.1-mini'),
       messages: modelMessages,
       system: SYSTEM_PROMPT,
       stopWhen: stepCountIs(5),
