@@ -42,9 +42,13 @@ function createTransaction(tx: {
 }
 
 async function resolveSwapAssets(sellAssetInput: AssetInput, buyAssetInput: AssetInput): Promise<ResolvedAssets> {
+  // If only one network is specified, default to same-chain swap
+  const sellNetwork = sellAssetInput.network || buyAssetInput.network
+  const buyNetwork = buyAssetInput.network || sellAssetInput.network
+
   const [buyAssetsResult, sellAssetsResult] = await Promise.all([
-    executeGetAssets({ searchTerm: buyAssetInput.symbolOrName, network: buyAssetInput.network }),
-    executeGetAssets({ searchTerm: sellAssetInput.symbolOrName, network: sellAssetInput.network }),
+    executeGetAssets({ searchTerm: buyAssetInput.symbolOrName, network: buyNetwork }),
+    executeGetAssets({ searchTerm: sellAssetInput.symbolOrName, network: sellNetwork }),
   ])
 
   if (sellAssetsResult.assets.length === 0) {

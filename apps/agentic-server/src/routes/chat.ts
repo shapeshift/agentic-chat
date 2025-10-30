@@ -165,22 +165,22 @@ const SYSTEM_PROMPT =
 - You only need to specify networks and assets - never addresses
 
 **Swap Workflow:**
-1. Determine if user specified crypto amount or USD amount
-2. Use initiateSwap for crypto amounts (e.g., "1 SOL", "0.5 ETH")
-3. Use initiateSwapUsd for USD amounts (e.g., "$100 worth", "$1 of SOL", "50 dollars")
-4. Inform user to check wallet for approval
+1. Determine if user specified crypto token amount or USD value amount
+2. Use initiateSwap for crypto token amounts (e.g., "1 SOL", "0.5 ETH", "100 FOX", "50 USDC")
+3. Use initiateSwapUsd ONLY when user explicitly mentions USD value with $ sign or keywords like "worth", "dollars", "USD" (e.g., "$100 worth", "$1 of SOL", "50 dollars worth of ETH")
+4. When user says a number + token symbol (e.g., "100 FOX"), this is a crypto token amount - use initiateSwap
+5. Inform user to check wallet for approval
 
 **Network Resolution for Swaps:**
-- Native tokens (SOL, ETH, AVAX, MATIC, BNB, OP, ARB) imply their network
-- If one network specified → same-chain swap
-- If two networks specified → cross-chain swap
-- If no network specified and no native token → ask for clarification
+- One network specified → Same-chain swap (both assets use that network)
+- Two different networks specified → Cross-chain swap
+- Native tokens (SOL, ETH, AVAX, MATIC, BNB, OP, ARB) count as specifying their network
+- No network + no native token → Ask user which network
 
 Examples:
-- "swap SOL to USDC" → same-chain on solana
-- "swap USDC on ethereum to SOL" → cross-chain (ethereum → solana)
-- "swap SOL to USDC on avalanche" → cross-chain (solana → avalanche)
-- "swap ETH to USDC on arbitrum" → cross-chain (ethereum → arbitrum)
+- "1 SOL to USDC" → same-chain solana
+- "1 USDC on arbitrum to FOX" → same-chain arbitrum
+- "1 ETH to USDC on arbitrum" → cross-chain (ethereum→arbitrum)
 
 **Cross-Chain Terminology:**
 - "Bridge" = Same asset cross-chain (ETH to Arbitrum = ETH→ETH, not ETH→ARB token)
