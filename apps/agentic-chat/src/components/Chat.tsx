@@ -19,11 +19,41 @@ export function Chat() {
   const { messages, sendMessage, isLoading } = useChatContext()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
+  const shouldAutoScrollRef = useRef(true)
 
-  // Auto-scroll to bottom on new messages
+  const lastMessage = messages[messages.length - 1]
+  const hasMessages = messages.length > 0
+
+  // Scroll event listener to continuously track user position
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    const handleScroll = () => {
+      const isNearBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 100
+      shouldAutoScrollRef.current = isNearBottom
+    }
+
+    viewport.addEventListener('scroll', handleScroll, { passive: true })
+    return () => viewport.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Initial scroll when messages first load (e.g., opening a conversation)
+  useEffect(() => {
+    if (!hasMessages) return
+
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      shouldAutoScrollRef.current = true
+    })
+  }, [hasMessages])
+
+  // Auto-scroll during streaming and new messages
+  useEffect(() => {
+    if (!shouldAutoScrollRef.current) return
+
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' })
+  }, [lastMessage])
 
   const handleSuggestionClick = (suggestion: string) => {
     void sendMessage({

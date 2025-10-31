@@ -1,12 +1,13 @@
 import { useChat } from '@ai-sdk/react'
 import { useAppKitAccount } from '@reown/appkit/react'
-import { DefaultChatTransport } from 'ai'
+import { DefaultChatTransport, isToolOrDynamicToolUIPart } from 'ai'
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAccount as useEvmAccount } from 'wagmi'
 
 import { useChatPersistence } from '@/hooks/useChatPersistence'
+import { useToolExecutionStore } from '@/stores/toolExecutionStore'
 import type { Conversation } from '@/types'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
@@ -48,7 +49,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
 
-  const { savedChats, saveConversation, loadConversation, deleteConversation } = useChatPersistence()
+  const { savedChats, saveConversation, loadConversation, loadToolStates, deleteConversation } = useChatPersistence()
 
   // Use refs to avoid closure capture in transport body function
   const evmAddressRef = useRef(evmAccount.address)
@@ -77,12 +78,21 @@ export function ChatProvider({ children }: ChatProviderProps) {
       if (!messages || messages.length === 0 || !urlConversationId) return
 
       const title = extractTitleFromMessages(messages, savedChats, urlConversationId)
-      saveConversation(urlConversationId, title, messages)
+      const toolStates = serializePersistedStates()
+      saveConversation(urlConversationId, title, messages, toolStates)
     },
   })
 
   const { setMessages } = chat
   const lastLoadedIdRef = useRef<string | undefined>(undefined)
+  const {
+    markMultipleExecuted,
+    markAsHistorical,
+    clearHistoricalTools,
+    serializePersistedStates,
+    restorePersistedStates,
+  } = useToolExecutionStore()
+  const persistedStates = useToolExecutionStore(state => state.persistedStates)
 
   // Auto-redirect to new conversation if at /chats with no ID
   useEffect(() => {
@@ -96,9 +106,37 @@ export function ChatProvider({ children }: ChatProviderProps) {
     if (urlConversationId && urlConversationId !== lastLoadedIdRef.current) {
       const messages = loadConversation(urlConversationId)
       setMessages(messages)
+
+      const toolCallIds = messages.flatMap(message =>
+        message.parts
+          .filter(isToolOrDynamicToolUIPart)
+          .map(part => ('toolCallId' in part ? part.toolCallId : null))
+          .filter((id): id is string => id !== null)
+      )
+
+      clearHistoricalTools()
+
+      if (toolCallIds.length > 0) {
+        markAsHistorical(toolCallIds)
+        markMultipleExecuted(toolCallIds)
+      }
+
+      const savedToolStates = loadToolStates(urlConversationId)
+      if (savedToolStates) {
+        restorePersistedStates(savedToolStates)
+      }
+
       lastLoadedIdRef.current = urlConversationId
     }
-  }, [urlConversationId, loadConversation, setMessages])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlConversationId])
+
+  useEffect(() => {
+    if (!urlConversationId) return
+
+    const toolStates = serializePersistedStates()
+    localStorage.setItem(`ai-chat-tool-states-${urlConversationId}`, JSON.stringify(toolStates))
+  }, [persistedStates, urlConversationId, serializePersistedStates])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value)

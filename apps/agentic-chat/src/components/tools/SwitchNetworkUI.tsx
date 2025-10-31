@@ -3,6 +3,7 @@ import type { DynamicToolUIPart } from 'ai'
 import { ArrowRightLeft } from 'lucide-react'
 
 import { useNetworkSwitch } from '@/hooks/useNetworkSwitch'
+import { useToolExecutionStore } from '@/stores/toolExecutionStore'
 
 import { CollapsableDetails } from '../ui/CollapsableDetails'
 import { StatusText } from '../ui/StatusText'
@@ -22,6 +23,7 @@ interface SwitchNetworkUIProps {
 export function SwitchNetworkUI({ toolPart }: SwitchNetworkUIProps) {
   const { state, output, toolCallId, errorText } = toolPart
   const networkOutput = output as SwitchNetworkOutput | undefined
+  const { isHistorical, getPersistedState } = useToolExecutionStore()
 
   const networkData = state === 'output-available' && networkOutput ? networkOutput : null
   const { phase, error } = useNetworkSwitch(toolCallId, networkData)
@@ -37,6 +39,10 @@ export function SwitchNetworkUI({ toolPart }: SwitchNetworkUIProps) {
 
   if (phase === 'error') {
     return <ErrorDetails title="Network switch failed" message={error || 'Unknown error'} />
+  }
+
+  if (isHistorical(toolCallId) && !getPersistedState(toolCallId)) {
+    return <StatusText>⏭️ Network switch skipped (no saved data)</StatusText>
   }
 
   if (phase === 'switching' || phase === 'idle') {

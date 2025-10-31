@@ -3,6 +3,7 @@ import type { DynamicToolUIPart } from 'ai'
 import type { ReactNode } from 'react'
 
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
+import { useToolExecutionStore } from '@/stores/toolExecutionStore'
 
 import { StatusText } from '../ui/StatusText'
 
@@ -52,6 +53,7 @@ interface InitiateSwapUIProps {
 export function InitiateSwapUI({ toolPart }: InitiateSwapUIProps) {
   const { state, output, toolCallId } = toolPart
   const swapOutput = output as InitiateSwapOutput | undefined
+  const { isHistorical, getPersistedState } = useToolExecutionStore()
 
   const swapData = state === 'output-available' && swapOutput ? swapOutput : null
   const { error, steps, networkName } = useSwapExecution(toolCallId, swapData)
@@ -66,6 +68,10 @@ export function InitiateSwapUI({ toolPart }: InitiateSwapUIProps) {
 
   if (error) {
     return <StatusText.Error>⚠️ Swap execution failed: {error}</StatusText.Error>
+  }
+
+  if (isHistorical(toolCallId) && !getPersistedState(toolCallId)) {
+    return <StatusText>⏭️ Swap execution skipped (no saved data)</StatusText>
   }
 
   return (

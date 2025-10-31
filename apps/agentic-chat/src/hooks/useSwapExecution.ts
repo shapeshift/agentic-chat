@@ -1,8 +1,11 @@
 import { useAppKitProvider } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
-import { useChainId, useSwitchChain } from 'wagmi'
+import { useRef } from 'react'
+import { useSwitchChain } from 'wagmi'
 
+import type { PersistedToolState } from '@/stores/toolExecutionStore'
+import { useToolExecutionStore } from '@/stores/toolExecutionStore'
 import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
@@ -44,6 +47,60 @@ const getStepStatus = (step: SwapStep, state: SwapState): StepStatus => {
   return StepStatus.SKIPPED
 }
 
+function swapStateToPersistedState(toolCallId: string, state: SwapState, networkName?: string): PersistedToolState {
+  const phases: string[] = []
+
+  if (state.completedSteps.has(SwapStep.NETWORK_SWITCH)) {
+    phases.push('network_switched')
+  }
+  if (state.completedSteps.has(SwapStep.APPROVAL)) {
+    phases.push('approval_complete')
+  }
+  if (state.currentStep > SwapStep.APPROVAL && !state.completedSteps.has(SwapStep.APPROVAL)) {
+    phases.push('approval_skipped')
+  }
+  if (state.completedSteps.has(SwapStep.SWAP)) {
+    phases.push('swap_complete')
+  }
+  if (state.error) {
+    phases.push('error')
+  }
+
+  return {
+    toolCallId,
+    phases,
+    meta: {
+      ...(state.approvalTxHash && { approvalTxHash: state.approvalTxHash }),
+      ...(state.swapTxHash && { swapTxHash: state.swapTxHash }),
+      ...(state.error && { error: state.error }),
+      ...(networkName && { networkName }),
+    },
+  }
+}
+
+function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
+  const completedSteps = new Set<SwapStep>()
+  let currentStep = SwapStep.COMPLETE
+
+  if (persisted.phases.includes('network_switched')) {
+    completedSteps.add(SwapStep.NETWORK_SWITCH)
+  }
+  if (persisted.phases.includes('approval_complete')) {
+    completedSteps.add(SwapStep.APPROVAL)
+  }
+  if (persisted.phases.includes('swap_complete')) {
+    completedSteps.add(SwapStep.SWAP)
+  }
+
+  return {
+    currentStep,
+    completedSteps,
+    approvalTxHash: persisted.meta.approvalTxHash as string | undefined,
+    swapTxHash: persisted.meta.swapTxHash as string | undefined,
+    error: persisted.meta.error as string | undefined,
+  }
+}
+
 interface UseSwapExecutionResult {
   steps: {
     networkSwitch: StepStatus
@@ -57,10 +114,21 @@ interface UseSwapExecutionResult {
 }
 
 export const useSwapExecution = (toolCallId: string, swapData: SwapData | null): UseSwapExecutionResult => {
-  const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
   const { walletProvider } = useAppKitProvider('solana')
   const solanaProvider = walletProvider as SolanaWalletProvider | undefined
+  const store = useToolExecutionStore()
+
+  const hasHydratedRef = useRef(false)
+  if (!hasHydratedRef.current && !store.toolStates.has(toolCallId)) {
+    const persisted = store.getPersistedState(toolCallId)
+    if (persisted) {
+      const hydratedState = persistedStateToSwapState(persisted)
+      store.initializeState(toolCallId, hydratedState)
+      store.markExecuted(toolCallId)
+      hasHydratedRef.current = true
+    }
+  }
 
   const { state } = useToolExecutionEffect(
     toolCallId,
@@ -68,6 +136,9 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
     initialSwapState,
     (_data, state) => state.currentStep === SwapStep.NETWORK_SWITCH,
     async (data, setState) => {
+      let approvalTxHash: string | undefined
+      let swapTxHash: string | undefined
+
       try {
         const { needsApproval, approvalTx, swapTx } = data
 
@@ -82,28 +153,19 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
             draft.error = undefined
           })
         } else {
-          // EVM: check if network switch is needed
+          // EVM: always switch to the sell chain to avoid race conditions with WalletConnect
           const sellChainIdNumber = Number(chainReference)
-          const needsNetworkSwitch = currentChainId !== sellChainIdNumber
-
-          if (needsNetworkSwitch) {
-            await switchChainAsync({ chainId: sellChainIdNumber })
-            setState(draft => {
-              draft.completedSteps.add(draft.currentStep)
-              draft.currentStep = (draft.currentStep + 1) as SwapStep
-              draft.error = undefined
-            })
-          } else {
-            setState(draft => {
-              draft.currentStep = (draft.currentStep + 1) as SwapStep
-              draft.error = undefined
-            })
-          }
+          await switchChainAsync({ chainId: sellChainIdNumber })
+          setState(draft => {
+            draft.completedSteps.add(draft.currentStep)
+            draft.currentStep = (draft.currentStep + 1) as SwapStep
+            draft.error = undefined
+          })
         }
 
         // Step 2: Approval
         if (needsApproval && approvalTx) {
-          const approvalTxHash = await executeApproval(approvalTx, { solanaProvider })
+          approvalTxHash = await executeApproval(approvalTx, { solanaProvider })
           setState(draft => {
             draft.approvalTxHash = approvalTxHash
           })
@@ -120,7 +182,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
         }
 
         // Step 3: Swap
-        const swapTxHash = await executeSwap(swapTx, { solanaProvider })
+        swapTxHash = await executeSwap(swapTx, { solanaProvider })
         setState(draft => {
           draft.swapTxHash = swapTxHash
         })
@@ -129,14 +191,36 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
           draft.currentStep = (draft.currentStep + 1) as SwapStep
           draft.error = undefined
         })
+
+        // Save terminal state
+        const finalState: SwapState = {
+          currentStep: SwapStep.COMPLETE,
+          completedSteps: new Set([
+            SwapStep.NETWORK_SWITCH,
+            ...(needsApproval ? [SwapStep.APPROVAL] : []),
+            SwapStep.SWAP,
+          ]),
+          ...(approvalTxHash && { approvalTxHash }),
+          ...(swapTxHash && { swapTxHash }),
+        }
+        const persisted = swapStateToPersistedState(toolCallId, finalState, data.swapData.sellAsset.network)
+        store.savePersistedState(persisted)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
+        let errorState: SwapState | undefined
         setState(draft => {
           draft.error = errorMessage
+          errorState = { ...draft }
         })
+
+        // Save error state
+        if (errorState) {
+          const persisted = swapStateToPersistedState(toolCallId, errorState, data.swapData.sellAsset.network)
+          store.savePersistedState(persisted)
+        }
       }
     },
-    [currentChainId, switchChainAsync, solanaProvider]
+    [switchChainAsync, solanaProvider, toolCallId]
   )
 
   return {

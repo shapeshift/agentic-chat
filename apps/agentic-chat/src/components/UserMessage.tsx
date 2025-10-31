@@ -1,10 +1,11 @@
 import type { UIMessage } from 'ai'
+import { memo } from 'react'
 
 interface UserMessageProps {
   message: UIMessage
 }
 
-export function UserMessage({ message }: UserMessageProps) {
+export const UserMessage = memo(function UserMessage({ message }: UserMessageProps) {
   // Extract text content from parts
   const textContent = message.parts
     .filter(part => part.type === 'text')
@@ -18,4 +19,4 @@ export function UserMessage({ message }: UserMessageProps) {
       </div>
     </div>
   )
-}
+})
