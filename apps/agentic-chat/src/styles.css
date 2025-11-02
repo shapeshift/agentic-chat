@@ -39,6 +39,36 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-green-50: #E6FAF5;
+  --color-green-100: #A1ECD9;
+  --color-green-200: #5CDFBD;
+  --color-green-300: #33D7AD;
+  --color-green-400: #16D1A1;
+  --color-green-500: #00CD98;
+  --color-green-600: #00A67B;
+  --color-green-700: #008562;
+  --color-green-800: #00684D;
+  --color-green-900: #004F3A;
+  --color-purple-50: #FAF5FF;
+  --color-purple-100: #E9D8FD;
+  --color-purple-200: #D6BCFA;
+  --color-purple-300: #B794F4;
+  --color-purple-400: #9F7AEA;
+  --color-purple-500: #805AD5;
+  --color-purple-600: #6B46C1;
+  --color-purple-700: #553C9A;
+  --color-purple-800: #44337A;
+  --color-purple-900: #322659;
+  --color-whiteAlpha-50: #ffffff0a;
+  --color-whiteAlpha-100: #ffffff0f;
+  --color-whiteAlpha-200: #ffffff14;
+  --color-whiteAlpha-300: #ffffff29;
+  --color-whiteAlpha-400: #ffffff3d;
+  --color-whiteAlpha-500: #ffffff5c;
+  --color-whiteAlpha-600: #ffffff7a;
+  --color-whiteAlpha-700: #ffffffa3;
+  --color-whiteAlpha-800: #ffffffcc;
+  --color-whiteAlpha-900: #ffffffeb;
 }
 
 :root {
@@ -116,7 +146,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    overflow: hidden;
+    overflow: auto;
   }
 
   *::-webkit-scrollbar {

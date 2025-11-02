@@ -25,6 +25,7 @@ export enum StepStatus {
   IN_PROGRESS = 'in_progress',
   COMPLETE = 'complete',
   SKIPPED = 'skipped',
+  FAILED = 'failed',
 }
 
 interface SwapState {
@@ -33,6 +34,7 @@ interface SwapState {
   approvalTxHash?: string
   swapTxHash?: string
   error?: string
+  failedStep?: SwapStep
 }
 
 const initialSwapState: SwapState = {
@@ -41,8 +43,9 @@ const initialSwapState: SwapState = {
 }
 
 const getStepStatus = (step: SwapStep, state: SwapState): StepStatus => {
+  if (state.failedStep === step) return StepStatus.FAILED
   if (state.currentStep < step) return StepStatus.NOT_STARTED
-  if (state.currentStep === step) return StepStatus.IN_PROGRESS
+  if (state.currentStep === step && !state.error) return StepStatus.IN_PROGRESS
   if (state.completedSteps.has(step)) return StepStatus.COMPLETE
   return StepStatus.SKIPPED
 }
@@ -101,12 +104,13 @@ function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
   }
 }
 
+export interface SwapStepInfo {
+  step: SwapStep
+  status: StepStatus
+}
+
 interface UseSwapExecutionResult {
-  steps: {
-    networkSwitch: StepStatus
-    approval: StepStatus
-    swap: StepStatus
-  }
+  steps: SwapStepInfo[]
   networkName?: string
   error?: string
   approvalTxHash?: string
@@ -210,6 +214,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
         let errorState: SwapState | undefined
         setState(draft => {
           draft.error = errorMessage
+          draft.failedStep = draft.currentStep
           errorState = { ...draft }
         })
 
@@ -224,11 +229,11 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
   )
 
   return {
-    steps: {
-      networkSwitch: getStepStatus(SwapStep.NETWORK_SWITCH, state),
-      approval: getStepStatus(SwapStep.APPROVAL, state),
-      swap: getStepStatus(SwapStep.SWAP, state),
-    },
+    steps: [
+      { step: SwapStep.NETWORK_SWITCH, status: getStepStatus(SwapStep.NETWORK_SWITCH, state) },
+      { step: SwapStep.APPROVAL, status: getStepStatus(SwapStep.APPROVAL, state) },
+      { step: SwapStep.SWAP, status: getStepStatus(SwapStep.SWAP, state) },
+    ],
     networkName: swapData?.swapData?.sellAsset?.network,
     error: state.error,
     approvalTxHash: state.approvalTxHash,

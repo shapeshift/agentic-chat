@@ -1,50 +1,13 @@
+import { useAppKitAccount } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import type { DynamicToolUIPart } from 'ai'
-import type { ReactNode } from 'react'
 
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
+import { firstFourLastFour } from '@/lib/utils'
 import { useToolExecutionStore } from '@/stores/toolExecutionStore'
 
-import { StatusText } from '../ui/StatusText'
-
-const Step: React.FC<{
-  status: StepStatus
-  loading: ReactNode
-  complete: ReactNode
-  skipped?: ReactNode
-}> = ({ status, loading, complete, skipped }) => {
-  if (status === StepStatus.SKIPPED) return skipped || null
-  if (status === StepStatus.COMPLETE) return <StatusText.Success>{complete}</StatusText.Success>
-  if (status === StepStatus.IN_PROGRESS) return <StatusText.Loading>{loading}</StatusText.Loading>
-  return null
-}
-
-const SwapProgress: React.FC<{
-  steps: {
-    networkSwitch: StepStatus
-    approval: StepStatus
-    swap: StepStatus
-  }
-  networkName?: string
-}> = ({ steps, networkName }) => {
-  return (
-    <div className="space-y-2 text-muted-foreground">
-      <Step
-        status={steps.networkSwitch}
-        loading={`⏳ Switching to ${networkName}...`}
-        complete={`✅ Switched to ${networkName}`}
-      />
-      <Step
-        status={steps.approval}
-        loading="⏳ Approving token spending..."
-        complete="✅ Token approved"
-        skipped={<StatusText.Success>✅ Token approval skipped</StatusText.Success>}
-      />
-      <Step status={steps.swap} loading="⏳ Signing swap transaction..." complete="✅ Transaction signed" />
-      {steps.swap === StepStatus.COMPLETE && <StatusText.Success>🎉 Swap complete!</StatusText.Success>}
-    </div>
-  )
-}
+import { SwapCard } from '../ui/SwapCard'
+import { TxStepCard } from '../ui/TxStepCard'
 
 interface InitiateSwapUIProps {
   toolPart: DynamicToolUIPart
@@ -54,39 +17,90 @@ export function InitiateSwapUI({ toolPart }: InitiateSwapUIProps) {
   const { state, output, toolCallId } = toolPart
   const swapOutput = output as InitiateSwapOutput | undefined
   const { isHistorical, getPersistedState } = useToolExecutionStore()
+  const { address } = useAppKitAccount()
 
   const swapData = state === 'output-available' && swapOutput ? swapOutput : null
   const { error, steps, networkName } = useSwapExecution(toolCallId, swapData)
 
   if (state === 'input-streaming' || state === 'input-available') {
-    return <StatusText.Loading>Getting swap quote...</StatusText.Loading>
+    return (
+      <TxStepCard.Root>
+        <TxStepCard.Header>
+          <TxStepCard.HeaderRow>
+            {address && (
+              <div className="text-xs text-muted-foreground font-normal">
+                Received from {firstFourLastFour(address)}
+              </div>
+            )}
+            <div className="text-sm text-muted-foreground font-normal">—</div>
+          </TxStepCard.HeaderRow>
+          <TxStepCard.HeaderRow>
+            <div className="text-xl font-bold">Swap Quote</div>
+            <div className="text-xl font-bold text-muted-foreground">—</div>
+          </TxStepCard.HeaderRow>
+        </TxStepCard.Header>
+
+        <TxStepCard.Stepper completedCount={0} totalCount={1}>
+          <TxStepCard.Step status={StepStatus.IN_PROGRESS} connectorBottom={false}>
+            Getting swap quote
+          </TxStepCard.Step>
+        </TxStepCard.Stepper>
+      </TxStepCard.Root>
+    )
   }
 
   if (state === 'output-error' || !swapOutput) {
-    return <StatusText.Error>❌ Failed to get swap quote</StatusText.Error>
+    return (
+      <TxStepCard.Root>
+        <TxStepCard.Header>
+          <TxStepCard.HeaderRow>
+            {address && (
+              <div className="text-xs text-muted-foreground font-normal">
+                Received from {firstFourLastFour(address)}
+              </div>
+            )}
+            <div className="text-sm text-muted-foreground font-normal">—</div>
+          </TxStepCard.HeaderRow>
+          <TxStepCard.HeaderRow>
+            <div className="text-xl font-bold">Swap Quote</div>
+            <div className="text-xl font-bold text-muted-foreground">—</div>
+          </TxStepCard.HeaderRow>
+        </TxStepCard.Header>
+
+        <TxStepCard.Stepper completedCount={0} totalCount={1}>
+          <TxStepCard.Step status={StepStatus.FAILED} connectorBottom={false}>
+            Getting swap quote
+          </TxStepCard.Step>
+          <div className="text-sm text-red-500 font-medium mt-4">Failed to get swap quote</div>
+        </TxStepCard.Stepper>
+      </TxStepCard.Root>
+    )
   }
 
-  if (error) {
-    return <StatusText.Error>⚠️ Swap execution failed: {error}</StatusText.Error>
-  }
+  const swap = swapOutput.swapData
+  if (!swap) return null
+  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedState(toolCallId)
 
-  if (isHistorical(toolCallId) && !getPersistedState(toolCallId)) {
-    return <StatusText>⏭️ Swap execution skipped (no saved data)</StatusText>
-  }
+  const displaySteps = isHistoricalSkipped ? steps.map(s => ({ ...s, status: StepStatus.SKIPPED })) : steps
+
+  const completedCount = displaySteps.filter(
+    s => s.status === StepStatus.COMPLETE || s.status === StepStatus.SKIPPED
+  ).length
+
+  const footerMessage = (() => {
+    if (error) return { type: 'error' as const, text: `Swap execution failed: ${error}` }
+    if (isHistoricalSkipped) return { type: 'info' as const, text: '⏭️ Swap execution skipped (no saved data)' }
+    return null
+  })()
 
   return (
-    <div className="space-y-2 rounded-lg border border-border bg-background p-3">
-      <div className="text-base text-muted-foreground">
-        ✅ Quote found • Rate: 1 {swapOutput.swapData.sellAsset.symbol} ={' '}
-        {(() => {
-          const buy = Number(swapOutput.swapData.buyAmountCryptoPrecision)
-          const sell = Number(swapOutput.swapData.sellAmountCryptoPrecision)
-          if (!Number.isFinite(buy) || !Number.isFinite(sell) || sell <= 0) return '—'
-          return (buy / sell).toFixed(6)
-        })()}{' '}
-        {swapOutput.swapData.buyAsset.symbol}
-      </div>
-      <SwapProgress steps={steps} networkName={networkName} />
-    </div>
+    <SwapCard
+      address={address}
+      swap={swap}
+      steps={displaySteps}
+      networkName={networkName}
+      completedCount={completedCount}
+      footerMessage={footerMessage}
+    />
   )
 }

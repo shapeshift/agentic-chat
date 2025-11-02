@@ -24,6 +24,8 @@ export const assetInputSchema = z.object({
 export const swapDataSchema = z.object({
   sellAmountCryptoPrecision: z.string(),
   buyAmountCryptoPrecision: z.string(),
+  sellAmountUsd: z.string().optional(),
+  buyAmountUsd: z.string().optional(),
   approvalTarget: z.string(),
   sellAsset: asset,
   buyAsset: asset,

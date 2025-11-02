@@ -288,9 +288,17 @@ async function executeSwapInternal({
 
   const summary = createSwapSummary(sellAsset, buyAsset, sellAmountCrypto, bestRate)
 
+  const sellPrice = parseFloat(sellAsset.price || '0')
+  const buyPrice = parseFloat(buyAsset.price || '0')
+  const sellValueUSD = sellPrice > 0 ? (parseFloat(sellAmountCrypto) * sellPrice).toFixed(2) : undefined
+  const buyEstimatedValueUSD =
+    buyPrice > 0 ? (parseFloat(bestRate.buyAmountCryptoPrecision) * buyPrice).toFixed(2) : undefined
+
   const swapExecutionData = {
     sellAmountCryptoPrecision: sellAmountCrypto,
     buyAmountCryptoPrecision: bestRate.buyAmountCryptoPrecision,
+    sellAmountUsd: sellValueUSD,
+    buyAmountUsd: buyEstimatedValueUSD,
     approvalTarget: bestRate.approvalTarget,
     sellAsset,
     buyAsset,
