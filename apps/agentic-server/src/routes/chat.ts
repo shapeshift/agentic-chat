@@ -16,6 +16,7 @@ import { supportedChainsContext } from '../context'
 import { anthropic } from '../models'
 import { getAccountTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
+import { getAssetDetailsTool } from '../tools/getAssetDetails'
 import { getAssetsTool } from '../tools/getAssets'
 import { getTransactionHistoryTool } from '../tools/getTransactionHistory'
 import { initiateSwapTool, initiateSwapUsdTool } from '../tools/initiateSwap'
@@ -67,6 +68,13 @@ function buildTools(walletContext: WalletContext) {
       execute: (args: Parameters<typeof getAssetsTool.execute>[0]) => {
         console.log('[Tool] getAssetsTool:', JSON.stringify(args, null, 2))
         return getAssetsTool.execute(args)
+      },
+    },
+    getAssetDetailsTool: {
+      ...getAssetDetailsTool,
+      execute: (args: Parameters<typeof getAssetDetailsTool.execute>[0]) => {
+        console.log('[Tool] getAssetDetailsTool:', JSON.stringify(args, null, 2))
+        return getAssetDetailsTool.execute(args)
       },
     },
     getAccountTool: {
@@ -152,13 +160,19 @@ const SYSTEM_PROMPT =
 - For mathematical formulas, use LaTeX: wrap block equations with $$...$$
 
 **Tool Usage:**
-- **getAssets**: Find assets by name/symbol, get prices and market data
+- **getAssets**: Quick asset lookup for swaps, portfolio, and price checks. Returns basic info (price, address, decimals)
+- **getAssetDetails**: Detailed market analysis for a specific asset. Returns volume, market cap, FDV, supply, description, sentiment score
 - **getTransactionHistory**: Get recent transaction history for the connected wallet on a specific network
 - **mathCalculator**: Use for all arithmetic operations to ensure precision
 - **portfolio**: Get user balances with human-readable values and USD amounts (EVM chains and Solana only)
 - **initiateSwap**: Execute swap with crypto token amounts (e.g., 1 ETH, 0.5 SOL)
 - **initiateSwapUsd**: Execute swap with USD value amounts (e.g., $100 worth, $1.50 worth)
 - **switchNetwork**: Switch the connected wallet to a different blockchain network
+
+**Asset Lookup Workflow:**
+1. Use getAssets for: "what's the price of X", "find X token", "swap X to Y", portfolio balance enrichment
+2. Use getAssetDetails for: "tell me about X", "analyze X", "what is X", "show me X market data", "how is X performing"
+3. After getAssetDetails is called, respond with ONE brief sentence only (do NOT list prices, market cap, volume, supply, sentiment, or any other data - the UI card shows everything)
 
 **Wallet Address Handling:**
 - All tools automatically extract wallet addresses from connected wallet context
