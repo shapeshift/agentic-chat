@@ -13,7 +13,7 @@ import { convertToModelMessages, stepCountIs, streamText } from 'ai'
 import type { Context } from 'hono'
 
 import { supportedChainsContext } from '../context'
-import { openai } from '../models'
+import { anthropic } from '../models'
 import { getAccountTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetsTool } from '../tools/getAssets'
@@ -212,9 +212,10 @@ export async function handleChatRequest(c: Context) {
     const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
 
     const result = streamText({
-      model: openai('gpt-4.1-mini'),
+      model: anthropic('claude-haiku-4-5'),
       messages: modelMessages,
       system: SYSTEM_PROMPT,
+      temperature: 1.0,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),
     })

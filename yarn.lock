@@ -12,6 +12,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ai-sdk/anthropic@npm:^2.0.41":
+  version: 2.0.41
+  resolution: "@ai-sdk/anthropic@npm:2.0.41"
+  dependencies:
+    "@ai-sdk/provider": "npm:2.0.0"
+    "@ai-sdk/provider-utils": "npm:3.0.16"
+  peerDependencies:
+    zod: ^3.25.76 || ^4.1.8
+  checksum: 10/7099417ec5b8283bb8f3d739a4234892dfc761759c98311bb884db9223853cf2ef26d1c93987fa2b995b116c4f17abb0765db9425eb41966be3917c8064be79e
+  languageName: node
+  linkType: hard
+
 "@ai-sdk/gateway@npm:2.0.0":
   version: 2.0.0
   resolution: "@ai-sdk/gateway@npm:2.0.0"
@@ -22,18 +34,6 @@ __metadata:
   peerDependencies:
     zod: ^3.25.76 || ^4.1.8
   checksum: 10/ff20ec2e075f5c29d3325c45b64e66b811c54a06f99d91e2112fe05ed9ab5cb1f8e760d9bc672734399d8bce0792d8425f284a24b7e3f311008f978e182fe97f
-  languageName: node
-  linkType: hard
-
-"@ai-sdk/openai@npm:^2.0.32":
-  version: 2.0.32
-  resolution: "@ai-sdk/openai@npm:2.0.32"
-  dependencies:
-    "@ai-sdk/provider": "npm:2.0.0"
-    "@ai-sdk/provider-utils": "npm:3.0.9"
-  peerDependencies:
-    zod: ^3.25.76 || ^4
-  checksum: 10/4cb5af8e7b6fe89529f78cc8de86658f6aa22ee0e438074668cf0b3a79975960ccb1a9ce795096ce085c780e53a272c3405ec53af023eccb4beee73f8769889d
   languageName: node
   linkType: hard
 
@@ -63,16 +63,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ai-sdk/provider-utils@npm:3.0.9":
-  version: 3.0.9
-  resolution: "@ai-sdk/provider-utils@npm:3.0.9"
+"@ai-sdk/provider-utils@npm:3.0.16":
+  version: 3.0.16
+  resolution: "@ai-sdk/provider-utils@npm:3.0.16"
   dependencies:
     "@ai-sdk/provider": "npm:2.0.0"
     "@standard-schema/spec": "npm:^1.0.0"
-    eventsource-parser: "npm:^3.0.5"
+    eventsource-parser: "npm:^3.0.6"
   peerDependencies:
-    zod: ^3.25.76 || ^4
-  checksum: 10/a58d61502d3f73dc615b19bc2cfef0931cdd2dbec4e58b20e523461622a23671a91cf65290bc8f245905c918b8db4712387343bdaf8c6aba871d4838fb756ef4
+    zod: ^3.25.76 || ^4.1.8
+  checksum: 10/3f3838a139ac58e9df16c42e5cdc772eecb6f0c6b10a14c687af91ed8dd4acb34b34cc1ced82106270c8e925c4bbc13b35d1f9cf60df4b150987cb9caaec34a3
   languageName: node
   linkType: hard
 
@@ -3240,7 +3240,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@shapeshiftoss/agentic-server@workspace:apps/agentic-server"
   dependencies:
-    "@ai-sdk/openai": "npm:^2.0.32"
+    "@ai-sdk/anthropic": "npm:^2.0.41"
     "@hono/node-server": "npm:^1.19.5"
     "@solana/spl-token": "npm:^0.4.0"
     "@solana/web3.js": "npm:^1.95.2"
@@ -7476,7 +7476,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eventsource-parser@npm:^3.0.5":
+"eventsource-parser@npm:^3.0.5, eventsource-parser@npm:^3.0.6":
   version: 3.0.6
   resolution: "eventsource-parser@npm:3.0.6"
   checksum: 10/febf7058b9c2168ecbb33e92711a1646e06bd1568f60b6eb6a01a8bf9f8fcd29cc8320d57247059cacf657a296280159f21306d2e3ff33309a9552b2ef889387

@@ -14,7 +14,7 @@
     "type-check": "yarn run -T tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.32",
+    "@ai-sdk/anthropic": "^2.0.41",
     "@hono/node-server": "^1.19.5",
     "@solana/spl-token": "^0.4.0",
     "@solana/web3.js": "^1.95.2",
