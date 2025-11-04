@@ -67,6 +67,8 @@ export const getRelayRate = async ({
           to: '',
           value: '0',
         },
+        networkFeeCryptoPrecision: data.fees.gas.amountFormatted,
+        networkFeeUsd: data.fees.gas.amountUsd,
       }
     }
 
@@ -92,6 +94,8 @@ export const getRelayRate = async ({
           value: evmTxData.value,
           ...(evmTxData.gas && { gasLimit: Number(evmTxData.gas) }),
         },
+        networkFeeCryptoPrecision: data.fees.gas.amountFormatted,
+        networkFeeUsd: data.fees.gas.amountUsd,
       }
     }
 

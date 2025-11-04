@@ -89,6 +89,8 @@ export const getBebopRate = async ({
         value: quote.tx.value,
         ...(quote.tx.gas && { gasLimit: quote.tx.gas }),
       },
+      networkFeeCryptoPrecision: quote.gasFee.native,
+      networkFeeUsd: quote.gasFee.usd.toString(),
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {

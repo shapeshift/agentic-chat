@@ -24,6 +24,8 @@ export const assetInputSchema = z.object({
 export const swapDataSchema = z.object({
   sellAmountCryptoPrecision: z.string(),
   buyAmountCryptoPrecision: z.string(),
+  sellAmountUsd: z.string().optional(),
+  buyAmountUsd: z.string().optional(),
   approvalTarget: z.string(),
   sellAsset: asset,
   buyAsset: asset,
@@ -53,6 +55,9 @@ export const swapSummarySchema = z.object({
     provider: z.string(),
     rate: z.string(),
     priceImpact: z.string().optional(),
+    networkFeeCrypto: z.string().optional(),
+    networkFeeSymbol: z.string().optional(),
+    networkFeeUsd: z.string().optional(),
   }),
   isCrossChain: z.boolean(),
 })

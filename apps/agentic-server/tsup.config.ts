@@ -7,6 +7,14 @@ export default defineConfig({
   target: 'node22',
   clean: true,
   sourcemap: true,
+  dts: {
+    resolve: true,
+    entry: ['src/index.ts'],
+    compilerOptions: {
+      composite: false,
+      skipLibCheck: true,
+    },
+  },
   minify: false,
   bundle: true,
   splitting: false,
