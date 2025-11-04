@@ -12,7 +12,6 @@ export function useToolExecutionEffect<TData, TState>(
   toolCallId: string,
   data: TData | null,
   initialState: TState,
-  shouldExecute: (data: TData, state: TState) => boolean,
   execute: (data: TData, setState: (updater: (draft: TState) => void) => void) => void | Promise<void>,
   deps: DependencyList
 ): UseToolExecutionEffectResult<TState> {
@@ -40,11 +39,6 @@ export function useToolExecutionEffect<TData, TState>(
 
     // Initialize state in store if this is the first time
     initializeState(toolCallId, initialState)
-
-    // Use the reactive state
-    if (!shouldExecute(data, state)) {
-      return
-    }
 
     markExecuted(toolCallId)
 

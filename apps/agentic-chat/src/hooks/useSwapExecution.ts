@@ -1,6 +1,7 @@
 import { useAppKitProvider } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
+import type { DynamicToolUIPart } from 'ai'
 import { useRef } from 'react'
 import { useSwitchChain } from 'wagmi'
 
@@ -14,10 +15,11 @@ import { useToolExecutionEffect } from './useToolExecutionEffect'
 type SwapData = InitiateSwapOutput
 
 export enum SwapStep {
-  NETWORK_SWITCH = 0,
-  APPROVAL = 1,
-  SWAP = 2,
-  COMPLETE = 3,
+  QUOTE = 0,
+  NETWORK_SWITCH = 1,
+  APPROVAL = 2,
+  SWAP = 3,
+  COMPLETE = 4,
 }
 
 export enum StepStatus {
@@ -38,7 +40,7 @@ interface SwapState {
 }
 
 const initialSwapState: SwapState = {
-  currentStep: SwapStep.NETWORK_SWITCH,
+  currentStep: SwapStep.QUOTE,
   completedSteps: new Set(),
 }
 
@@ -53,6 +55,9 @@ const getStepStatus = (step: SwapStep, state: SwapState): StepStatus => {
 function swapStateToPersistedState(toolCallId: string, state: SwapState, networkName?: string): PersistedToolState {
   const phases: string[] = []
 
+  if (state.completedSteps.has(SwapStep.QUOTE)) {
+    phases.push('quote_complete')
+  }
   if (state.completedSteps.has(SwapStep.NETWORK_SWITCH)) {
     phases.push('network_switched')
   }
@@ -85,6 +90,9 @@ function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
   const completedSteps = new Set<SwapStep>()
   let currentStep = SwapStep.COMPLETE
 
+  if (persisted.phases.includes('quote_complete')) {
+    completedSteps.add(SwapStep.QUOTE)
+  }
   if (persisted.phases.includes('network_switched')) {
     completedSteps.add(SwapStep.NETWORK_SWITCH)
   }
@@ -117,7 +125,11 @@ interface UseSwapExecutionResult {
   swapTxHash?: string
 }
 
-export const useSwapExecution = (toolCallId: string, swapData: SwapData | null): UseSwapExecutionResult => {
+export const useSwapExecution = (
+  toolCallId: string,
+  toolState: DynamicToolUIPart['state'],
+  swapData: SwapData | null
+): UseSwapExecutionResult => {
   const { switchChainAsync } = useSwitchChain()
   const { walletProvider } = useAppKitProvider('solana')
   const solanaProvider = walletProvider as SolanaWalletProvider | undefined
@@ -138,7 +150,6 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
     toolCallId,
     swapData,
     initialSwapState,
-    (_data, state) => state.currentStep === SwapStep.NETWORK_SWITCH,
     async (data, setState) => {
       let approvalTxHash: string | undefined
       let swapTxHash: string | undefined
@@ -148,6 +159,13 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
 
         const sellAssetChainId = data.swapData.sellAsset.chainId
         const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
+
+        // Step 0: Quote (completed by this point)
+        setState(draft => {
+          draft.completedSteps.add(SwapStep.QUOTE)
+          draft.currentStep = SwapStep.NETWORK_SWITCH
+          draft.error = undefined
+        })
 
         // Step 1: Network Switch
         // Non-EVM: no wallet network switch needed; skip step
@@ -200,6 +218,7 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
         const finalState: SwapState = {
           currentStep: SwapStep.COMPLETE,
           completedSteps: new Set([
+            SwapStep.QUOTE,
             SwapStep.NETWORK_SWITCH,
             ...(needsApproval ? [SwapStep.APPROVAL] : []),
             SwapStep.SWAP,
@@ -228,8 +247,16 @@ export const useSwapExecution = (toolCallId: string, swapData: SwapData | null):
     [switchChainAsync, solanaProvider, toolCallId]
   )
 
+  const quoteStepStatus = (() => {
+    if (toolState === 'output-error') return StepStatus.FAILED
+    if (toolState === 'input-streaming' || toolState === 'input-available') return StepStatus.IN_PROGRESS
+    if (toolState === 'output-available') return StepStatus.COMPLETE
+    return StepStatus.NOT_STARTED
+  })()
+
   return {
     steps: [
+      { step: SwapStep.QUOTE, status: quoteStepStatus },
       { step: SwapStep.NETWORK_SWITCH, status: getStepStatus(SwapStep.NETWORK_SWITCH, state) },
       { step: SwapStep.APPROVAL, status: getStepStatus(SwapStep.APPROVAL, state) },
       { step: SwapStep.SWAP, status: getStepStatus(SwapStep.SWAP, state) },

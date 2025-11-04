@@ -94,7 +94,6 @@ export const useNetworkSwitch = (
     toolCallId,
     networkData,
     initialNetworkState,
-    (_data, state) => state.phase === 'idle' && !!modal,
     (data, setState) => {
       const targetNetwork = networkMap[data.network]
 
