@@ -1,46 +1,24 @@
 import * as CollapsiblePrimitive from '@radix-ui/react-collapsible'
 import { Check, ChevronRight, Circle, List, X } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { createContext, useContext, useState } from 'react'
 
 import { StepStatus } from '@/hooks/useSwapExecution'
 import { cn } from '@/lib/utils'
 
-const TxStepCardContext = createContext<{
-  isOpen: boolean
-  setIsOpen: (open: boolean) => void
-}>({
-  isOpen: false,
-  setIsOpen: () => {},
-})
-
 const TxStepCardRoot = ({ children, className }: { children: ReactNode; className?: string }) => {
-  const [isOpen, setIsOpen] = useState(false)
-
   return (
-    <TxStepCardContext.Provider value={{ isOpen, setIsOpen }}>
-      <CollapsiblePrimitive.Root
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        className={cn('min-w-[512px] rounded-lg border border-border bg-whiteAlpha-50', className)}
-      >
-        {children}
-      </CollapsiblePrimitive.Root>
-    </TxStepCardContext.Provider>
+    <CollapsiblePrimitive.Root
+      className={cn('min-w-[512px] rounded-lg border border-border bg-whiteAlpha-50', className)}
+    >
+      {children}
+    </CollapsiblePrimitive.Root>
   )
 }
 
 const TxStepCardHeader = ({ children, className }: { children: ReactNode; className?: string }) => {
-  const { isOpen, setIsOpen } = useContext(TxStepCardContext)
-
   return (
     <CollapsiblePrimitive.Trigger asChild>
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn('flex flex-col gap-1 cursor-pointer p-4', !isOpen && 'select-none', className)}
-      >
-        {children}
-      </div>
+      <div className={cn('flex flex-col gap-1 cursor-pointer p-4', className)}>{children}</div>
     </CollapsiblePrimitive.Trigger>
   )
 }

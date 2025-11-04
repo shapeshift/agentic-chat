@@ -188,6 +188,20 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
       ? (((parseFloat(buyEstimatedValueUSD) - parseFloat(sellValueUSD)) / parseFloat(sellValueUSD)) * 100).toFixed(2)
       : null
 
+  const networkToFeeSymbol: Record<string, string> = {
+    ethereum: 'ETH',
+    optimism: 'ETH',
+    arbitrum: 'ETH',
+    base: 'ETH',
+    polygon: 'POL',
+    avalanche: 'AVAX',
+    bsc: 'BNB',
+    gnosis: 'xDAI',
+    solana: 'SOL',
+  }
+
+  const feeSymbol = networkToFeeSymbol[sellAsset.network] || sellAsset.symbol.toUpperCase()
+
   return {
     sellAsset: {
       symbol: sellAsset.symbol.toUpperCase(),
@@ -209,6 +223,9 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
       provider: bestRate.source || 'Unknown',
       rate: `1 ${sellAsset.symbol.toUpperCase()} = ${exchangeRate} ${buyAsset.symbol.toUpperCase()}`,
       priceImpact: priceImpact ? `${priceImpact}%` : 'N/A',
+      networkFeeCrypto: bestRate.networkFeeCryptoPrecision,
+      networkFeeSymbol: feeSymbol,
+      networkFeeUsd: bestRate.networkFeeUsd,
     },
     isCrossChain: sellAsset.network !== buyAsset.network,
   }

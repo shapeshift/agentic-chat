@@ -8,9 +8,5 @@
     "noEmit": false,
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
   },
-  "include": ["src/**/*.ts"],
-  "references": [
-    { "path": "../../packages/types" },
-    { "path": "../../packages/utils" }
-  ]
+  "include": ["src/**/*.ts"]
 }

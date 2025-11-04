@@ -55,6 +55,9 @@ export const swapSummarySchema = z.object({
     provider: z.string(),
     rate: z.string(),
     priceImpact: z.string().optional(),
+    networkFeeCrypto: z.string().optional(),
+    networkFeeSymbol: z.string().optional(),
+    networkFeeUsd: z.string().optional(),
   }),
   isCrossChain: z.boolean(),
 })

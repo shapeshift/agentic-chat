@@ -18,6 +18,8 @@ export const getRateOutput = z.object({
   sellAmountCryptoPrecision: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),
   source: z.string().describe('The source of the swap quote'),
   unsignedTx,
+  networkFeeCryptoPrecision: z.string().optional().describe('Network fee in human-readable crypto format'),
+  networkFeeUsd: z.string().optional().describe('Network fee in USD'),
 })
 
 export type GetRateInput = z.infer<typeof getRateInput>

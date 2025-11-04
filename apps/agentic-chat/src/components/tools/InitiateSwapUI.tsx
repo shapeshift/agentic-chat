@@ -97,7 +97,16 @@ export function InitiateSwapUI({ toolPart }: InitiateSwapUIProps) {
               label="Rate"
               value={`1 ${swap.sellAsset.symbol.toUpperCase()} = ${rate} ${swap.buyAsset.symbol.toUpperCase()}`}
             />
-            <TxStepCard.DetailItem label="Network Fees" value={<Skeleton className="h-4 w-20" />} />
+            <TxStepCard.DetailItem
+              label="Network Fees"
+              value={
+                swapOutput?.summary.exchange.networkFeeCrypto && swapOutput?.summary.exchange.networkFeeUsd ? (
+                  `${swapOutput.summary.exchange.networkFeeCrypto} ${swapOutput.summary.exchange.networkFeeSymbol} ($${swapOutput.summary.exchange.networkFeeUsd})`
+                ) : (
+                  <Skeleton className="h-4 w-20" />
+                )
+              }
+            />
           </TxStepCard.Details>
         </TxStepCard.Content>
       )}
