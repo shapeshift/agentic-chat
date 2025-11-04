@@ -169,7 +169,7 @@ const SYSTEM_PROMPT =
 2. Use initiateSwap for crypto token amounts (e.g., "1 SOL", "0.5 ETH", "100 FOX", "50 USDC")
 3. Use initiateSwapUsd ONLY when user explicitly mentions USD value with $ sign or keywords like "worth", "dollars", "USD" (e.g., "$100 worth", "$1 of SOL", "50 dollars worth of ETH")
 4. When user says a number + token symbol (e.g., "100 FOX"), this is a crypto token amount - use initiateSwap
-5. Inform user to check wallet for approval
+5. After swap is initiated, respond with ONE brief sentence confirming the swap was started and directing them to follow the steps above (do NOT provide detailed swap summary, rate, fees, or other details)
 
 **Network Resolution for Swaps:**
 - One network specified → Same-chain swap (both assets use that network)
