@@ -12,6 +12,22 @@ function truncateAddress(address: string, startChars = 6, endChars = 4): string 
   return `${address.slice(0, startChars)}...${address.slice(-endChars)}`
 }
 
+function getExplorerUrl(network: string, txid: string): string {
+  const explorerMap: Record<string, string> = {
+    ethereum: `https://etherscan.io/tx/${txid}`,
+    polygon: `https://polygonscan.com/tx/${txid}`,
+    arbitrum: `https://arbiscan.io/tx/${txid}`,
+    base: `https://basescan.org/tx/${txid}`,
+    avalanche: `https://snowtrace.io/tx/${txid}`,
+    optimism: `https://optimistic.etherscan.io/tx/${txid}`,
+    bsc: `https://bscscan.com/tx/${txid}`,
+    gnosis: `https://gnosisscan.io/tx/${txid}`,
+    solana: `https://solscan.io/tx/${txid}`,
+  }
+
+  return explorerMap[network] || `https://etherscan.io/tx/${txid}`
+}
+
 function formatTimestamp(timestamp: number): string {
   const date = new Date(timestamp * 1000)
   return date.toLocaleDateString('en-US', {
@@ -116,6 +132,7 @@ function TransactionCard({ tx, network }: { tx: ParsedTransaction; network: stri
   const primaryAmount = getPrimaryAmount(tx)
   const isSwap = tx.type === 'swap'
   const isSuccess = tx.status === 'success'
+  const explorerUrl = getExplorerUrl(network, tx.txid)
 
   const amountColorClass =
     tx.type === 'receive' ? 'text-green-500' : tx.type === 'send' ? 'text-orange-500' : 'text-foreground'
@@ -149,9 +166,15 @@ function TransactionCard({ tx, network }: { tx: ParsedTransaction; network: stri
             <ToolCard.DetailItem
               label="TX ID"
               value={
-                <span className="font-mono text-xs" title={tx.txid}>
+                <a
+                  href={explorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-sm text-blue-500 hover:text-blue-400 transition-colors"
+                  title={tx.txid}
+                >
                   {truncateAddress(tx.txid, 8, 6)}
-                </span>
+                </a>
               }
             />
             <ToolCard.DetailItem
