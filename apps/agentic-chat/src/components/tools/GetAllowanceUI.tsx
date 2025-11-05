@@ -1,24 +1,25 @@
-import type { DynamicToolUIPart } from 'ai'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
 import { CollapsableDetails } from '../ui/CollapsableDetails'
-import { StatusText } from '../ui/StatusText'
 
-interface GetAllowanceUIProps {
-  toolPart: DynamicToolUIPart
-}
+import { useToolStateRender } from './toolUIHelpers'
+import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function GetAllowanceUI({ toolPart }: GetAllowanceUIProps) {
+export function GetAllowanceUI({ toolPart }: ToolUIComponentProps) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
   const output = toolPart.output
   const { state, toolName } = toolPart
 
-  if (state === 'input-streaming' || state === 'input-available') {
-    const asset = input?.asset as Record<string, unknown> | undefined
-    const symbol = asset ? String((asset.symbol as string) ?? '') : ''
-    const message = symbol ? `Fetching allowance for ${symbol}...` : 'Fetching allowance'
-    return <StatusText.Loading>{message}</StatusText.Loading>
-  }
+  const asset = input?.asset as Record<string, unknown> | undefined
+  const symbol = asset ? String((asset.symbol as string) ?? '') : ''
+  const message = symbol ? `Fetching allowance for ${symbol}...` : 'Fetching allowance'
+
+  const stateRender = useToolStateRender(state, {
+    loading: message,
+    error: null,
+  })
+
+  if (stateRender) return stateRender
 
   if (state === 'output-error' || !output) {
     return (

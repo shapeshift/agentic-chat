@@ -3,7 +3,6 @@ import type { ComponentType } from 'react'
 
 import { GetAccountUI } from './tools/GetAccountUI'
 import { GetAllowanceUI } from './tools/GetAllowanceUI'
-import { GetAssetDetailsUI } from './tools/GetAssetDetailsUI'
 import { GetAssetsUI } from './tools/GetAssetsUI'
 import { GetTransactionHistoryUI } from './tools/GetTransactionHistoryUI'
 import { InitiateSwapUI } from './tools/InitiateSwapUI'
@@ -22,7 +21,6 @@ export const TOOL_UI_REGISTRY: Record<string, ToolUIComponent> = {
   switchNetworkTool: SwitchNetworkUI,
   portfolioTool: PortfolioUI,
   getAssetsTool: GetAssetsUI,
-  getAssetDetailsTool: GetAssetDetailsUI,
   getAccountTool: GetAccountUI,
   getTransactionHistoryTool: GetTransactionHistoryUI,
   getAllowanceTool: GetAllowanceUI,

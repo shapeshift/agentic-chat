@@ -1,12 +1,7 @@
-import type { DynamicToolUIPart } from 'ai'
+import { useToolStateRender } from './toolUIHelpers'
+import type { ToolUIComponentProps } from './toolUIHelpers'
 
-import { StatusText } from '../ui/StatusText'
-
-interface GetAccountUIProps {
-  toolPart: DynamicToolUIPart
-}
-
-export function GetAccountUI({ toolPart }: GetAccountUIProps) {
+export function GetAccountUI({ toolPart }: ToolUIComponentProps) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
   const { state } = toolPart
 
@@ -23,13 +18,13 @@ export function GetAccountUI({ toolPart }: GetAccountUIProps) {
     return parts.join(' ')
   })()
 
-  if (state === 'input-streaming' || state === 'input-available') {
-    return <StatusText.Loading>{`Checking ${accountDetailsText}`}</StatusText.Loading>
-  }
+  const stateRender = useToolStateRender(state, {
+    loading: `Checking ${accountDetailsText}`,
+    error: `Failed to find ${accountDetailsText} ❌`,
+    success: `Found ${accountDetailsText} ✅`,
+  })
 
-  if (state === 'output-error') {
-    return <StatusText.Error>{`Failed to find ${accountDetailsText} ❌`}</StatusText.Error>
-  }
+  if (stateRender) return stateRender
 
-  return <StatusText.Success>{`Found ${accountDetailsText} ✅`}</StatusText.Success>
+  return null
 }

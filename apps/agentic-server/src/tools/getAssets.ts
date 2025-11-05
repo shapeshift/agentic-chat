@@ -128,7 +128,7 @@ export async function executeGetAssets(input: GetAssetsInput): Promise<GetAssets
 
 export const getAssetsTool = {
   description:
-    'Find crypto assets by name/symbol for swaps and portfolio lookups. Returns basic info: price, symbol, contract address, and decimals. FAST and lightweight. Supports 18 networks including EVM chains (Ethereum, Arbitrum, etc), Solana, Sui, Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, and Cardano. For detailed market analysis, use getAssetDetails.',
+    'Find crypto assets by name/symbol with detailed market data including price, volume, market cap, FDV, sentiment, supply info, and more. Use for market analysis, price lookups, and portfolio valuations. Supports 18 networks including EVM chains (Ethereum, Arbitrum, etc), Solana, Sui, Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, and Cardano. Can search by name/symbol or lookup multiple assets by assetId.',
   inputSchema: getAssetsSchema,
   execute: executeGetAssets,
 }

@@ -1,15 +1,13 @@
-import type { DynamicToolUIPart } from 'ai'
 import { History } from 'lucide-react'
 
 import { StatusText } from '../ui/StatusText'
 
+import { useToolStateRender } from './toolUIHelpers'
+import type { ToolUIComponentProps } from './toolUIHelpers'
+
 const Icon = History
 
-interface GetTransactionHistoryUIProps {
-  toolPart: DynamicToolUIPart
-}
-
-export function GetTransactionHistoryUI({ toolPart }: GetTransactionHistoryUIProps) {
+export function GetTransactionHistoryUI({ toolPart }: ToolUIComponentProps) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
   const output = toolPart.output as Record<string, unknown> | undefined
   const { state } = toolPart
@@ -17,9 +15,12 @@ export function GetTransactionHistoryUI({ toolPart }: GetTransactionHistoryUIPro
   const networkValue = input?.network
   const network = networkValue !== undefined ? String(networkValue as string) : 'network'
 
-  if (state === 'input-streaming' || state === 'input-available') {
-    return <StatusText.Loading>Fetching transaction history for {network}...</StatusText.Loading>
-  }
+  const stateRender = useToolStateRender(state, {
+    loading: `Fetching transaction history for ${network}...`,
+    error: null,
+  })
+
+  if (stateRender) return stateRender
 
   if (state === 'output-error') {
     return (
