@@ -1,12 +1,7 @@
-import type { DynamicToolUIPart } from 'ai'
+import { useToolStateRender } from './toolUIHelpers'
+import type { ToolUIComponentProps } from './toolUIHelpers'
 
-import { StatusText } from '../ui/StatusText'
-
-interface PortfolioUIProps {
-  toolPart: DynamicToolUIPart
-}
-
-export function PortfolioUI({ toolPart }: PortfolioUIProps) {
+export function PortfolioUI({ toolPart }: ToolUIComponentProps) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
   const { state } = toolPart
 
@@ -19,13 +14,13 @@ export function PortfolioUI({ toolPart }: PortfolioUIProps) {
     return parts.join(' ')
   })()
 
-  if (state === 'input-streaming' || state === 'input-available') {
-    return <StatusText.Loading>Fetching {portfolioDetailsText}</StatusText.Loading>
-  }
+  const stateRender = useToolStateRender(state, {
+    loading: `Fetching ${portfolioDetailsText}`,
+    error: `Failed to fetch ${portfolioDetailsText} ❌`,
+    success: `Fetched ${portfolioDetailsText} ✅`,
+  })
 
-  if (state === 'output-error') {
-    return <StatusText.Error>Failed to fetch {portfolioDetailsText} ❌</StatusText.Error>
-  }
+  if (stateRender) return stateRender
 
-  return <StatusText.Success>Fetched {portfolioDetailsText} ✅</StatusText.Success>
+  return null
 }

@@ -1,6 +1,5 @@
 import { useAppKitAccount } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
-import type { DynamicToolUIPart } from 'ai'
 
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
 import { firstFourLastFour } from '@/lib/utils'
@@ -9,11 +8,9 @@ import { useToolExecutionStore } from '@/stores/toolExecutionStore'
 import { Skeleton } from '../ui/skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
-interface InitiateSwapUIProps {
-  toolPart: DynamicToolUIPart
-}
+import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function InitiateSwapUI({ toolPart }: InitiateSwapUIProps) {
+export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
   const { state, output, toolCallId } = toolPart
   const swapOutput = output as InitiateSwapOutput | undefined
   const { isHistorical, getPersistedState } = useToolExecutionStore()

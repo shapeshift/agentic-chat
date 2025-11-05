@@ -1,46 +1,10 @@
-import * as CollapsiblePrimitive from '@radix-ui/react-collapsible'
 import { Check, ChevronRight, Circle, List, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { StepStatus } from '@/hooks/useSwapExecution'
 import { cn } from '@/lib/utils'
 
-const TxStepCardRoot = ({ children, className }: { children: ReactNode; className?: string }) => {
-  return (
-    <CollapsiblePrimitive.Root
-      className={cn('min-w-[512px] rounded-lg border border-border bg-whiteAlpha-50', className)}
-    >
-      {children}
-    </CollapsiblePrimitive.Root>
-  )
-}
-
-const TxStepCardHeader = ({ children, className }: { children: ReactNode; className?: string }) => {
-  return (
-    <CollapsiblePrimitive.Trigger asChild>
-      <div className={cn('flex flex-col gap-1 cursor-pointer p-4', className)}>{children}</div>
-    </CollapsiblePrimitive.Trigger>
-  )
-}
-
-const TxStepCardContent = ({ children, className }: { children: ReactNode; className?: string }) => {
-  return (
-    <CollapsiblePrimitive.Content className={cn('space-y-4 px-4', className)}>{children}</CollapsiblePrimitive.Content>
-  )
-}
-
-const TxStepCardDetails = ({ children, className }: { children: ReactNode; className?: string }) => {
-  return <div className={cn('space-y-4 text-sm font-normal pb-4', className)}>{children}</div>
-}
-
-const TxStepCardDetailItem = ({ label, value, className }: { label: string; value: ReactNode; className?: string }) => {
-  return (
-    <div className={cn('flex justify-between text-muted-foreground font-normal', className)}>
-      <span className="font-normal">{label}</span>
-      <span className="font-medium">{value}</span>
-    </div>
-  )
-}
+import { ToolCard } from './ToolCard'
 
 const TxStepCardStepper = ({
   children,
@@ -158,10 +122,6 @@ const TxStepCardStep = ({
   )
 }
 
-const TxStepCardHeaderRow = ({ children, className }: { children: ReactNode; className?: string }) => {
-  return <div className={cn('flex items-center justify-between gap-4', className)}>{children}</div>
-}
-
 const TxStepCardSwapPair = ({
   fromSymbol,
   toSymbol,
@@ -187,12 +147,14 @@ const TxStepCardAmount = ({ children, className }: { children: ReactNode; classN
 }
 
 export const TxStepCard = {
-  Root: TxStepCardRoot,
-  Header: TxStepCardHeader,
-  HeaderRow: TxStepCardHeaderRow,
-  Content: TxStepCardContent,
-  Details: TxStepCardDetails,
-  DetailItem: TxStepCardDetailItem,
+  // Re-export generic components from ToolCard
+  Root: ToolCard.Root,
+  Header: ToolCard.Header,
+  HeaderRow: ToolCard.HeaderRow,
+  Content: ToolCard.Content,
+  Details: ToolCard.Details,
+  DetailItem: ToolCard.DetailItem,
+  // Transaction-specific components
   Stepper: TxStepCardStepper,
   Step: TxStepCardStep,
   SwapPair: TxStepCardSwapPair,

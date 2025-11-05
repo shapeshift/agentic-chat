@@ -30,8 +30,6 @@ export function getNativeAssetAddress(chainId: ChainId): string | null {
   return null
 }
 
-// Fetches native asset price using /simple/price endpoint (lightest-weight)
-// Uses hardcoded asset metadata + real-time price data
 export async function getNativeAssetWithPrice(coinId: string, network: Network): Promise<Asset> {
   const nativeAsset = networkToNativeAsset[network]
 
@@ -53,7 +51,6 @@ export async function getNativeAssetWithPrice(coinId: string, network: Network):
     precision: nativeAsset.precision,
     price,
     symbol: nativeAsset.symbol,
-    // icon: nativeAsset.icon,
   }
 }
 

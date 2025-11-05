@@ -152,7 +152,7 @@ const SYSTEM_PROMPT =
 - For mathematical formulas, use LaTeX: wrap block equations with $$...$$
 
 **Tool Usage:**
-- **getAssets**: Find assets by name/symbol, get prices and market data
+- **getAssets**: Find assets and get market data. Returns price, volume, market cap, FDV, description, sentiment, and more. CRITICAL: After calling this tool, respond with ONLY a single brief sentence directing user to the card - do NOT include prices, market caps, volumes, descriptions, or ANY data from the response
 - **getTransactionHistory**: Get recent transaction history for the connected wallet on a specific network
 - **mathCalculator**: Use for all arithmetic operations to ensure precision
 - **portfolio**: Get user balances with human-readable values and USD amounts (EVM chains and Solana only)

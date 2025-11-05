@@ -7,6 +7,7 @@ export {
   type GetAssetsInput as GetAssetsToolInput,
   type GetAssetsOutput,
 } from './tools/getAssets'
+export { type AssetWithMarketData } from './lib/asset/coingecko/getCoingeckoAssetsBySearchTerm'
 export {
   getAccountTool,
   executeGetAccount,

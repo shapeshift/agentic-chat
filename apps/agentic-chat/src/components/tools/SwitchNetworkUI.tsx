@@ -1,5 +1,4 @@
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
-import type { DynamicToolUIPart } from 'ai'
 import { ArrowRightLeft } from 'lucide-react'
 
 import { useNetworkSwitch } from '@/hooks/useNetworkSwitch'
@@ -7,6 +6,9 @@ import { useToolExecutionStore } from '@/stores/toolExecutionStore'
 
 import { CollapsableDetails } from '../ui/CollapsableDetails'
 import { StatusText } from '../ui/StatusText'
+
+import { useToolStateRender } from './toolUIHelpers'
+import type { ToolUIComponentProps } from './toolUIHelpers'
 
 const Icon = ArrowRightLeft
 
@@ -16,11 +18,7 @@ const ErrorDetails: React.FC<{ title: string; message: string }> = ({ title, mes
   </CollapsableDetails>
 )
 
-interface SwitchNetworkUIProps {
-  toolPart: DynamicToolUIPart
-}
-
-export function SwitchNetworkUI({ toolPart }: SwitchNetworkUIProps) {
+export function SwitchNetworkUI({ toolPart }: ToolUIComponentProps) {
   const { state, output, toolCallId, errorText } = toolPart
   const networkOutput = output as SwitchNetworkOutput | undefined
   const { isHistorical, getPersistedState } = useToolExecutionStore()
@@ -28,9 +26,12 @@ export function SwitchNetworkUI({ toolPart }: SwitchNetworkUIProps) {
   const networkData = state === 'output-available' && networkOutput ? networkOutput : null
   const { phase, error } = useNetworkSwitch(toolCallId, networkData)
 
-  if (state === 'input-streaming' || state === 'input-available') {
-    return <StatusText.Loading>Preparing network switch...</StatusText.Loading>
-  }
+  const stateRender = useToolStateRender(state, {
+    loading: 'Preparing network switch...',
+    error: null,
+  })
+
+  if (stateRender) return stateRender
 
   if (state === 'output-error') {
     const message = errorText || 'Unknown error'
