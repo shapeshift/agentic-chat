@@ -153,7 +153,7 @@ const SYSTEM_PROMPT =
 
 **Tool Usage:**
 - **getAssets**: Find assets and get market data. Returns price, volume, market cap, FDV, description, sentiment, and more. CRITICAL: After calling this tool, respond with ONLY a single brief sentence directing user to the card - do NOT include prices, market caps, volumes, descriptions, or ANY data from the response
-- **getTransactionHistory**: Get recent transaction history for the connected wallet on a specific network
+- **getTransactionHistory**: Get recent transaction history for the connected wallet on a specific network. Returns transaction details with types, amounts, timestamps, and addresses. After calling this tool, respond with ONLY a single brief sentence - do NOT list transactions, counts, types, or any details (the UI card shows everything)
 - **mathCalculator**: Use for all arithmetic operations to ensure precision
 - **portfolio**: Get user balances with human-readable values and USD amounts (EVM chains and Solana only)
 - **initiateSwap**: Execute swap with crypto token amounts (e.g., 1 ETH, 0.5 SOL)
