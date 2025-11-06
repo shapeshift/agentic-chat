@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 
 import { formatCompactNumber, formatFiat } from '@/lib/number'
 
+import { AssetIcon } from '../ui/AssetIcon'
 import { Skeleton } from '../ui/skeleton'
 import { ToolCard } from '../ui/ToolCard'
 
@@ -76,7 +77,7 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
         <ToolCard.HeaderRow>
           <div className="flex items-start justify-between w-full">
             <div className="flex items-center gap-3">
-              {asset.icon && <img src={asset.icon} alt={asset.symbol} className="w-10 h-10 rounded-full" />}
+              <AssetIcon icon={asset.icon ?? undefined} symbol={asset.symbol} />
               <div className="flex flex-col h-12 justify-between">
                 <span className="text-[20px] font-bold leading-7">{asset.name}</span>
                 <span className="text-sm text-muted-foreground font-normal leading-5">

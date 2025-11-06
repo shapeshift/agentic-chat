@@ -86,7 +86,7 @@ function transformCoinGeckoToken(token: TokensResponse['data'][0], network: Netw
       precision: token.attributes.decimals,
       price: token.attributes.price_usd,
       symbol: token.attributes.symbol,
-      // icon: token.attributes.image_url,
+      icon: token.attributes.image_url,
     }
   } catch {
     return null

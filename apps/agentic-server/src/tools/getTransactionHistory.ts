@@ -19,6 +19,7 @@ export type GetTransactionHistoryInput = z.infer<typeof getTransactionHistorySch
 export type GetTransactionHistoryOutput = {
   address: string
   chainId: string
+  network: string
   transactions: ParsedTransaction[]
   cursor?: string
 }
@@ -79,6 +80,7 @@ export async function executeGetTransactionHistory(
   return {
     address,
     chainId,
+    network,
     transactions,
     cursor: responseCursor,
   }

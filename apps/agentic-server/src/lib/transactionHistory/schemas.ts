@@ -86,8 +86,10 @@ export const parsedTransactionSchema = z.object({
       z.object({
         symbol: z.string(),
         amount: z.string(),
+        decimals: z.number(),
         from: z.string(),
         to: z.string(),
+        contract: z.string().optional(),
       })
     )
     .optional(),

@@ -1,8 +1,10 @@
 export type TokenTransfer = {
   symbol: string
   amount: string
+  decimals: number
   from: string
   to: string
+  contract?: string
 }
 
 type BaseTransaction = {

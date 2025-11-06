@@ -36,6 +36,7 @@ export {
   type TokenTransfer,
   isSwapTransaction,
 } from './lib/transactionHistory'
+export { networkToNativeAsset } from './lib/asset/coingecko/constants'
 export {
   portfolioTool,
   executeGetPortfolio,

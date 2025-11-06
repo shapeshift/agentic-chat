@@ -38,8 +38,10 @@ export function parseSolanaTransaction(tx: SolanaTx, userAddress: string): Parse
           .map(transfer => ({
             symbol: transfer.token?.symbol || 'Unknown',
             amount: fromBaseUnit(transfer.amount!.toString(), transfer.token?.decimals || 9),
+            decimals: transfer.token?.decimals || 9,
             from: transfer.fromUserAccount || '',
             to: transfer.toUserAccount || '',
+            contract: transfer.mint,
           }))
       : undefined
 

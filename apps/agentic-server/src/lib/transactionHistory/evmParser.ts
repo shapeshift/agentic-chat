@@ -80,10 +80,11 @@ function determineTransactionType(tx: EvmTx, userAddress: string): ParsedTransac
   const netTransfers = calculateNetTransfers(tx, userAddress)
   const hasNativeValue = BigInt(tx.value) > 0n
   const userSentNative = hasNativeValue && normalizedFrom === normalizedUserAddress
+  const userReceivedNative = hasNativeValue && normalizedTo === normalizedUserAddress
 
   if (netTransfers.length > 0 || userSentNative) {
     const hasNegative = netTransfers.some(t => t.netAmount < 0n) || userSentNative
-    const hasPositive = netTransfers.some(t => t.netAmount > 0n)
+    const hasPositive = netTransfers.some(t => t.netAmount > 0n) || userReceivedNative
 
     if (hasNegative && hasPositive) {
       return 'swap'
@@ -134,8 +135,10 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string): ParsedTrans
         transfer.netAmount < 0n ? (-transfer.netAmount).toString() : transfer.netAmount.toString(),
         transfer.decimals
       ),
+      decimals: transfer.decimals,
       from: transfer.netAmount < 0n ? userAddress : transfer.from,
       to: transfer.netAmount > 0n ? userAddress : transfer.to,
+      contract: transfer.contract,
     }))
 
     const hasNativeValue = BigInt(tx.value) > 0n && normalizedFrom === normalizedUserAddress
@@ -146,6 +149,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string): ParsedTrans
         {
           symbol: 'ETH',
           amount: fromBaseUnit(tx.value, EVM_NATIVE_DECIMALS),
+          decimals: EVM_NATIVE_DECIMALS,
           from: userAddress,
           to: tx.to,
         },
@@ -164,8 +168,10 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string): ParsedTrans
         ? userInvolvedTransfers.map(transfer => ({
             symbol: transfer.symbol,
             amount: fromBaseUnit(transfer.value, transfer.decimals),
+            decimals: transfer.decimals,
             from: transfer.from,
             to: transfer.to,
+            contract: transfer.contract,
           }))
         : undefined
   }
