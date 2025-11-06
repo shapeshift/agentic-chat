@@ -1,6 +1,8 @@
 import { useAppKit, useAppKitAccount, useAppKitNetwork, useWalletInfo } from '@reown/appkit/react'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'
 
+import { truncateAddress } from '@/lib/utils'
+
 import { Button } from './ui/button'
 
 export const CustomConnectButton = () => {
@@ -25,10 +27,9 @@ export const CustomConnectButton = () => {
     )
   }
 
-  // Convert numeric chain ID to CAIP format
   const caipChainId = caipNetwork?.caipNetworkId
   const networkIcon = caipChainId ? NETWORK_ICONS[caipChainId] : undefined
-  const truncatedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ''
+  const truncatedAddress = address ? truncateAddress(address) : ''
 
   return (
     <Button onClick={handleOpenAccount} variant="wallet" className="gap-2">

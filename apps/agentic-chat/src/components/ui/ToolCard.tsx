@@ -5,10 +5,18 @@ import { cn } from '@/lib/utils'
 
 import { Skeleton } from './skeleton'
 
-const ToolCardRoot = ({ children, className }: { children: ReactNode; className?: string }) => {
+const ToolCardRoot = ({
+  children,
+  className,
+  defaultOpen = true,
+}: {
+  children: ReactNode
+  className?: string
+  defaultOpen?: boolean
+}) => {
   return (
     <CollapsiblePrimitive.Root
-      defaultOpen={true}
+      defaultOpen={defaultOpen}
       className={cn('min-w-[512px] rounded-lg border border-border bg-whiteAlpha-50', className)}
     >
       {children}

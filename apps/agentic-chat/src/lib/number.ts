@@ -111,3 +111,33 @@ export function formatPercent(value: NumberValue | null | undefined, options: Nu
     return 'N/A'
   }
 }
+
+export type FormatCryptoAmountOptions = {
+  symbol?: string
+  decimals?: number
+}
+
+export function formatCryptoAmount(value: NumberValue | null | undefined, options?: FormatCryptoAmountOptions): string {
+  if (value === null || value === undefined) return 'N/A'
+
+  try {
+    const num = toNumber(value)
+    if (isNaN(num)) return 'N/A'
+
+    let formatted: string
+    if (num === 0) {
+      formatted = '0'
+    } else if (num < 0.000001) {
+      formatted = num.toExponential(2)
+    } else {
+      const maxDecimals = options?.decimals ?? 8
+      const fixedStr = num.toFixed(maxDecimals)
+      formatted = fixedStr.replace(/\.?0+$/, '')
+    }
+
+    return options?.symbol ? `${formatted} ${options.symbol}` : formatted
+  } catch (e) {
+    console.error(e)
+    return 'N/A'
+  }
+}

@@ -28,6 +28,16 @@ export {
   type GetTransactionHistoryOutput,
 } from './tools/getTransactionHistory'
 export {
+  type ParsedTransaction,
+  type SendTransaction,
+  type ReceiveTransaction,
+  type SwapTransaction,
+  type ContractTransaction,
+  type TokenTransfer,
+  isSwapTransaction,
+} from './lib/transactionHistory'
+export { networkToNativeAsset } from './lib/asset/coingecko/constants'
+export {
   portfolioTool,
   executeGetPortfolio,
   type PortfolioInput,
