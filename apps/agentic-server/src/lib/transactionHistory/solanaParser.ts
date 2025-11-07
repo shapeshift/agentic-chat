@@ -1,3 +1,4 @@
+import type { ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
 import { fromBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import { z } from 'zod'
@@ -5,7 +6,6 @@ import { z } from 'zod'
 import { SOLANA_NATIVE_DECIMALS } from './constants'
 import { solanaTxSchema } from './schemas'
 import type { SolanaTx } from './schemas'
-import type { ParsedTransaction, TokenTransfer } from './types'
 
 function determineTransactionType(
   nativeTransfer: SolanaTx['nativeTransfers'] extends (infer U)[] | undefined ? U | undefined : never,

@@ -195,3 +195,24 @@ export const cardano = Object.freeze<Readonly<Omit<Asset, 'price'>>>({
   icon: 'https://rawcdn.githack.com/trustwallet/assets/b7a5f12d893fcf58e0eb1dd64478f076857b720b/blockchains/cardano/info/logo.png',
   network: 'cardano',
 })
+
+export const networkToNativeAsset = {
+  ethereum,
+  optimism,
+  arbitrum,
+  base,
+  polygon,
+  avalanche: avax,
+  bsc: bnbsmartchain,
+  gnosis,
+  solana,
+  sui,
+  bitcoin,
+  litecoin,
+  dogecoin,
+  bitcoincash,
+  cosmos,
+  thorchain,
+  tron,
+  cardano,
+} as const

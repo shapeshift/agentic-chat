@@ -1,23 +1,3 @@
-import {
-  arbitrum,
-  avax,
-  base,
-  bitcoin,
-  bitcoincash,
-  bnbsmartchain,
-  cosmos,
-  dogecoin,
-  ethereum,
-  gnosis,
-  litecoin,
-  optimism,
-  polygon,
-  solana,
-  sui,
-  thorchain,
-  tron,
-  cardano,
-} from '@shapeshiftoss/types'
 import type { Network } from '@shapeshiftoss/types'
 
 export const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
@@ -51,26 +31,7 @@ export const networkToOnchainNetwork: Partial<Record<Network, string>> = {
   // UTXO chains (bitcoin, litecoin, dogecoin) don't have onchain endpoints - they use /coins/{id} endpoint
 }
 
-export const networkToNativeAsset = {
-  ethereum,
-  optimism,
-  arbitrum,
-  base,
-  polygon,
-  avalanche: avax,
-  bsc: bnbsmartchain,
-  gnosis,
-  solana,
-  sui,
-  bitcoin,
-  litecoin,
-  dogecoin,
-  bitcoincash,
-  cosmos,
-  thorchain,
-  tron,
-  cardano,
-} as const
+export { networkToNativeAsset } from '@shapeshiftoss/types'
 
 export const coingeckoIdToNativeNetworks: Record<string, Network[]> = {
   ethereum: ['ethereum', 'optimism', 'arbitrum', 'base'],

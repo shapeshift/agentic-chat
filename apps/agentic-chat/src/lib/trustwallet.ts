@@ -1,5 +1,5 @@
-import { networkToNativeAsset } from '@shapeshiftoss/agentic-server'
 import type { Network } from '@shapeshiftoss/types'
+import { networkToNativeAsset } from '@shapeshiftoss/types'
 import { getAddress, isAddress } from 'viem'
 
 const networkToTrustWalletBlockchain: Partial<Record<Network, string>> = {

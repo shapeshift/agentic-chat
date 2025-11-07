@@ -21,4 +21,4 @@ export {
   type SendTransaction,
   type SwapTransaction,
   type TokenTransfer,
-} from './types'
+} from '@shapeshiftoss/types'

@@ -1,4 +1,4 @@
-import type { ParsedTransaction, TokenTransfer } from '@shapeshiftoss/agentic-server'
+import type { ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
 import type { Network } from '@shapeshiftoss/types'
 import { ArrowRight } from 'lucide-react'
 

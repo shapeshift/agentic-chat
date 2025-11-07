@@ -1,4 +1,5 @@
-import type { GetTransactionHistoryOutput, ParsedTransaction } from '@shapeshiftoss/agentic-server'
+import type { GetTransactionHistoryOutput } from '@shapeshiftoss/agentic-server'
+import type { ParsedTransaction } from '@shapeshiftoss/types'
 import type { Network } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'

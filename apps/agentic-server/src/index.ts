@@ -35,8 +35,8 @@ export {
   type ContractTransaction,
   type TokenTransfer,
   isSwapTransaction,
-} from './lib/transactionHistory'
-export { networkToNativeAsset } from './lib/asset/coingecko/constants'
+  networkToNativeAsset,
+} from '@shapeshiftoss/types'
 export {
   portfolioTool,
   executeGetPortfolio,

@@ -1,3 +1,4 @@
+import type { ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
 import { fromBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import z from 'zod'
@@ -5,7 +6,6 @@ import z from 'zod'
 import { EVM_NATIVE_DECIMALS } from './constants'
 import { evmTxSchema } from './schemas'
 import type { EvmTx } from './schemas'
-import type { ParsedTransaction, TokenTransfer } from './types'
 
 interface NetTransfer {
   contract: string
