@@ -1,5 +1,4 @@
-import type { ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
-import type { Network } from '@shapeshiftoss/types'
+import type { ParsedTransaction, TokenTransfer, Network } from '@shapeshiftoss/types'
 import { ArrowRight } from 'lucide-react'
 
 import { formatCryptoAmount } from '@/lib/number'

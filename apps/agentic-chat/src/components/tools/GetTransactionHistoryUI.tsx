@@ -1,6 +1,5 @@
 import type { GetTransactionHistoryOutput } from '@shapeshiftoss/agentic-server'
-import type { ParsedTransaction } from '@shapeshiftoss/types'
-import type { Network } from '@shapeshiftoss/types'
+import type { ParsedTransaction, Network } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CheckCircle2, FileCode, XCircle } from 'lucide-react'
