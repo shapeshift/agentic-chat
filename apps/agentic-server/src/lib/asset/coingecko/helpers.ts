@@ -1,12 +1,19 @@
 import type { AssetId, ChainId } from '@shapeshiftoss/caip'
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, Network } from '@shapeshiftoss/types'
+import { networkToNativeAssetId } from '@shapeshiftoss/types'
+import { decodeAssetData } from '@shapeshiftoss/utils'
+import type { EncodedAssetData } from '@shapeshiftoss/utils'
+import encodedAssetData from '@shapeshiftoss/utils/src/assetData/encodedAssetData.json'
 import axios from 'axios'
 import { zeroAddress } from 'viem'
 
 import { isEvmChain, isSolanaChain, isSuiChain } from '../../../utils/chains/helpers'
 
-import { COINGECKO_API_KEY, API_TIMEOUT, networkToNativeAsset } from './constants'
+import { COINGECKO_API_KEY, API_TIMEOUT } from './constants'
+
+// Decode asset data once at module load (same pattern as chat app)
+const { assetData: assetsById } = decodeAssetData(encodedAssetData as unknown as EncodedAssetData)
 
 /**
  * Maps a native asset to its on-chain address format expected by CoinGecko's multi endpoint.
@@ -31,7 +38,12 @@ export function getNativeAssetAddress(chainId: ChainId): string | null {
 }
 
 export async function getNativeAssetWithPrice(coinId: string, network: Network): Promise<Asset> {
-  const nativeAsset = networkToNativeAsset[network]
+  const assetId = networkToNativeAssetId[network]
+  const staticAsset = assetsById[assetId]
+
+  if (!staticAsset) {
+    throw new Error(`Native asset not found for network: ${network}`)
+  }
 
   const { data } = await axios.get(
     `https://pro-api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`,
@@ -44,13 +56,14 @@ export async function getNativeAssetWithPrice(coinId: string, network: Network):
   const price = data[coinId]?.usd?.toString() ?? '0'
 
   return {
-    assetId: nativeAsset.assetId,
-    chainId: nativeAsset.chainId,
-    name: nativeAsset.name,
-    network: nativeAsset.network,
-    precision: nativeAsset.precision,
+    assetId: staticAsset.assetId,
+    chainId: staticAsset.chainId,
+    name: staticAsset.name,
+    network,
+    precision: staticAsset.precision,
     price,
-    symbol: nativeAsset.symbol,
+    symbol: staticAsset.symbol,
+    icon: staticAsset.icon ?? '',
   }
 }
 

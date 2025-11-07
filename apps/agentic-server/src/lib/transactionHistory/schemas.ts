@@ -90,6 +90,7 @@ export const parsedTransactionSchema = z.object({
         from: z.string(),
         to: z.string(),
         contract: z.string().optional(),
+        assetId: z.string(),
       })
     )
     .optional(),

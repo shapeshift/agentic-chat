@@ -1,5 +1,6 @@
 import type { Network } from '@shapeshiftoss/types'
-import { networkToNativeAsset } from '@shapeshiftoss/types'
+import { networkToNativeAssetId } from '@shapeshiftoss/types'
+import { assetService } from '@shapeshiftoss/utils'
 import { getAddress, isAddress } from 'viem'
 
 const networkToTrustWalletBlockchain: Partial<Record<Network, string>> = {
@@ -12,11 +13,15 @@ const networkToTrustWalletBlockchain: Partial<Record<Network, string>> = {
   bsc: 'smartchain',
   gnosis: 'xdai',
   solana: 'solana',
+  sui: 'sui',
+  tron: 'tron',
+  cardano: 'cardano',
 }
 
 export function getTrustWalletIconUrl(network: Network, contractAddress?: string): string | undefined {
   if (!contractAddress) {
-    const nativeAsset = networkToNativeAsset[network]
+    const assetId = networkToNativeAssetId[network]
+    const nativeAsset = assetService.getAsset(assetId)
     return nativeAsset?.icon ?? undefined
   }
 
@@ -24,8 +29,8 @@ export function getTrustWalletIconUrl(network: Network, contractAddress?: string
   if (!blockchain) return undefined
 
   let formattedAddress = contractAddress
-  // Only validate EVM addresses, not Solana (which uses base58 encoding)
-  if (network !== 'solana' && isAddress(contractAddress)) {
+  // Only validate EVM addresses, not Solana/SUI/Cardano (which use different encoding)
+  if (network !== 'solana' && network !== 'sui' && network !== 'cardano' && isAddress(contractAddress)) {
     formattedAddress = getAddress(contractAddress)
   }
 

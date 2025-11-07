@@ -16,7 +16,7 @@ import { getAddressForChain } from '../utils/walletContextSimple'
 import type { WalletContext } from '../utils/walletContextSimple'
 
 import { executeGetAccount } from './getAccount'
-import { executeGetAssets } from './getAssets'
+import { executeGetAssetsBasic } from './getAssets'
 
 interface ResolvedAssets {
   sellAsset: Asset
@@ -47,8 +47,8 @@ async function resolveSwapAssets(sellAssetInput: AssetInput, buyAssetInput: Asse
   const buyNetwork = buyAssetInput.network || sellAssetInput.network
 
   const [buyAssetsResult, sellAssetsResult] = await Promise.all([
-    executeGetAssets({ searchTerm: buyAssetInput.symbolOrName, network: buyNetwork }),
-    executeGetAssets({ searchTerm: sellAssetInput.symbolOrName, network: sellNetwork }),
+    executeGetAssetsBasic({ searchTerm: buyAssetInput.symbolOrName, network: buyNetwork }),
+    executeGetAssetsBasic({ searchTerm: sellAssetInput.symbolOrName, network: sellNetwork }),
   ])
 
   if (sellAssetsResult.assets.length === 0) {
@@ -379,7 +379,7 @@ export async function executeInitiateSwapUsd(
     throw new Error('USD amount must be a positive number')
   }
 
-  const sellAssetsResult = await executeGetAssets({
+  const sellAssetsResult = await executeGetAssetsBasic({
     searchTerm: sellAssetInput.symbolOrName,
     network: sellAssetInput.network,
   })

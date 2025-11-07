@@ -1,15 +1,15 @@
 import { ASSET_NAMESPACE, toAssetId } from '@shapeshiftoss/caip'
-import { NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
+import { NETWORKS, networkToChainIdMap, networkToNativeAssetId } from '@shapeshiftoss/types'
 import type { Asset, Network } from '@shapeshiftoss/types'
+import { decodeAssetData } from '@shapeshiftoss/utils'
+import type { EncodedAssetData } from '@shapeshiftoss/utils'
+import encodedAssetData from '@shapeshiftoss/utils/src/assetData/encodedAssetData.json'
 import axios from 'axios'
 
-import {
-  COINGECKO_API_KEY,
-  API_TIMEOUT,
-  networkToSearchPlatform,
-  coingeckoIdToNativeNetworks,
-  networkToNativeAsset,
-} from './constants'
+import { COINGECKO_API_KEY, API_TIMEOUT, networkToSearchPlatform, coingeckoIdToNativeNetworks } from './constants'
+
+// Decode asset data once at module load
+const { assetData: assetsById } = decodeAssetData(encodedAssetData as unknown as EncodedAssetData)
 
 const MAX_SEARCH_RESULTS = 5
 
@@ -109,7 +109,13 @@ export const getCoingeckoAssetsBySearchTerm = async ({
 
       // Only proceed if the target network is valid for this native asset
       if (nativeNetworks.includes(targetNetwork)) {
-        const nativeAsset = networkToNativeAsset[targetNetwork]
+        const assetId = networkToNativeAssetId[targetNetwork]
+        const nativeAsset = assetsById[assetId]
+
+        if (!nativeAsset) {
+          console.error(`Native asset not found for network: ${targetNetwork}`)
+          continue
+        }
 
         const assetWithMarketData: AssetWithMarketData = {
           assetId: nativeAsset.assetId,

@@ -108,6 +108,6 @@ export default [
     },
   },
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts', '**/.mastra/**'],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts', '**/.mastra/**', 'scripts/**'],
   },
 ]

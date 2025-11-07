@@ -26,8 +26,12 @@ import {
 } from '@shapeshiftoss/caip'
 import BigNumber from 'bignumber.js'
 
+export * from './assetData/index.js'
+export * from './assertUnreachable.js'
+export * from './getAssetNamespaceFromChainId.js'
 export * from './viem.js'
 export * from './networkIcons.js'
+export { assetService } from './AssetService.js'
 
 export const fromBaseUnit = (value: string | number | BigNumber, precision: number): string => {
   const bn = new BigNumber(value)

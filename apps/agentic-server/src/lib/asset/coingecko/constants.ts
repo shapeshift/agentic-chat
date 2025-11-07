@@ -14,7 +14,6 @@ export const networkToSearchPlatform: Partial<Record<Network, string>> = {
   gnosis: 'xdai',
   solana: 'solana',
   sui: 'sui-network',
-  // UTXO chains (bitcoin, litecoin, dogecoin) don't have search platforms - they use /coins/{id} endpoint
 }
 
 export const networkToOnchainNetwork: Partial<Record<Network, string>> = {
@@ -28,10 +27,7 @@ export const networkToOnchainNetwork: Partial<Record<Network, string>> = {
   gnosis: 'xdai',
   solana: 'solana',
   sui: 'sui',
-  // UTXO chains (bitcoin, litecoin, dogecoin) don't have onchain endpoints - they use /coins/{id} endpoint
 }
-
-export { networkToNativeAsset } from '@shapeshiftoss/types'
 
 export const coingeckoIdToNativeNetworks: Record<string, Network[]> = {
   ethereum: ['ethereum', 'optimism', 'arbitrum', 'base'],

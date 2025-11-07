@@ -1,5 +1,7 @@
-import type { ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
-import { fromBaseUnit } from '@shapeshiftoss/utils'
+import { toAssetId } from '@shapeshiftoss/caip'
+import type { KnownChainIds, Network } from '@shapeshiftoss/types'
+import { networkToChainIdMap } from '@shapeshiftoss/types'
+import { fromBaseUnit, getAssetNamespaceFromChainId } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import { z } from 'zod'
 
@@ -28,21 +30,28 @@ function determineTransactionType(
   return 'contract'
 }
 
-export function parseSolanaTransaction(tx: SolanaTx, userAddress: string): ParsedTransaction {
+export function parseSolanaTransaction(tx: SolanaTx, userAddress: string, network: Network): ParsedTransaction {
   const nativeTransfer = tx.nativeTransfers?.[0]
+  const chainId = networkToChainIdMap[network]
 
   const tokenTransfers: TokenTransfer[] | undefined =
     tx.tokenTransfers && tx.tokenTransfers.length > 0
       ? tx.tokenTransfers
           .filter(transfer => transfer.amount !== undefined && transfer.amount !== null)
-          .map(transfer => ({
-            symbol: transfer.token?.symbol || 'Unknown',
-            amount: fromBaseUnit(transfer.amount!.toString(), transfer.token?.decimals || 9),
-            decimals: transfer.token?.decimals || 9,
-            from: transfer.fromUserAccount || '',
-            to: transfer.toUserAccount || '',
-            contract: transfer.mint,
-          }))
+          .map(transfer => {
+            const assetNamespace = getAssetNamespaceFromChainId(chainId as KnownChainIds)
+            const assetId = toAssetId({ chainId, assetNamespace, assetReference: transfer.mint! })
+
+            return {
+              symbol: transfer.token?.symbol || 'Unknown',
+              amount: fromBaseUnit(transfer.amount!.toString(), transfer.token?.decimals || 9),
+              decimals: transfer.token?.decimals || 9,
+              from: transfer.fromUserAccount || '',
+              to: transfer.toUserAccount || '',
+              contract: transfer.mint,
+              assetId,
+            }
+          })
       : undefined
 
   let from = tx.feePayer
@@ -85,7 +94,8 @@ export function parseSolanaTransaction(tx: SolanaTx, userAddress: string): Parse
 
 export async function fetchSolanaTransactionHistory(
   url: string,
-  address: string
+  address: string,
+  network: Network
 ): Promise<{ transactions: ParsedTransaction[]; cursor?: string }> {
   try {
     const { data } = await axios.get(url)
@@ -98,7 +108,7 @@ export async function fetchSolanaTransactionHistory(
       })
       .parse(data)
 
-    const transactions = solanaResponse.txs.map(tx => parseSolanaTransaction(tx, address))
+    const transactions = solanaResponse.txs.map(tx => parseSolanaTransaction(tx, address, network))
 
     return {
       transactions,

@@ -11,6 +11,10 @@
       "types": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./src/assetData/*.json": {
+      "import": "./src/assetData/*.json",
+      "default": "./src/assetData/*.json"
     }
   },
   "scripts": {

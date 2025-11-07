@@ -35,8 +35,7 @@ export {
   type ContractTransaction,
   type TokenTransfer,
   isSwapTransaction,
-  networkToNativeAsset,
-} from '@shapeshiftoss/types'
+} from './lib/transactionHistory'
 export {
   portfolioTool,
   executeGetPortfolio,

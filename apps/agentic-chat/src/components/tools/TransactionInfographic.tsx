@@ -21,9 +21,10 @@ export function TransactionInfographic({ tx, network, networkIcon }: Transaction
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col items-center gap-2 flex-1">
             <AssetIcon
-              contract={swapTokens.tokenOut.contract}
-              network={network}
+              assetId={swapTokens.tokenOut.assetId}
               symbol={swapTokens.tokenOut.symbol}
+              network={network}
+              contract={swapTokens.tokenOut.contract}
               networkIcon={networkIcon}
             />
             <span className="text-xs font-medium text-center">{formatTokenAmount(swapTokens.tokenOut)}</span>
@@ -33,9 +34,10 @@ export function TransactionInfographic({ tx, network, networkIcon }: Transaction
 
           <div className="flex flex-col items-center gap-2 flex-1">
             <AssetIcon
-              contract={swapTokens.tokenIn.contract}
-              network={network}
+              assetId={swapTokens.tokenIn.assetId}
               symbol={swapTokens.tokenIn.symbol}
+              network={network}
+              contract={swapTokens.tokenIn.contract}
               networkIcon={networkIcon}
             />
             <span className="text-xs font-medium text-center">{formatTokenAmount(swapTokens.tokenIn)}</span>
@@ -53,7 +55,13 @@ export function TransactionInfographic({ tx, network, networkIcon }: Transaction
   return (
     <div className="bg-whiteAlpha-50 border border-border rounded-lg p-4 mb-3">
       <div className="flex flex-col items-center gap-2">
-        <AssetIcon contract={transfer?.contract} network={network} symbol={symbol} networkIcon={networkIcon} />
+        <AssetIcon
+          assetId={transfer?.assetId}
+          symbol={symbol}
+          network={network}
+          contract={transfer?.contract}
+          networkIcon={networkIcon}
+        />
         <span className="text-xs font-medium">{formatCryptoAmount(amount, { symbol, decimals })}</span>
       </div>
     </div>

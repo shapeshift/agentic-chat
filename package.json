@@ -18,7 +18,8 @@
     "test": "vitest",
     "lint": "eslint .",
     "lint:fix": "yarn lint --fix",
-    "type-check": "yarn workspaces foreach --all --parallel run type-check"
+    "type-check": "yarn workspaces foreach --all --parallel run type-check",
+    "update-assets": "tsx scripts/updateAssetData.ts"
   },
   "dependencies": {
     "@shapeshiftoss/agentic-server": "workspace:^",
