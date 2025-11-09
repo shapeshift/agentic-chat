@@ -3,23 +3,19 @@ import { fromChainId } from '@shapeshiftoss/caip'
 import type { StaticAsset } from '@shapeshiftoss/types'
 
 import { decodeAssetData } from './assetData/decodeAssetData.js'
-import { decodeRelatedAssetIndex } from './assetData/decodeRelatedAssetIndex.js'
 import encodedAssetData from './assetData/encodedAssetData.json'
-import encodedRelatedAssetIndex from './assetData/encodedRelatedAssetIndex.json'
 import type { EncodedAssetData } from './assetData/types.js'
 
 class AssetService {
   private static instance: AssetService
   private readonly assetsById: Record<AssetId, StaticAsset>
-  private readonly relatedAssetIndex: Record<AssetId, AssetId[]>
   private readonly assetsBySymbol: Map<string, StaticAsset[]>
   private readonly assetsByName: Map<string, StaticAsset[]>
 
   private constructor() {
-    const { assetData, sortedAssetIds } = decodeAssetData(encodedAssetData as unknown as EncodedAssetData)
+    const { assetData } = decodeAssetData(encodedAssetData as unknown as EncodedAssetData)
 
     this.assetsById = assetData
-    this.relatedAssetIndex = decodeRelatedAssetIndex(encodedRelatedAssetIndex, sortedAssetIds)
 
     this.assetsBySymbol = new Map()
     this.assetsByName = new Map()
@@ -99,11 +95,6 @@ class AssetService {
     }
 
     return Array.from(resultMap.values())
-  }
-
-  getRelatedAssets(assetId: AssetId): StaticAsset[] {
-    const relatedIds = this.relatedAssetIndex[assetId] || []
-    return relatedIds.map(id => this.assetsById[id]).filter((asset): asset is StaticAsset => asset !== undefined)
   }
 }
 

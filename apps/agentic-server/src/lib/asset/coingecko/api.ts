@@ -2,13 +2,47 @@ import type { AssetId } from '@shapeshiftoss/caip'
 import { assetIdToCoingecko } from '@shapeshiftoss/caip'
 import axios from 'axios'
 
-import { COINGECKO_API_KEY, API_TIMEOUT } from './constants'
+import type { CoinResponse, SimplePriceData, SimplePriceResult } from './types'
 
-export type SimplePriceResult = {
-  assetId: AssetId
-  price: string
+const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
+const BASE_URL = 'https://pro-api.coingecko.com/api/v3'
+const TIMEOUT = 10000
+
+const client = axios.create({
+  baseURL: BASE_URL,
+  headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
+  timeout: TIMEOUT,
+})
+
+/**
+ * Fetch full market data for a single asset by CoinGecko ID
+ * Endpoint: GET /coins/{id}
+ */
+export async function getMarketData(coinGeckoId: string): Promise<CoinResponse> {
+  const { data } = await client.get<CoinResponse>(`/coins/${coinGeckoId}`)
+  return data
 }
 
+/**
+ * Fetch simple prices for multiple assets by CoinGecko IDs
+ * Endpoint: GET /simple/price?ids={ids}&vs_currencies=usd
+ */
+export async function getBulkPrices(coinGeckoIds: string[]): Promise<SimplePriceData> {
+  if (coinGeckoIds.length === 0) return {}
+
+  const { data } = await client.get<SimplePriceData>('/simple/price', {
+    params: {
+      ids: coinGeckoIds.join(','),
+      vs_currencies: 'usd',
+    },
+  })
+
+  return data
+}
+
+/**
+ * Higher-level wrapper: fetch prices for assetIds (maps assetId → coinGeckoId internally)
+ */
 export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceResult[]> {
   if (assetIds.length === 0) return []
 
@@ -33,13 +67,7 @@ export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceR
   // Batch fetch all prices in a single API call
   if (coinGeckoIds.size > 0) {
     try {
-      const { data } = await axios.get(
-        `https://pro-api.coingecko.com/api/v3/simple/price?ids=${Array.from(coinGeckoIds).join(',')}&vs_currencies=usd`,
-        {
-          headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
-          timeout: API_TIMEOUT,
-        }
-      )
+      const data = await getBulkPrices(Array.from(coinGeckoIds))
 
       for (const [assetId, coinGeckoId] of assetIdToCoinGeckoId) {
         const price = data[coinGeckoId]?.usd?.toString() ?? '0'

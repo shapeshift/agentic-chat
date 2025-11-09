@@ -2,50 +2,23 @@ import { assetIdToCoingecko } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
 import { chainIdToNetwork, NETWORKS } from '@shapeshiftoss/types'
 import { assetService } from '@shapeshiftoss/utils'
-import axios from 'axios'
 import { z } from 'zod'
 
-import { API_TIMEOUT, COINGECKO_API_KEY } from '../lib/asset/coingecko/constants'
-import { getSimplePrices } from '../lib/asset/coingecko/getSimplePrices'
+import { getMarketData, getSimplePrices } from '../lib/asset/coingecko'
 
 export type AssetWithMarketData = Asset & {
   icon?: string
-  marketCap: string | null
-  volume24h: string | null
-  fdv: string | null
-  priceChange24h: number | null
-  circulatingSupply: string | null
-  totalSupply: string | null
-  maxSupply: string | null
-  sentimentVotesUpPercentage: number | null
-  sentimentVotesDownPercentage: number | null
-  marketCapRank: number | null
-  description: string | null
-}
-
-type CoinResponse = {
-  id: string
-  name: string
-  symbol: string
-  image: {
-    large: string
-  }
-  market_cap_rank?: number
-  sentiment_votes_up_percentage?: number
-  sentiment_votes_down_percentage?: number
-  description?: {
-    en?: string
-  }
-  market_data: {
-    current_price: Record<string, number>
-    market_cap?: Record<string, number>
-    total_volume?: Record<string, number>
-    fully_diluted_valuation?: Record<string, number>
-    price_change_percentage_24h?: number
-    circulating_supply?: number
-    total_supply?: number
-    max_supply?: number
-  }
+  marketCap?: string | null
+  volume24h?: string | null
+  fdv?: string | null
+  priceChange24h?: number | null
+  circulatingSupply?: string | null
+  totalSupply?: string | null
+  maxSupply?: string | null
+  sentimentVotesUpPercentage?: number | null
+  sentimentVotesDownPercentage?: number | null
+  marketCapRank?: number | null
+  description?: string | null
 }
 
 export const getAssetsSchema = z.object({
@@ -64,35 +37,9 @@ export type GetAssetsWithMarketDataOutput = {
   assets: AssetWithMarketData[]
 }
 
-function assetToAssetWithMarketData(asset: Asset): AssetWithMarketData {
-  return {
-    ...asset,
-    marketCap: null,
-    volume24h: null,
-    fdv: null,
-    priceChange24h: null,
-    circulatingSupply: null,
-    totalSupply: null,
-    maxSupply: null,
-    sentimentVotesUpPercentage: null,
-    sentimentVotesDownPercentage: null,
-    marketCapRank: null,
-    description: null,
-  }
-}
-
-async function fetchMarketDataByCoinGeckoId(
-  asset: Asset,
-  coinGeckoId: string,
-): Promise<AssetWithMarketData | null> {
+async function fetchMarketDataByCoinGeckoId(asset: Asset, coinGeckoId: string): Promise<AssetWithMarketData | null> {
   try {
-    const { data } = await axios.get<CoinResponse>(
-      `https://pro-api.coingecko.com/api/v3/coins/${coinGeckoId}`,
-      {
-        headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
-        timeout: API_TIMEOUT,
-      },
-    )
+    const data = await getMarketData(coinGeckoId)
 
     return {
       ...asset,
@@ -198,7 +145,7 @@ export async function executeGetAssetsWithMarketData(input: GetAssetsInput): Pro
       assetId: topAsset.assetId,
       coinGeckoId,
     })
-    return { assets: [assetToAssetWithMarketData(assetWithNetwork)] }
+    return { assets: [assetWithNetwork] }
   }
 
   if (assetIds) {
@@ -220,11 +167,11 @@ export async function executeGetAssetsWithMarketData(input: GetAssetsInput): Pro
       // Full market data would require individual /coins/{id} calls which are very slow
       const assets: AssetWithMarketData[] = staticAssets.map(staticAsset => {
         const inferredNetwork = network ?? chainIdToNetwork[staticAsset.chainId] ?? 'ethereum'
-        return assetToAssetWithMarketData({
+        return {
           ...staticAsset,
           price: priceMap.get(staticAsset.assetId) ?? '0',
           network: inferredNetwork,
-        })
+        }
       })
 
       return { assets }

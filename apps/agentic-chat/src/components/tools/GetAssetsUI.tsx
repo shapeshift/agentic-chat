@@ -1,6 +1,4 @@
 import type { AssetWithMarketData } from '@shapeshiftoss/agentic-server'
-import { fromAssetId } from '@shapeshiftoss/caip'
-import type { Network } from '@shapeshiftoss/types'
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import React, { useState } from 'react'
 
@@ -73,21 +71,13 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
     return ((vol / mcap) * 100).toFixed(2)
   })()
 
-  const { assetNamespace, assetReference } = fromAssetId(asset.assetId)
-  const contract = assetNamespace === 'slip44' ? undefined : assetReference
-
   return (
     <ToolCard.Root>
       <ToolCard.Header>
         <ToolCard.HeaderRow>
           <div className="flex items-start justify-between w-full">
             <div className="flex items-center gap-3">
-              <AssetIcon
-                assetId={asset.assetId}
-                symbol={asset.symbol}
-                network={asset.network as Network}
-                contract={contract}
-              />
+              <AssetIcon assetId={asset.assetId} />
               <div className="flex flex-col h-12 justify-between">
                 <span className="text-[20px] font-bold leading-7">{asset.name}</span>
                 <span className="text-sm text-muted-foreground font-normal leading-5">

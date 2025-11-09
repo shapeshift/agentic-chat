@@ -36,7 +36,6 @@ export const decodeAssetData = (encodedAssetData: EncodedAssetData) => {
       precision: 0,
       color: '',
       icon: '',
-      relatedAssetKey: null,
     }
 
     FIELDS.forEach((field, fieldIdx) => {
@@ -51,12 +50,6 @@ export const decodeAssetData = (encodedAssetData: EncodedAssetData) => {
             asset.icons = iconOrIcons
             asset.icon = iconOrIcons[0]
           }
-          break
-        }
-        case 'relatedAssetKey': {
-          const assetIdx = value as FieldToType[typeof field]
-          const relatedAssetId = assetIdx === null ? null : sortedAssetIds[assetIdx]
-          asset.relatedAssetKey = relatedAssetId
           break
         }
         case 'name':

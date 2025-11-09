@@ -1,32 +1,23 @@
 import type { AssetId } from '@shapeshiftoss/caip'
-import type { Network } from '@shapeshiftoss/types'
 import { assetService } from '@shapeshiftoss/utils'
 import { useMemo, useState } from 'react'
 
-import { getTrustWalletIconUrl } from '../../lib/trustwallet'
-
 type AssetIconProps = {
-  assetId?: AssetId
-  symbol: string
-  network?: Network
-  contract?: string
+  assetId: AssetId
   networkIcon?: string
   className?: string
 }
 
-export function AssetIcon({ assetId, symbol, network, contract, networkIcon, className }: AssetIconProps) {
+export function AssetIcon({ assetId, networkIcon, className }: AssetIconProps) {
   const [hasError, setHasError] = useState(false)
 
-  const assetIcon = useMemo(() => {
-    if (!assetId) return undefined
-
+  const { assetIcon, symbol } = useMemo(() => {
     const asset = assetService.getAsset(assetId)
-    if (asset?.icon) return asset.icon
-
-    if (network) return getTrustWalletIconUrl(network, contract)
-
-    return undefined
-  }, [assetId, network, contract])
+    return {
+      assetIcon: asset?.icon,
+      symbol: asset?.symbol ?? '?',
+    }
+  }, [assetId])
 
   const showFallback = !assetIcon || hasError
   const initial = symbol.charAt(0).toUpperCase()

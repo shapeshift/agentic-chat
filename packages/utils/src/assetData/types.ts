@@ -9,7 +9,6 @@ export type FieldToType = {
   color: string
   icon: string[]
   symbol: string
-  relatedAssetKey: number | null
   isPool: 0 | 1
 }
 
@@ -20,7 +19,6 @@ export type EncodedAsset = [
   FieldToType['color'],
   FieldToType['icon'],
   FieldToType['symbol'],
-  FieldToType['relatedAssetKey'],
   FieldToType['isPool'],
 ]
 
@@ -29,5 +27,3 @@ export type EncodedAssetData = {
   encodedAssetIds: string[]
   encodedAssets: EncodedAsset[]
 }
-
-export type EncodedRelatedAssetIndex = Record<number, number[]>

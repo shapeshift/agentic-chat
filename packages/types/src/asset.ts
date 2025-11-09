@@ -13,7 +13,6 @@ export const asset = z.object({
   icon: z.string().describe('The asset icon url'),
   color: z.string().optional().describe('The asset color for UI theming'),
   icons: z.array(z.string()).optional().describe('Multiple icon URLs (if available)'),
-  relatedAssetKey: z.string().nullable().optional().describe('Related asset ID (for wrapped tokens)'),
   isPool: z.boolean().optional().describe('Whether this asset is a pool token'),
 })
 
