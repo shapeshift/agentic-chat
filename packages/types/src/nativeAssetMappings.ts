@@ -3,7 +3,6 @@ import type { AssetId } from '@shapeshiftoss/caip'
 import type { Network } from './network'
 
 // Lightweight mapping from network to native asset ID
-// Replaces the heavyweight networkToNativeAsset object with just the IDs
 export const networkToNativeAssetId: Record<Network, AssetId> = {
   ethereum: 'eip155:1/slip44:60',
   optimism: 'eip155:10/slip44:60',
@@ -23,24 +22,4 @@ export const networkToNativeAssetId: Record<Network, AssetId> = {
   thorchain: 'cosmos:thorchain-1/slip44:931',
   tron: 'tron:0x2b6653dc/slip44:195',
   cardano: 'cardano:1/slip44:1815',
-}
-
-// Mapping from asset symbol to CoinGecko coin ID
-// Required for CoinGecko's /simple/price API which uses coin IDs not symbols
-export const symbolToCoinGeckoId: Record<string, string> = {
-  ETH: 'ethereum',
-  BTC: 'bitcoin',
-  AVAX: 'avalanche-2',
-  BNB: 'binancecoin',
-  POL: 'matic-network',
-  xDAI: 'xdai',
-  SOL: 'solana',
-  SUI: 'sui',
-  LTC: 'litecoin',
-  DOGE: 'dogecoin',
-  BCH: 'bitcoin-cash',
-  ATOM: 'cosmos',
-  RUNE: 'thorchain',
-  TRX: 'tron',
-  ADA: 'cardano',
 }
