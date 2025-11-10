@@ -19,5 +19,5 @@ export default defineConfig({
   bundle: true,
   splitting: false,
   treeshake: true,
-  external: ['@shapeshiftoss/caip', '@shapeshiftoss/types', '@shapeshiftoss/utils'],
+  external: [],
 })
