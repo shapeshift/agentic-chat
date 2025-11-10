@@ -1,8 +1,8 @@
 import invertBy from 'lodash/invertBy.js'
 
-import { fromAssetId } from '../../assetId'
-import { fromChainId, toChainId } from '../../chainId'
-import type { AssetId, ChainId } from '../../constants'
+import { fromAssetId } from '../../assetId.js'
+import { fromChainId, toChainId } from '../../chainId.js'
+import type { AssetId, ChainId } from '../../constants.js'
 import {
   arbitrumChainId,
   arbitrumNovaChainId,
@@ -19,9 +19,9 @@ import {
   polygonChainId,
   solanaChainId,
   thorchainChainId,
-} from '../../constants'
+} from '../../constants.js'
 
-import * as adapters from './generated'
+import * as adapters from './generated/index.js'
 
 // https://api.coingecko.com/api/v3/asset_platforms
 export enum CoingeckoAssetPlatform {
