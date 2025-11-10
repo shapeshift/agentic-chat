@@ -29,5 +29,7 @@ jobs:
           restore-keys: eslint-
 
       - run: bun install --frozen-lockfile
-      - run: bun build
-      - run: bun concurrently --kill-others-on-fail "bun type-check" "bun lint" "bun test"
+      - run: bun run build
+      - run: bun run type-check
+      - run: bun run lint
+      - run: bun run test
