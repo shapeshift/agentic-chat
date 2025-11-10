@@ -71,8 +71,11 @@ export const getBebopRate = async ({
     if (!data.routes?.[0]?.quote) throw new Error('No routes found in Bebop response')
 
     const quote = data.routes[0].quote
-    const buyAmountCryptoBaseUnit = quote.buyTokens[buyTokenAddress].amount.toString()
-    const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, quote.buyTokens[buyTokenAddress].decimals)
+    const buyToken = quote.buyTokens[buyTokenAddress]
+    if (!buyToken) throw new Error('Buy token not found in quote')
+
+    const buyAmountCryptoBaseUnit = buyToken.amount.toString()
+    const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, buyToken.decimals)
 
     return {
       approvalTarget: quote.approvalTarget,

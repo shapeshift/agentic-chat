@@ -3291,6 +3291,8 @@ __metadata:
 "@shapeshiftoss/caip@workspace:^, @shapeshiftoss/caip@workspace:packages/caip":
   version: 0.0.0-use.local
   resolution: "@shapeshiftoss/caip@workspace:packages/caip"
+  dependencies:
+    lodash: "npm:^4.17.21"
   languageName: unknown
   linkType: soft
 

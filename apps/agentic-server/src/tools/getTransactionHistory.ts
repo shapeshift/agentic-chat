@@ -1,4 +1,5 @@
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
+import type { Network } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
 import { getUnchainedHttpUrlEnvVar } from '@shapeshiftoss/utils'
 import type { z } from 'zod'
@@ -27,14 +28,15 @@ export type GetTransactionHistoryOutput = {
 async function fetchTransactionHistory(
   chainNamespace: string,
   url: string,
-  address: string
+  address: string,
+  network: Network
 ): Promise<{ transactions: ParsedTransaction[]; cursor?: string }> {
   if (chainNamespace === CHAIN_NAMESPACE.Evm) {
-    return fetchEvmTransactionHistory(url, address)
+    return fetchEvmTransactionHistory(url, address, network)
   }
 
   if (chainNamespace === CHAIN_NAMESPACE.Solana) {
-    return fetchSolanaTransactionHistory(url, address)
+    return fetchSolanaTransactionHistory(url, address, network)
   }
 
   throw new Error(`Transaction history not supported for chain namespace: ${chainNamespace}`)
@@ -75,7 +77,7 @@ export async function executeGetTransactionHistory(
   const safeUrl = url.replace(address, maskedAddress)
   console.log('[getTransactionHistory] Fetching:', safeUrl)
 
-  const { transactions, cursor: responseCursor } = await fetchTransactionHistory(chainNamespace, url, address)
+  const { transactions, cursor: responseCursor } = await fetchTransactionHistory(chainNamespace, url, address, network)
 
   return {
     address,

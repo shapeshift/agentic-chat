@@ -6,8 +6,8 @@ export {
   type GetAssetsInput,
   type GetAssetsInput as GetAssetsToolInput,
   type GetAssetsOutput,
+  type AssetWithMarketData,
 } from './tools/getAssets'
-export { type AssetWithMarketData } from './lib/asset/coingecko/getCoingeckoAssetsBySearchTerm'
 export {
   getAccountTool,
   executeGetAccount,
@@ -35,8 +35,7 @@ export {
   type ContractTransaction,
   type TokenTransfer,
   isSwapTransaction,
-  networkToNativeAsset,
-} from '@shapeshiftoss/types'
+} from './lib/transactionHistory'
 export {
   portfolioTool,
   executeGetPortfolio,

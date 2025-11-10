@@ -24,13 +24,15 @@ export default [
     },
     settings: {
       'import/resolver': {
-        typescript: true,
+        typescript: {
+          project: ['./tsconfig.node.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json'],
+        },
       },
     },
     rules: {
       // Recommended rules
-      ...typescript.configs.recommended.rules,
-      ...typescript.configs['recommended-requiring-type-checking'].rules,
+      ...(typescript.configs.recommended?.rules ?? {}),
+      ...(typescript.configs['recommended-requiring-type-checking']?.rules ?? {}),
 
       // Typescript rules
       '@typescript-eslint/await-thenable': 'error',
@@ -108,6 +110,14 @@ export default [
     },
   },
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts', '**/.mastra/**'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/*.d.ts',
+      '**/.mastra/**',
+      'scripts/**',
+      '**/tailwind.config.js',
+      '**/postcss.config.js',
+    ],
   },
 ]

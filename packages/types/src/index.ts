@@ -1,5 +1,7 @@
 export * from './account.js'
 export * from './asset.js'
+export * from './knownChainIds.js'
+export * from './nativeAssetMappings.js'
 export * from './network.js'
 export * from './rate.js'
 export * from './tx.js'

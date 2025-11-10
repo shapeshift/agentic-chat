@@ -6,7 +6,7 @@ import { getAddressForNetwork } from '../utils/walletContextSimple'
 import type { WalletContext } from '../utils/walletContextSimple'
 
 import { executeGetAccount } from './getAccount'
-import { executeGetAssets } from './getAssets'
+import { executeGetAssetsBasic } from './getAssets'
 
 export const portfolioSchema = z.object({
   network: z.enum(NETWORKS).describe('Network name (e.g., ethereum, arbitrum, solana)'),
@@ -44,7 +44,7 @@ export async function executeGetPortfolio(
   const { balances } = await executeGetAccount({ account, network })
 
   const assetIds = Object.keys(balances)
-  const { assets } = await executeGetAssets({ assetIds })
+  const { assets } = await executeGetAssetsBasic({ assetIds })
 
   const assetMap = new Map(assets.map(asset => [asset.assetId, asset]))
 

@@ -1,3 +1,5 @@
+import type { AssetId } from '@shapeshiftoss/caip'
+
 export type TokenTransfer = {
   symbol: string
   amount: string
@@ -5,6 +7,7 @@ export type TokenTransfer = {
   from: string
   to: string
   contract?: string
+  assetId: AssetId
 }
 
 type BaseTransaction = {

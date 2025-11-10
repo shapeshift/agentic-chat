@@ -1,32 +1,31 @@
-import type { Network } from '@shapeshiftoss/types'
-import { useState } from 'react'
-
-import { getTrustWalletIconUrl } from '../../lib/trustwallet'
+import type { AssetId } from '@shapeshiftoss/caip'
+import { assetService } from '@shapeshiftoss/utils'
+import { useMemo, useState } from 'react'
 
 type AssetIconProps = {
-  icon?: string
-  contract?: string
-  network?: Network
-  symbol: string
+  assetId: AssetId
   networkIcon?: string
   className?: string
 }
 
-export function AssetIcon({ icon, contract, network, symbol, networkIcon, className }: AssetIconProps) {
+export function AssetIcon({ assetId, networkIcon, className }: AssetIconProps) {
   const [hasError, setHasError] = useState(false)
-  const generatedIcon = icon || (network ? getTrustWalletIconUrl(network, contract) : undefined)
-  const showFallback = !generatedIcon || hasError
+
+  const { assetIcon, symbol } = useMemo(() => {
+    const asset = assetService.getAsset(assetId)
+    return {
+      assetIcon: asset?.icon,
+      symbol: asset?.symbol ?? '?',
+    }
+  }, [assetId])
+
+  const showFallback = !assetIcon || hasError
   const initial = symbol.charAt(0).toUpperCase()
 
   return (
     <div className={`relative ${className ?? 'w-10 h-10'}`}>
-      {generatedIcon && !hasError && (
-        <img
-          src={generatedIcon}
-          alt={symbol}
-          className="w-full h-full rounded-full"
-          onError={() => setHasError(true)}
-        />
+      {assetIcon && !hasError && (
+        <img src={assetIcon} alt={symbol} className="w-full h-full rounded-full" onError={() => setHasError(true)} />
       )}
       {showFallback && (
         <div className="w-full h-full rounded-full flex items-center justify-center bg-primary text-primary-foreground font-bold text-sm">

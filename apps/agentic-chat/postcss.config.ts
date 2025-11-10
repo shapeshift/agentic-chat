@@ -7,7 +7,7 @@ import { join } from 'path'
 export default {
   plugins: {
     '@tailwindcss/postcss': {
-      config: join(__dirname, 'tailwind.config.ts'),
+      config: join(__dirname, 'tailwind.config.js'),
     },
     autoprefixer: {},
   },

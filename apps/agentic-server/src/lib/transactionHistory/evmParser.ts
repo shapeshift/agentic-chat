@@ -1,5 +1,7 @@
-import type { ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
-import { fromBaseUnit } from '@shapeshiftoss/utils'
+import { toAssetId } from '@shapeshiftoss/caip'
+import type { KnownChainIds, Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
+import { networkToChainIdMap, networkToNativeAssetId } from '@shapeshiftoss/types'
+import { fromBaseUnit, getAssetNamespaceFromChainId } from '@shapeshiftoss/utils'
 import axios from 'axios'
 import z from 'zod'
 
@@ -114,11 +116,12 @@ function determineTransactionType(tx: EvmTx, userAddress: string): ParsedTransac
   return 'contract'
 }
 
-export function parseEvmTransaction(tx: EvmTx, userAddress: string): ParsedTransaction {
+export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Network): ParsedTransaction {
   const type = determineTransactionType(tx, userAddress)
   const netTransfers = calculateNetTransfers(tx, userAddress)
   const normalizedUserAddress = userAddress.toLowerCase()
   const normalizedFrom = tx.from.toLowerCase()
+  const chainId = networkToChainIdMap[network]
 
   let tokenTransfers: TokenTransfer[] | undefined
 
@@ -129,17 +132,23 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string): ParsedTrans
       return 0
     })
 
-    tokenTransfers = sortedTransfers.map(transfer => ({
-      symbol: transfer.symbol,
-      amount: fromBaseUnit(
-        transfer.netAmount < 0n ? (-transfer.netAmount).toString() : transfer.netAmount.toString(),
-        transfer.decimals
-      ),
-      decimals: transfer.decimals,
-      from: transfer.netAmount < 0n ? userAddress : transfer.from,
-      to: transfer.netAmount > 0n ? userAddress : transfer.to,
-      contract: transfer.contract,
-    }))
+    tokenTransfers = sortedTransfers.map(transfer => {
+      const assetNamespace = getAssetNamespaceFromChainId(chainId as KnownChainIds)
+      const assetId = toAssetId({ chainId, assetNamespace, assetReference: transfer.contract })
+
+      return {
+        symbol: transfer.symbol,
+        amount: fromBaseUnit(
+          transfer.netAmount < 0n ? (-transfer.netAmount).toString() : transfer.netAmount.toString(),
+          transfer.decimals
+        ),
+        decimals: transfer.decimals,
+        from: transfer.netAmount < 0n ? userAddress : transfer.from,
+        to: transfer.netAmount > 0n ? userAddress : transfer.to,
+        contract: transfer.contract,
+        assetId,
+      }
+    })
 
     const hasNativeValue = BigInt(tx.value) > 0n && normalizedFrom === normalizedUserAddress
     const hasNegativeToken = sortedTransfers.some(t => t.netAmount < 0n)
@@ -152,6 +161,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string): ParsedTrans
           decimals: EVM_NATIVE_DECIMALS,
           from: userAddress,
           to: tx.to,
+          assetId: networkToNativeAssetId[network],
         },
         ...tokenTransfers,
       ]
@@ -165,14 +175,20 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string): ParsedTrans
 
     tokenTransfers =
       userInvolvedTransfers.length > 0
-        ? userInvolvedTransfers.map(transfer => ({
-            symbol: transfer.symbol,
-            amount: fromBaseUnit(transfer.value, transfer.decimals),
-            decimals: transfer.decimals,
-            from: transfer.from,
-            to: transfer.to,
-            contract: transfer.contract,
-          }))
+        ? userInvolvedTransfers.map(transfer => {
+            const assetNamespace = getAssetNamespaceFromChainId(chainId as KnownChainIds)
+            const assetId = toAssetId({ chainId, assetNamespace, assetReference: transfer.contract })
+
+            return {
+              symbol: transfer.symbol,
+              amount: fromBaseUnit(transfer.value, transfer.decimals),
+              decimals: transfer.decimals,
+              from: transfer.from,
+              to: transfer.to,
+              contract: transfer.contract,
+              assetId,
+            }
+          })
         : undefined
   }
 
@@ -204,7 +220,8 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string): ParsedTrans
 
 export async function fetchEvmTransactionHistory(
   url: string,
-  address: string
+  address: string,
+  network: Network
 ): Promise<{ transactions: ParsedTransaction[]; cursor?: string }> {
   try {
     const { data } = await axios.get(url)
@@ -217,7 +234,7 @@ export async function fetchEvmTransactionHistory(
       })
       .parse(data)
 
-    const transactions = evmResponse.txs.map(tx => parseEvmTransaction(tx, address))
+    const transactions = evmResponse.txs.map(tx => parseEvmTransaction(tx, address, network))
 
     return {
       transactions,
