@@ -1,4 +1,4 @@
-import invertBy from 'lodash/invertBy'
+import invertBy from 'lodash/invertBy.js'
 
 import { fromAssetId } from '../../assetId'
 import { fromChainId, toChainId } from '../../chainId'
