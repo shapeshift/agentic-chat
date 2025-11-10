@@ -75,6 +75,8 @@ export async function executeGetAssetsBasic(input: GetAssetsInput): Promise<GetA
     }
 
     const topAsset = staticAssets[0]
+    if (!topAsset) return { assets: [] }
+
     const prices = await getSimplePrices([topAsset.assetId])
     const price = prices.find(p => p.assetId === topAsset.assetId)?.price ?? '0'
 
@@ -124,6 +126,8 @@ export async function executeGetAssetsWithMarketData(input: GetAssetsInput): Pro
     }
 
     const topAsset = staticAssets[0]
+    if (!topAsset) return { assets: [] }
+
     const inferredNetwork = network ?? chainIdToNetwork[topAsset.chainId] ?? 'ethereum'
     const assetWithNetwork: Asset = {
       ...topAsset,

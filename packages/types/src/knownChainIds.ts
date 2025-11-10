@@ -16,4 +16,7 @@ export enum KnownChainIds {
   ThorchainMainnet = 'cosmos:thorchain-1',
   MayachainMainnet = 'cosmos:mayachain-mainnet-v1',
   SolanaMainnet = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+  TronMainnet = 'tron:0x2b6653dc',
+  CardanoMainnet = 'cardano:1',
+  SuiMainnet = 'sui:mainnet',
 }

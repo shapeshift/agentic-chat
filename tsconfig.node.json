@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "Bundler"
+  },
+  "include": ["*.ts", "scripts/**/*.ts", "apps/*/*.ts", "apps/*/*.mts"]
+}

@@ -1,50 +1,11 @@
 {
-  "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "types": ["node", "vite/client", "vitest/globals"],
-    "skipLibCheck": true,
-    "noEmit": true,
-    "noEmitOnError": true,
-
-    /* Type Checking */
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "strict": true,
-    "noImplicitReturns": false,
-
-    /* Module Resolution Options */
-    "baseUrl": ".",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "paths": {
-      "@/*": ["apps/agentic-chat/src/*"]
-    },
-
-    /* Interop Constraints */
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-
-    /* Language and Environment */
-    "jsx": "react-jsx",
-  },
-  "include": [
-    "apps/**/*",
-    "apps/**/*.json",
-    "packages/**/*",
-    "packages/**/*.json",
-    "eslint.config.ts",
-    "vitest.config.ts",
-    "*.json"
-  ],
-  "exclude": ["dist", "node_modules"],
+  "files": [],
   "references": [
-    { "path": "./apps/agentic-server" },
+    { "path": "./tsconfig.node.json" },
+    { "path": "./packages/caip" },
     { "path": "./packages/types" },
-    { "path": "./packages/utils" }
+    { "path": "./packages/utils" },
+    { "path": "./apps/agentic-server" },
+    { "path": "./apps/agentic-chat" }
   ]
 }

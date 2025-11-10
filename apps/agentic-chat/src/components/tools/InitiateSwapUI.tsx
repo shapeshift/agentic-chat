@@ -30,6 +30,16 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
   }
 
   const [quoteStep, networkStep, approvalStep, swapStep] = steps
+  if (!quoteStep || !networkStep || !approvalStep || !swapStep) {
+    return (
+      <TxStepCard.Root>
+        <div className="text-sm text-muted-foreground font-medium p-4">
+          ⚠️ Unable to load swap steps. Please try again.
+        </div>
+      </TxStepCard.Root>
+    )
+  }
+
   const completedCount = [quoteStep.status, networkStep.status, approvalStep.status, swapStep.status].filter(
     s => s === StepStatus.COMPLETE || s === StepStatus.SKIPPED
   ).length

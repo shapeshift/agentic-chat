@@ -56,7 +56,7 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
     return null
   }
 
-  const priceChange24h = formatPriceChange(asset.priceChange24h)
+  const priceChange24h = formatPriceChange(asset.priceChange24h ?? null)
   const description = asset.description || 'No description available for this asset.'
   const shouldTruncate = description.length > 200
   const displayDescription = descriptionExpanded || !shouldTruncate ? description : `${description.slice(0, 200)}...`
@@ -152,10 +152,10 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-green-500 font-medium">
-                        {asset.sentimentVotesUpPercentage.toFixed(1)}% Bullish
+                        {asset.sentimentVotesUpPercentage?.toFixed(1)}% Bullish
                       </span>
                       <span className="text-red-500 font-medium">
-                        {asset.sentimentVotesDownPercentage.toFixed(1)}% Bearish
+                        {asset.sentimentVotesDownPercentage?.toFixed(1)}% Bearish
                       </span>
                     </div>
                   </>

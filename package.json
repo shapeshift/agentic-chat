@@ -8,7 +8,7 @@
   },
   "scripts": {
     "clean": "yarn workspaces foreach --all --parallel run clean && rm -rf node_modules",
-    "build": "yarn workspaces foreach --all --include 'packages/*' --parallel run build && yarn workspace @shapeshiftoss/agentic-server build:tsc",
+    "build": "tsc --build",
     "build:chat": "yarn workspaces foreach --all --include 'packages/*' --parallel run build && yarn workspace @shapeshiftoss/agentic-chat build",
     "dev": "concurrently \"yarn dev:packages\" \"yarn dev:apps\"",
     "dev:apps": "concurrently \"yarn workspace @shapeshiftoss/agentic-server dev\" \"yarn workspace @shapeshiftoss/agentic-chat dev\"",
@@ -18,7 +18,7 @@
     "test": "vitest",
     "lint": "eslint .",
     "lint:fix": "yarn lint --fix",
-    "type-check": "yarn workspaces foreach --all --parallel run type-check",
+    "type-check": "tsc --build",
     "update-assets": "tsx scripts/updateAssetData.ts"
   },
   "dependencies": {

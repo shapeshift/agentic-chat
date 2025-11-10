@@ -26,6 +26,7 @@ export const decodeAssetData = (encodedAssetData: EncodedAssetData) => {
 
   const assetData = encodedAssets.reduce<Record<AssetId, StaticAsset>>((acc, encodedAsset, idx) => {
     const assetId = sortedAssetIds[idx]
+    if (!assetId) return acc
     const { chainId } = fromAssetId(assetId)
 
     const asset: StaticAsset = {
@@ -44,9 +45,9 @@ export const decodeAssetData = (encodedAssetData: EncodedAssetData) => {
       switch (field) {
         case 'icon': {
           const iconOrIcons = value as FieldToType[typeof field]
-          if (iconOrIcons.length === 1) {
+          if (iconOrIcons.length === 1 && iconOrIcons[0]) {
             asset.icon = iconOrIcons[0]
-          } else if (iconOrIcons.length > 1) {
+          } else if (iconOrIcons.length > 1 && iconOrIcons[0]) {
             asset.icons = iconOrIcons
             asset.icon = iconOrIcons[0]
           }

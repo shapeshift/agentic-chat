@@ -1,5 +1,5 @@
 import { toAssetId } from '@shapeshiftoss/caip'
-import type { KnownChainIds, Network } from '@shapeshiftoss/types'
+import type { KnownChainIds, Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
 import { networkToChainIdMap, networkToNativeAssetId } from '@shapeshiftoss/types'
 import { fromBaseUnit, getAssetNamespaceFromChainId } from '@shapeshiftoss/utils'
 import axios from 'axios'

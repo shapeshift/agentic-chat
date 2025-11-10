@@ -1,6 +1,6 @@
 import type { AssetId } from '@shapeshiftoss/caip'
-import { fromChainId } from '@shapeshiftoss/caip'
 import type { StaticAsset } from '@shapeshiftoss/types'
+import { chainIdToNetwork, networkToChainIdMap } from '@shapeshiftoss/types'
 
 import { decodeAssetData } from './assetData/decodeAssetData.js'
 import encodedAssetData from './assetData/encodedAssetData.json'
@@ -50,12 +50,14 @@ class AssetService {
     const results = this.assetsBySymbol.get(symbol.toLowerCase()) || []
 
     if (network) {
+      const normalized = network.toLowerCase()
+      const candidateChainId = normalized.includes(':')
+        ? normalized
+        : (networkToChainIdMap as Record<string, string>)[normalized]?.toLowerCase()
+
       return results.filter(asset => {
-        const { chainNamespace, chainReference } = fromChainId(asset.chainId)
-        const assetNetwork = `${chainNamespace}:${chainReference}`.toLowerCase()
-        return (
-          assetNetwork.includes(network.toLowerCase()) || asset.chainId.toLowerCase().includes(network.toLowerCase())
-        )
+        const assetNetwork = chainIdToNetwork[asset.chainId]
+        return assetNetwork === normalized || asset.chainId === candidateChainId
       })
     }
 
@@ -73,12 +75,14 @@ class AssetService {
     const results = [...exactMatches, ...partialMatches]
 
     if (network) {
+      const normalized = network.toLowerCase()
+      const candidateChainId = normalized.includes(':')
+        ? normalized
+        : (networkToChainIdMap as Record<string, string>)[normalized]?.toLowerCase()
+
       return results.filter(asset => {
-        const { chainNamespace, chainReference } = fromChainId(asset.chainId)
-        const assetNetwork = `${chainNamespace}:${chainReference}`.toLowerCase()
-        return (
-          assetNetwork.includes(network.toLowerCase()) || asset.chainId.toLowerCase().includes(network.toLowerCase())
-        )
+        const assetNetwork = chainIdToNetwork[asset.chainId]
+        return assetNetwork === normalized || asset.chainId === candidateChainId
       })
     }
 

@@ -18,6 +18,7 @@ export type TokenTransfer = {
   from: string
   to: string
   contract?: string
+  assetId: string
 }
 
 type BaseTransaction = {

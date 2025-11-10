@@ -71,6 +71,10 @@ async function resolveSwapAssets(sellAssetInput: AssetInput, buyAssetInput: Asse
   const sellAsset = sellAssetsResult.assets[0]
   const buyAsset = buyAssetsResult.assets[0]
 
+  if (!sellAsset || !buyAsset) {
+    throw new Error('Could not resolve sell or buy asset')
+  }
+
   return { sellAsset, buyAsset }
 }
 
@@ -280,7 +284,7 @@ async function executeSwapInternal({
 
   const accountData = await executeGetAccount({
     account: sellAddress,
-    network: chainIdToNetwork[sellAsset.chainId],
+    network: chainIdToNetwork[sellAsset.chainId] ?? 'ethereum',
   })
 
   const userBalance = accountData.balances[sellAsset.assetId] || '0'
@@ -394,6 +398,10 @@ export async function executeInitiateSwapUsd(
   }
 
   const sellAsset = sellAssetsResult.assets[0]
+  if (!sellAsset) {
+    throw new Error('Could not resolve sell asset')
+  }
+
   const sellAssetPrice = parseFloat(sellAsset.price || '0')
 
   if (sellAssetPrice <= 0) {
