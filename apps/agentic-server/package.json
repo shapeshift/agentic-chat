@@ -14,25 +14,22 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsup",
-    "build:tsc": "tsup && yarn run -T tsc --emitDeclarationOnly",
-    "dev": "NODE_OPTIONS=\"--import tsx/esm\" DOTENV_CONFIG_PATH=../../.env.local tsx --watch --require dotenv/config src/server.ts",
-    "start": "node dist/server.js",
-    "type-check": "yarn run -T tsc --noEmit"
+    "build:tsc": "tsup && tsc --emitDeclarationOnly",
+    "dev": "bun --env-file=../../.env.local --watch src/server.ts",
+    "start": "bun dist/server.js",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.41",
-    "@hono/node-server": "^1.19.5",
     "@solana/spl-token": "^0.4.0",
     "@solana/web3.js": "^1.95.2",
     "ai": "^5.0.76",
     "axios": "^1.11.0",
-    "dotenv": "^17.2.3",
     "expr-eval": "^2.0.2",
     "hono": "^4.10.2",
     "zod": "*"
   },
   "devDependencies": {
-    "tsup": "^8.5.0",
-    "tsx": "^4.20.6"
+    "tsup": "^8.5.0"
   }
 }

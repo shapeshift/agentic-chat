@@ -18,10 +18,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v1
         with:
-          node-version: 23
-          cache: "yarn"
+          bun-version: latest
 
       - uses: actions/cache@v4
         with:
@@ -29,6 +28,6 @@ jobs:
           key: eslint-${{ hashFiles('eslint.config.ts') }}
           restore-keys: eslint-
 
-      - run: yarn install --frozen-lockfile
-      - run: yarn build
-      - run: yarn concurrently --kill-others-on-fail "yarn type-check" "yarn lint" "yarn test"
+      - run: bun install --frozen-lockfile
+      - run: bun build
+      - run: bun concurrently --kill-others-on-fail "bun type-check" "bun lint" "bun test"

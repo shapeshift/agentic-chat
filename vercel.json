@@ -1,7 +1,7 @@
 {
-  "buildCommand": "yarn build:chat",
+  "buildCommand": "bun build:chat",
   "outputDirectory": "apps/agentic-chat/dist",
-  "installCommand": "yarn install",
+  "installCommand": "bun install",
   "framework": "vite",
   "rewrites": [
     {

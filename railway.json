@@ -2,7 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "yarn install && yarn workspaces foreach --all --include \"packages/*\" --parallel run build && yarn workspace @shapeshiftoss/agentic-server build",
+    "buildCommand": "bun install && bun build:server",
     "watchPatterns": [
       "apps/agentic-server/**",
       "packages/caip/**",
@@ -10,13 +10,12 @@
       "packages/types/**",
       "railway.json",
       "package.json",
-      "yarn.lock",
-      ".yarnrc.yml",
+      "bun.lockb",
       "tsconfig.json"
     ]
   },
   "deploy": {
-    "startCommand": "node apps/agentic-server/dist/server.js",
+    "startCommand": "bun apps/agentic-server/dist/server.js",
     "restartPolicyType": "ON_FAILURE",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100
