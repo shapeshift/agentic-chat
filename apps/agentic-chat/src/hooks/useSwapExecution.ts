@@ -2,7 +2,7 @@ import { useAppKitProvider } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import type { DynamicToolUIPart } from 'ai'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSwitchChain } from 'wagmi'
 
 import type { PersistedToolState } from '@/stores/toolExecutionStore'
@@ -136,15 +136,24 @@ export const useSwapExecution = (
   const store = useToolExecutionStore()
 
   const hasHydratedRef = useRef(false)
-  if (!hasHydratedRef.current && !store.toolStates.has(toolCallId)) {
-    const persisted = store.getPersistedState(toolCallId)
-    if (persisted) {
-      const hydratedState = persistedStateToSwapState(persisted)
-      store.initializeState(toolCallId, hydratedState)
-      store.markExecuted(toolCallId)
-      hasHydratedRef.current = true
+  const lastToolCallIdRef = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    // Reset hydration flag when toolCallId changes
+    if (lastToolCallIdRef.current !== toolCallId) {
+      hasHydratedRef.current = false
+      lastToolCallIdRef.current = toolCallId
     }
-  }
+
+    if (!hasHydratedRef.current && !store.toolStates.has(toolCallId)) {
+      const persisted = store.getPersistedState(toolCallId)
+      if (persisted) {
+        const hydratedState = persistedStateToSwapState(persisted)
+        store.initializeState(toolCallId, hydratedState)
+        store.markExecuted(toolCallId)
+        hasHydratedRef.current = true
+      }
+    }
+  }, [toolCallId, store])
 
   const { state } = useToolExecutionEffect(
     toolCallId,

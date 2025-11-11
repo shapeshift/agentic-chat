@@ -1,21 +1,23 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
-import { chainIdToNetwork } from '@shapeshiftoss/types'
-import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
-import { PublicKey } from '@solana/web3.js'
+import { toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
 import { assetInputSchema } from '../lib/schemas/swapSchemas'
 import type { AssetInput, swapPreparationSchema } from '../lib/schemas/swapSchemas'
 import { getAllowance } from '../utils'
-import { isEvmChain, isSolanaChain } from '../utils/chains/helpers'
+import { validateAddress } from '../utils/addressValidation'
+import { resolveAsset } from '../utils/assetHelpers'
+import { validateSufficientBalance } from '../utils/balanceHelpers'
+import { isEvmChain } from '../utils/chains/helpers'
 import { getBebopRate } from '../utils/getBebopRate'
 import { getRelayRate } from '../utils/getRelayRate'
+import { networkToFeeSymbol } from '../utils/networkHelpers'
+import { createTransaction } from '../utils/transactionHelpers'
 import { getAddressForChain } from '../utils/walletContextSimple'
 import type { WalletContext } from '../utils/walletContextSimple'
 
-import { executeGetAccount } from './getAccount'
 import { executeGetAssetsBasic } from './getAssets'
 
 interface ResolvedAssets {
@@ -23,57 +25,21 @@ interface ResolvedAssets {
   buyAsset: Asset
 }
 
-function createTransaction(tx: {
-  chainId: string | number
-  data: string
-  from: string
-  to: string
-  value: string
-  gasLimit?: string
-}) {
-  return {
-    chainId: String(tx.chainId),
-    data: tx.data || '',
-    from: tx.from,
-    to: tx.to,
-    value: tx.value,
-    ...(tx.gasLimit && { gasLimit: tx.gasLimit }),
-  }
-}
-
 async function resolveSwapAssets(sellAssetInput: AssetInput, buyAssetInput: AssetInput): Promise<ResolvedAssets> {
   // If only one network is specified, default to same-chain swap
-  const sellNetwork = sellAssetInput.network || buyAssetInput.network
-  const buyNetwork = buyAssetInput.network || sellAssetInput.network
+  const sellInputWithNetwork = {
+    ...sellAssetInput,
+    network: sellAssetInput.network || buyAssetInput.network,
+  }
+  const buyInputWithNetwork = {
+    ...buyAssetInput,
+    network: buyAssetInput.network || sellAssetInput.network,
+  }
 
-  const [buyAssetsResult, sellAssetsResult] = await Promise.all([
-    executeGetAssetsBasic({ searchTerm: buyAssetInput.symbolOrName, network: buyNetwork }),
-    executeGetAssetsBasic({ searchTerm: sellAssetInput.symbolOrName, network: sellNetwork }),
+  const [sellAsset, buyAsset] = await Promise.all([
+    resolveAsset(sellInputWithNetwork),
+    resolveAsset(buyInputWithNetwork),
   ])
-
-  if (sellAssetsResult.assets.length === 0) {
-    throw new Error(
-      `No asset found for "${sellAssetInput.symbolOrName}"${sellAssetInput.network ? ` on ${sellAssetInput.network}` : ''}`
-    )
-  }
-  if (sellAssetsResult.assets.length > 1) {
-    throw new Error(`Multiple assets found for "${sellAssetInput.symbolOrName}". Please be more specific.`)
-  }
-  if (buyAssetsResult.assets.length === 0) {
-    throw new Error(
-      `No asset found for "${buyAssetInput.symbolOrName}"${buyAssetInput.network ? ` on ${buyAssetInput.network}` : ''}`
-    )
-  }
-  if (buyAssetsResult.assets.length > 1) {
-    throw new Error(`Multiple assets found for "${buyAssetInput.symbolOrName}". Please be more specific.`)
-  }
-
-  const sellAsset = sellAssetsResult.assets[0]
-  const buyAsset = buyAssetsResult.assets[0]
-
-  if (!sellAsset || !buyAsset) {
-    throw new Error('Could not resolve sell or buy asset')
-  }
 
   return { sellAsset, buyAsset }
 }
@@ -192,18 +158,6 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
       ? (((parseFloat(buyEstimatedValueUSD) - parseFloat(sellValueUSD)) / parseFloat(sellValueUSD)) * 100).toFixed(2)
       : null
 
-  const networkToFeeSymbol: Record<string, string> = {
-    ethereum: 'ETH',
-    optimism: 'ETH',
-    arbitrum: 'ETH',
-    base: 'ETH',
-    polygon: 'POL',
-    avalanche: 'AVAX',
-    bsc: 'BNB',
-    gnosis: 'xDAI',
-    solana: 'SOL',
-  }
-
   const feeSymbol = networkToFeeSymbol[sellAsset.network] || sellAsset.symbol.toUpperCase()
 
   return {
@@ -255,21 +209,8 @@ async function executeSwapInternal({
   const sellAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const buyAddress = getAddressForChain(walletContext, buyAsset.chainId)
 
-  if (isSolanaChain(sellAsset.chainId)) {
-    try {
-      new PublicKey(sellAddress)
-    } catch {
-      throw new Error(`Invalid Solana address for sell asset: ${sellAddress}`)
-    }
-  }
-
-  if (isSolanaChain(buyAsset.chainId)) {
-    try {
-      new PublicKey(buyAddress)
-    } catch {
-      throw new Error(`Invalid Solana address for buy asset: ${buyAddress}`)
-    }
-  }
+  validateAddress(sellAddress, sellAsset.chainId)
+  validateAddress(buyAddress, buyAsset.chainId)
 
   const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmountCrypto)
 
@@ -282,20 +223,7 @@ async function executeSwapInternal({
 
   const needsApproval = allowanceData.isApprovalRequired
 
-  const accountData = await executeGetAccount({
-    account: sellAddress,
-    network: chainIdToNetwork[sellAsset.chainId] ?? 'ethereum',
-  })
-
-  const userBalance = accountData.balances[sellAsset.assetId] || '0'
-  const sellAmountBaseUnit = toBaseUnit(sellAmountCrypto, sellAsset.precision)
-
-  if (BigInt(userBalance) < BigInt(sellAmountBaseUnit)) {
-    const availableAmount = fromBaseUnit(userBalance, sellAsset.precision)
-    throw new Error(
-      `Insufficient ${sellAsset.symbol} balance. Required: ${sellAmountCrypto}, Available: ${availableAmount}`
-    )
-  }
+  await validateSufficientBalance(sellAddress, sellAsset, sellAmountCrypto)
 
   const approvalTx = buildApprovalTransaction(
     needsApproval,
