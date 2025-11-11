@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "clean": "rm -rf dist node_modules",
-    "build": "NODE_NO_WARNINGS=1 yarn vite build",
-    "dev": "NODE_NO_WARNINGS=1 yarn vite",
-    "preview": "yarn build && NODE_NO_WARNINGS=1 yarn vite preview",
-    "type-check": "yarn run -T tsc --noEmit"
+    "build": "bun vite build",
+    "dev": "bun vite",
+    "preview": "bun build && bun vite preview",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.76",

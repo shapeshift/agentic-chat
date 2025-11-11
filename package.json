@@ -3,23 +3,23 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
+  "type": "module",
   "engines": {
-    "node": "22.x"
+    "bun": ">=1.1.42"
   },
   "scripts": {
-    "clean": "yarn workspaces foreach --all --parallel run clean && rm -rf node_modules",
-    "build": "tsc --build",
-    "build:chat": "yarn workspaces foreach --all --include 'packages/*' --parallel run build && yarn workspace @shapeshiftoss/agentic-chat build",
-    "dev": "concurrently \"yarn dev:packages\" \"yarn dev:apps\"",
-    "dev:apps": "concurrently \"yarn workspace @shapeshiftoss/agentic-server dev\" \"yarn workspace @shapeshiftoss/agentic-chat dev\"",
-    "dev:packages": "yarn workspaces foreach --all --include 'packages/*' --parallel run dev",
-    "dev:backend": "yarn workspace @shapeshiftoss/agentic-server dev",
-    "dev:frontend": "yarn workspace @shapeshiftoss/agentic-chat dev",
+    "clean": "rm -rf node_modules packages/*/dist apps/*/dist",
+    "build": "tsc --build && bun run --filter './apps/*' build",
+    "build:chat": "tsc --build && bun --filter @shapeshiftoss/agentic-chat build",
+    "build:server": "tsc --build && bun --filter @shapeshiftoss/agentic-server build",
+    "dev": "bun run --filter './apps/*' dev",
+    "dev:backend": "bun --filter @shapeshiftoss/agentic-server dev",
+    "dev:frontend": "bun --filter @shapeshiftoss/agentic-chat dev",
     "test": "vitest",
     "lint": "eslint .",
-    "lint:fix": "yarn lint --fix",
+    "lint:fix": "eslint . --fix",
     "type-check": "tsc --build",
-    "update-assets": "tsx scripts/updateAssetData.ts"
+    "update-assets": "bun scripts/updateAssetData.ts"
   },
   "dependencies": {
     "@shapeshiftoss/agentic-server": "workspace:^",
@@ -35,7 +35,7 @@
     "@types/node": "^24.0.1",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
-    "concurrently": "^9.2.0",
+    "concurrently": "^9.2.1",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-import-resolver-alias": "^1.1.2",
@@ -55,8 +55,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "yarn@4.9.4",
-  "resolutions": {
-    "@mastra/core@npm:0.17.0": "patch:@mastra/core@npm%3A0.17.0#~/.yarn/patches/@mastra-core-npm-0.17.0-e90ee9bf9b.patch"
-  }
+  "packageManager": "bun@1.1.42"
 }
