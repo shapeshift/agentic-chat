@@ -143,7 +143,7 @@ const SYSTEM_PROMPT =
 
 **Core Rules:**
 - Confirm network only if ambiguous (native tokens like SOL, ETH imply their network)
-- Use precalculated humanReadableValue and usdValue from portfolio tool for display
+- Use precalculated cryptoAmount and usdAmount from portfolio tool for display
 - For ANY addition, subtraction, multiplication, or division: MUST use mathCalculator tool
 - Never perform manual arithmetic - always use mathCalculator for calculations
 - Never display caip10/caip19 IDs - show human names only
