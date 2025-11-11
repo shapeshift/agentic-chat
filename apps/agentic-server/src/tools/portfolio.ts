@@ -14,7 +14,7 @@ export const portfolioSchema = z.object({
 
 export type PortfolioInput = z.infer<typeof portfolioSchema>
 
-export type PortfolioOutput = {
+export type PortfolioDataFull = {
   account: string
   chainId: string
   balances: Array<{
@@ -25,16 +25,28 @@ export type PortfolioOutput = {
       precision: number
       price: string
     }
-    value: string
-    humanReadableValue: string
-    usdValue: string
+    baseUnitValue: string
+    cryptoAmount: string
+    usdAmount: string
   }>
 }
 
-export async function executeGetPortfolio(
+export type PortfolioOutput = {
+  account: string
+  chainId: string
+  balances: Array<{
+    assetId: string
+    name: string
+    symbol: string
+    cryptoAmount: string
+    usdAmount: string
+  }>
+}
+
+export async function getPortfolioData(
   input: PortfolioInput,
   walletContext?: WalletContext
-): Promise<PortfolioOutput> {
+): Promise<PortfolioDataFull> {
   console.log('[getPortfolio]:', input)
 
   const { network } = input
@@ -60,8 +72,8 @@ export async function executeGetPortfolio(
           return null
         }
 
-        const humanReadableValue = fromBaseUnit(baseUnitValue, asset.precision)
-        const usdValue = calculateUsdValue(humanReadableValue, asset.price)
+        const cryptoAmount = fromBaseUnit(baseUnitValue, asset.precision)
+        const usdAmount = calculateUsdValue(cryptoAmount, asset.price)
 
         return {
           asset: {
@@ -71,12 +83,31 @@ export async function executeGetPortfolio(
             precision: asset.precision,
             price: asset.price,
           },
-          value: baseUnitValue,
-          humanReadableValue,
-          usdValue,
+          baseUnitValue,
+          cryptoAmount,
+          usdAmount,
         }
       })
       .filter((balance): balance is NonNullable<typeof balance> => balance !== null),
+  }
+}
+
+export async function executeGetPortfolio(
+  input: PortfolioInput,
+  walletContext?: WalletContext
+): Promise<PortfolioOutput> {
+  const fullData = await getPortfolioData(input, walletContext)
+
+  return {
+    account: fullData.account,
+    chainId: fullData.chainId,
+    balances: fullData.balances.map(balance => ({
+      assetId: balance.asset.assetId,
+      name: balance.asset.name,
+      symbol: balance.asset.symbol,
+      cryptoAmount: balance.cryptoAmount,
+      usdAmount: balance.usdAmount,
+    })),
   }
 }
 

@@ -39,9 +39,11 @@ export {
 export {
   portfolioTool,
   executeGetPortfolio,
+  getPortfolioData,
   type PortfolioInput,
   type PortfolioInput as PortfolioToolInput,
   type PortfolioOutput,
+  type PortfolioDataFull,
 } from './tools/portfolio'
 export {
   initiateSwapTool,
