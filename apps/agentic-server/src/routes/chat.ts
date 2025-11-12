@@ -21,6 +21,7 @@ import { getTransactionHistoryTool } from '../tools/getTransactionHistory'
 import { initiateSwapTool, initiateSwapUsdTool } from '../tools/initiateSwap'
 import { mathCalculator } from '../tools/mathCalculator'
 import { portfolioTool } from '../tools/portfolio'
+import { sendTool } from '../tools/send'
 import { switchNetworkTool } from '../tools/switchNetwork'
 import type { WalletContext } from '../utils/walletContextSimple'
 
@@ -126,6 +127,14 @@ function buildTools(walletContext: WalletContext) {
       execute: (args: Parameters<typeof switchNetworkTool.execute>[0]) => {
         console.log('[Tool] switchNetworkTool:', JSON.stringify(args, null, 2))
         return switchNetworkTool.execute(args)
+      },
+    },
+    sendTool: {
+      description: sendTool.description,
+      inputSchema: sendTool.inputSchema,
+      execute: async (args: Parameters<typeof sendTool.execute>[0]) => {
+        console.log('[Tool] sendTool:', JSON.stringify(args, null, 2))
+        return sendTool.execute(args, walletContext)
       },
     },
   }

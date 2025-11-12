@@ -7,6 +7,7 @@ import { GetAssetsUI } from './tools/GetAssetsUI'
 import { GetTransactionHistoryUI } from './tools/GetTransactionHistoryUI'
 import { InitiateSwapUI } from './tools/InitiateSwapUI'
 import { PortfolioUI } from './tools/PortfolioUI'
+import { SendUI } from './tools/SendUI'
 import { SwitchNetworkUI } from './tools/SwitchNetworkUI'
 
 interface ToolUIProps {
@@ -24,6 +25,7 @@ export const TOOL_UI_REGISTRY: Record<string, ToolUIComponent> = {
   getAccountTool: GetAccountUI,
   getTransactionHistoryTool: GetTransactionHistoryUI,
   getAllowanceTool: GetAllowanceUI,
+  sendTool: SendUI,
 } as const
 
 export function getToolUIComponent(toolName: string): ToolUIComponent | undefined {

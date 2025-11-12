@@ -2,7 +2,7 @@ import type { AppKitNetwork } from '@reown/appkit/networks'
 import { arbitrum, avalanche, base, bsc, gnosis, mainnet, optimism, polygon, solana } from '@reown/appkit/networks'
 import { modal } from '@reown/appkit/react'
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 import type { PersistedToolState } from '@/stores/toolExecutionStore'
 import { useToolExecutionStore } from '@/stores/toolExecutionStore'
@@ -80,15 +80,24 @@ export const useNetworkSwitch = (
   const store = useToolExecutionStore()
 
   const hasHydratedRef = useRef(false)
-  if (!hasHydratedRef.current && !store.toolStates.has(toolCallId)) {
-    const persisted = store.getPersistedState(toolCallId)
-    if (persisted) {
-      const hydratedState = persistedStateToNetworkState(persisted)
-      store.initializeState(toolCallId, hydratedState)
-      store.markExecuted(toolCallId)
-      hasHydratedRef.current = true
+  const lastToolCallIdRef = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    // Reset hydration flag when toolCallId changes
+    if (lastToolCallIdRef.current !== toolCallId) {
+      hasHydratedRef.current = false
+      lastToolCallIdRef.current = toolCallId
     }
-  }
+
+    if (!hasHydratedRef.current && !store.toolStates.has(toolCallId)) {
+      const persisted = store.getPersistedState(toolCallId)
+      if (persisted) {
+        const hydratedState = persistedStateToNetworkState(persisted)
+        store.initializeState(toolCallId, hydratedState)
+        store.markExecuted(toolCallId)
+        hasHydratedRef.current = true
+      }
+    }
+  }, [toolCallId, store])
 
   const { state } = useToolExecutionEffect(
     toolCallId,

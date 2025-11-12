@@ -61,3 +61,4 @@ export {
   type SwitchNetworkInput,
   type SwitchNetworkOutput,
 } from './tools/switchNetwork'
+export { sendTool, executeSend, type SendInput, type SendOutput } from './tools/send'
