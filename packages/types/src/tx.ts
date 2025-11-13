@@ -21,6 +21,12 @@ export type TokenTransfer = {
   assetId: string
 }
 
+export const TRANSACTION_TYPES = ['send', 'receive', 'swap', 'contract'] as const
+export type TransactionType = (typeof TRANSACTION_TYPES)[number]
+
+export const TRANSACTION_STATUSES = ['success', 'failed'] as const
+export type TransactionStatus = (typeof TRANSACTION_STATUSES)[number]
+
 type BaseTransaction = {
   txid: string
   timestamp: number
@@ -29,6 +35,10 @@ type BaseTransaction = {
   fee: string
   from: string
   to: string
+  network?: string
+  usdValueSent?: number
+  usdValueReceived?: number
+  usdFee?: number
 }
 
 export type SendTransaction = BaseTransaction & {

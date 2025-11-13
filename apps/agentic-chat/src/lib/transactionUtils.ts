@@ -19,8 +19,9 @@ export function getSwapTokens(tx: ParsedTransaction): SwapTokens | null {
 }
 
 export function formatTokenAmount(transfer: TokenTransfer, maxDecimals: number = MAX_DISPLAYED_DECIMALS): string {
+  const decimals = transfer.decimals ?? 8
   return formatCryptoAmount(transfer.amount, {
     symbol: transfer.symbol,
-    decimals: Math.min(transfer.decimals, maxDecimals),
+    decimals: Math.min(decimals, maxDecimals),
   })
 }

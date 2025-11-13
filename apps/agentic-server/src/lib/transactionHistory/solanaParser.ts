@@ -1,13 +1,10 @@
-import { toAssetId } from '@shapeshiftoss/caip'
-import type { KnownChainIds, Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
+import type { Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
-import { fromBaseUnit, getAssetNamespaceFromChainId } from '@shapeshiftoss/utils'
-import axios from 'axios'
-import { z } from 'zod'
+import { fromBaseUnit } from '@shapeshiftoss/utils'
 
-import { SOLANA_NATIVE_DECIMALS } from './constants'
-import { solanaTxSchema } from './schemas'
+import { PRECISION_MEDIUM, SOLANA_NATIVE_DECIMALS } from './constants'
 import type { SolanaTx } from './schemas'
+import { createAssetId } from './transactionUtils'
 
 function determineTransactionType(
   nativeTransfer: SolanaTx['nativeTransfers'] extends (infer U)[] | undefined ? U | undefined : never,
@@ -39,13 +36,13 @@ export function parseSolanaTransaction(tx: SolanaTx, userAddress: string, networ
       ? tx.tokenTransfers
           .filter(transfer => transfer.amount !== undefined && transfer.amount !== null)
           .map(transfer => {
-            const assetNamespace = getAssetNamespaceFromChainId(chainId as KnownChainIds)
-            const assetId = toAssetId({ chainId, assetNamespace, assetReference: transfer.mint! })
+            const assetId = createAssetId(chainId, transfer.mint!, false)
+            const decimals = transfer.token?.decimals ?? PRECISION_MEDIUM
 
             return {
               symbol: transfer.token?.symbol || 'Unknown',
-              amount: fromBaseUnit(transfer.amount!.toString(), transfer.token?.decimals || 9),
-              decimals: transfer.token?.decimals || 9,
+              amount: fromBaseUnit(transfer.amount!.toString(), decimals),
+              decimals,
               from: transfer.fromUserAccount || '',
               to: transfer.toUserAccount || '',
               contract: transfer.mint,
@@ -89,35 +86,5 @@ export function parseSolanaTransaction(tx: SolanaTx, userAddress: string, networ
     ...baseTransaction,
     type,
     tokenTransfers,
-  }
-}
-
-export async function fetchSolanaTransactionHistory(
-  url: string,
-  address: string,
-  network: Network
-): Promise<{ transactions: ParsedTransaction[]; cursor?: string }> {
-  try {
-    const { data } = await axios.get(url)
-
-    const solanaResponse = z
-      .object({
-        pubkey: z.string(),
-        cursor: z.string().optional(),
-        txs: z.array(solanaTxSchema),
-      })
-      .parse(data)
-
-    const transactions = solanaResponse.txs.map(tx => parseSolanaTransaction(tx, address, network))
-
-    return {
-      transactions,
-      cursor: solanaResponse.cursor,
-    }
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(`Failed to fetch Solana transaction history: ${error.message}`)
-    }
-    throw error
   }
 }

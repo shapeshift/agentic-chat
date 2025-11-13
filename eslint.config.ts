@@ -66,7 +66,7 @@ export default [
           },
         },
       ],
-      'import/no-unresolved': 'error',
+      'import/no-unresolved': ['error', { ignore: ['^bun:'] }],
       'import/no-duplicates': 'error',
       'import/no-unused-modules': 'warn',
       'import/first': 'error',
@@ -119,5 +119,14 @@ export default [
       '**/tailwind.config.js',
       '**/postcss.config.js',
     ],
+  },
+  {
+    files: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+    rules: {
+      'import/no-unresolved': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/require-await': 'off',
+    },
   },
 ]

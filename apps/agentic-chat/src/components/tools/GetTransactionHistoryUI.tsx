@@ -1,4 +1,3 @@
-import type { GetTransactionHistoryOutput } from '@shapeshiftoss/agentic-server'
 import type { ParsedTransaction, Network } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'
@@ -175,17 +174,13 @@ function TransactionCard({
 
 export function GetTransactionHistoryUI({ toolPart }: ToolUIComponentProps) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
-  const output = toolPart.output as GetTransactionHistoryOutput | undefined
+  const output = toolPart.output as
+    | { transactions?: ParsedTransaction[]; metadata?: { networksChecked?: string[] } }
+    | undefined
   const { state } = toolPart
 
-  const networkValue = output?.network ?? input?.network
-  const network = (networkValue !== undefined ? String(networkValue as string) : 'ethereum') as Network
-
-  const chainId = networkToChainIdMap[network]
-  const networkIcon = chainId ? NETWORK_ICONS[chainId] : undefined
-
   const stateRender = useToolStateRender(state, {
-    loading: `Fetching transaction history for ${network}`,
+    loading: `Fetching transaction history...`,
     error: `Failed to fetch transaction history ❌`,
   })
 
@@ -198,15 +193,29 @@ export function GetTransactionHistoryUI({ toolPart }: ToolUIComponentProps) {
   if (state === 'output-available' && output && 'transactions' in output) {
     const transactions = output.transactions
 
-    if (transactions.length === 0) {
+    if (!transactions || transactions.length === 0) {
       return null
     }
 
+    const renderTransactions = input?.renderTransactions
+
+    // Early exit if explicitly told not to render
+    if (renderTransactions === false) {
+      return null
+    }
+
+    // Determine how many to render: specific number or all
+    const renderCount = typeof renderTransactions === 'number' ? renderTransactions : transactions.length
+
     return (
       <div className="space-y-3">
-        {transactions.map(tx => (
-          <TransactionCard key={tx.txid} tx={tx} network={network} networkIcon={networkIcon} />
-        ))}
+        {transactions.slice(0, renderCount).map(tx => {
+          const network = (tx.network ?? 'ethereum') as Network
+          const chainId = networkToChainIdMap[network]
+          const networkIcon = chainId ? NETWORK_ICONS[chainId] : undefined
+
+          return <TransactionCard key={tx.txid} tx={tx} network={network} networkIcon={networkIcon} />
+        })}
       </div>
     )
   }

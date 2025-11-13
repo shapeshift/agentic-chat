@@ -1,15 +1,6 @@
-export { fetchEvmTransactionHistory, parseEvmTransaction } from './evmParser'
-export { fetchSolanaTransactionHistory, parseSolanaTransaction } from './solanaParser'
-export {
-  evmTxSchema,
-  getTransactionHistoryInput,
-  getTransactionHistoryOutput,
-  solanaTxSchema,
-  type EvmTx,
-  type GetTransactionHistoryInput,
-  type GetTransactionHistoryOutput,
-  type SolanaTx,
-} from './schemas'
+export { parseEvmTransaction } from './evmParser'
+export { parseSolanaTransaction } from './solanaParser'
+export { evmTxSchema, solanaTxSchema, type EvmTx, type SolanaTx } from './schemas'
 export {
   isContractTransaction,
   isReceiveTransaction,
