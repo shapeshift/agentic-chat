@@ -14,6 +14,7 @@ import type { Context } from 'hono'
 
 import { supportedChainsContext } from '../context'
 import { anthropic } from '../models'
+import { analyzeTransactionHistoryTool } from '../tools/analyzeTransactionHistory'
 import { getAccountTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetsTool } from '../tools/getAssets'
@@ -98,6 +99,14 @@ function buildTools(walletContext: WalletContext) {
         return getTransactionHistoryTool.execute(args, walletContext)
       },
     },
+    analyzeTransactionHistoryTool: {
+      description: analyzeTransactionHistoryTool.description,
+      inputSchema: analyzeTransactionHistoryTool.inputSchema,
+      execute: async (args: Parameters<typeof analyzeTransactionHistoryTool.execute>[0]) => {
+        console.log('[Tool] analyzeTransactionHistoryTool:', JSON.stringify(args, null, 2))
+        return analyzeTransactionHistoryTool.execute(args, walletContext)
+      },
+    },
     portfolioTool: {
       description: portfolioTool.description,
       inputSchema: portfolioTool.inputSchema,
@@ -162,7 +171,15 @@ const SYSTEM_PROMPT =
 
 **Tool Usage:**
 - **getAssets**: Find assets and get market data. Returns price, volume, market cap, FDV, description, sentiment, and more. CRITICAL: After calling this tool, respond with ONLY a single brief sentence directing user to the card - do NOT include prices, market caps, volumes, descriptions, or ANY data from the response
-- **getTransactionHistory**: Get recent transaction history for the connected wallet on a specific network. Returns transaction details with types, amounts, timestamps, and addresses. After calling this tool, respond with ONLY a single brief sentence - do NOT list transactions, counts, types, or any details (the UI card shows everything)
+- **getTransactionHistory**: Get transaction history. Optionally specify address parameter to query other wallets (e.g., "show transactions for 0x123..."). If address omitted, uses connected wallet. Use offset and limit to target specific transactions:
+  - "last tx" → {limit: 1} (returns 1st most recent)
+  - "second last tx" → {limit: 1, offset: 1} (skips 1, returns 2nd)
+  - "3rd last tx" → {limit: 1, offset: 2} (skips 2, returns 3rd)
+  - "last 5 txs" → {limit: 5} (returns 5 most recent)
+  - "transactions 3-5" → {limit: 3, offset: 2} (skips 2, returns next 3)
+  Supports filtering: types (["swap", "send"]), status (["success", "failed"]), dateFrom/dateTo (Unix timestamps).
+  Default pageSize of 10 ensures recent txs from each network. For display questions (e.g., "show my last swap"), respond with brief sentence - UI renders details
+- **analyzeTransactionHistory**: Analyze transaction history with aggregations. Optionally specify address to analyze other wallets. Use for analytical questions (e.g., "how much did I spend on fees?", "how many swaps did I make?", "total fees on my last 5 swaps"). Supports limit/offset to analyze specific subsets (e.g., limit=5 for last 5 transactions). Returns ONLY computed aggregations - does NOT return transaction details. If user wants to see specific transactions, call getTransactionHistory separately. Available aggregations: count, totalFees, countByType. Default pageSize of 50. Warns if analysis may be incomplete
 - **mathCalculator**: Use for all arithmetic operations to ensure precision
 - **portfolio**: Get user balances with human-readable values and USD amounts (EVM chains and Solana only)
 - **initiateSwap**: Execute swap with crypto token amounts (e.g., 1 ETH, 0.5 SOL)

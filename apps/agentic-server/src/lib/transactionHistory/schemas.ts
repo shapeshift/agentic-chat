@@ -65,10 +65,60 @@ export const solanaTxSchema = z.object({
   type: z.string().optional(),
 })
 
+export const transactionFilterParams = {
+  types: z
+    .array(z.enum(['send', 'receive', 'swap', 'contract']))
+    .optional()
+    .describe('Filter by transaction types (e.g., ["swap", "send"])'),
+  status: z
+    .array(z.enum(['success', 'failed']))
+    .optional()
+    .describe('Filter by transaction status'),
+  dateFrom: z.number().optional().describe('Filter transactions from this Unix timestamp (inclusive)'),
+  dateTo: z.number().optional().describe('Filter transactions until this Unix timestamp (inclusive)'),
+}
+
 export const getTransactionHistoryInput = z.object({
-  network: z.enum(NETWORKS).describe('Network name (e.g., ethereum, arbitrum, solana)'),
-  pageSize: z.number().min(1).max(50).optional().default(10).describe('Number of transactions to fetch (max 50)'),
-  cursor: z.string().optional().describe('Pagination cursor for fetching next page'),
+  address: z
+    .string()
+    .optional()
+    .describe(
+      'Wallet address to query. If not provided, uses connected wallet address. For EVM networks, provide checksummed address (0x...). For Solana, provide base58 address.'
+    ),
+  network: z
+    .enum(NETWORKS)
+    .optional()
+    .describe(
+      'Network name (e.g., ethereum, arbitrum, solana). If not provided, fetches from all supported networks (EVM + Solana)'
+    ),
+  pageSize: z
+    .number()
+    .min(1)
+    .max(50)
+    .optional()
+    .default(10)
+    .describe('Number of transactions to fetch per network (max 50)'),
+  limit: z
+    .number()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe(
+      'Maximum total transactions to return across all networks after sorting by timestamp. Use this to limit results (e.g., limit=1 for most recent transaction only)'
+    ),
+  offset: z
+    .number()
+    .min(0)
+    .optional()
+    .default(0)
+    .describe(
+      'Number of transactions to skip before applying limit. Use for targeting specific transactions (e.g., offset=1 for second most recent, offset=2 for third most recent)'
+    ),
+  cursor: z
+    .string()
+    .optional()
+    .describe('Pagination cursor for fetching next page (only works when network is specified)'),
+  ...transactionFilterParams,
 })
 
 export const parsedTransactionSchema = z.object({
@@ -97,10 +147,10 @@ export const parsedTransactionSchema = z.object({
 })
 
 export const getTransactionHistoryOutput = z.object({
-  address: z.string(),
-  chainId: z.string(),
   transactions: z.array(parsedTransactionSchema),
-  cursor: z.string().optional(),
+  cursors: z.record(z.string(), z.string()).optional(),
+  networksChecked: z.array(z.string()),
+  errors: z.record(z.string(), z.string()).optional(),
 })
 
 export type EvmTx = z.infer<typeof evmTxSchema>

@@ -226,24 +226,32 @@ export async function fetchEvmTransactionHistory(
   try {
     const { data } = await axios.get(url)
 
+    console.log(`[evmParser] ${network} - Raw API response tx count: ${data.txs?.length || 0}`)
+
     const evmResponse = z
       .object({
         pubkey: z.string(),
-        cursor: z.string().optional(),
+        cursor: z.string().nullable().optional(),
         txs: z.array(evmTxSchema),
       })
       .parse(data)
 
+    console.log(`[evmParser] ${network} - Parsed ${evmResponse.txs.length} transactions`)
+
     const transactions = evmResponse.txs.map(tx => parseEvmTransaction(tx, address, network))
+
+    console.log(`[evmParser] ${network} - After parsing: ${transactions.length} transactions`)
 
     return {
       transactions,
-      cursor: evmResponse.cursor,
+      cursor: evmResponse.cursor || undefined,
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      console.error(`[evmParser] ${network} - API Error:`, error.response?.status, error.message)
       throw new Error(`Failed to fetch EVM transaction history: ${error.message}`)
     }
+    console.error(`[evmParser] ${network} - Parse Error:`, error)
     throw error
   }
 }
