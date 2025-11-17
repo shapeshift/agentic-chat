@@ -1,5 +1,5 @@
 import type { ParsedTransaction, Network } from '@shapeshiftoss/types'
-import { networkToChainIdMap } from '@shapeshiftoss/types'
+import { networkToChainIdMap, networkToNativeSymbol } from '@shapeshiftoss/types'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CheckCircle2, FileCode, XCircle } from 'lucide-react'
 import type React from 'react'
@@ -22,6 +22,11 @@ const TRANSACTION_ICONS: Record<ParsedTransaction['type'], React.ReactElement> =
   receive: <ArrowDownLeft className="w-5 h-5 text-green-500" />,
   swap: <ArrowLeftRight className="w-5 h-5 text-blue-500" />,
   contract: <FileCode className="w-5 h-5 text-purple-500" />,
+}
+
+function getNativeSymbol(network?: string): string {
+  if (!network) return 'ETH'
+  return networkToNativeSymbol[network as Network] ?? 'ETH'
 }
 
 function TxSecondaryText({ children }: { children: React.ReactNode }) {
@@ -74,7 +79,7 @@ function TransactionCard({
                     className="-ml-0.5"
                   />
                 )}
-                {!swapTokens && <TxAmount>{tx.tokenTransfers?.[0]?.symbol ?? 'ETH'}</TxAmount>}
+                {!swapTokens && <TxAmount>{tx.tokenTransfers?.[0]?.symbol ?? getNativeSymbol(tx.network)}</TxAmount>}
               </div>
             </div>
             <div className="flex flex-col items-end justify-center gap-0.5">
@@ -91,7 +96,10 @@ function TransactionCard({
                     -
                     {tx.tokenTransfers?.[0]
                       ? formatTokenAmount(tx.tokenTransfers[0])
-                      : formatCryptoAmount(parseFloat(tx.value), { symbol: 'ETH', decimals: MAX_DISPLAYED_DECIMALS })}
+                      : formatCryptoAmount(parseFloat(tx.value), {
+                          symbol: getNativeSymbol(tx.network),
+                          decimals: MAX_DISPLAYED_DECIMALS,
+                        })}
                   </TxAmount>
                 </>
               )}
@@ -102,7 +110,10 @@ function TransactionCard({
                     +
                     {tx.tokenTransfers?.[0]
                       ? formatTokenAmount(tx.tokenTransfers[0])
-                      : formatCryptoAmount(parseFloat(tx.value), { symbol: 'ETH', decimals: MAX_DISPLAYED_DECIMALS })}
+                      : formatCryptoAmount(parseFloat(tx.value), {
+                          symbol: getNativeSymbol(tx.network),
+                          decimals: MAX_DISPLAYED_DECIMALS,
+                        })}
                   </TxAmount>
                 </>
               )}
@@ -112,7 +123,10 @@ function TransactionCard({
                     ? formatTokenAmount(tx.tokenTransfers[0])
                     : parseFloat(tx.value) === 0
                       ? 'N/A'
-                      : formatCryptoAmount(parseFloat(tx.value), { symbol: 'ETH', decimals: MAX_DISPLAYED_DECIMALS })}
+                      : formatCryptoAmount(parseFloat(tx.value), {
+                          symbol: getNativeSymbol(tx.network),
+                          decimals: MAX_DISPLAYED_DECIMALS,
+                        })}
                 </TxAmount>
               )}
             </div>
@@ -157,7 +171,7 @@ function TransactionCard({
                 </div>
               }
             />
-            <ToolCard.DetailItem label="Miner Fee" value={`${tx.fee} ${network === 'solana' ? 'SOL' : 'ETH'}`} />
+            <ToolCard.DetailItem label="Miner Fee" value={`${tx.fee} ${getNativeSymbol(network)}`} />
             <ToolCard.DetailItem label="Date" value={formatTimestamp(tx.timestamp)} />
             {!isSwap && (
               <>

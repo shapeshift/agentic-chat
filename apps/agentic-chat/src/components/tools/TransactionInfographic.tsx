@@ -1,12 +1,16 @@
 import type { ParsedTransaction, TokenTransfer } from '@shapeshiftoss/agentic-server'
 import type { Network } from '@shapeshiftoss/types'
-import { networkToNativeAssetId } from '@shapeshiftoss/types'
+import { networkToNativeAssetId, networkToNativeSymbol } from '@shapeshiftoss/types'
 import { ArrowRight } from 'lucide-react'
 
 import { formatCryptoAmount } from '@/lib/number'
 import { formatTokenAmount, getSwapTokens } from '@/lib/transactionUtils'
 
 import { AssetIcon } from '../ui/AssetIcon'
+
+function getNativeSymbol(network: Network): string {
+  return networkToNativeSymbol[network] ?? 'ETH'
+}
 
 type TransactionInfographicProps = {
   tx: ParsedTransaction
@@ -39,7 +43,7 @@ export function TransactionInfographic({ tx, network, networkIcon }: Transaction
 
   const transfer: TokenTransfer | undefined = tx.tokenTransfers?.[0]
   const assetId = transfer?.assetId ?? networkToNativeAssetId[network]
-  const symbol = transfer?.symbol ?? '???'
+  const symbol = transfer?.symbol ?? getNativeSymbol(network)
   const amount = transfer?.amount ?? tx.value
   const decimals = transfer?.decimals ?? 18
 

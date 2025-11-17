@@ -1,4 +1,5 @@
 import type { Network } from '@shapeshiftoss/types'
+import { networkToNativeSymbol } from '@shapeshiftoss/types'
 
 import type { TransactionWithUsd } from '../usdCalculator'
 
@@ -11,32 +12,11 @@ export interface FilterOptions {
   excludeAssets?: string[]
 }
 
-const NETWORK_TO_NATIVE_SYMBOL: Record<Network, string> = {
-  ethereum: 'ETH',
-  optimism: 'ETH',
-  arbitrum: 'ETH',
-  base: 'ETH',
-  polygon: 'MATIC',
-  avalanche: 'AVAX',
-  bsc: 'BNB',
-  gnosis: 'XDAI',
-  solana: 'SOL',
-  sui: 'SUI',
-  bitcoin: 'BTC',
-  litecoin: 'LTC',
-  dogecoin: 'DOGE',
-  bitcoincash: 'BCH',
-  cosmos: 'ATOM',
-  thorchain: 'RUNE',
-  tron: 'TRX',
-  cardano: 'ADA',
-}
-
 function getTransactionAssetSymbols(tx: TransactionWithUsd): Set<string> {
   const symbols = new Set<string>()
 
-  if (tx.network && tx.network in NETWORK_TO_NATIVE_SYMBOL && parseFloat(tx.value) > 0) {
-    const nativeSymbol = NETWORK_TO_NATIVE_SYMBOL[tx.network as Network]
+  if (tx.network && tx.network in networkToNativeSymbol && parseFloat(tx.value) > 0) {
+    const nativeSymbol = networkToNativeSymbol[tx.network as Network]
     symbols.add(nativeSymbol.toLowerCase())
   }
 
