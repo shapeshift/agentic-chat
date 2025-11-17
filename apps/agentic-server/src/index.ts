@@ -22,11 +22,11 @@ export {
   type GetAllowanceOutput,
 } from './tools/getAllowance'
 export {
-  getTransactionHistoryTool,
-  executeGetTransactionHistory,
-  type GetTransactionHistoryInput,
-  type GetTransactionHistoryOutput,
-} from './tools/getTransactionHistory'
+  transactionHistoryTool,
+  executeTransactionHistory,
+  type TransactionHistoryInput,
+  type TransactionHistoryToolOutput,
+} from './tools/transactionHistory'
 export {
   type ParsedTransaction,
   type SendTransaction,

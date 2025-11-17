@@ -74,7 +74,7 @@ export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceR
         results.push({ assetId, price })
       }
     } catch (error) {
-      console.error('Error fetching prices from CoinGecko:', error)
+      console.error('[CoinGecko API] Error fetching prices:', error)
       // Fill in remaining assets with '0' price
       const processedAssetIds = new Set(results.map(r => r.assetId))
       for (const [assetId] of assetIdToCoinGeckoId) {

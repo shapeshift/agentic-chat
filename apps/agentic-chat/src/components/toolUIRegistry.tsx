@@ -24,6 +24,7 @@ export const TOOL_UI_REGISTRY: Record<string, ToolUIComponent> = {
   getAssetsTool: GetAssetsUI,
   getAccountTool: GetAccountUI,
   getTransactionHistoryTool: GetTransactionHistoryUI,
+  transactionHistoryTool: GetTransactionHistoryUI,
   getAllowanceTool: GetAllowanceUI,
   sendTool: SendUI,
 } as const

@@ -2,7 +2,6 @@ import type { AssetId } from '@shapeshiftoss/caip'
 
 import type { Network } from './network'
 
-// Lightweight mapping from network to native asset ID
 export const networkToNativeAssetId: Record<Network, AssetId> = {
   ethereum: 'eip155:1/slip44:60',
   optimism: 'eip155:10/slip44:60',
@@ -22,4 +21,25 @@ export const networkToNativeAssetId: Record<Network, AssetId> = {
   thorchain: 'cosmos:thorchain-1/slip44:931',
   tron: 'tron:0x2b6653dc/slip44:195',
   cardano: 'cardano:1/slip44:1815',
+}
+
+export const networkToNativeSymbol: Record<Network, string> = {
+  ethereum: 'ETH',
+  optimism: 'ETH',
+  arbitrum: 'ETH',
+  base: 'ETH',
+  polygon: 'MATIC',
+  avalanche: 'AVAX',
+  bsc: 'BNB',
+  gnosis: 'xDAI',
+  solana: 'SOL',
+  sui: 'SUI',
+  bitcoin: 'BTC',
+  litecoin: 'LTC',
+  dogecoin: 'DOGE',
+  bitcoincash: 'BCH',
+  cosmos: 'ATOM',
+  thorchain: 'RUNE',
+  tron: 'TRX',
+  cardano: 'ADA',
 }

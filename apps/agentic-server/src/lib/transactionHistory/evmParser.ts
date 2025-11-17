@@ -1,18 +1,15 @@
-import { toAssetId } from '@shapeshiftoss/caip'
-import type { KnownChainIds, Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
+import type { Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
 import { networkToChainIdMap, networkToNativeAssetId } from '@shapeshiftoss/types'
-import { fromBaseUnit, getAssetNamespaceFromChainId } from '@shapeshiftoss/utils'
-import axios from 'axios'
-import z from 'zod'
+import { fromBaseUnit } from '@shapeshiftoss/utils'
 
-import { EVM_NATIVE_DECIMALS } from './constants'
-import { evmTxSchema } from './schemas'
+import { EVM_NATIVE_DECIMALS, PRECISION_HIGH } from './constants'
 import type { EvmTx } from './schemas'
+import { createAssetId } from './transactionUtils'
 
 interface NetTransfer {
   contract: string
   symbol: string
-  decimals: number
+  decimals?: number
   netAmount: bigint
   from: string
   to: string
@@ -22,7 +19,7 @@ function calculateNetTransfers(tx: EvmTx, userAddress: string): NetTransfer[] {
   const normalizedUserAddress = userAddress.toLowerCase()
   const netPositions = new Map<
     string,
-    { sent: bigint; received: bigint; symbol: string; decimals: number; from: string; to: string }
+    { sent: bigint; received: bigint; symbol: string; decimals?: number; from: string; to: string }
   >()
 
   tx.tokenTransfers?.forEach(transfer => {
@@ -133,16 +130,14 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
     })
 
     tokenTransfers = sortedTransfers.map(transfer => {
-      const assetNamespace = getAssetNamespaceFromChainId(chainId as KnownChainIds)
-      const assetId = toAssetId({ chainId, assetNamespace, assetReference: transfer.contract })
+      const assetId = createAssetId(chainId, transfer.contract, true)
+      const decimals = transfer.decimals ?? PRECISION_HIGH
+      const amount = fromBaseUnit(transfer.netAmount.toString(), decimals)
 
       return {
         symbol: transfer.symbol,
-        amount: fromBaseUnit(
-          transfer.netAmount < 0n ? (-transfer.netAmount).toString() : transfer.netAmount.toString(),
-          transfer.decimals
-        ),
-        decimals: transfer.decimals,
+        amount,
+        decimals,
         from: transfer.netAmount < 0n ? userAddress : transfer.from,
         to: transfer.netAmount > 0n ? userAddress : transfer.to,
         contract: transfer.contract,
@@ -176,13 +171,13 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
     tokenTransfers =
       userInvolvedTransfers.length > 0
         ? userInvolvedTransfers.map(transfer => {
-            const assetNamespace = getAssetNamespaceFromChainId(chainId as KnownChainIds)
-            const assetId = toAssetId({ chainId, assetNamespace, assetReference: transfer.contract })
+            const assetId = createAssetId(chainId, transfer.contract, true)
+            const decimals = transfer.decimals ?? PRECISION_HIGH
 
             return {
               symbol: transfer.symbol,
-              amount: fromBaseUnit(transfer.value, transfer.decimals),
-              decimals: transfer.decimals,
+              amount: fromBaseUnit(transfer.value, decimals),
+              decimals,
               from: transfer.from,
               to: transfer.to,
               contract: transfer.contract,
@@ -215,35 +210,5 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
     ...baseTransaction,
     type,
     tokenTransfers,
-  }
-}
-
-export async function fetchEvmTransactionHistory(
-  url: string,
-  address: string,
-  network: Network
-): Promise<{ transactions: ParsedTransaction[]; cursor?: string }> {
-  try {
-    const { data } = await axios.get(url)
-
-    const evmResponse = z
-      .object({
-        pubkey: z.string(),
-        cursor: z.string().optional(),
-        txs: z.array(evmTxSchema),
-      })
-      .parse(data)
-
-    const transactions = evmResponse.txs.map(tx => parseEvmTransaction(tx, address, network))
-
-    return {
-      transactions,
-      cursor: evmResponse.cursor,
-    }
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(`Failed to fetch EVM transaction history: ${error.message}`)
-    }
-    throw error
   }
 }

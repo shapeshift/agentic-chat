@@ -10,6 +10,7 @@ import {
   solanaChainId,
 } from '@shapeshiftoss/caip'
 import { convertToModelMessages, stepCountIs, streamText } from 'ai'
+import { format, getUnixTime } from 'date-fns'
 import type { Context } from 'hono'
 
 import { supportedChainsContext } from '../context'
@@ -17,12 +18,12 @@ import { anthropic } from '../models'
 import { getAccountTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetsTool } from '../tools/getAssets'
-import { getTransactionHistoryTool } from '../tools/getTransactionHistory'
 import { initiateSwapTool, initiateSwapUsdTool } from '../tools/initiateSwap'
 import { mathCalculator } from '../tools/mathCalculator'
 import { portfolioTool } from '../tools/portfolio'
 import { sendTool } from '../tools/send'
 import { switchNetworkTool } from '../tools/switchNetwork'
+import { transactionHistoryTool } from '../tools/transactionHistory'
 import type { WalletContext } from '../utils/walletContextSimple'
 
 function buildWalletContext(evmAddress?: string, solanaAddress?: string): WalletContext {
@@ -90,12 +91,12 @@ function buildTools(walletContext: WalletContext) {
         return getAllowanceTool.execute({ ...args, from })
       },
     },
-    getTransactionHistoryTool: {
-      description: getTransactionHistoryTool.description,
-      inputSchema: getTransactionHistoryTool.inputSchema,
-      execute: async (args: Parameters<typeof getTransactionHistoryTool.execute>[0]) => {
-        console.log('[Tool] getTransactionHistoryTool:', JSON.stringify(args, null, 2))
-        return getTransactionHistoryTool.execute(args, walletContext)
+    transactionHistoryTool: {
+      description: transactionHistoryTool.description,
+      inputSchema: transactionHistoryTool.inputSchema,
+      execute: async (args: Parameters<typeof transactionHistoryTool.execute>[0]) => {
+        console.log('[Tool] transactionHistoryTool:', JSON.stringify(args, null, 2))
+        return transactionHistoryTool.execute(args, walletContext)
       },
     },
     portfolioTool: {
@@ -144,6 +145,10 @@ const SYSTEM_PROMPT =
   `
 **ShapeShift Crypto Assistant**
 
+**Current Date and Time:**
+- Today's date: ${format(new Date(), 'yyyy-MM-dd')} (${format(new Date(), 'EEEE, MMMM d, yyyy')})
+- Current Unix timestamp: ${getUnixTime(new Date())}
+
 **Scope & Purpose:**
 - Your expertise is cryptocurrency, blockchain, Web3, and DeFi
 - Help with: crypto prices, trading, swaps, portfolios, transaction history, blockchain concepts, and market data
@@ -161,8 +166,8 @@ const SYSTEM_PROMPT =
 - For mathematical formulas, use LaTeX: wrap block equations with $$...$$
 
 **Tool Usage:**
-- **getAssets**: Find assets and get market data. Returns price, volume, market cap, FDV, description, sentiment, and more. CRITICAL: After calling this tool, respond with ONLY a single brief sentence directing user to the card - do NOT include prices, market caps, volumes, descriptions, or ANY data from the response
-- **getTransactionHistory**: Get recent transaction history for the connected wallet on a specific network. Returns transaction details with types, amounts, timestamps, and addresses. After calling this tool, respond with ONLY a single brief sentence - do NOT list transactions, counts, types, or any details (the UI card shows everything)
+- **getAssets**: Find assets and get market data. CRITICAL: After calling this tool, respond with ONLY a single brief sentence directing user to the card - do NOT include prices, market caps, volumes, descriptions, or ANY data from the response
+- **transactionHistoryTool**: Query and analyze transaction history. Use for any transaction-related questions. See tool description for full capabilities (filtering, sorting, aggregations, etc.)
 - **mathCalculator**: Use for all arithmetic operations to ensure precision
 - **portfolio**: Get user balances with human-readable values and USD amounts (EVM chains and Solana only)
 - **initiateSwap**: Execute swap with crypto token amounts (e.g., 1 ETH, 0.5 SOL)
@@ -199,6 +204,8 @@ Examples:
 **Error Handling:**
 - Insufficient balance → Show exact shortage amount
 - No rates available → "Route not supported or amount too small"
+- Timeout errors → Suggest narrowing the query (shorter date range, specific network, fewer filters)
+- If a tool fails, explain what went wrong and suggest alternatives
 
 **Portfolio Rules:**
 - Only check balances if user says "all my [token]" or asks balance first

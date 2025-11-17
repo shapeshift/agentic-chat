@@ -127,7 +127,7 @@ export function formatCryptoAmount(value: NumberValue | null | undefined, option
     let formatted: string
     if (num === 0) {
       formatted = '0'
-    } else if (num < 0.000001) {
+    } else if (Math.abs(num) < 0.000001) {
       formatted = num.toExponential(2)
     } else {
       const maxDecimals = options?.decimals ?? 8

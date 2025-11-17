@@ -1,6 +1,5 @@
-import type { GetTransactionHistoryOutput } from '@shapeshiftoss/agentic-server'
 import type { ParsedTransaction, Network } from '@shapeshiftoss/types'
-import { networkToChainIdMap } from '@shapeshiftoss/types'
+import { networkToChainIdMap, networkToNativeSymbol } from '@shapeshiftoss/types'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CheckCircle2, FileCode, XCircle } from 'lucide-react'
 import type React from 'react'
@@ -23,6 +22,11 @@ const TRANSACTION_ICONS: Record<ParsedTransaction['type'], React.ReactElement> =
   receive: <ArrowDownLeft className="w-5 h-5 text-green-500" />,
   swap: <ArrowLeftRight className="w-5 h-5 text-blue-500" />,
   contract: <FileCode className="w-5 h-5 text-purple-500" />,
+}
+
+function getNativeSymbol(network?: string): string {
+  if (!network) return 'ETH'
+  return networkToNativeSymbol[network as Network] ?? 'ETH'
 }
 
 function TxSecondaryText({ children }: { children: React.ReactNode }) {
@@ -75,7 +79,7 @@ function TransactionCard({
                     className="-ml-0.5"
                   />
                 )}
-                {!swapTokens && <TxAmount>{tx.tokenTransfers?.[0]?.symbol ?? 'ETH'}</TxAmount>}
+                {!swapTokens && <TxAmount>{tx.tokenTransfers?.[0]?.symbol ?? getNativeSymbol(tx.network)}</TxAmount>}
               </div>
             </div>
             <div className="flex flex-col items-end justify-center gap-0.5">
@@ -92,7 +96,10 @@ function TransactionCard({
                     -
                     {tx.tokenTransfers?.[0]
                       ? formatTokenAmount(tx.tokenTransfers[0])
-                      : formatCryptoAmount(parseFloat(tx.value), { symbol: 'ETH', decimals: MAX_DISPLAYED_DECIMALS })}
+                      : formatCryptoAmount(parseFloat(tx.value), {
+                          symbol: getNativeSymbol(tx.network),
+                          decimals: MAX_DISPLAYED_DECIMALS,
+                        })}
                   </TxAmount>
                 </>
               )}
@@ -103,7 +110,10 @@ function TransactionCard({
                     +
                     {tx.tokenTransfers?.[0]
                       ? formatTokenAmount(tx.tokenTransfers[0])
-                      : formatCryptoAmount(parseFloat(tx.value), { symbol: 'ETH', decimals: MAX_DISPLAYED_DECIMALS })}
+                      : formatCryptoAmount(parseFloat(tx.value), {
+                          symbol: getNativeSymbol(tx.network),
+                          decimals: MAX_DISPLAYED_DECIMALS,
+                        })}
                   </TxAmount>
                 </>
               )}
@@ -113,7 +123,10 @@ function TransactionCard({
                     ? formatTokenAmount(tx.tokenTransfers[0])
                     : parseFloat(tx.value) === 0
                       ? 'N/A'
-                      : formatCryptoAmount(parseFloat(tx.value), { symbol: 'ETH', decimals: MAX_DISPLAYED_DECIMALS })}
+                      : formatCryptoAmount(parseFloat(tx.value), {
+                          symbol: getNativeSymbol(tx.network),
+                          decimals: MAX_DISPLAYED_DECIMALS,
+                        })}
                 </TxAmount>
               )}
             </div>
@@ -158,7 +171,7 @@ function TransactionCard({
                 </div>
               }
             />
-            <ToolCard.DetailItem label="Miner Fee" value={`${tx.fee} ${network === 'solana' ? 'SOL' : 'ETH'}`} />
+            <ToolCard.DetailItem label="Miner Fee" value={`${tx.fee} ${getNativeSymbol(network)}`} />
             <ToolCard.DetailItem label="Date" value={formatTimestamp(tx.timestamp)} />
             {!isSwap && (
               <>
@@ -175,17 +188,13 @@ function TransactionCard({
 
 export function GetTransactionHistoryUI({ toolPart }: ToolUIComponentProps) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
-  const output = toolPart.output as GetTransactionHistoryOutput | undefined
+  const output = toolPart.output as
+    | { transactions?: ParsedTransaction[]; metadata?: { networksChecked?: string[] } }
+    | undefined
   const { state } = toolPart
 
-  const networkValue = output?.network ?? input?.network
-  const network = (networkValue !== undefined ? String(networkValue as string) : 'ethereum') as Network
-
-  const chainId = networkToChainIdMap[network]
-  const networkIcon = chainId ? NETWORK_ICONS[chainId] : undefined
-
   const stateRender = useToolStateRender(state, {
-    loading: `Fetching transaction history for ${network}`,
+    loading: `Fetching transaction history...`,
     error: `Failed to fetch transaction history ❌`,
   })
 
@@ -198,15 +207,29 @@ export function GetTransactionHistoryUI({ toolPart }: ToolUIComponentProps) {
   if (state === 'output-available' && output && 'transactions' in output) {
     const transactions = output.transactions
 
-    if (transactions.length === 0) {
+    if (!transactions || transactions.length === 0) {
       return null
     }
 
+    const renderTransactions = input?.renderTransactions
+
+    // Early exit if explicitly told not to render
+    if (renderTransactions === false) {
+      return null
+    }
+
+    // Determine how many to render: specific number or all
+    const renderCount = typeof renderTransactions === 'number' ? renderTransactions : transactions.length
+
     return (
       <div className="space-y-3">
-        {transactions.map(tx => (
-          <TransactionCard key={tx.txid} tx={tx} network={network} networkIcon={networkIcon} />
-        ))}
+        {transactions.slice(0, renderCount).map(tx => {
+          const network = (tx.network ?? 'ethereum') as Network
+          const chainId = networkToChainIdMap[network]
+          const networkIcon = chainId ? NETWORK_ICONS[chainId] : undefined
+
+          return <TransactionCard key={tx.txid} tx={tx} network={network} networkIcon={networkIcon} />
+        })}
       </div>
     )
   }

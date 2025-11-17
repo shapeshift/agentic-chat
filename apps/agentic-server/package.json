@@ -30,6 +30,7 @@
     "zod": "*"
   },
   "devDependencies": {
+    "@types/bun": "^1.2.21",
     "tsup": "^8.5.0"
   }
 }

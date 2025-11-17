@@ -47,4 +47,7 @@ console.log(`   Health: /health`)
 export default {
   fetch: app.fetch,
   port,
+  // Increase timeout to handle exhaustive transaction history queries
+  // which can take longer when fetching across multiple networks
+  idleTimeout: 30, // 30 seconds
 }
