@@ -65,16 +65,24 @@ export function calculateUsdValues(transactions: ParsedTransaction[], priceMap: 
     // Calculate USD values based on transaction type
     switch (tx.type) {
       case 'send': {
-        // usdValueSent = native value × price
-        if (nativePrice !== undefined) {
+        // Check if this is an ERC20/token send (has token transfers)
+        if (tx.tokenTransfers && tx.tokenTransfers.length > 0) {
+          const { sent } = calculateTokenTransferUsd(tx.tokenTransfers, priceMap, tx.from)
+          if (sent) txWithUsd.usdValueSent = sent
+        } else if (nativePrice !== undefined) {
+          // Native token send (ETH, SOL, etc.)
           txWithUsd.usdValueSent = calculateUsdValue(tx.value, nativePrice)
         }
         break
       }
 
       case 'receive': {
-        // usdValueReceived = native value × price
-        if (nativePrice !== undefined) {
+        // Check if this is an ERC20/token receive (has token transfers)
+        if (tx.tokenTransfers && tx.tokenTransfers.length > 0) {
+          const { received } = calculateTokenTransferUsd(tx.tokenTransfers, priceMap, tx.to)
+          if (received) txWithUsd.usdValueReceived = received
+        } else if (nativePrice !== undefined) {
+          // Native token receive (ETH, SOL, etc.)
           txWithUsd.usdValueReceived = calculateUsdValue(tx.value, nativePrice)
         }
         break

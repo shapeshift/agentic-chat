@@ -185,6 +185,72 @@ describe('USD Calculator', () => {
     expect(result[0]?.usdFee).toBeUndefined()
   })
 
+  test('calculates USD values for ERC20 token send', () => {
+    const transactions: ParsedTransaction[] = [
+      {
+        txid: 'tx5',
+        timestamp: 1704067200,
+        blockHeight: 100,
+        status: 'success',
+        type: 'send',
+        value: '0', // No native token sent
+        fee: '0.01', // 0.01 ETH fee
+        from: '0x123',
+        to: '0x456',
+        network: 'ethereum',
+        tokenTransfers: [
+          {
+            symbol: 'USDC',
+            amount: '1000', // Sent 1000 USDC
+            decimals: 6,
+            from: '0x123',
+            to: '0x456',
+            assetId: 'eip155:1/erc20:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          },
+        ],
+      },
+    ]
+
+    const result = calculateUsdValues(transactions, priceMap)
+
+    expect(result[0]?.usdValueSent).toBe(1000) // 1000 USDC × $1
+    expect(result[0]?.usdValueReceived).toBeUndefined()
+    expect(result[0]?.usdFee).toBe(30) // 0.01 ETH × $3000
+  })
+
+  test('calculates USD values for ERC20 token receive', () => {
+    const transactions: ParsedTransaction[] = [
+      {
+        txid: 'tx6',
+        timestamp: 1704067200,
+        blockHeight: 100,
+        status: 'success',
+        type: 'receive',
+        value: '0', // No native token received
+        fee: '0.01', // 0.01 ETH fee
+        from: '0x456',
+        to: '0x123',
+        network: 'ethereum',
+        tokenTransfers: [
+          {
+            symbol: 'DAI',
+            amount: '500', // Received 500 DAI
+            decimals: 18,
+            from: '0x456',
+            to: '0x123',
+            assetId: 'eip155:1/erc20:0x6b175474e89094c44da98b954eedeac495271d0f',
+          },
+        ],
+      },
+    ]
+
+    const result = calculateUsdValues(transactions, priceMap)
+
+    expect(result[0]?.usdValueSent).toBeUndefined()
+    expect(result[0]?.usdValueReceived).toBe(500) // 500 DAI × $1
+    expect(result[0]?.usdFee).toBe(30) // 0.01 ETH × $3000
+  })
+
   test('handles swap with multiple token transfers', () => {
     const transactions: ParsedTransaction[] = [
       {
