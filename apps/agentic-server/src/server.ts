@@ -1,7 +1,14 @@
+import util from 'util'
+
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
 import { handleChatRequest } from './routes/chat'
+
+// Prevent console.log truncation of deep objects and large arrays
+util.inspect.defaultOptions.depth = null
+util.inspect.defaultOptions.maxArrayLength = null
+util.inspect.defaultOptions.maxStringLength = null
 
 const app = new Hono()
 
