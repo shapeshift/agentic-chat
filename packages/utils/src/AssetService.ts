@@ -12,10 +12,13 @@ class AssetService {
   private readonly assetsBySymbol: Map<string, StaticAsset[]>
   private readonly assetsByName: Map<string, StaticAsset[]>
 
+  private readonly sortedAssetIds: AssetId[]
+
   private constructor() {
-    const { assetData } = decodeAssetData(encodedAssetData as unknown as EncodedAssetData)
+    const { assetData, sortedAssetIds } = decodeAssetData(encodedAssetData as unknown as EncodedAssetData)
 
     this.assetsById = assetData
+    this.sortedAssetIds = sortedAssetIds
 
     this.assetsBySymbol = new Map()
     this.assetsByName = new Map()
@@ -99,6 +102,10 @@ class AssetService {
     }
 
     return Array.from(resultMap.values())
+  }
+
+  getSortedAssetIds(): AssetId[] {
+    return this.sortedAssetIds
   }
 }
 

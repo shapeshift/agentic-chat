@@ -25,9 +25,10 @@ export type CoinResponse = {
   }
 }
 
-export type SimplePriceData = Record<string, { usd: number }>
+export type SimplePriceData = Record<string, { usd: number; usd_24h_change?: number }>
 
 export type SimplePriceResult = {
   assetId: AssetId
   price: string
+  priceChange24h?: number
 }

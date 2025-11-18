@@ -1,12 +1,10 @@
 import { Chat } from '@/components/Chat'
 import { ConnectWallet } from '@/components/ConnectWallet'
 import { SidebarLeft } from '@/components/SidebarLeft'
-import { SidebarRight } from '@/components/SidebarRight'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { ChatProvider } from '@/providers/ChatProvider'
 
 const isSidebarLeftEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true'
-const isSidebarRightEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_RIGHT === 'true'
 
 export const Dashboard = () => {
   return (
@@ -24,7 +22,6 @@ export const Dashboard = () => {
             <Chat />
           </div>
         </SidebarInset>
-        {isSidebarRightEnabled && <SidebarRight />}
       </SidebarProvider>
     </ChatProvider>
   )

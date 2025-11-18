@@ -9,7 +9,16 @@ import { wagmiConfig, wagmiAdapter } from '@/lib/wagmi-config'
 
 import { Dashboard } from './dashboard/page'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 10_000,
+      gcTime: 5 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: true,
+    },
+  },
+})
 
 const metadata = {
   name: 'Agentic Chat',

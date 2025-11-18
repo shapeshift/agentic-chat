@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 const ASSET_DATA_BASE = 'https://raw.githubusercontent.com/shapeshift/web/develop/src/lib/asset-service/service';
 const COINGECKO_MAPPINGS_BASE = 'https://raw.githubusercontent.com/shapeshift/web/develop/packages/caip/src/adapters/coingecko/generated';
-const ASSET_DATA_FILES = ['encodedAssetData.json'];
+const ASSET_DATA_FILES = ['encodedAssetData.json', 'encodedRelatedAssetIndex.json'];
 const COINGECKO_CHAINS = [
     'bip122_000000000019d6689c085ae165831e93', // Bitcoin
     'bip122_000000000000000000651ef99cb9fcbe', // Bitcoin Cash

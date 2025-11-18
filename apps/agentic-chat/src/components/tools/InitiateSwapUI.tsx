@@ -2,6 +2,7 @@ import { useAppKitAccount } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
+import { bnOrZero } from '@/lib/bignumber'
 import { firstFourLastFour } from '@/lib/utils'
 import { useToolExecutionStore } from '@/stores/toolExecutionStore'
 
@@ -51,9 +52,9 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
   })()
 
   const swap = swapOutput?.swapData
-  const buyAmount = swap ? Number(swap.buyAmountCryptoPrecision) : 0
-  const sellAmount = swap ? Number(swap.sellAmountCryptoPrecision) : 0
-  const rate = buyAmount > 0 && sellAmount > 0 ? (buyAmount / sellAmount).toFixed(6) : '—'
+  const buyAmount = swap ? bnOrZero(swap.buyAmountCryptoPrecision) : bnOrZero(0)
+  const sellAmount = swap ? bnOrZero(swap.sellAmountCryptoPrecision) : bnOrZero(0)
+  const rate = buyAmount.gt(0) && sellAmount.gt(0) ? buyAmount.div(sellAmount).toFixed(6) : '—'
 
   return (
     <TxStepCard.Root>
@@ -77,7 +78,7 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
           )}
           {swap ? (
             <TxStepCard.Amount>
-              +{Number(swap.buyAmountCryptoPrecision).toFixed(6)} {swap.buyAsset.symbol.toUpperCase()}
+              +{bnOrZero(swap.buyAmountCryptoPrecision).toFixed(6)} {swap.buyAsset.symbol.toUpperCase()}
             </TxStepCard.Amount>
           ) : (
             <Skeleton className="h-7 w-32" />

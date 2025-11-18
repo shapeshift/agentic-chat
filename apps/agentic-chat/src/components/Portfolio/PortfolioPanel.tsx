@@ -1,0 +1,40 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+import { PortfolioAssetList } from './PortfolioAssetList'
+import { PortfolioHeader } from './PortfolioHeader'
+
+export function PortfolioPanel() {
+  return (
+    <div className="flex flex-col h-full">
+      <PortfolioHeader />
+
+      <Tabs defaultValue="balances" className="flex-1 flex flex-col min-h-0">
+        <div className="px-4 pb-4">
+          <TabsList className="justify-start">
+            <TabsTrigger value="balances" className="px-4 py-2">
+              Balances
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="px-4 py-2">
+              Activity
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="balances" className="flex-1 mt-0 min-h-0 overflow-y-auto">
+          <PortfolioAssetList />
+        </TabsContent>
+
+        <TabsContent value="activity" className="flex-1 mt-0 min-h-0 overflow-y-auto">
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center px-4">
+              <div className="text-lg font-medium text-foreground">Activity Coming Soon</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Transaction history from agentic app will appear here
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}

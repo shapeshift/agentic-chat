@@ -27,6 +27,7 @@ import {
 import BigNumber from 'bignumber.js'
 
 export * from './assetData/index.js'
+export * from './assetData/relatedAssetIndex.js'
 export * from './assertUnreachable.js'
 export * from './getAssetNamespaceFromChainId.js'
 export * from './viem.js'

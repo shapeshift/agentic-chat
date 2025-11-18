@@ -29,8 +29,12 @@ export const getAssetsSchema = z.object({
 
 export type GetAssetsInput = z.infer<typeof getAssetsSchema>
 
+export type AssetWithPriceChange = Asset & {
+  priceChange24h?: number
+}
+
 export type GetAssetsBasicOutput = {
-  assets: Asset[]
+  assets: AssetWithPriceChange[]
 }
 
 export type GetAssetsWithMarketDataOutput = {
@@ -78,11 +82,14 @@ export async function executeGetAssetsBasic(input: GetAssetsInput): Promise<GetA
     if (!topAsset) return { assets: [] }
 
     const prices = await getSimplePrices([topAsset.assetId])
-    const price = prices.find(p => p.assetId === topAsset.assetId)?.price ?? '0'
+    const priceResult = prices.find(p => p.assetId === topAsset.assetId)
+    const price = priceResult?.price ?? '0'
+    const priceChange24h = priceResult?.priceChange24h
 
-    const assetWithPrice: Asset = {
+    const assetWithPrice: AssetWithPriceChange = {
       ...topAsset,
       price,
+      priceChange24h,
       network: network ?? chainIdToNetwork[topAsset.chainId] ?? 'ethereum',
     }
 
@@ -99,13 +106,17 @@ export async function executeGetAssetsBasic(input: GetAssetsInput): Promise<GetA
     }
 
     const prices = await getSimplePrices(assetIds)
-    const priceMap = new Map(prices.map(p => [p.assetId, p.price]))
+    const priceMap = new Map(prices.map(p => [p.assetId, { price: p.price, priceChange24h: p.priceChange24h }]))
 
-    const assetsWithPrices: Asset[] = staticAssets.map(staticAsset => ({
-      ...staticAsset,
-      price: priceMap.get(staticAsset.assetId) ?? '0',
-      network: network ?? chainIdToNetwork[staticAsset.chainId] ?? 'ethereum',
-    }))
+    const assetsWithPrices: AssetWithPriceChange[] = staticAssets.map(staticAsset => {
+      const priceData = priceMap.get(staticAsset.assetId)
+      return {
+        ...staticAsset,
+        price: priceData?.price ?? '0',
+        priceChange24h: priceData?.priceChange24h,
+        network: network ?? chainIdToNetwork[staticAsset.chainId] ?? 'ethereum',
+      }
+    })
 
     return { assets: assetsWithPrices }
   }

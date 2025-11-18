@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["node", "vite/client", "vitest/globals"],
+    "types": ["node", "vite/client", "bun-types"],
 
     "module": "ESNext",
     "moduleDetection": "force",

@@ -14,6 +14,15 @@ export const asset = z.object({
   color: z.string().optional().describe('The asset color for UI theming'),
   icons: z.array(z.string()).optional().describe('Multiple icon URLs (if available)'),
   isPool: z.boolean().optional().describe('Whether this asset is a pool token'),
+  relatedAssetKey: z
+    .string()
+    .optional()
+    .describe('The assetId of the primary asset in a group of related assets (e.g., USDC on different chains)'),
+  isPrimary: z.boolean().optional().describe('Whether this is the primary implementation of a multi-chain asset'),
+  isChainSpecific: z
+    .boolean()
+    .optional()
+    .describe('Whether this asset only exists on one chain (e.g., native chain assets)'),
 })
 
 export type Asset = z.infer<typeof asset>

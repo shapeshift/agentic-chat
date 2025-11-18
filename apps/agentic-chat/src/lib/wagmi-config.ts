@@ -6,6 +6,10 @@ import { networks } from './appkit'
 // Read Project ID from environment variables
 const projectId = import.meta.env.VITE_PROJECT_ID
 
+if (!projectId) {
+  throw new Error('VITE_PROJECT_ID is required')
+}
+
 const storage = createStorage({ storage: cookieStorage })
 
 // Create the Wagmi adapter instance

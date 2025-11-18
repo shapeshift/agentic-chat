@@ -15,7 +15,7 @@
     "dev": "bun run --filter './apps/*' dev",
     "dev:backend": "bun --filter @shapeshiftoss/agentic-server --elide-lines=0 dev",
     "dev:frontend": "bun --filter @shapeshiftoss/agentic-chat dev",
-    "test": "vitest",
+    "test": "bun test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --build",
@@ -28,6 +28,7 @@
     "@shapeshiftoss/utils": "workspace:^",
     "bignumber.js": "^9.3.0",
     "date-fns": "^4.1.0",
+    "react-virtuoso": "^4.14.1",
     "viem": "^2.31.0",
     "zod": "^4.1.5"
   },
@@ -46,11 +47,9 @@
     "eslint-plugin-prettier": "^5.4.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
-    "happy-dom": "^18.0.1",
     "prettier": "^3.5.3",
     "tsx": "^4.20.2",
-    "typescript": "^5.8.3",
-    "vitest": "^3.2.3"
+    "typescript": "^5.8.3"
   },
   "workspaces": [
     "apps/*",

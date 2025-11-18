@@ -4,6 +4,7 @@ import { NETWORK_ICONS } from '@shapeshiftoss/utils'
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CheckCircle2, FileCode, XCircle } from 'lucide-react'
 import type React from 'react'
 
+import { bnOrZero } from '@/lib/bignumber'
 import { getExplorerUrl } from '@/lib/explorers'
 import { formatCryptoAmount } from '@/lib/number'
 import { formatTimestamp } from '@/lib/time'
@@ -96,7 +97,7 @@ function TransactionCard({
                     -
                     {tx.tokenTransfers?.[0]
                       ? formatTokenAmount(tx.tokenTransfers[0])
-                      : formatCryptoAmount(parseFloat(tx.value), {
+                      : formatCryptoAmount(tx.value, {
                           symbol: getNativeSymbol(tx.network),
                           decimals: MAX_DISPLAYED_DECIMALS,
                         })}
@@ -110,7 +111,7 @@ function TransactionCard({
                     +
                     {tx.tokenTransfers?.[0]
                       ? formatTokenAmount(tx.tokenTransfers[0])
-                      : formatCryptoAmount(parseFloat(tx.value), {
+                      : formatCryptoAmount(tx.value, {
                           symbol: getNativeSymbol(tx.network),
                           decimals: MAX_DISPLAYED_DECIMALS,
                         })}
@@ -121,9 +122,9 @@ function TransactionCard({
                 <TxAmount variant="negative">
                   {tx.tokenTransfers?.[0]
                     ? formatTokenAmount(tx.tokenTransfers[0])
-                    : parseFloat(tx.value) === 0
+                    : bnOrZero(tx.value).isZero()
                       ? 'N/A'
-                      : formatCryptoAmount(parseFloat(tx.value), {
+                      : formatCryptoAmount(tx.value, {
                           symbol: getNativeSymbol(tx.network),
                           decimals: MAX_DISPLAYED_DECIMALS,
                         })}
