@@ -18,6 +18,7 @@ import { anthropic } from '../models'
 import { getAccountTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetsTool } from '../tools/getAssets'
+import { getShapeShiftKnowledgeTool } from '../tools/getShapeShiftKnowledge'
 import { initiateSwapTool, initiateSwapUsdTool } from '../tools/initiateSwap'
 import { mathCalculator } from '../tools/mathCalculator'
 import { portfolioTool } from '../tools/portfolio'
@@ -138,6 +139,13 @@ function buildTools(walletContext: WalletContext) {
         return sendTool.execute(args, walletContext)
       },
     },
+    getShapeShiftKnowledgeTool: {
+      ...getShapeShiftKnowledgeTool,
+      execute: (args: Parameters<typeof getShapeShiftKnowledgeTool.execute>[0]) => {
+        console.log('[Tool] getShapeShiftKnowledgeTool:', JSON.stringify(args, null, 2))
+        return getShapeShiftKnowledgeTool.execute(args)
+      },
+    },
   }
 }
 
@@ -173,6 +181,7 @@ const SYSTEM_PROMPT =
 - **initiateSwap**: Execute swap with crypto token amounts (e.g., 1 ETH, 0.5 SOL)
 - **initiateSwapUsd**: Execute swap with USD value amounts (e.g., $100 worth, $1.50 worth)
 - **switchNetwork**: Switch the connected wallet to a different blockchain network
+- **getShapeShiftKnowledge**: Get information about ShapeShift platform, company, and DAO. Categories: company, platform, swappers, chains, staking, fox-token, features, mobile-app
 
 **Wallet Address Handling:**
 - All tools automatically extract wallet addresses from connected wallet context
