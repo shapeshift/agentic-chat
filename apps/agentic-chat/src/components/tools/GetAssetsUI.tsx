@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import { bnOrZero } from '@/lib/bignumber'
 import { formatCompactNumber, formatFiat } from '@/lib/number'
 
+import { Amount } from '../ui/Amount'
 import { AssetIcon } from '../ui/AssetIcon'
 import { Skeleton } from '../ui/skeleton'
 import { ToolCard } from '../ui/ToolCard'
@@ -69,7 +70,7 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
     const vol = bnOrZero(asset.volume24h)
     const mcap = bnOrZero(asset.marketCap)
     if (vol.isZero() || mcap.isZero()) return null
-    return vol.div(mcap).times(100).toFixed(2)
+    return vol.div(mcap).times(100).toFixed(4)
   })()
 
   return (
@@ -88,7 +89,7 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
             </div>
             <div className="flex flex-col h-12 justify-between items-end">
               <span className="text-[18px] font-bold leading-7">
-                ${bnOrZero(asset.price).toFixed(asset.precision > 2 ? 6 : 2)}
+                <Amount.Fiat value={asset.price} />
               </span>
               <div className="flex items-end gap-1 leading-5">
                 <div className={`flex items-center gap-1 ${priceChange24h.color}`}>
@@ -153,10 +154,10 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-green-500 font-medium">
-                        {asset.sentimentVotesUpPercentage?.toFixed(1)}% Bullish
+                        <Amount.Percent value={asset.sentimentVotesUpPercentage} suffix="Bullish" />
                       </span>
                       <span className="text-red-500 font-medium">
-                        {asset.sentimentVotesDownPercentage?.toFixed(1)}% Bearish
+                        <Amount.Percent value={asset.sentimentVotesDownPercentage} suffix="Bearish" />
                       </span>
                     </div>
                   </>
@@ -169,7 +170,7 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
             <div className="grid grid-cols-3 gap-4">
               {asset.marketCapRank && <StatMetric label="Market Cap Rank" value={`#${asset.marketCapRank}`} />}
               <StatMetric label="24h Volume" value={formatFiat(asset.volume24h)} />
-              <StatMetric label="Vol/MCap" value={volMcapRatio ? `${volMcapRatio}%` : 'N/A'} />
+              <StatMetric label="Vol/MCap" value={volMcapRatio ? <Amount.Percent value={volMcapRatio} /> : 'N/A'} />
             </div>
           </div>
         </ToolCard.Details>

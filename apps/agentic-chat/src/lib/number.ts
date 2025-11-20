@@ -100,7 +100,8 @@ export function formatPercent(value: BigNumber.Value | null | undefined, options
   try {
     const bn = bnOrZero(value)
     if (!bn.isFinite()) return 'N/A'
-    const number = bn.toNumber()
+    // Convert from 0-100 range to 0-1 range since Intl.NumberFormat with style: 'percent' multiplies by 100
+    const number = bn.div(100).toNumber()
     if (isNaN(number)) return 'N/A'
     return number.toLocaleString('en-US', {
       style: 'percent',

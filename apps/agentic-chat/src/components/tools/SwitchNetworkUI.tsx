@@ -2,7 +2,7 @@ import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import { ArrowRightLeft } from 'lucide-react'
 
 import { useNetworkSwitch } from '@/hooks/useNetworkSwitch'
-import { useToolExecutionStore } from '@/stores/toolExecutionStore'
+import { useChatStore } from '@/stores/chatStore'
 
 import { CollapsableDetails } from '../ui/CollapsableDetails'
 import { StatusText } from '../ui/StatusText'
@@ -21,7 +21,7 @@ const ErrorDetails: React.FC<{ title: string; message: string }> = ({ title, mes
 export function SwitchNetworkUI({ toolPart }: ToolUIComponentProps) {
   const { state, output, toolCallId, errorText } = toolPart
   const networkOutput = output as SwitchNetworkOutput | undefined
-  const { isHistorical, getPersistedState } = useToolExecutionStore()
+  const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const networkData = state === 'output-available' && networkOutput ? networkOutput : null
   const { phase, error } = useNetworkSwitch(toolCallId, networkData)
@@ -42,7 +42,7 @@ export function SwitchNetworkUI({ toolPart }: ToolUIComponentProps) {
     return <ErrorDetails title="Network switch failed" message={error || 'Unknown error'} />
   }
 
-  if (isHistorical(toolCallId) && !getPersistedState(toolCallId)) {
+  if (isHistorical(toolCallId) && !getPersistedTransaction(toolCallId)) {
     return <StatusText>⏭️ Network switch skipped (no saved data)</StatusText>
   }
 

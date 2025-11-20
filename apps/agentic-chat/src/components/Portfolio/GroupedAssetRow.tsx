@@ -1,53 +1,56 @@
-import { ChevronDown, ChevronUp } from 'lucide-react'
-
+import { Amount } from '@/components/ui/Amount'
+import { AssetIcon } from '@/components/ui/AssetIcon'
+import { DrawerListItem } from '@/components/ui/DrawerListItem'
 import type { GroupedPortfolioAsset, PortfolioAsset } from '@/types/portfolio'
 
 import { PortfolioAssetRow } from './PortfolioAssetRow'
 
 type GroupedAssetRowProps = {
   group: GroupedPortfolioAsset
-  isExpanded: boolean
-  onToggle: () => void
 }
 
-export function GroupedAssetRow({ group, isExpanded, onToggle }: GroupedAssetRowProps) {
+function RelatedAssetsList({ assets }: { assets: PortfolioAsset[] }) {
+  return (
+    <div className="flex flex-col">
+      {assets.map((asset, index) => (
+        <div key={asset.assetId} className={`flex items-center gap-3 pt-3 ${index < assets.length - 1 ? 'pb-3' : ''}`}>
+          <PortfolioAssetRow asset={asset} showNetwork />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function GroupedAssetRow({ group }: GroupedAssetRowProps) {
   const { primaryAsset, relatedAssets, totalFiatAmount, totalCryptoBalancePrecision } = group
 
   const hasMultipleAssets = relatedAssets.length > 1
 
   if (!hasMultipleAssets) {
-    return <PortfolioAssetRow asset={primaryAsset} />
-  }
-
-  // Create aggregated asset for display
-  const aggregatedAsset: PortfolioAsset = {
-    ...primaryAsset,
-    fiatAmount: totalFiatAmount,
-    cryptoBalancePrecision: totalCryptoBalancePrecision,
+    return (
+      <DrawerListItem>
+        <PortfolioAssetRow asset={primaryAsset} />
+      </DrawerListItem>
+    )
   }
 
   return (
-    <div>
-      <PortfolioAssetRow
-        asset={aggregatedAsset}
-        onClick={onToggle}
-        className={isExpanded ? 'rounded-t-xl bg-gray-50 dark:bg-white/[0.04]' : ''}
-        trailingElement={
-          isExpanded ? (
-            <ChevronUp className="w-3 h-3 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="w-3 h-3 text-muted-foreground" />
-          )
-        }
-      />
-
-      {isExpanded && (
-        <div className="bg-gray-50 dark:bg-white/[0.04] rounded-b-xl">
-          {relatedAssets.map(asset => (
-            <PortfolioAssetRow key={asset.assetId} asset={asset} showNetwork />
-          ))}
+    <DrawerListItem expandedChildren={<RelatedAssetsList assets={relatedAssets} />}>
+      <AssetIcon assetId={primaryAsset.assetId} className="w-10 h-10" />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-sm md:text-base text-foreground">{primaryAsset.symbol}</span>
+          <Amount.Percent value={primaryAsset.priceChange24h} showSign autoColor className="text-xs" />
         </div>
-      )}
-    </div>
+        <div className="text-sm text-muted-foreground truncate">
+          <Amount.Crypto value={totalCryptoBalancePrecision} symbol={primaryAsset.symbol} decimals={6} />
+        </div>
+      </div>
+      <div className="text-right">
+        <div className="font-semibold text-foreground">
+          <Amount.Fiat value={totalFiatAmount} />
+        </div>
+      </div>
+    </DrawerListItem>
   )
 }

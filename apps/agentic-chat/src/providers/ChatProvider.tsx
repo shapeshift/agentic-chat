@@ -6,8 +6,7 @@ import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAccount as useEvmAccount } from 'wagmi'
 
-import { useChatPersistence } from '@/hooks/useChatPersistence'
-import { useToolExecutionStore } from '@/stores/toolExecutionStore'
+import { useChatStore, saveMessages, loadMessages } from '@/stores/chatStore'
 import type { Conversation } from '@/types'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
@@ -49,7 +48,13 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
 
-  const { savedChats, saveConversation, loadConversation, loadToolStates, deleteConversation } = useChatPersistence()
+  const {
+    conversations,
+    saveConversation: storeConversation,
+    deleteConversation: storeDeleteConversation,
+    markAsHistorical,
+    clearHistoricalTools,
+  } = useChatStore()
 
   // Use refs to avoid closure capture in transport body function
   const evmAddressRef = useRef(evmAccount.address)
@@ -77,24 +82,15 @@ export function ChatProvider({ children }: ChatProviderProps) {
     onFinish: ({ messages }) => {
       if (!messages || messages.length === 0 || !urlConversationId) return
 
-      const title = extractTitleFromMessages(messages, savedChats, urlConversationId)
-      const toolStates = serializePersistedStates()
-      saveConversation(urlConversationId, title, messages, toolStates)
+      const title = extractTitleFromMessages(messages, conversations, urlConversationId)
+      storeConversation(urlConversationId, title)
+      saveMessages(urlConversationId, messages)
     },
   })
 
   const { setMessages } = chat
   const lastLoadedIdRef = useRef<string | undefined>(undefined)
-  const {
-    markMultipleExecuted,
-    markAsHistorical,
-    clearHistoricalTools,
-    serializePersistedStates,
-    restorePersistedStates,
-  } = useToolExecutionStore()
-  const persistedStates = useToolExecutionStore(state => state.persistedStates)
 
-  // Auto-redirect to new conversation if at /chats with no ID
   useEffect(() => {
     if (!urlConversationId) {
       const newId = generateConversationId()
@@ -104,7 +100,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   useEffect(() => {
     if (urlConversationId && urlConversationId !== lastLoadedIdRef.current) {
-      const messages = loadConversation(urlConversationId)
+      const messages = loadMessages(urlConversationId)
       setMessages(messages)
 
       const toolCallIds = messages.flatMap(message =>
@@ -118,25 +114,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
       if (toolCallIds.length > 0) {
         markAsHistorical(toolCallIds)
-        markMultipleExecuted(toolCallIds)
-      }
-
-      const savedToolStates = loadToolStates(urlConversationId)
-      if (savedToolStates) {
-        restorePersistedStates(savedToolStates)
       }
 
       lastLoadedIdRef.current = urlConversationId
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlConversationId])
-
-  useEffect(() => {
-    if (!urlConversationId) return
-
-    const toolStates = serializePersistedStates()
-    localStorage.setItem(`ai-chat-tool-states-${urlConversationId}`, JSON.stringify(toolStates))
-  }, [persistedStates, urlConversationId, serializePersistedStates])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value)
@@ -168,14 +151,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   const handleDeleteConversation = useCallback(
     (conversationId: string) => {
-      deleteConversation(conversationId)
+      storeDeleteConversation(conversationId)
 
       if (conversationId === urlConversationId) {
         const newId = generateConversationId()
         void navigate(`/chats/${newId}`)
       }
     },
-    [urlConversationId, navigate, deleteConversation]
+    [urlConversationId, navigate, storeDeleteConversation]
   )
 
   const value: ChatContextValue = {
@@ -192,7 +175,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     stop: () => {
       void chat.stop()
     },
-    conversations: savedChats,
+    conversations,
     activeConversationId: urlConversationId || null,
     createNewConversation,
     switchConversation,

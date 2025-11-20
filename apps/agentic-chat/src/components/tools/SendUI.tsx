@@ -3,8 +3,9 @@ import type { SendOutput } from '@shapeshiftoss/agentic-server'
 
 import { StepStatus, useSendExecution } from '@/hooks/useSendExecution'
 import { firstFourLastFour } from '@/lib/utils'
-import { useToolExecutionStore } from '@/stores/toolExecutionStore'
+import { useChatStore } from '@/stores/chatStore'
 
+import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
@@ -13,13 +14,13 @@ import type { ToolUIComponentProps } from './toolUIHelpers'
 export function SendUI({ toolPart }: ToolUIComponentProps) {
   const { state, output, toolCallId } = toolPart
   const sendOutput = output as SendOutput | undefined
-  const { isHistorical, getPersistedState } = useToolExecutionStore()
+  const { isHistorical, getPersistedTransaction } = useChatStore()
   const { address } = useAppKitAccount()
 
   const sendData = state === 'output-available' && sendOutput ? sendOutput : null
   const { error, steps, networkName } = useSendExecution(toolCallId, state, sendData)
 
-  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedState(toolCallId)
+  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedTransaction(toolCallId)
 
   if (isHistoricalSkipped) {
     return (
@@ -54,7 +55,11 @@ export function SendUI({ toolPart }: ToolUIComponentProps) {
             <div className="text-xs text-muted-foreground font-normal">Sent from {firstFourLastFour(address)}</div>
           )}
           <div className="text-sm text-muted-foreground font-normal">
-            {summary?.estimatedFeeUsd ? summary.estimatedFeeUsd : <Skeleton className="h-5 w-16" />}
+            {summary?.estimatedFeeUsd ? (
+              <Amount.Fiat value={summary.estimatedFeeUsd} />
+            ) : (
+              <Skeleton className="h-5 w-16" />
+            )}
           </div>
         </TxStepCard.HeaderRow>
         <TxStepCard.HeaderRow>
@@ -65,7 +70,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps) {
           )}
           {summary ? (
             <TxStepCard.Amount>
-              -{summary.amount} {summary.symbol}
+              <Amount.Crypto value={summary.amount} symbol={summary.symbol} prefix="-" />
             </TxStepCard.Amount>
           ) : (
             <Skeleton className="h-7 w-32" />
@@ -82,7 +87,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps) {
             <TxStepCard.DetailItem label="Network" value={summary.chainName} />
             <TxStepCard.DetailItem
               label="Estimated Fee"
-              value={`${summary.estimatedFeeCrypto} ${summary.estimatedFeeSymbol}`}
+              value={<Amount.Crypto value={summary.estimatedFeeCrypto} symbol={summary.estimatedFeeSymbol} />}
             />
             {summary.ataCreation && (
               <TxStepCard.DetailItem

@@ -1,9 +1,8 @@
+import { Amount } from '@/components/ui/Amount'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePortfolioQuery } from '@/hooks/usePortfolioQuery'
 import { bnOrZero } from '@/lib/bignumber'
-import { formatFiat } from '@/lib/number'
-
-import { PriceChangeIndicator } from './PriceChangeIndicator'
+import { cn } from '@/lib/utils'
 
 export function PortfolioHeader() {
   const { totalBalance, delta24h, isLoading } = usePortfolioQuery()
@@ -19,15 +18,19 @@ export function PortfolioHeader() {
 
   return (
     <div className="flex flex-col items-center py-6 px-4">
-      <div className="text-[40px] font-semibold tracking-tight text-foreground">{formatFiat(totalBalance)}</div>
+      <div className="text-[40px] font-semibold tracking-tight text-foreground">
+        <Amount.Fiat value={totalBalance} />
+      </div>
       {delta24h && (
-        <div className="text-sm mt-1">
-          <PriceChangeIndicator
-            priceChange={bnOrZero(delta24h.fiatAmount)}
-            formattedAmount={formatFiat(bnOrZero(delta24h.fiatAmount).abs())}
-            formattedChange={`${Math.abs(delta24h.percentage).toFixed(2)}%`}
-          />
-        </div>
+        <span
+          className={cn(
+            'text-xs mt-1',
+            bnOrZero(delta24h.percentage).gt(0) && 'text-green-500',
+            bnOrZero(delta24h.percentage).lt(0) && 'text-red-500'
+          )}
+        >
+          <Amount.Fiat value={delta24h.fiatAmount} /> (<Amount.Percent value={delta24h.percentage} />)
+        </span>
       )}
     </div>
   )
