@@ -3,6 +3,7 @@ import type { GetRateInput, GetRateOutput } from '@shapeshiftoss/types'
 import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
 
+import { DEFAULT_FEE_BPS, DAO_TREASURY_BASE } from '../../lib/fees/constants'
 import { getChainAdapter } from '../chains/relayAdapterRegistry'
 
 import type { RelayFetchQuoteParams, RelayQuote } from './types'
@@ -37,7 +38,13 @@ export const getRelayRate = async ({
       tradeType: 'EXACT_INPUT',
       amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
       slippageTolerance: undefined,
-      appFees: [], // TODO(gomes): affiliate, none for the time being for devving
+      referrer: 'shapeshift',
+      appFees: [
+        {
+          recipient: DAO_TREASURY_BASE,
+          fee: DEFAULT_FEE_BPS,
+        },
+      ],
     } as RelayFetchQuoteParams)
 
     const buyAmountCryptoBaseUnit = data.details.currencyOut.amount
