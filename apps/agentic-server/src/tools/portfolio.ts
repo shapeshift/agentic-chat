@@ -2,6 +2,7 @@ import { NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
 import { calculateUsdValue, fromBaseUnit } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
+import * as portfolioCache from '../lib/portfolio/cache'
 import { getAddressForNetwork } from '../utils/walletContextSimple'
 import type { WalletContext } from '../utils/walletContextSimple'
 
@@ -24,6 +25,7 @@ export type PortfolioDataFull = {
       symbol: string
       precision: number
       price: string
+      priceChange24h?: number
     }
     baseUnitValue: string
     cryptoAmount: string
@@ -47,11 +49,16 @@ export async function getPortfolioData(
   input: PortfolioInput,
   walletContext?: WalletContext
 ): Promise<PortfolioDataFull> {
-  console.log('[getPortfolio]:', input)
-
   const { network } = input
   const chainId = networkToChainIdMap[network]
   const account = getAddressForNetwork(walletContext, network)
+
+  const cacheKey = portfolioCache.getCacheKey(account, network)
+  const cached = portfolioCache.get(cacheKey)
+
+  if (cached) {
+    return cached
+  }
 
   const { balances } = await executeGetAccount({ account, network })
 
@@ -60,7 +67,7 @@ export async function getPortfolioData(
 
   const assetMap = new Map(assets.map(asset => [asset.assetId, asset]))
 
-  return {
+  const result: PortfolioDataFull = {
     account,
     chainId,
     balances: assetIds
@@ -82,6 +89,7 @@ export async function getPortfolioData(
             symbol: asset.symbol,
             precision: asset.precision,
             price: asset.price,
+            priceChange24h: asset.priceChange24h,
           },
           baseUnitValue,
           cryptoAmount,
@@ -90,6 +98,10 @@ export async function getPortfolioData(
       })
       .filter((balance): balance is NonNullable<typeof balance> => balance !== null),
   }
+
+  portfolioCache.set(cacheKey, result)
+
+  return result
 }
 
 export async function executeGetPortfolio(

@@ -7,7 +7,7 @@ const ASSET_DATA_BASE = 'https://raw.githubusercontent.com/shapeshift/web/develo
 const COINGECKO_MAPPINGS_BASE =
   'https://raw.githubusercontent.com/shapeshift/web/develop/packages/caip/src/adapters/coingecko/generated'
 
-const ASSET_DATA_FILES = ['encodedAssetData.json']
+const ASSET_DATA_FILES = ['encodedAssetData.json', 'encodedRelatedAssetIndex.json']
 
 const COINGECKO_CHAINS = [
   'bip122_000000000019d6689c085ae165831e93', // Bitcoin

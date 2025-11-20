@@ -25,7 +25,7 @@ export async function getMarketData(coinGeckoId: string): Promise<CoinResponse> 
 
 /**
  * Fetch simple prices for multiple assets by CoinGecko IDs
- * Endpoint: GET /simple/price?ids={ids}&vs_currencies=usd
+ * Endpoint: GET /simple/price?ids={ids}&vs_currencies=usd&include_24hr_change=true
  */
 export async function getBulkPrices(coinGeckoIds: string[]): Promise<SimplePriceData> {
   if (coinGeckoIds.length === 0) return {}
@@ -34,6 +34,7 @@ export async function getBulkPrices(coinGeckoIds: string[]): Promise<SimplePrice
     params: {
       ids: coinGeckoIds.join(','),
       vs_currencies: 'usd',
+      include_24hr_change: true,
     },
   })
 
@@ -56,7 +57,7 @@ export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceR
 
     if (!coinGeckoId) {
       console.warn(`No CoinGecko mapping for assetId: ${assetId}`)
-      results.push({ assetId, price: '0' })
+      results.push({ assetId, price: '0', priceChange24h: undefined })
       continue
     }
 
@@ -70,8 +71,10 @@ export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceR
       const data = await getBulkPrices(Array.from(coinGeckoIds))
 
       for (const [assetId, coinGeckoId] of assetIdToCoinGeckoId) {
-        const price = data[coinGeckoId]?.usd?.toString() ?? '0'
-        results.push({ assetId, price })
+        const priceData = data[coinGeckoId]
+        const price = priceData?.usd?.toString() ?? '0'
+        const priceChange24h = priceData?.usd_24h_change
+        results.push({ assetId, price, priceChange24h })
       }
     } catch (error) {
       console.error('[CoinGecko API] Error fetching prices:', error)
@@ -79,7 +82,7 @@ export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceR
       const processedAssetIds = new Set(results.map(r => r.assetId))
       for (const [assetId] of assetIdToCoinGeckoId) {
         if (!processedAssetIds.has(assetId)) {
-          results.push({ assetId, price: '0' })
+          results.push({ assetId, price: '0', priceChange24h: undefined })
         }
       }
     }

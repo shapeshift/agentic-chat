@@ -1,9 +1,6 @@
-export type NumberValue = number | string
+import type BigNumber from 'bignumber.js'
 
-const toNumber = (value: NumberValue): number => {
-  if (typeof value === 'number') return value
-  return Number(value) || 0
-}
+import { bnOrZero } from './bignumber'
 
 const getFiatNumberFractionDigits = (num: number): number => {
   if (num >= 1 || 0.000001 > num) return 0
@@ -70,10 +67,12 @@ const abbreviateNumber = (
   return parts.reduce(partsReducer(maximumFractionDigits, options?.omitDecimalTrailingZeros), lessThanMin ? '<' : '')
 }
 
-export function formatFiat(value: NumberValue | null | undefined, options?: NumberFormatOptions): string {
+export function formatFiat(value: BigNumber.Value | null | undefined, options?: NumberFormatOptions): string {
   if (value === null || value === undefined) return 'N/A'
   try {
-    const number = toNumber(value)
+    const bn = bnOrZero(value)
+    if (!bn.isFinite()) return 'N/A'
+    const number = bn.toNumber()
     if (isNaN(number)) return 'N/A'
     return abbreviateNumber(number, 'en-US', 'USD', options)
   } catch (e) {
@@ -82,10 +81,12 @@ export function formatFiat(value: NumberValue | null | undefined, options?: Numb
   }
 }
 
-export function formatCompactNumber(value: NumberValue | null | undefined, options?: NumberFormatOptions): string {
+export function formatCompactNumber(value: BigNumber.Value | null | undefined, options?: NumberFormatOptions): string {
   if (value === null || value === undefined) return 'N/A'
   try {
-    const number = toNumber(value)
+    const bn = bnOrZero(value)
+    if (!bn.isFinite()) return 'N/A'
+    const number = bn.toNumber()
     if (isNaN(number)) return 'N/A'
     return abbreviateNumber(number, 'en-US', undefined, options)
   } catch (e) {
@@ -94,10 +95,12 @@ export function formatCompactNumber(value: NumberValue | null | undefined, optio
   }
 }
 
-export function formatPercent(value: NumberValue | null | undefined, options: NumberFormatOptions = {}): string {
+export function formatPercent(value: BigNumber.Value | null | undefined, options: NumberFormatOptions = {}): string {
   if (value === null || value === undefined) return 'N/A'
   try {
-    const number = toNumber(value)
+    const bn = bnOrZero(value)
+    if (!bn.isFinite()) return 'N/A'
+    const number = bn.toNumber()
     if (isNaN(number)) return 'N/A'
     return number.toLocaleString('en-US', {
       style: 'percent',
@@ -117,11 +120,17 @@ export type FormatCryptoAmountOptions = {
   decimals?: number
 }
 
-export function formatCryptoAmount(value: NumberValue | null | undefined, options?: FormatCryptoAmountOptions): string {
+export function formatCryptoAmount(
+  value: BigNumber.Value | null | undefined,
+  options?: FormatCryptoAmountOptions
+): string {
   if (value === null || value === undefined) return 'N/A'
 
   try {
-    const num = toNumber(value)
+    const bn = bnOrZero(value)
+    if (!bn.isFinite()) return 'N/A'
+
+    const num = bn.toNumber()
     if (isNaN(num)) return 'N/A'
 
     let formatted: string

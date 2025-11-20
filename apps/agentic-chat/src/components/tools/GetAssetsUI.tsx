@@ -2,6 +2,7 @@ import type { AssetWithMarketData } from '@shapeshiftoss/agentic-server'
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import React, { useState } from 'react'
 
+import { bnOrZero } from '@/lib/bignumber'
 import { formatCompactNumber, formatFiat } from '@/lib/number'
 
 import { AssetIcon } from '../ui/AssetIcon'
@@ -65,10 +66,10 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
 
   const volMcapRatio = (() => {
     if (!asset.volume24h || !asset.marketCap) return null
-    const vol = parseFloat(asset.volume24h)
-    const mcap = parseFloat(asset.marketCap)
-    if (isNaN(vol) || isNaN(mcap) || mcap === 0) return null
-    return ((vol / mcap) * 100).toFixed(2)
+    const vol = bnOrZero(asset.volume24h)
+    const mcap = bnOrZero(asset.marketCap)
+    if (vol.isZero() || mcap.isZero()) return null
+    return vol.div(mcap).times(100).toFixed(2)
   })()
 
   return (
@@ -87,7 +88,7 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
             </div>
             <div className="flex flex-col h-12 justify-between items-end">
               <span className="text-[18px] font-bold leading-7">
-                ${parseFloat(asset.price).toFixed(asset.precision > 2 ? 6 : 2)}
+                ${bnOrZero(asset.price).toFixed(asset.precision > 2 ? 6 : 2)}
               </span>
               <div className="flex items-end gap-1 leading-5">
                 <div className={`flex items-center gap-1 ${priceChange24h.color}`}>

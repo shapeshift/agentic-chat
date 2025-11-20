@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
 import { handleChatRequest } from './routes/chat'
+import { handlePortfolioRequest } from './routes/portfolio'
 
 // Prevent console.log truncation of deep objects and large arrays
 util.inspect.defaultOptions.depth = null
@@ -34,6 +35,9 @@ app.get('/health', c => {
 // Chat endpoint
 app.post('/api/chat', handleChatRequest)
 
+// Portfolio endpoint
+app.post('/api/portfolio', handlePortfolioRequest)
+
 // 404 handler
 app.notFound(c => {
   return c.json({ error: 'Not found' }, 404)
@@ -49,6 +53,7 @@ const port = Number(process.env.PORT) || 4111
 
 console.log(`🚀 Server starting on port ${port}`)
 console.log(`   API: /api/chat`)
+console.log(`   API: /api/portfolio`)
 console.log(`   Health: /health`)
 
 export default {

@@ -5,7 +5,11 @@ import { truncateAddress } from '@/lib/utils'
 
 import { Button } from './ui/button'
 
-export const CustomConnectButton = () => {
+type CustomConnectButtonProps = {
+  onConnectedClick?: () => void
+}
+
+export const CustomConnectButton = ({ onConnectedClick }: CustomConnectButtonProps) => {
   const { open } = useAppKit()
   const { address, isConnected } = useAppKitAccount()
   const { caipNetwork } = useAppKitNetwork()
@@ -16,7 +20,11 @@ export const CustomConnectButton = () => {
   }
 
   const handleOpenAccount = () => {
-    void open({ view: 'Account' })
+    if (onConnectedClick) {
+      onConnectedClick()
+    } else {
+      void open({ view: 'Account' })
+    }
   }
 
   if (!isConnected) {

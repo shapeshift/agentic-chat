@@ -43,7 +43,7 @@ export const NETWORKS = [
 
 export type Network = (typeof NETWORKS)[number]
 
-export const EVM_SOLANA_NETWORKS = [
+export const EVM_NETWORKS = [
   'ethereum',
   'optimism',
   'arbitrum',
@@ -52,8 +52,11 @@ export const EVM_SOLANA_NETWORKS = [
   'bsc',
   'base',
   'gnosis',
-  'solana',
 ] as const
+
+export const SOLANA_NETWORK = 'solana' as const
+
+export const EVM_SOLANA_NETWORKS = [...EVM_NETWORKS, SOLANA_NETWORK] as const
 
 export type EvmSolanaNetwork = (typeof EVM_SOLANA_NETWORKS)[number]
 
