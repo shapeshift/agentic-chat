@@ -15,6 +15,8 @@ import axios from 'axios'
 import type { Address } from 'viem'
 import { getAddress } from 'viem'
 
+import { DEFAULT_FEE_BPS } from '../../lib/fees/constants'
+
 import type { BebopResponse } from './types'
 
 const BEBOP_API_KEY = process.env.BEBOP_API_KEY
@@ -60,6 +62,7 @@ export const getBebopRate = async ({
     skip_validation: 'true',
     gasless: 'false',
     source: 'shapeshift',
+    fee: DEFAULT_FEE_BPS,
   }
 
   try {
