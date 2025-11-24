@@ -22,6 +22,7 @@ import { getShapeShiftKnowledgeTool } from '../tools/getShapeShiftKnowledge'
 import { initiateSwapTool, initiateSwapUsdTool } from '../tools/initiateSwap'
 import { mathCalculator } from '../tools/mathCalculator'
 import { portfolioTool } from '../tools/portfolio'
+import { receiveTool } from '../tools/receive'
 import { sendTool } from '../tools/send'
 import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
@@ -139,6 +140,14 @@ function buildTools(walletContext: WalletContext) {
         return sendTool.execute(args, walletContext)
       },
     },
+    receiveTool: {
+      description: receiveTool.description,
+      inputSchema: receiveTool.inputSchema,
+      execute: async (args: Parameters<typeof receiveTool.execute>[0]) => {
+        console.log('[Tool] receiveTool:', JSON.stringify(args, null, 2))
+        return receiveTool.execute(args, walletContext)
+      },
+    },
     getShapeShiftKnowledgeTool: {
       ...getShapeShiftKnowledgeTool,
       execute: (args: Parameters<typeof getShapeShiftKnowledgeTool.execute>[0]) => {
@@ -181,6 +190,7 @@ const SYSTEM_PROMPT =
 - **initiateSwap**: Execute swap with crypto token amounts (e.g., 1 ETH, 0.5 SOL)
 - **initiateSwapUsd**: Execute swap with USD value amounts (e.g., $100 worth, $1.50 worth)
 - **switchNetwork**: Switch the connected wallet to a different blockchain network
+- **receive**: Get a wallet address and QR code for receiving cryptocurrency. The address is the same for all tokens on a given network. After calling this tool, respond with ONE brief sentence (e.g., "Here's your address for receiving ETH on Arbitrum") - the card shows all the details
 - **getShapeShiftKnowledge**: Get information about ShapeShift platform, company, and DAO. Categories: company, platform, swappers, chains, staking, fox-token, features, mobile-app
 
 **Wallet Address Handling:**

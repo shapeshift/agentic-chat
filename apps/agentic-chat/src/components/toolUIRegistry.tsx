@@ -7,6 +7,7 @@ import { GetAssetsUI } from './tools/GetAssetsUI'
 import { GetTransactionHistoryUI } from './tools/GetTransactionHistoryUI'
 import { InitiateSwapUI } from './tools/InitiateSwapUI'
 import { PortfolioUI } from './tools/PortfolioUI'
+import { ReceiveUI } from './tools/ReceiveUI'
 import { SendUI } from './tools/SendUI'
 import { SwitchNetworkUI } from './tools/SwitchNetworkUI'
 
@@ -27,6 +28,7 @@ export const TOOL_UI_REGISTRY: Record<string, ToolUIComponent> = {
   transactionHistoryTool: GetTransactionHistoryUI,
   getAllowanceTool: GetAllowanceUI,
   sendTool: SendUI,
+  receiveTool: ReceiveUI,
 } as const
 
 export function getToolUIComponent(toolName: string): ToolUIComponent | undefined {
