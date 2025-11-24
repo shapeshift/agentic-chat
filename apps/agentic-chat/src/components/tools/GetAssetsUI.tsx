@@ -105,7 +105,7 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
 
       <ToolCard.Content>
         <ToolCard.Details>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <StatMetric label="Volume" value={formatFiat(asset.volume24h)} isLoading={!asset.volume24h} />
             <StatMetric label="Market Cap" value={formatFiat(asset.marketCap)} isLoading={!asset.marketCap} />
             <StatMetric label="FDV" value={formatFiat(asset.fdv)} isLoading={!asset.fdv} />
@@ -167,7 +167,7 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
           )}
 
           <div className="border-t border-border pt-4 mt-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {asset.marketCapRank && <StatMetric label="Market Cap Rank" value={`#${asset.marketCapRank}`} />}
               <StatMetric label="24h Volume" value={formatFiat(asset.volume24h)} />
               <StatMetric label="Vol/MCap" value={volMcapRatio ? <Amount.Percent value={volMcapRatio} /> : 'N/A'} />

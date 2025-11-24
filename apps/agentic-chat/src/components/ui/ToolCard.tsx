@@ -17,7 +17,10 @@ const ToolCardRoot = ({
   return (
     <CollapsiblePrimitive.Root
       defaultOpen={defaultOpen}
-      className={cn('min-w-[512px] rounded-lg border border-border bg-whiteAlpha-50', className)}
+      className={cn(
+        'w-full sm:min-w-[512px] sm:max-w-[512px] rounded-lg border border-border bg-whiteAlpha-50',
+        className
+      )}
     >
       {children}
     </CollapsiblePrimitive.Root>
