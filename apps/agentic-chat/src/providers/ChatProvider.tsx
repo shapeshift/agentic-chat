@@ -20,6 +20,7 @@ interface ChatContextValue {
   setInput: (input: string) => void
   status: ReturnType<typeof useChat>['status']
   stop: () => void
+  error: Error | undefined
   conversations: Conversation[]
   activeConversationId: string | null
   createNewConversation: () => void
@@ -175,6 +176,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     stop: () => {
       void chat.stop()
     },
+    error: chat.error,
     conversations,
     activeConversationId: urlConversationId || null,
     createNewConversation,
