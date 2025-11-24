@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 
 import { Skeleton } from '@/components/ui/skeleton'
@@ -10,13 +10,6 @@ import { GroupedAssetRow } from './GroupedAssetRow'
 export function PortfolioAssetList() {
   const { assets, isLoading } = usePortfolioQuery()
   const groupedAssets = useMemo(() => groupPortfolioAssets(assets), [assets])
-  const [expandedIds, setExpandedIds] = useState<string[]>([])
-
-  const toggleExpanded = (assetId: string) => {
-    setExpandedIds(prev => (prev.includes(assetId) ? prev.filter(id => id !== assetId) : [...prev, assetId]))
-  }
-
-  const isExpanded = (assetId: string) => expandedIds.includes(assetId)
 
   if (isLoading) {
     return (
@@ -51,13 +44,8 @@ export function PortfolioAssetList() {
       style={{ height: '100%' }}
       data={groupedAssets}
       itemContent={(_index, group) => (
-        <div className="px-1 mb-2">
-          <GroupedAssetRow
-            key={group.primaryAsset.assetId}
-            group={group}
-            isExpanded={isExpanded(group.primaryAsset.assetId)}
-            onToggle={() => toggleExpanded(group.primaryAsset.assetId)}
-          />
+        <div className="px-4 mb-2">
+          <GroupedAssetRow key={group.primaryAsset.assetId} group={group} />
         </div>
       )}
     />

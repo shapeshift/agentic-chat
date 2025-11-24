@@ -4,8 +4,9 @@ import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
 import { bnOrZero } from '@/lib/bignumber'
 import { firstFourLastFour } from '@/lib/utils'
-import { useToolExecutionStore } from '@/stores/toolExecutionStore'
+import { useChatStore } from '@/stores/chatStore'
 
+import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
@@ -14,13 +15,13 @@ import type { ToolUIComponentProps } from './toolUIHelpers'
 export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
   const { state, output, toolCallId } = toolPart
   const swapOutput = output as InitiateSwapOutput | undefined
-  const { isHistorical, getPersistedState } = useToolExecutionStore()
+  const { isHistorical, getPersistedTransaction } = useChatStore()
   const { address } = useAppKitAccount()
 
   const swapData = state === 'output-available' && swapOutput ? swapOutput : null
   const { error, steps, networkName } = useSwapExecution(toolCallId, state, swapData)
 
-  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedState(toolCallId)
+  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedTransaction(toolCallId)
 
   if (isHistoricalSkipped) {
     return (
@@ -64,7 +65,7 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
             <div className="text-xs text-muted-foreground font-normal">Received from {firstFourLastFour(address)}</div>
           )}
           <div className="text-sm text-muted-foreground font-normal">
-            {swap?.buyAmountUsd ? `$${swap.buyAmountUsd}` : <Skeleton className="h-5 w-16" />}
+            {swap?.buyAmountUsd ? <Amount.Fiat value={swap.buyAmountUsd} /> : <Skeleton className="h-5 w-16" />}
           </div>
         </TxStepCard.HeaderRow>
         <TxStepCard.HeaderRow>
@@ -78,7 +79,7 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
           )}
           {swap ? (
             <TxStepCard.Amount>
-              +{bnOrZero(swap.buyAmountCryptoPrecision).toFixed(6)} {swap.buyAsset.symbol.toUpperCase()}
+              <Amount.Crypto value={swap.buyAmountCryptoPrecision} symbol={swap.buyAsset.symbol.toUpperCase()} />
             </TxStepCard.Amount>
           ) : (
             <Skeleton className="h-7 w-32" />
@@ -95,11 +96,11 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
             />
             <TxStepCard.DetailItem
               label="Buy Amount"
-              value={`${buyAmount.toFixed(8)} ${swap.buyAsset.symbol.toUpperCase()}`}
+              value={<Amount.Crypto value={buyAmount} symbol={swap.buyAsset.symbol.toUpperCase()} />}
             />
             <TxStepCard.DetailItem
               label="Sell Amount"
-              value={`${sellAmount.toFixed(8)} ${swap.sellAsset.symbol.toUpperCase()}`}
+              value={<Amount.Crypto value={sellAmount} symbol={swap.sellAsset.symbol.toUpperCase()} />}
             />
             <TxStepCard.DetailItem
               label="Rate"
@@ -109,7 +110,15 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
               label="Network Fees"
               value={
                 swapOutput?.summary.exchange.networkFeeCrypto && swapOutput?.summary.exchange.networkFeeUsd ? (
-                  `${swapOutput.summary.exchange.networkFeeCrypto} ${swapOutput.summary.exchange.networkFeeSymbol} ($${swapOutput.summary.exchange.networkFeeUsd})`
+                  <Amount.Crypto
+                    value={swapOutput.summary.exchange.networkFeeCrypto}
+                    symbol={swapOutput.summary.exchange.networkFeeSymbol}
+                    suffix={
+                      <>
+                        (<Amount.Fiat value={swapOutput.summary.exchange.networkFeeUsd} />)
+                      </>
+                    }
+                  />
                 ) : (
                   <Skeleton className="h-4 w-20" />
                 )

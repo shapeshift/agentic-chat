@@ -11,6 +11,7 @@ import { formatTimestamp } from '@/lib/time'
 import { formatTokenAmount, getSwapTokens, MAX_DISPLAYED_DECIMALS } from '@/lib/transactionUtils'
 import { truncateAddress } from '@/lib/utils'
 
+import { Amount } from '../ui/Amount'
 import { ToolCard } from '../ui/ToolCard'
 import { TxStepCard } from '../ui/TxStepCard'
 
@@ -172,7 +173,10 @@ function TransactionCard({
                 </div>
               }
             />
-            <ToolCard.DetailItem label="Miner Fee" value={`${tx.fee} ${getNativeSymbol(network)}`} />
+            <ToolCard.DetailItem
+              label="Miner Fee"
+              value={<Amount.Crypto value={tx.fee} symbol={getNativeSymbol(network)} />}
+            />
             <ToolCard.DetailItem label="Date" value={formatTimestamp(tx.timestamp)} />
             {!isSwap && (
               <>

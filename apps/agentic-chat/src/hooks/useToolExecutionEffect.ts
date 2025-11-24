@@ -1,7 +1,7 @@
 import type { DependencyList } from 'react'
 import { useEffect } from 'react'
 
-import { useToolExecutionStore } from '@/stores/toolExecutionStore'
+import { useChatStore } from '@/stores/chatStore'
 
 interface UseToolExecutionEffectResult<TState> {
   state: TState
@@ -15,16 +15,15 @@ export function useToolExecutionEffect<TData, TState>(
   execute: (data: TData, setState: (updater: (draft: TState) => void) => void) => void | Promise<void>,
   deps: DependencyList
 ): UseToolExecutionEffectResult<TState> {
-  const { setState, hasExecuted, markExecuted, initializeState } = useToolExecutionStore()
+  const { setRuntimeState, hasRuntimeState, initializeRuntimeState } = useChatStore()
 
-  // Use a selector to reactively subscribe to this tool's state
-  const state = useToolExecutionStore(store => {
-    const toolState = store.toolStates.get(toolCallId)
+  const state = useChatStore(store => {
+    const toolState = store.runtimeToolStates.get(toolCallId)
     return toolState !== undefined ? (toolState as TState) : initialState
   })
 
   const wrappedSetState = (updater: (draft: TState) => void) => {
-    setState(toolCallId, updater)
+    setRuntimeState(toolCallId, updater)
   }
 
   useEffect(() => {
@@ -32,15 +31,11 @@ export function useToolExecutionEffect<TData, TState>(
       return
     }
 
-    // Early exit if already executed - skip all initialization work
-    if (hasExecuted(toolCallId)) {
+    if (hasRuntimeState(toolCallId)) {
       return
     }
 
-    // Initialize state in store if this is the first time
-    initializeState(toolCallId, initialState)
-
-    markExecuted(toolCallId)
+    initializeRuntimeState(toolCallId, initialState)
 
     const executeWrapper = async () => {
       await execute(data, wrappedSetState)
@@ -49,7 +44,7 @@ export function useToolExecutionEffect<TData, TState>(
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     executeWrapper()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toolCallId, data, state, hasExecuted, markExecuted, setState, initializeState, ...deps])
+  }, [toolCallId, data, state, hasRuntimeState, setRuntimeState, initializeRuntimeState, ...deps])
 
   return {
     state,

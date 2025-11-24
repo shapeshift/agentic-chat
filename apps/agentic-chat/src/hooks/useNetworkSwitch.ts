@@ -4,8 +4,9 @@ import { modal } from '@reown/appkit/react'
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import { useEffect, useRef } from 'react'
 
-import type { PersistedToolState } from '@/stores/toolExecutionStore'
-import { useToolExecutionStore } from '@/stores/toolExecutionStore'
+import { useChatContext } from '@/providers/ChatProvider'
+import type { PersistedToolState } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 
@@ -40,7 +41,9 @@ const networkMap: Record<string, AppKitNetwork> = {
 function networkStateToPersistedState(
   toolCallId: string,
   state: NetworkSwitchState,
-  network: string
+  conversationId: string,
+  network: string,
+  networkOutput: SwitchNetworkOutput | null
 ): PersistedToolState {
   const phases: string[] = []
 
@@ -53,11 +56,15 @@ function networkStateToPersistedState(
 
   return {
     toolCallId,
+    toolType: 'network_switch',
+    conversationId,
+    timestamp: Date.now(),
     phases,
     meta: {
       network,
       ...(state.error && { error: state.error }),
     },
+    ...(networkOutput && { toolOutput: networkOutput }),
   }
 }
 
@@ -77,23 +84,22 @@ export const useNetworkSwitch = (
   toolCallId: string,
   networkData: SwitchNetworkOutput | null
 ): UseNetworkSwitchResult => {
-  const store = useToolExecutionStore()
+  const store = useChatStore()
+  const { activeConversationId } = useChatContext()
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
-    // Reset hydration flag when toolCallId changes
     if (lastToolCallIdRef.current !== toolCallId) {
       hasHydratedRef.current = false
       lastToolCallIdRef.current = toolCallId
     }
 
-    if (!hasHydratedRef.current && !store.toolStates.has(toolCallId)) {
-      const persisted = store.getPersistedState(toolCallId)
+    if (!hasHydratedRef.current && !store.runtimeToolStates.has(toolCallId)) {
+      const persisted = store.getPersistedTransaction(toolCallId)
       if (persisted) {
         const hydratedState = persistedStateToNetworkState(persisted)
-        store.initializeState(toolCallId, hydratedState)
-        store.markExecuted(toolCallId)
+        store.initializeRuntimeState(toolCallId, hydratedState)
         hasHydratedRef.current = true
       }
     }
@@ -125,8 +131,16 @@ export const useNetworkSwitch = (
           setState(draft => {
             draft.phase = 'success'
           })
-          const persisted = networkStateToPersistedState(toolCallId, { phase: 'success' }, data.network)
-          store.savePersistedState(persisted)
+          if (activeConversationId) {
+            const persisted = networkStateToPersistedState(
+              toolCallId,
+              { phase: 'success' },
+              activeConversationId,
+              data.network,
+              data
+            )
+            store.persistTransaction(persisted)
+          }
         })
         .catch((error: Error) => {
           const errorMessage = error.message
@@ -134,12 +148,16 @@ export const useNetworkSwitch = (
             draft.phase = 'error'
             draft.error = errorMessage
           })
-          const persisted = networkStateToPersistedState(
-            toolCallId,
-            { phase: 'error', error: errorMessage },
-            data.network
-          )
-          store.savePersistedState(persisted)
+          if (activeConversationId) {
+            const persisted = networkStateToPersistedState(
+              toolCallId,
+              { phase: 'error', error: errorMessage },
+              activeConversationId,
+              data.network,
+              data
+            )
+            store.persistTransaction(persisted)
+          }
         })
     },
     [modal]

@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
+import { ActivityList } from './ActivityList'
 import { PortfolioAssetList } from './PortfolioAssetList'
 import { PortfolioHeader } from './PortfolioHeader'
 
@@ -25,14 +26,7 @@ export function PortfolioPanel() {
         </TabsContent>
 
         <TabsContent value="activity" className="flex-1 mt-0 min-h-0 overflow-y-auto">
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center px-4">
-              <div className="text-lg font-medium text-foreground">Activity Coming Soon</div>
-              <div className="text-sm text-muted-foreground mt-1">
-                Transaction history from agentic app will appear here
-              </div>
-            </div>
-          </div>
+          <ActivityList />
         </TabsContent>
       </Tabs>
     </div>

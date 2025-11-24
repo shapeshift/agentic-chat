@@ -5,8 +5,9 @@ import type { DynamicToolUIPart } from 'ai'
 import { useEffect, useRef } from 'react'
 import { useSwitchChain } from 'wagmi'
 
-import type { PersistedToolState } from '@/stores/toolExecutionStore'
-import { useToolExecutionStore } from '@/stores/toolExecutionStore'
+import { useChatContext } from '@/providers/ChatProvider'
+import type { PersistedToolState } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
 import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
@@ -52,7 +53,13 @@ const getStepStatus = (step: SwapStep, state: SwapState): StepStatus => {
   return StepStatus.SKIPPED
 }
 
-function swapStateToPersistedState(toolCallId: string, state: SwapState, networkName?: string): PersistedToolState {
+function swapStateToPersistedState(
+  toolCallId: string,
+  state: SwapState,
+  conversationId: string,
+  swapOutput: InitiateSwapOutput | null,
+  networkName?: string
+): PersistedToolState {
   const phases: string[] = []
 
   if (state.completedSteps.has(SwapStep.QUOTE)) {
@@ -76,6 +83,9 @@ function swapStateToPersistedState(toolCallId: string, state: SwapState, network
 
   return {
     toolCallId,
+    toolType: 'swap',
+    conversationId,
+    timestamp: Date.now(),
     phases,
     meta: {
       ...(state.approvalTxHash && { approvalTxHash: state.approvalTxHash }),
@@ -83,6 +93,7 @@ function swapStateToPersistedState(toolCallId: string, state: SwapState, network
       ...(state.error && { error: state.error }),
       ...(networkName && { networkName }),
     },
+    ...(swapOutput && { toolOutput: swapOutput }),
   }
 }
 
@@ -133,23 +144,22 @@ export const useSwapExecution = (
   const { switchChainAsync } = useSwitchChain()
   const { walletProvider } = useAppKitProvider('solana')
   const solanaProvider = walletProvider as SolanaWalletProvider | undefined
-  const store = useToolExecutionStore()
+  const store = useChatStore()
+  const { activeConversationId } = useChatContext()
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
-    // Reset hydration flag when toolCallId changes
     if (lastToolCallIdRef.current !== toolCallId) {
       hasHydratedRef.current = false
       lastToolCallIdRef.current = toolCallId
     }
 
-    if (!hasHydratedRef.current && !store.toolStates.has(toolCallId)) {
-      const persisted = store.getPersistedState(toolCallId)
+    if (!hasHydratedRef.current && !store.runtimeToolStates.has(toolCallId)) {
+      const persisted = store.getPersistedTransaction(toolCallId)
       if (persisted) {
         const hydratedState = persistedStateToSwapState(persisted)
-        store.initializeState(toolCallId, hydratedState)
-        store.markExecuted(toolCallId)
+        store.initializeRuntimeState(toolCallId, hydratedState)
         hasHydratedRef.current = true
       }
     }
@@ -235,8 +245,16 @@ export const useSwapExecution = (
           ...(approvalTxHash && { approvalTxHash }),
           ...(swapTxHash && { swapTxHash }),
         }
-        const persisted = swapStateToPersistedState(toolCallId, finalState, data.swapData.sellAsset.network)
-        store.savePersistedState(persisted)
+        if (activeConversationId) {
+          const persisted = swapStateToPersistedState(
+            toolCallId,
+            finalState,
+            activeConversationId,
+            data,
+            data.swapData.sellAsset.network
+          )
+          store.persistTransaction(persisted)
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         let errorState: SwapState | undefined
@@ -246,10 +264,15 @@ export const useSwapExecution = (
           errorState = { ...draft }
         })
 
-        // Save error state
-        if (errorState) {
-          const persisted = swapStateToPersistedState(toolCallId, errorState, data.swapData.sellAsset.network)
-          store.savePersistedState(persisted)
+        if (errorState && activeConversationId) {
+          const persisted = swapStateToPersistedState(
+            toolCallId,
+            errorState,
+            activeConversationId,
+            data,
+            data.swapData.sellAsset.network
+          )
+          store.persistTransaction(persisted)
         }
       }
     },

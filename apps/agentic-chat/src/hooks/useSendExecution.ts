@@ -5,8 +5,9 @@ import type { DynamicToolUIPart } from 'ai'
 import { useEffect, useRef } from 'react'
 import { useSwitchChain } from 'wagmi'
 
-import type { PersistedToolState } from '@/stores/toolExecutionStore'
-import { useToolExecutionStore } from '@/stores/toolExecutionStore'
+import { useChatContext } from '@/providers/ChatProvider'
+import type { PersistedToolState } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
 import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { executeSend } from '@/utils/sendExecutor'
 
@@ -50,7 +51,13 @@ const getStepStatus = (step: SendStep, state: SendState): StepStatus => {
   return StepStatus.SKIPPED
 }
 
-function sendStateToPersistedState(toolCallId: string, state: SendState, networkName?: string): PersistedToolState {
+function sendStateToPersistedState(
+  toolCallId: string,
+  state: SendState,
+  conversationId: string,
+  sendOutput: SendOutput | null,
+  networkName?: string
+): PersistedToolState {
   const phases: string[] = []
 
   if (state.completedSteps.has(SendStep.PREPARATION)) {
@@ -68,6 +75,9 @@ function sendStateToPersistedState(toolCallId: string, state: SendState, network
 
   return {
     toolCallId,
+    toolType: 'send',
+    conversationId,
+    timestamp: Date.now(),
     phases,
     meta: {
       ...(state.sendTxHash && { sendTxHash: state.sendTxHash }),
@@ -75,6 +85,7 @@ function sendStateToPersistedState(toolCallId: string, state: SendState, network
       ...(state.failedStep !== undefined && { failedStep: state.failedStep }),
       ...(networkName && { networkName }),
     },
+    ...(sendOutput && { toolOutput: sendOutput }),
   }
 }
 
@@ -121,23 +132,22 @@ export const useSendExecution = (
   const { switchChainAsync } = useSwitchChain()
   const { walletProvider } = useAppKitProvider('solana')
   const solanaProvider = walletProvider as SolanaWalletProvider | undefined
-  const store = useToolExecutionStore()
+  const store = useChatStore()
+  const { activeConversationId } = useChatContext()
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
-    // Reset hydration flag when toolCallId changes
     if (lastToolCallIdRef.current !== toolCallId) {
       hasHydratedRef.current = false
       lastToolCallIdRef.current = toolCallId
     }
 
-    if (!hasHydratedRef.current && !store.toolStates.has(toolCallId)) {
-      const persisted = store.getPersistedState(toolCallId)
+    if (!hasHydratedRef.current && !store.runtimeToolStates.has(toolCallId)) {
+      const persisted = store.getPersistedTransaction(toolCallId)
       if (persisted) {
         const hydratedState = persistedStateToSendState(persisted)
-        store.initializeState(toolCallId, hydratedState)
-        store.markExecuted(toolCallId)
+        store.initializeRuntimeState(toolCallId, hydratedState)
         hasHydratedRef.current = true
       }
     }
@@ -203,8 +213,16 @@ export const useSendExecution = (
           completedSteps: finalCompletedSteps,
           sendTxHash,
         }
-        const persisted = sendStateToPersistedState(toolCallId, finalState, data.sendData.asset.network)
-        store.savePersistedState(persisted)
+        if (activeConversationId) {
+          const persisted = sendStateToPersistedState(
+            toolCallId,
+            finalState,
+            activeConversationId,
+            data,
+            data.sendData.asset.network
+          )
+          store.persistTransaction(persisted)
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         let errorState: SendState | undefined
@@ -214,10 +232,15 @@ export const useSendExecution = (
           errorState = { ...draft }
         })
 
-        // Save error state
-        if (errorState) {
-          const persisted = sendStateToPersistedState(toolCallId, errorState, data.sendData.asset.network)
-          store.savePersistedState(persisted)
+        if (errorState && activeConversationId) {
+          const persisted = sendStateToPersistedState(
+            toolCallId,
+            errorState,
+            activeConversationId,
+            data,
+            data.sendData.asset.network
+          )
+          store.persistTransaction(persisted)
         }
       }
     },
