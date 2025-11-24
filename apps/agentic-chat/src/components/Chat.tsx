@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 import { useChatContext } from '../providers/ChatProvider'
@@ -16,7 +17,7 @@ const WELCOME_SUGGESTIONS = [
 ]
 
 export function Chat() {
-  const { messages, sendMessage, isLoading } = useChatContext()
+  const { messages, sendMessage, isLoading, error } = useChatContext()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
   const shouldAutoScrollRef = useRef(true)
@@ -86,6 +87,18 @@ export function Chat() {
             })}
 
             {isLoading && <LoadingIndicator />}
+
+            {error && (
+              <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
+                <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
+                <div className="flex flex-col gap-1">
+                  <div className="font-medium text-red-800 dark:text-red-200">Something went wrong</div>
+                  <div className="text-sm text-red-600 dark:text-red-400">
+                    The service is temporarily unavailable. Please try again.
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div ref={messagesEndRef} />
           </div>
