@@ -11,14 +11,14 @@ export const Dashboard = () => {
     <ChatProvider>
       <SidebarProvider>
         {isSidebarLeftEnabled && <SidebarLeft />}
-        <SidebarInset className="h-screen">
-          <header className="top-0 flex gap-2 bg-background z-10 px-2 pt-2 items-center">
+        <SidebarInset className="h-dvh flex flex-col">
+          <header className="sticky top-0 h-12 flex-shrink-0 flex gap-2 bg-background z-10 px-2 items-center">
             <div className="flex items-center gap-2">{isSidebarLeftEnabled && <SidebarTrigger />}</div>
             <div className="ml-auto">
               <ConnectWallet />
             </div>
           </header>
-          <div className="overflow-hidden h-full">
+          <div className="overflow-hidden flex-1">
             <Chat />
           </div>
         </SidebarInset>
