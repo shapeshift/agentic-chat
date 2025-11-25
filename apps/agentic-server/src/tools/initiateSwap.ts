@@ -45,6 +45,7 @@ async function resolveSwapAssets(sellAssetInput: AssetInput, buyAssetInput: Asse
 }
 
 type SwapRate = GetRateOutput
+type RateResult = { rate: SwapRate } | { error: string }
 
 async function fetchBestSwapRate(
   sellAddress: string,
@@ -54,7 +55,7 @@ async function fetchBestSwapRate(
   sellAmount: string
 ): Promise<SwapRate> {
   const isCrossChain = sellAsset.chainId !== buyAsset.chainId
-  const ratePromises: Array<Promise<SwapRate | null>> = []
+  const ratePromises: Array<Promise<RateResult>> = []
 
   ratePromises.push(
     getRelayRate({
@@ -63,7 +64,9 @@ async function fetchBestSwapRate(
       sellAsset,
       buyAsset,
       sellAmountCryptoPrecision: sellAmount,
-    }).catch(() => null)
+    })
+      .then(rate => ({ rate }))
+      .catch((err: Error) => ({ error: err.message }))
   )
 
   if (!isCrossChain && isEvmChain(sellAsset.chainId)) {
@@ -73,17 +76,19 @@ async function fetchBestSwapRate(
         sellAsset,
         buyAsset,
         sellAmountCryptoPrecision: sellAmount,
-      }).catch(() => null)
+      })
+        .then(rate => ({ rate }))
+        .catch((err: Error) => ({ error: err.message }))
     )
   }
 
-  const rates = await Promise.all(ratePromises)
-  const availableRates = rates.filter((rate): rate is SwapRate => rate !== null)
+  const results = await Promise.all(ratePromises)
+  const availableRates = results.filter((r): r is { rate: SwapRate } => 'rate' in r).map(r => r.rate)
+  const errors = results.filter((r): r is { error: string } => 'error' in r).map(r => r.error)
 
   if (availableRates.length === 0) {
-    throw new Error(
-      'No rates available from any provider. This swap route may not be supported or the amount may be too small.'
-    )
+    const errorDetails = errors.length > 0 ? errors.join('. ') : 'Unknown error'
+    throw new Error(`No rates available. ${errorDetails}`)
   }
 
   return availableRates.reduce((best, current) =>
