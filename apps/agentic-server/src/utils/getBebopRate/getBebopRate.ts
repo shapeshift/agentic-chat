@@ -100,10 +100,15 @@ export const getBebopRate = async ({
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('[getBebopRate] API request failed:', error.response?.status, error.response?.data || error.message)
-    } else {
-      console.error('[getBebopRate] Unexpected error:', error)
+      const data = error.response?.data as { error?: { message?: string }; message?: string } | undefined
+      const apiMessage = data?.error?.message || data?.message || error.message
+
+      console.error('[getBebopRate] API request failed:', error.response?.status, data || error.message)
+
+      throw new Error(`Bebop: ${apiMessage}`)
     }
-    throw error
+
+    console.error('[getBebopRate] Unexpected error:', error)
+    throw new Error(`Bebop: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }

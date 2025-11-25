@@ -109,10 +109,15 @@ export const getRelayRate = async ({
     throw new Error(`Unsupported chain namespace: ${chainNamespace}`)
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('[getRelayRate] API request failed:', error.response?.status, error.response?.data || error.message)
-    } else {
-      console.error('[getRelayRate] Unexpected error:', error)
+      const data = error.response?.data as { message?: string } | undefined
+      const apiMessage = data?.message || error.message
+
+      console.error('[getRelayRate] API request failed:', error.response?.status, data || error.message)
+
+      throw new Error(`Relay: ${apiMessage}`)
     }
-    throw error
+
+    console.error('[getRelayRate] Unexpected error:', error)
+    throw new Error(`Relay: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
