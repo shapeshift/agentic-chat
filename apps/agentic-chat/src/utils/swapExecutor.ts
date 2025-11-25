@@ -9,6 +9,7 @@ type TransactionData = SwapData['swapTx']
 
 interface ExecuteTransactionOptions {
   solanaProvider?: SolanaWalletProvider
+  nonce?: number
 }
 
 async function executeTransaction(tx: TransactionData, options?: ExecuteTransactionOptions) {
@@ -25,6 +26,7 @@ async function executeTransaction(tx: TransactionData, options?: ExecuteTransact
           : Number(tx.gasLimit),
     }),
     ...(options?.solanaProvider && { solanaProvider: options.solanaProvider }),
+    ...(options?.nonce !== undefined && { nonce: options.nonce }),
   }
 
   return sendTransaction(finalTx)

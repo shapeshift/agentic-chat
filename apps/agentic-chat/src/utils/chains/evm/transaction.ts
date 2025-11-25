@@ -33,7 +33,16 @@ export async function sendEvmTransaction(params: TransactionParams): Promise<str
     const data = params.data as Hex
     const gas = params.gasLimit ? BigInt(params.gasLimit) : undefined
 
-    const txHash = await walletClient.sendTransaction({ account, to, value, data, chain, ...(gas && { gas }) })
+    const nonce = params.nonce
+    const txHash = await walletClient.sendTransaction({
+      account,
+      to,
+      value,
+      data,
+      chain,
+      ...(gas && { gas }),
+      ...(nonce !== undefined && { nonce }),
+    })
     return txHash
   } catch (error) {
     if (error instanceof Error) {

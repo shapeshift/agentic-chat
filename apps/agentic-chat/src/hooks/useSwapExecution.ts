@@ -1,10 +1,13 @@
 import { useAppKitProvider } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
+import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { useEffect, useRef } from 'react'
+import { getAddress } from 'viem'
 import { useSwitchChain } from 'wagmi'
 
+import { wagmiConfig } from '@/lib/wagmi-config'
 import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
@@ -204,9 +207,24 @@ export const useSwapExecution = (
           })
         }
 
+        // Fetch nonce before approval for EVM chains to prevent race conditions
+        let baseNonce: number | undefined
+        if (chainNamespace === CHAIN_NAMESPACE.Evm && needsApproval && approvalTx) {
+          const publicClient = getPublicClient(wagmiConfig, { chainId: Number(chainReference) })
+          if (publicClient) {
+            baseNonce = await publicClient.getTransactionCount({
+              address: getAddress(approvalTx.from),
+              blockTag: 'pending',
+            })
+          }
+        }
+
         // Step 2: Approval
         if (needsApproval && approvalTx) {
-          approvalTxHash = await executeApproval(approvalTx, { solanaProvider })
+          approvalTxHash = await executeApproval(approvalTx, {
+            solanaProvider,
+            ...(baseNonce !== undefined && { nonce: baseNonce }),
+          })
           setState(draft => {
             draft.approvalTxHash = approvalTxHash
           })
@@ -222,8 +240,12 @@ export const useSwapExecution = (
           })
         }
 
-        // Step 3: Swap
-        swapTxHash = await executeSwap(swapTx, { solanaProvider })
+        // Step 3: Swap - use nonce + 1 if we did an approval to prevent race condition
+        const swapNonce = baseNonce !== undefined ? baseNonce + 1 : undefined
+        swapTxHash = await executeSwap(swapTx, {
+          solanaProvider,
+          ...(swapNonce !== undefined && { nonce: swapNonce }),
+        })
         setState(draft => {
           draft.swapTxHash = swapTxHash
         })
