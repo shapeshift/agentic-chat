@@ -67,6 +67,25 @@ class AssetService {
     return results
   }
 
+  private scoreMatch(asset: StaticAsset, term: string): number {
+    const symbol = asset.symbol.toLowerCase()
+    const name = asset.name.toLowerCase()
+
+    // Exact symbol match (highest)
+    if (symbol === term) return 1000
+
+    // Exact name match
+    if (name === term) return 500
+
+    // Symbol contains - shorter symbols rank higher (closer match)
+    if (symbol.includes(term)) return 400 - symbol.length
+
+    // Name contains - shorter names rank higher
+    if (name.includes(term)) return 200 - name.length
+
+    return 0
+  }
+
   searchByName(name: string, network?: string): StaticAsset[] {
     const nameLower = name.toLowerCase()
     const exactMatches = this.assetsByName.get(nameLower) || []
@@ -93,6 +112,7 @@ class AssetService {
   }
 
   search(term: string, network?: string): StaticAsset[] {
+    const termLower = term.toLowerCase()
     const symbolResults = this.searchBySymbol(term, network)
     const nameResults = this.searchByName(term, network)
 
@@ -102,6 +122,9 @@ class AssetService {
     }
 
     return Array.from(resultMap.values())
+      .map(asset => ({ asset, score: this.scoreMatch(asset, termLower) }))
+      .sort((a, b) => b.score - a.score)
+      .map(({ asset }) => asset)
   }
 
   getSortedAssetIds(): AssetId[] {

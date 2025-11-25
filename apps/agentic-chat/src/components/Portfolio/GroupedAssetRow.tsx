@@ -29,7 +29,7 @@ export function GroupedAssetRow({ group }: GroupedAssetRowProps) {
   if (!hasMultipleAssets) {
     return (
       <DrawerListItem>
-        <PortfolioAssetRow asset={primaryAsset} />
+        <PortfolioAssetRow asset={primaryAsset} showNetwork />
       </DrawerListItem>
     )
   }
