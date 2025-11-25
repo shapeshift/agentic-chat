@@ -80,14 +80,14 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
           <div className="flex items-start justify-between w-full">
             <div className="flex items-center gap-3">
               <AssetIcon assetId={asset.assetId} />
-              <div className="flex flex-col h-12 justify-between">
+              <div className="flex flex-col">
                 <span className="text-[20px] font-bold leading-7">{asset.name}</span>
                 <span className="text-sm text-muted-foreground font-normal leading-5">
                   {asset.symbol.toUpperCase()}
                 </span>
               </div>
             </div>
-            <div className="flex flex-col h-12 justify-between items-end">
+            <div className="flex flex-col items-end">
               <span className="text-[18px] font-bold leading-7">
                 <Amount.Fiat value={asset.price} />
               </span>
