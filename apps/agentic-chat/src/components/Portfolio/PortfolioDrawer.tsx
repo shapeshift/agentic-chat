@@ -1,5 +1,5 @@
-import { useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react'
-import { Power, X } from 'lucide-react'
+import { useAppKit, useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react'
+import { Power, Wallet, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { usePortfolioQuery } from '@/hooks/usePortfolioQuery'
@@ -26,7 +26,8 @@ type PortfolioDrawerProps = {
 }
 
 export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
-  const { address } = useAppKitAccount()
+  const { open } = useAppKit()
+  const { address, isConnected } = useAppKitAccount()
   const { disconnect } = useDisconnect()
   const { walletInfo } = useWalletInfo()
   const [showDisconnectAlert, setShowDisconnectAlert] = useState(false)
@@ -39,6 +40,10 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
     })
   }
 
+  const handleConnect = () => {
+    void open()
+  }
+
   const truncatedAddress = address ? truncateAddress(address) : ''
 
   return (
@@ -46,16 +51,21 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
       <SheetContent side="right" className="w-full sm:max-w-md p-0 [&>button]:hidden">
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b">
+            {isConnected && (
+              <div className="flex items-center gap-2">
+                {walletInfo?.icon && (
+                  <img src={walletInfo.icon} alt={walletInfo.name || 'Wallet'} className="w-6 h-6 rounded-full" />
+                )}
+                <span className="text-sm font-medium">{truncatedAddress}</span>
+              </div>
+            )}
+            {!isConnected && <div />}
             <div className="flex items-center gap-2">
-              {walletInfo?.icon && (
-                <img src={walletInfo.icon} alt={walletInfo.name || 'Wallet'} className="w-6 h-6 rounded-full" />
+              {isConnected && (
+                <Button variant="ghost" size="icon" onClick={() => setShowDisconnectAlert(true)} className="h-8 w-8">
+                  <Power className="w-4 h-4" />
+                </Button>
               )}
-              <span className="text-sm font-medium">{truncatedAddress}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setShowDisconnectAlert(true)} className="h-8 w-8">
-                <Power className="w-4 h-4" />
-              </Button>
               <SheetClose asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <X className="w-4 h-4" />
@@ -65,7 +75,17 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
           </div>
 
           <div className="flex-1 overflow-hidden">
-            {isError ? (
+            {!isConnected && (
+              <div className="flex flex-col items-center justify-center h-full p-4">
+                <Wallet className="w-16 h-16 text-muted-foreground mb-4" />
+                <div className="text-lg font-medium text-foreground">No wallet connected</div>
+                <div className="text-sm text-muted-foreground mt-1">Connect a wallet to view your portfolio</div>
+                <Button onClick={handleConnect} variant="default" className="mt-4">
+                  Connect Wallet
+                </Button>
+              </div>
+            )}
+            {isConnected && isError && (
               <div className="flex flex-col items-center justify-center h-full p-4">
                 <div className="text-center">
                   <div className="text-lg font-medium text-destructive">Failed to load portfolio</div>
@@ -77,9 +97,8 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
                   </Button>
                 </div>
               </div>
-            ) : (
-              <PortfolioPanel />
             )}
+            {isConnected && !isError && <PortfolioPanel />}
           </div>
         </div>
       </SheetContent>
