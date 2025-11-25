@@ -8,6 +8,7 @@ import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/skeleton'
+import { TruncateText } from '../ui/TruncateText'
 import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
@@ -142,11 +143,11 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
           Sign swap transaction
         </TxStepCard.Step>
         {footerMessage && (
-          <div
+          <TruncateText
+            text={footerMessage.text}
+            limit={80}
             className={`text-sm font-medium mt-4 ${footerMessage.type === 'error' ? 'text-red-500' : 'text-muted-foreground'}`}
-          >
-            {footerMessage.text}
-          </div>
+          />
         )}
       </TxStepCard.Stepper>
     </TxStepCard.Root>
