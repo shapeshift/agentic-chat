@@ -1,11 +1,10 @@
 import { useChat } from '@ai-sdk/react'
-import { useAppKitAccount } from '@reown/appkit/react'
 import { DefaultChatTransport, isToolOrDynamicToolUIPart } from 'ai'
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAccount as useEvmAccount } from 'wagmi'
 
+import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { useChatStore, saveMessages, loadMessages } from '@/stores/chatStore'
 import type { Conversation } from '@/types'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
@@ -43,8 +42,7 @@ interface ChatProviderProps {
 }
 
 export function ChatProvider({ children }: ChatProviderProps) {
-  const evmAccount = useEvmAccount()
-  const { address: solanaAddress } = useAppKitAccount({ namespace: 'solana' })
+  const { evmAddress, solanaAddress } = useWalletConnection()
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
@@ -58,11 +56,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
   } = useChatStore()
 
   // Use refs to avoid closure capture in transport body function
-  const evmAddressRef = useRef(evmAccount.address)
+  const evmAddressRef = useRef(evmAddress)
   const solanaAddressRef = useRef(solanaAddress)
 
   // Keep refs up-to-date
-  evmAddressRef.current = evmAccount.address
+  evmAddressRef.current = evmAddress
   solanaAddressRef.current = solanaAddress
 
   const transport = useMemo(

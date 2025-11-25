@@ -1,6 +1,7 @@
 import { useAppKit, useAppKitAccount, useAppKitNetwork, useWalletInfo } from '@reown/appkit/react'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'
 
+import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { truncateAddress } from '@/lib/utils'
 
 import { Button } from './ui/button'
@@ -11,7 +12,8 @@ type CustomConnectButtonProps = {
 
 export const CustomConnectButton = ({ onConnectedClick }: CustomConnectButtonProps) => {
   const { open } = useAppKit()
-  const { address, isConnected } = useAppKitAccount()
+  const { address } = useAppKitAccount()
+  const { isConnected } = useWalletConnection()
   const { caipNetwork } = useAppKitNetwork()
   const { walletInfo } = useWalletInfo()
 

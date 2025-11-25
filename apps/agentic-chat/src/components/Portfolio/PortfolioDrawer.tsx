@@ -3,6 +3,7 @@ import { Power, Wallet, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { usePortfolioQuery } from '@/hooks/usePortfolioQuery'
+import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { truncateAddress } from '@/lib/utils'
 
 import {
@@ -27,7 +28,8 @@ type PortfolioDrawerProps = {
 
 export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
   const { open } = useAppKit()
-  const { address, isConnected } = useAppKitAccount()
+  const { address } = useAppKitAccount()
+  const { isConnected } = useWalletConnection()
   const { disconnect } = useDisconnect()
   const { walletInfo } = useWalletInfo()
   const [showDisconnectAlert, setShowDisconnectAlert] = useState(false)

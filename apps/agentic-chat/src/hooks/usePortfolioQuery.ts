@@ -1,19 +1,15 @@
-import { useAppKitAccount } from '@reown/appkit/react'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { useAccount as useEvmAccount } from 'wagmi'
 
 import { bnOrZero } from '@/lib/bignumber'
 import { fetchFullPortfolio } from '@/services/portfolioService'
 
+import { useWalletConnection } from './useWalletConnection'
+
 const REFETCH_INTERVAL = 30_000 // 30 seconds
 
 export function usePortfolioQuery() {
-  const evmAccount = useEvmAccount()
-  const { address: solanaAddress } = useAppKitAccount({ namespace: 'solana' })
-
-  const evmAddress = evmAccount.address
-  const isConnected = !!evmAddress || !!solanaAddress
+  const { isConnected, evmAddress, solanaAddress } = useWalletConnection()
 
   const queryKey = useMemo(() => ['portfolio', evmAddress, solanaAddress] as const, [evmAddress, solanaAddress])
 
