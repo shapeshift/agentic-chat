@@ -1,4 +1,5 @@
-import { NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
+import type { EvmSolanaNetwork } from '@shapeshiftoss/types'
+import { chainIdToNetwork, EVM_SOLANA_NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
 import { calculateUsdValue, fromBaseUnit } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
@@ -10,12 +11,16 @@ import { executeGetAccount } from './getAccount'
 import { executeGetAssetsBasic } from './getAssets'
 
 export const portfolioSchema = z.object({
-  network: z.enum(NETWORKS).describe('Network name (e.g., ethereum, arbitrum, solana)'),
+  networks: z
+    .array(z.enum(EVM_SOLANA_NETWORKS))
+    .optional()
+    .describe('Networks to fetch portfolio for. Omit to fetch all connected networks.'),
 })
 
 export type PortfolioInput = z.infer<typeof portfolioSchema>
 
 export type PortfolioDataFull = {
+  network: EvmSolanaNetwork
   account: string
   chainId: string
   balances: Array<{
@@ -33,7 +38,8 @@ export type PortfolioDataFull = {
   }>
 }
 
-export type PortfolioOutput = {
+export type PortfolioOutput = Array<{
+  network: EvmSolanaNetwork
   account: string
   chainId: string
   balances: Array<{
@@ -43,13 +49,19 @@ export type PortfolioOutput = {
     cryptoAmount: string
     usdAmount: string
   }>
+}>
+
+export function getConnectedNetworks(walletContext?: WalletContext): EvmSolanaNetwork[] {
+  if (!walletContext?.connectedWallets) return []
+  return Object.keys(walletContext.connectedWallets)
+    .map(chainId => chainIdToNetwork[chainId])
+    .filter((n): n is EvmSolanaNetwork => !!n && EVM_SOLANA_NETWORKS.includes(n as EvmSolanaNetwork))
 }
 
-export async function getPortfolioData(
-  input: PortfolioInput,
+async function getPortfolioDataSingle(
+  network: EvmSolanaNetwork,
   walletContext?: WalletContext
 ): Promise<PortfolioDataFull> {
-  const { network } = input
   const chainId = networkToChainIdMap[network]
   const account = getAddressForNetwork(walletContext, network)
 
@@ -68,6 +80,7 @@ export async function getPortfolioData(
   const assetMap = new Map(assets.map(asset => [asset.assetId, asset]))
 
   const result: PortfolioDataFull = {
+    network,
     account,
     chainId,
     balances: assetIds
@@ -104,27 +117,42 @@ export async function getPortfolioData(
   return result
 }
 
+export async function getPortfolioData(
+  input: { networks: EvmSolanaNetwork[] },
+  walletContext?: WalletContext
+): Promise<PortfolioDataFull[]> {
+  return Promise.all(input.networks.map(network => getPortfolioDataSingle(network, walletContext)))
+}
+
 export async function executeGetPortfolio(
   input: PortfolioInput,
   walletContext?: WalletContext
 ): Promise<PortfolioOutput> {
-  const fullData = await getPortfolioData(input, walletContext)
+  const networks = input.networks || getConnectedNetworks(walletContext)
 
-  return {
-    account: fullData.account,
-    chainId: fullData.chainId,
-    balances: fullData.balances.map(balance => ({
+  if (networks.length === 0) {
+    throw new Error('No networks specified and no connected wallets found')
+  }
+
+  const fullData = await getPortfolioData({ networks }, walletContext)
+
+  return fullData.map(networkData => ({
+    network: networkData.network,
+    account: networkData.account,
+    chainId: networkData.chainId,
+    balances: networkData.balances.map(balance => ({
       assetId: balance.asset.assetId,
       name: balance.asset.name,
       symbol: balance.asset.symbol,
       cryptoAmount: balance.cryptoAmount,
       usdAmount: balance.usdAmount,
     })),
-  }
+  }))
 }
 
 export const portfolioTool = {
-  description: 'Get user crypto balances with human-readable values and USD amounts for a specific network',
+  description:
+    'Get user crypto balances with human-readable values and USD amounts. Omit networks to fetch all connected wallets.',
   inputSchema: portfolioSchema,
   execute: executeGetPortfolio,
 }

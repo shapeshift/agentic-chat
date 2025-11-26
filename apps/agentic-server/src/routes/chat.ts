@@ -158,8 +158,21 @@ function buildTools(walletContext: WalletContext) {
   }
 }
 
-const SYSTEM_PROMPT =
-  `
+function buildConnectedWalletsPrompt(evmAddress?: string, solanaAddress?: string): string {
+  if (!evmAddress && !solanaAddress) {
+    return '**Connected Wallets:** None'
+  }
+  const parts: string[] = []
+  if (evmAddress) parts.push(`EVM (${evmAddress.slice(0, 6)}...${evmAddress.slice(-4)})`)
+  if (solanaAddress) parts.push(`Solana (${solanaAddress.slice(0, 4)}...${solanaAddress.slice(-4)})`)
+  return `**Connected Wallets:** ${parts.join(', ')}`
+}
+
+function buildSystemPrompt(evmAddress?: string, solanaAddress?: string): string {
+  return (
+    `
+${buildConnectedWalletsPrompt(evmAddress, solanaAddress)}
+
 **ShapeShift Crypto Assistant**
 
 **Current Date and Time:**
@@ -227,9 +240,12 @@ Examples:
 - If a tool fails, explain what went wrong and suggest alternatives
 
 **Portfolio Rules:**
+- Portfolio tool fetches all connected networks by default - no need to call multiple times
 - Only check balances if user says "all my [token]" or asks balance first
 - For specific amounts ("swap 10 USDC"), use exact amount without balance check
 ` + supportedChainsContext
+  )
+}
 
 export async function handleChatRequest(c: Context) {
   try {
@@ -249,7 +265,7 @@ export async function handleChatRequest(c: Context) {
     const result = streamText({
       model: anthropic('claude-haiku-4-5'),
       messages: modelMessages,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(evmAddress, solanaAddress),
       temperature: 1.0,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),
