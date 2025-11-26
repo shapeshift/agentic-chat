@@ -9,16 +9,16 @@ import {
   polygonChainId,
   solanaChainId,
 } from '@shapeshiftoss/caip'
-import { NETWORKS } from '@shapeshiftoss/types'
+import { EVM_SOLANA_NETWORKS } from '@shapeshiftoss/types'
 import type { Context } from 'hono'
 import { z } from 'zod'
 
-import { getPortfolioData } from '../tools/portfolio'
+import { getConnectedNetworks, getPortfolioData } from '../tools/portfolio'
 import type { WalletContext } from '../utils/walletContextSimple'
 
 const portfolioRequestSchema = z
   .object({
-    network: z.enum(NETWORKS),
+    networks: z.array(z.enum(EVM_SOLANA_NETWORKS)).optional(),
     evmAddress: z.string().optional(),
     solanaAddress: z.string().optional(),
   })
@@ -57,11 +57,16 @@ export async function handlePortfolioRequest(c: Context) {
   try {
     const body = await c.req.json()
     const validatedBody = portfolioRequestSchema.parse(body)
-    const { network, evmAddress, solanaAddress } = validatedBody
+    const { networks, evmAddress, solanaAddress } = validatedBody
 
     const walletContext = buildWalletContext(evmAddress, solanaAddress)
+    const networksToFetch = networks || getConnectedNetworks(walletContext)
 
-    const portfolioData = await getPortfolioData({ network }, walletContext)
+    if (networksToFetch.length === 0) {
+      return c.json({ error: 'No networks available for the provided addresses' }, 400)
+    }
+
+    const portfolioData = await getPortfolioData({ networks: networksToFetch }, walletContext)
 
     return c.json(portfolioData)
   } catch (error) {

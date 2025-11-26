@@ -33,7 +33,5 @@ export type PortfolioData = {
   assets: PortfolioAsset[]
   totalBalance: string
   delta24h: PortfolioDelta | null
-  loadingChains: Set<ChainId>
-  errorChains: Set<ChainId>
   lastUpdated: number
 }

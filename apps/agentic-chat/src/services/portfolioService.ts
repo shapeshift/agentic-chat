@@ -1,6 +1,5 @@
 import type { ChainId } from '@shapeshiftoss/caip'
 import type { EvmSolanaNetwork } from '@shapeshiftoss/types'
-import { EVM_NETWORKS, SOLANA_NETWORK, networkToChainIdMap } from '@shapeshiftoss/types'
 
 import { bn, bnOrZero } from '@/lib/bignumber'
 import { calculate24hDelta } from '@/lib/portfolio'
@@ -20,43 +19,14 @@ type PortfolioBalanceItem = {
   usdAmount: string
 }
 
-type PortfolioResponse = {
+type PortfolioNetworkResult = {
+  network: EvmSolanaNetwork
   account: string
   chainId: ChainId
   balances: PortfolioBalanceItem[]
 }
 
 const API_BASE_URL = import.meta.env.VITE_AGENTIC_SERVER_BASE_URL
-
-async function fetchNetworkPortfolio(
-  network: EvmSolanaNetwork,
-  evmAddress?: string,
-  solanaAddress?: string
-): Promise<PortfolioResponse | null> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/portfolio`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        network,
-        evmAddress,
-        solanaAddress,
-      }),
-    })
-
-    if (!response.ok) {
-      console.error(`[Portfolio] Failed to fetch ${network}:`, response.statusText)
-      return null
-    }
-
-    return (await response.json()) as PortfolioResponse
-  } catch (error) {
-    console.error(`[Portfolio] Error fetching ${network}:`, error)
-    return null
-  }
-}
 
 export async function fetchFullPortfolio(evmAddress?: string, solanaAddress?: string): Promise<PortfolioData> {
   if (!evmAddress && !solanaAddress) {
@@ -65,76 +35,68 @@ export async function fetchFullPortfolio(evmAddress?: string, solanaAddress?: st
       assets: [],
       totalBalance: '0',
       delta24h: null,
-      loadingChains: new Set(),
-      errorChains: new Set(),
       lastUpdated: Date.now(),
     }
   }
 
-  const loadingChains = new Set<ChainId>()
-  const errorChains = new Set<ChainId>()
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/portfolio`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ evmAddress, solanaAddress }),
+    })
 
-  const networksToFetch: EvmSolanaNetwork[] = []
-
-  if (evmAddress) {
-    networksToFetch.push(...EVM_NETWORKS)
-  }
-
-  if (solanaAddress) {
-    networksToFetch.push(SOLANA_NETWORK)
-  }
-
-  const fetchPromises = networksToFetch.map(async network => {
-    const chainId = networkToChainIdMap[network]
-    loadingChains.add(chainId)
-
-    const result = await fetchNetworkPortfolio(network, evmAddress, solanaAddress)
-
-    loadingChains.delete(chainId)
-
-    if (!result) {
-      errorChains.add(chainId)
-      return null
+    if (!response.ok) {
+      console.error('[Portfolio] Failed to fetch:', response.statusText)
+      return {
+        assets: [],
+        totalBalance: '0',
+        delta24h: null,
+        lastUpdated: Date.now(),
+      }
     }
 
-    return result
-  })
+    const results = (await response.json()) as PortfolioNetworkResult[]
 
-  const results = await Promise.all(fetchPromises)
-  const successfulResults = results.filter((r): r is PortfolioResponse => r !== null)
+    const allAssets: PortfolioAsset[] = results.flatMap(result =>
+      result.balances.map(balance => ({
+        assetId: balance.asset.assetId,
+        chainId: result.chainId,
+        name: balance.asset.name,
+        symbol: balance.asset.symbol,
+        icon: undefined,
+        cryptoBalancePrecision: balance.cryptoAmount,
+        fiatAmount: balance.usdAmount,
+        price: balance.asset.price,
+        priceChange24h: balance.asset.priceChange24h?.toString() ?? '0',
+        allocation: 0,
+      }))
+    )
 
-  const allAssets: PortfolioAsset[] = successfulResults.flatMap(result =>
-    result.balances.map(balance => ({
-      assetId: balance.asset.assetId,
-      chainId: result.chainId,
-      name: balance.asset.name,
-      symbol: balance.asset.symbol,
-      icon: undefined,
-      cryptoBalancePrecision: balance.cryptoAmount,
-      fiatAmount: balance.usdAmount,
-      price: balance.asset.price,
-      priceChange24h: balance.asset.priceChange24h?.toString() ?? '0',
-      allocation: 0,
+    const totalBalance = allAssets.reduce((sum, asset) => sum.plus(bnOrZero(asset.fiatAmount)), bn(0))
+
+    const assetsWithAllocation = allAssets.map(asset => ({
+      ...asset,
+      allocation: totalBalance.gt(0) ? bnOrZero(asset.fiatAmount).div(totalBalance).times(100).toNumber() : 0,
     }))
-  )
 
-  const totalBalance = allAssets.reduce((sum, asset) => sum.plus(bnOrZero(asset.fiatAmount)), bn(0))
+    const delta24h = calculate24hDelta(assetsWithAllocation)
 
-  const assetsWithAllocation = allAssets.map(asset => ({
-    ...asset,
-    allocation: totalBalance.gt(0) ? bnOrZero(asset.fiatAmount).div(totalBalance).times(100).toNumber() : 0,
-  }))
+    console.log(`[Portfolio] Fetched ${allAssets.length} assets across ${results.length} networks`)
 
-  const delta24h = calculate24hDelta(assetsWithAllocation)
-
-  console.log(`[Portfolio] Fetched ${allAssets.length} assets across ${successfulResults.length} chains`)
-
-  return {
-    assets: assetsWithAllocation,
-    totalBalance: totalBalance.toFixed(2),
-    delta24h,
-    loadingChains,
-    errorChains,
-    lastUpdated: Date.now(),
+    return {
+      assets: assetsWithAllocation,
+      totalBalance: totalBalance.toFixed(2),
+      delta24h,
+      lastUpdated: Date.now(),
+    }
+  } catch (error) {
+    console.error('[Portfolio] Error:', error)
+    return {
+      assets: [],
+      totalBalance: '0',
+      delta24h: null,
+      lastUpdated: Date.now(),
+    }
   }
 }
