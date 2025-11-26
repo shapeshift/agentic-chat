@@ -41,17 +41,23 @@ if (import.meta.env.VITE_PROJECT_ID) {
   })
 }
 
-function App() {
+function AppContent() {
   useWalletAnalytics()
 
   return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/chats" replace />} />
+      <Route path="/chats" element={<Dashboard />} />
+      <Route path="/chats/:conversationId" element={<Dashboard />} />
+    </Routes>
+  )
+}
+
+function App() {
+  return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/chats" replace />} />
-          <Route path="/chats" element={<Dashboard />} />
-          <Route path="/chats/:conversationId" element={<Dashboard />} />
-        </Routes>
+        <AppContent />
       </QueryClientProvider>
     </WagmiProvider>
   )
