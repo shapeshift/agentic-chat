@@ -24,7 +24,7 @@ const metadata = {
   name: 'Agentic Chat',
   description: 'ShapeShift Agentic Chat',
   url: typeof window !== 'undefined' ? window.location.origin : 'https://chat.shapeshift.com',
-  icons: ['https://chat.shapeshift.com/favicon.ico'],
+  icons: ['https://app.shapeshift.com/icon-512x512.png'],
 }
 
 // Initialize AppKit
