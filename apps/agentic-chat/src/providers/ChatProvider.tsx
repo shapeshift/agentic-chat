@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
+import { analytics } from '@/lib/mixpanel'
 import { useChatStore, saveMessages, loadMessages } from '@/stores/chatStore'
 import type { Conversation } from '@/types'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
@@ -130,6 +131,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
     const messageToSend = input
     setInput('')
+
+    analytics.trackChatMessage()
 
     await chat.sendMessage({
       text: messageToSend,
