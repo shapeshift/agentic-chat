@@ -260,8 +260,8 @@ export const useSwapExecution = (
         analytics.trackSwap({
           sellAsset: data.swapData.sellAsset.symbol,
           buyAsset: data.swapData.buyAsset.symbol,
-          sellAmount: data.swapData.sellAmount,
-          buyAmount: data.swapData.buyAmount,
+          sellAmount: data.swapData.sellAmountCryptoPrecision,
+          buyAmount: data.swapData.buyAmountCryptoPrecision,
           network: data.swapData.sellAsset.network,
         })
 
