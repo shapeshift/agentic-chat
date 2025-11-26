@@ -2,13 +2,20 @@
 
 ## Getting started
 
-- Run `yarn` to install packages over all monorepo apps
-- Run `cp .env.example .env` and ensure your Anthropic API key and Bebop API keys are populated (the latter is required to get quotes)
-- Run `yarn dev` to run the client and server in conjunction
-- Go to `http://localhost:4200` and voila
+- Run `bun install` to install packages across the monorepo
+- Run `cp .env.example .env.local` and populate the required API keys:
+  - `ANTHROPIC_API_KEY` - Required for LLM
+  - `BEBOP_API_KEY` - Required for swap quotes
+  - `COINGECKO_API_KEY` - Required for price data
+- Run `bun dev` to run the client and server
+- Go to `http://localhost:4200`
 
-### Troubleshooting
+## Scripts
 
-- If you're having `expected workspace package to exist` issues with `yarn add <somePackage>`, it is related to wrong version of yarn i.e a regression introduced somewhere around ~1.20.0.
-  You will want to ensure yarn 3.5.0 is installed, which doesn't contain this bug. This can be done with `yarn set version 3.5.0` and checking with `yarn -v` the correct version is insalled
-- If after many many tries, `yarn -v` still outputs 1.2x, this is probably related to corepack. Ensure you run `corepack enable` before running `yarn set version`
+- `bun dev` - Run frontend and backend in development mode
+- `bun dev:frontend` - Run only the frontend
+- `bun dev:backend` - Run only the backend
+- `bun build` - Build all packages and apps
+- `bun lint` - Run linter
+- `bun lint:fix` - Run linter with auto-fix
+- `bun type-check` - Run TypeScript type checking
