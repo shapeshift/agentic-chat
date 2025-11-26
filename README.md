@@ -7,6 +7,7 @@
   - `ANTHROPIC_API_KEY` - Required for LLM
   - `BEBOP_API_KEY` - Required for swap quotes
   - `COINGECKO_API_KEY` - Required for price data
+  - `VITE_ENABLE_ANALYTICS=true` - Optional, enables Mixpanel analytics on local builds
 - Run `bun dev` to run the client and server
 - Go to `http://localhost:4200`
 
