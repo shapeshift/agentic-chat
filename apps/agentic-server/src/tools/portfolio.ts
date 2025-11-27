@@ -151,18 +151,8 @@ export async function executeGetPortfolio(
 }
 
 export const portfolioTool = {
-  description: `Get portfolio balances across connected networks.
-
-UI CARD DISPLAYS: token names, symbols, balances, and USD values per network.
-
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
-
-Default: Respond with one brief, natural sentence like:
-- "Here's your portfolio"
-- "I found your balances"
-- "Here's what you're holding"
-
-Only elaborate if the user asks about something not shown in the card.`,
+  description:
+    'Get portfolio balances across connected networks. No UI card - format and present the portfolio data in your response.',
   inputSchema: portfolioSchema,
   execute: executeGetPortfolio,
 }

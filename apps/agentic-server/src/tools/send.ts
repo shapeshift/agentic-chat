@@ -120,7 +120,7 @@ function createSendSummary(
 export const sendTool = {
   description: `Send crypto to an address.
 
-UI CARD DISPLAYS: send amount, recipient address, network, and estimated fees.
+UI CARD DISPLAYS: send amount, from/to addresses, network, and estimated fees.
 
 Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
 
