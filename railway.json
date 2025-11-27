@@ -10,7 +10,7 @@
       "packages/types/**",
       "railway.json",
       "package.json",
-      "bun.lockb",
+      "bun.lock",
       "tsconfig.json"
     ]
   },
