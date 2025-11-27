@@ -1,1 +1,0 @@
-{"root":["./eslint.config.ts","./scripts/updateAssetData.ts","./apps/agentic-chat/postcss.config.ts","./apps/agentic-chat/tailwind.config.ts","./apps/agentic-server/tsup.config.ts","./apps/agentic-chat/vite.config.mts"],"version":"5.9.3"}

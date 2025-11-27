@@ -10,6 +10,7 @@
 
 # compiled output
 dist
+*.tsbuildinfo
 
 # dependencies
 node_modules

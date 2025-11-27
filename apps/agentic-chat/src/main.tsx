@@ -1,5 +1,6 @@
 import { Buffer } from 'buffer'
 
+import * as Sentry from '@sentry/react'
 import mixpanel from 'mixpanel-browser'
 import { StrictMode } from 'react'
 import * as ReactDOM from 'react-dom/client'
@@ -9,6 +10,13 @@ import App from './app/app'
 
 // Polyfill Buffer for Solana SDK
 window.Buffer = Buffer
+
+// Initialize Sentry
+Sentry.init({
+  dsn: 'https://5029b06bf89b9e74ac64b3b8fc3e379d@o4507174990905344.ingest.de.sentry.io/4510434281783376',
+  sendDefaultPii: false,
+  enableLogs: true,
+})
 
 // Initialize Mixpanel (disabled in dev unless VITE_ENABLE_ANALYTICS is set)
 const isProduction = import.meta.env.PROD
