@@ -14,13 +14,14 @@ window.Buffer = Buffer
 const isProduction = import.meta.env.PROD
 const analyticsEnabled = isProduction || import.meta.env.VITE_ENABLE_ANALYTICS === 'true'
 
-mixpanel.init('c7ded934ffc012d90c2c3f3f2e8fd8aa', {
-  debug: !isProduction && analyticsEnabled,
-  track_pageview: false,
-  persistence: 'localStorage',
-  autocapture: false,
-  opt_out_tracking_by_default: !analyticsEnabled,
-})
+if (analyticsEnabled) {
+  mixpanel.init('c7ded934ffc012d90c2c3f3f2e8fd8aa', {
+    debug: !isProduction,
+    track_pageview: false,
+    persistence: 'localStorage',
+    autocapture: false,
+  })
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
