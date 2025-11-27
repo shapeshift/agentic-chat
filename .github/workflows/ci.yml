@@ -30,11 +30,7 @@ jobs:
 
       - run: bun install --frozen-lockfile
       - run: bun run build
-      - name: Upload Sentry source maps
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: cd apps/agentic-chat && bun run sentry:sourcemaps
-
-      - name: Create Sentry release
+      - name: Create Sentry release and upload source maps
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -45,6 +41,7 @@ jobs:
           VERSION=$(sentry-cli releases propose-version)
           sentry-cli releases new "$VERSION"
           sentry-cli releases set-commits "$VERSION" --auto
+          sentry-cli sourcemaps upload --release="$VERSION" apps/agentic-chat/dist
           sentry-cli releases finalize "$VERSION"
 
       - run: bun run type-check
