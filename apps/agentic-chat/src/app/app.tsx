@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { WagmiProvider } from 'wagmi'
 
+import { useWalletAnalytics } from '@/hooks/useWalletAnalytics'
 import { networks } from '@/lib/appkit'
 import { solanaAdapter } from '@/lib/solana-config'
 import { wagmiConfig, wagmiAdapter } from '@/lib/wagmi-config'
@@ -40,15 +41,23 @@ if (import.meta.env.VITE_PROJECT_ID) {
   })
 }
 
+function AppContent() {
+  useWalletAnalytics()
+
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/chats" replace />} />
+      <Route path="/chats" element={<Dashboard />} />
+      <Route path="/chats/:conversationId" element={<Dashboard />} />
+    </Routes>
+  )
+}
+
 function App() {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/chats" replace />} />
-          <Route path="/chats" element={<Dashboard />} />
-          <Route path="/chats/:conversationId" element={<Dashboard />} />
-        </Routes>
+        <AppContent />
       </QueryClientProvider>
     </WagmiProvider>
   )

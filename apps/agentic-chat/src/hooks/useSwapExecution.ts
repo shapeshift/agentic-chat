@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react'
 import { getAddress } from 'viem'
 import { useSwitchChain } from 'wagmi'
 
+import { analytics } from '@/lib/mixpanel'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
@@ -253,6 +254,15 @@ export const useSwapExecution = (
           draft.completedSteps.add(draft.currentStep)
           draft.currentStep = (draft.currentStep + 1) as SwapStep
           draft.error = undefined
+        })
+
+        // Track successful swap
+        analytics.trackSwap({
+          sellAsset: data.swapData.sellAsset.symbol,
+          buyAsset: data.swapData.buyAsset.symbol,
+          sellAmount: data.swapData.sellAmountCryptoPrecision,
+          buyAmount: data.swapData.buyAmountCryptoPrecision,
+          network: data.swapData.sellAsset.network,
         })
 
         // Save terminal state

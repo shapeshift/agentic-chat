@@ -5,6 +5,7 @@ import type { DynamicToolUIPart } from 'ai'
 import { useEffect, useRef } from 'react'
 import { useSwitchChain } from 'wagmi'
 
+import { analytics } from '@/lib/mixpanel'
 import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
@@ -205,6 +206,13 @@ export const useSendExecution = (
           draft.completedSteps.add(draft.currentStep)
           draft.currentStep = SendStep.COMPLETE
           draft.error = undefined
+        })
+
+        // Track successful send
+        analytics.trackSend({
+          asset: data.sendData.asset.symbol,
+          amount: data.sendData.amount,
+          network: data.sendData.asset.network,
         })
 
         // Save terminal state with actual accumulated completedSteps
