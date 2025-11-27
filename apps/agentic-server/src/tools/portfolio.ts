@@ -3,12 +3,12 @@ import { chainIdToNetwork, EVM_SOLANA_NETWORKS, networkToChainIdMap } from '@sha
 import { calculateUsdValue, fromBaseUnit } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
+import { getAssetPrices } from '../lib/asset/prices'
 import * as portfolioCache from '../lib/portfolio/cache'
 import { getAddressForNetwork } from '../utils/walletContextSimple'
 import type { WalletContext } from '../utils/walletContextSimple'
 
 import { executeGetAccount } from './getAccount'
-import { executeGetAssetsBasic } from './getAssets'
 
 export const portfolioSchema = z.object({
   networks: z
@@ -75,7 +75,7 @@ async function getPortfolioDataSingle(
   const { balances } = await executeGetAccount({ account, network })
 
   const assetIds = Object.keys(balances)
-  const { assets } = await executeGetAssetsBasic({ assetIds })
+  const assets = await getAssetPrices(assetIds)
 
   const assetMap = new Map(assets.map(asset => [asset.assetId, asset]))
 
@@ -102,7 +102,7 @@ async function getPortfolioDataSingle(
             symbol: asset.symbol,
             precision: asset.precision,
             price: asset.price,
-            priceChange24h: asset.priceChange24h,
+            priceChange24h: asset.priceChange24h ?? undefined,
           },
           baseUnitValue,
           cryptoAmount,
@@ -151,8 +151,18 @@ export async function executeGetPortfolio(
 }
 
 export const portfolioTool = {
-  description:
-    'Get user crypto balances with human-readable values and USD amounts. Omit networks to fetch all connected wallets.',
+  description: `Get portfolio balances across connected networks.
+
+UI CARD DISPLAYS: token names, symbols, balances, and USD values per network.
+
+Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+
+Default: Respond with one brief, natural sentence like:
+- "Here's your portfolio"
+- "I found your balances"
+- "Here's what you're holding"
+
+Only elaborate if the user asks about something not shown in the card.`,
   inputSchema: portfolioSchema,
   execute: executeGetPortfolio,
 }

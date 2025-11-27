@@ -4,7 +4,7 @@ import { chainIdToNetwork, NETWORKS } from '@shapeshiftoss/types'
 import { assetService } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
-import { getMarketData, getSimplePrices } from '../lib/asset/coingecko'
+import { getMarketData } from '../lib/asset/coingecko'
 
 export type AssetWithMarketData = Asset & {
   icon?: string
@@ -23,25 +23,17 @@ export type AssetWithMarketData = Asset & {
 
 export const getAssetsSchema = z.object({
   searchTerm: z.string().optional().describe('The search term to find tokens by name or symbol'),
-  assetIds: z.array(z.string()).optional().describe('A list of caip19 assetIds'),
+  assetId: z.string().optional().describe('A caip19 assetId'),
   network: z.enum(NETWORKS).optional().describe('Optional network to filter tokens by'),
 })
 
 export type GetAssetsInput = z.infer<typeof getAssetsSchema>
 
-export type AssetWithPriceChange = Asset & {
-  priceChange24h?: number
-}
-
-export type GetAssetsBasicOutput = {
-  assets: AssetWithPriceChange[]
-}
-
-export type GetAssetsWithMarketDataOutput = {
+export type GetAssetsOutput = {
   assets: AssetWithMarketData[]
 }
 
-async function fetchMarketDataByCoinGeckoId(asset: Asset, coinGeckoId: string): Promise<AssetWithMarketData | null> {
+async function enrichWithMarketData(asset: Asset, coinGeckoId: string): Promise<AssetWithMarketData | null> {
   try {
     const data = await getMarketData(coinGeckoId)
 
@@ -62,149 +54,59 @@ async function fetchMarketDataByCoinGeckoId(asset: Asset, coinGeckoId: string): 
       description: data.description?.en ?? null,
     }
   } catch (error) {
-    console.error(`Failed to fetch market data for coinGeckoId: ${coinGeckoId}`, error)
+    console.error(`[enrichWithMarketData] Failed for coinGeckoId: ${coinGeckoId}`, error)
     return null
   }
 }
 
-export async function executeGetAssetsBasic(input: GetAssetsInput): Promise<GetAssetsBasicOutput> {
-  console.log('[getAssetsBasic]:', input)
+async function getAssetWithMarketData(input: GetAssetsInput): Promise<GetAssetsOutput> {
+  const { searchTerm, assetId, network } = input
 
-  const { searchTerm, assetIds, network } = input
+  const asset = (() => {
+    if (searchTerm) return assetService.search(searchTerm, network)[0]
+    if (assetId) return assetService.getAsset(assetId)
+    return undefined
+  })()
 
-  if (searchTerm) {
-    const staticAssets = assetService.search(searchTerm, network)
-    if (staticAssets.length === 0) {
-      return { assets: [] }
-    }
+  if (!asset) return { assets: [] }
 
-    const topAsset = staticAssets[0]
-    if (!topAsset) return { assets: [] }
+  const inferredNetwork = network ?? chainIdToNetwork[asset.chainId] ?? ''
+  const assetWithNetwork: Asset = { ...asset, price: '0', network: inferredNetwork }
 
-    const prices = await getSimplePrices([topAsset.assetId])
-    const priceResult = prices.find(p => p.assetId === topAsset.assetId)
-    const price = priceResult?.price ?? '0'
-    const priceChange24h = priceResult?.priceChange24h
-
-    const assetWithPrice: AssetWithPriceChange = {
-      ...topAsset,
-      price,
-      priceChange24h,
-      network: network ?? chainIdToNetwork[topAsset.chainId] ?? 'ethereum',
-    }
-
-    return { assets: [assetWithPrice] }
+  const coinGeckoId = assetIdToCoingecko(asset.assetId)
+  if (coinGeckoId) {
+    const enriched = await enrichWithMarketData(assetWithNetwork, coinGeckoId)
+    if (enriched) return { assets: [enriched] }
   }
 
-  if (assetIds) {
-    const staticAssets = assetIds
-      .map(id => assetService.getAsset(id))
-      .filter((a): a is NonNullable<typeof a> => a !== undefined)
-
-    if (staticAssets.length === 0) {
-      return { assets: [] }
-    }
-
-    const prices = await getSimplePrices(assetIds)
-    const priceMap = new Map(prices.map(p => [p.assetId, { price: p.price, priceChange24h: p.priceChange24h }]))
-
-    const assetsWithPrices: AssetWithPriceChange[] = staticAssets.map(staticAsset => {
-      const priceData = priceMap.get(staticAsset.assetId)
-      return {
-        ...staticAsset,
-        price: priceData?.price ?? '0',
-        priceChange24h: priceData?.priceChange24h,
-        network: network ?? chainIdToNetwork[staticAsset.chainId] ?? 'ethereum',
-      }
-    })
-
-    return { assets: assetsWithPrices }
-  }
-
-  return { assets: [] }
+  return { assets: [assetWithNetwork] }
 }
 
-export async function executeGetAssetsWithMarketData(input: GetAssetsInput): Promise<GetAssetsWithMarketDataOutput> {
-  console.log('[getAssetsWithMarketData]:', input)
+export async function executeGetAssets(input: GetAssetsInput): Promise<GetAssetsOutput> {
+  console.log('[getAssets]:', input)
 
-  const { searchTerm, assetIds, network } = input
+  const { searchTerm, assetId } = input
 
-  if (searchTerm) {
-    // Search locally in 25k assets
-    const staticAssets = assetService.search(searchTerm, network)
-    if (staticAssets.length === 0) {
-      return { assets: [] }
-    }
-
-    const topAsset = staticAssets[0]
-    if (!topAsset) return { assets: [] }
-
-    const inferredNetwork = network ?? chainIdToNetwork[topAsset.chainId] ?? 'ethereum'
-    const assetWithNetwork: Asset = {
-      ...topAsset,
-      price: '0',
-      network: inferredNetwork,
-    }
-
-    // Try to enrich with market data from CoinGecko
-    const coinGeckoId = assetIdToCoingecko(topAsset.assetId)
-    if (coinGeckoId) {
-      const enriched = await fetchMarketDataByCoinGeckoId(assetWithNetwork, coinGeckoId)
-      if (enriched) {
-        return { assets: [enriched] }
-      }
-    }
-
-    // No CoinGecko mapping or fetch failed - return asset without price/market data
-    console.debug('[getAssets] No CoinGecko mapping or fetch failed, returning asset without enrichment', {
-      assetId: topAsset.assetId,
-      coinGeckoId,
-    })
-    return { assets: [assetWithNetwork] }
-  }
-
-  if (assetIds) {
-    try {
-      // Get static assets from AssetService
-      const staticAssets = assetIds
-        .map(id => assetService.getAsset(id))
-        .filter((a): a is NonNullable<typeof a> => a !== undefined)
-
-      if (staticAssets.length === 0) {
-        return { assets: [] }
-      }
-
-      // Get simple prices for all assets (no market data available via simple price endpoint)
-      const prices = await getSimplePrices(assetIds)
-      const priceMap = new Map(prices.map(p => [p.assetId, p.price]))
-
-      // For now, we only have price data - no market cap, volume, etc. from simple price endpoint
-      // Full market data would require individual /coins/{id} calls which are very slow
-      const assets: AssetWithMarketData[] = staticAssets.map(staticAsset => {
-        const inferredNetwork = network ?? chainIdToNetwork[staticAsset.chainId] ?? 'ethereum'
-        return {
-          ...staticAsset,
-          price: priceMap.get(staticAsset.assetId) ?? '0',
-          network: inferredNetwork,
-        }
-      })
-
-      return { assets }
-    } catch (error) {
-      console.error('[getAssets] Bulk asset lookup failed', { error, assetIds })
-      return { assets: [] }
-    }
+  if (searchTerm || assetId) {
+    return getAssetWithMarketData(input)
   }
 
   return { assets: [] }
 }
 
 export const getAssetsTool = {
-  description:
-    'Find crypto assets by name/symbol with detailed market data including price, volume, market cap, FDV, sentiment, supply info, and more. Use for market analysis, price lookups, and portfolio valuations. Supports 18 networks including EVM chains (Ethereum, Arbitrum, etc), Solana, Sui, Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, and Cardano. Can search by name/symbol or lookup multiple assets by assetId.',
-  inputSchema: getAssetsSchema,
-  execute: executeGetAssetsWithMarketData,
-}
+  description: `Get asset market data by name, symbol, or assetId.
 
-export const executeGetAssets = executeGetAssetsWithMarketData
-export type GetAssetsOutput = GetAssetsWithMarketDataOutput
+UI CARD DISPLAYS: token name, symbol, price, 24h change, market cap, volume, and supply info.
+
+Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+
+Default: Respond with one brief, natural sentence like:
+- "Here's the market data for [token]"
+- "I found the info on [token]"
+- "Here's what I found for [token]"
+
+Only elaborate if the user asks about something not shown in the card.`,
+  inputSchema: getAssetsSchema,
+  execute: executeGetAssets,
+}

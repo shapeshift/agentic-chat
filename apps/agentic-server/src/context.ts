@@ -17,7 +17,7 @@ export const supportedChainsContext = `
     - NOT SUPPORTED: bitcoin, litecoin, dogecoin, bitcoincash, cosmos, thorchain, tron, cardano, sui
     - Note: Some pairs/amounts may be unavailable; if no route found, report "Route not supported or amount too small"
 
-    **Tool Usage:**
+    **Network-Specific Capabilities:**
     - getAssets: Price lookups on ANY network (all 18 networks above)
     - portfolio: Get balances on EVM chains and Solana only
     - initiateSwap/initiateSwapUsd: For swaps involving EVM chains and/or Solana (same-chain or cross-chain)

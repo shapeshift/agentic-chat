@@ -58,8 +58,7 @@ export async function executeGetShapeShiftKnowledge(input: GetShapeShiftKnowledg
 }
 
 export const getShapeShiftKnowledgeTool = {
-  description:
-    'Get information about ShapeShift platform, company, and DAO. Categories: company, platform, swappers, chains, staking, fox-token, features, mobile-app, or "all" for everything.',
+  description: 'Get ShapeShift platform info. No UI card - format and present the information in your response.',
   inputSchema: getShapeShiftKnowledgeSchema,
   execute: executeGetShapeShiftKnowledge,
 }

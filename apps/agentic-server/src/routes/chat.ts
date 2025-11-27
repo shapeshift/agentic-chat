@@ -18,7 +18,12 @@ import { anthropic } from '../models'
 import { getAccountTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetsTool } from '../tools/getAssets'
+import { getCategoriesTool } from '../tools/getCategories'
+import { getNewCoinsTool } from '../tools/getNewCoins'
 import { getShapeShiftKnowledgeTool } from '../tools/getShapeShiftKnowledge'
+import { getTopGainersLosersTool } from '../tools/getTopGainersLosers'
+import { getTrendingPoolsTool } from '../tools/getTrendingPools'
+import { getTrendingTokensTool } from '../tools/getTrendingTokens'
 import { initiateSwapTool, initiateSwapUsdTool } from '../tools/initiateSwap'
 import { mathCalculator } from '../tools/mathCalculator'
 import { portfolioTool } from '../tools/portfolio'
@@ -27,6 +32,18 @@ import { sendTool } from '../tools/send'
 import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
 import type { WalletContext } from '../utils/walletContextSimple'
+
+function wrapToolWithLogging<
+  T extends { description: string; inputSchema: unknown; execute: (args: never) => unknown },
+>(name: string, tool: T): T {
+  return {
+    ...tool,
+    execute: (args: Parameters<T['execute']>[0]) => {
+      console.log(`[Tool] ${name}:`, JSON.stringify(args, null, 2))
+      return tool.execute(args)
+    },
+  } as T
+}
 
 function buildWalletContext(evmAddress?: string, solanaAddress?: string): WalletContext {
   const connectedWallets: Record<string, { address: string }> = {}
@@ -59,27 +76,9 @@ function buildWalletContext(evmAddress?: string, solanaAddress?: string): Wallet
 
 function buildTools(walletContext: WalletContext) {
   return {
-    mathCalculatorTool: {
-      ...mathCalculator,
-      execute: (args: Parameters<typeof mathCalculator.execute>[0]) => {
-        console.log('[Tool] mathCalculatorTool:', JSON.stringify(args, null, 2))
-        return mathCalculator.execute(args)
-      },
-    },
-    getAssetsTool: {
-      ...getAssetsTool,
-      execute: (args: Parameters<typeof getAssetsTool.execute>[0]) => {
-        console.log('[Tool] getAssetsTool:', JSON.stringify(args, null, 2))
-        return getAssetsTool.execute(args)
-      },
-    },
-    getAccountTool: {
-      ...getAccountTool,
-      execute: (args: Parameters<typeof getAccountTool.execute>[0]) => {
-        console.log('[Tool] getAccountTool:', JSON.stringify(args, null, 2))
-        return getAccountTool.execute(args)
-      },
-    },
+    mathCalculatorTool: wrapToolWithLogging('mathCalculatorTool', mathCalculator),
+    getAssetsTool: wrapToolWithLogging('getAssetsTool', getAssetsTool),
+    getAccountTool: wrapToolWithLogging('getAccountTool', getAccountTool),
     getAllowanceTool: {
       description: getAllowanceTool.description,
       inputSchema: getAllowanceTool.inputSchema,
@@ -125,13 +124,7 @@ function buildTools(walletContext: WalletContext) {
         return initiateSwapUsdTool.execute(args, walletContext)
       },
     },
-    switchNetworkTool: {
-      ...switchNetworkTool,
-      execute: (args: Parameters<typeof switchNetworkTool.execute>[0]) => {
-        console.log('[Tool] switchNetworkTool:', JSON.stringify(args, null, 2))
-        return switchNetworkTool.execute(args)
-      },
-    },
+    switchNetworkTool: wrapToolWithLogging('switchNetworkTool', switchNetworkTool),
     sendTool: {
       description: sendTool.description,
       inputSchema: sendTool.inputSchema,
@@ -148,13 +141,12 @@ function buildTools(walletContext: WalletContext) {
         return receiveTool.execute(args, walletContext)
       },
     },
-    getShapeShiftKnowledgeTool: {
-      ...getShapeShiftKnowledgeTool,
-      execute: (args: Parameters<typeof getShapeShiftKnowledgeTool.execute>[0]) => {
-        console.log('[Tool] getShapeShiftKnowledgeTool:', JSON.stringify(args, null, 2))
-        return getShapeShiftKnowledgeTool.execute(args)
-      },
-    },
+    getShapeShiftKnowledgeTool: wrapToolWithLogging('getShapeShiftKnowledgeTool', getShapeShiftKnowledgeTool),
+    getTrendingTokensTool: wrapToolWithLogging('getTrendingTokensTool', getTrendingTokensTool),
+    getTopGainersLosersTool: wrapToolWithLogging('getTopGainersLosersTool', getTopGainersLosersTool),
+    getTrendingPoolsTool: wrapToolWithLogging('getTrendingPoolsTool', getTrendingPoolsTool),
+    getCategoriesTool: wrapToolWithLogging('getCategoriesTool', getCategoriesTool),
+    getNewCoinsTool: wrapToolWithLogging('getNewCoinsTool', getNewCoinsTool),
   }
 }
 
@@ -195,20 +187,18 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress)}
 - Use markdown formatting for all responses
 - For mathematical formulas, use LaTeX: wrap block equations with $$...$$
 
-**Tool Usage:**
-- **getAssets**: Find assets and get market data. CRITICAL: After calling this tool, respond with ONLY a single brief sentence directing user to the card - do NOT include prices, market caps, volumes, descriptions, or ANY data from the response
-- **transactionHistoryTool**: Query and analyze transaction history. Use for any transaction-related questions. See tool description for full capabilities (filtering, sorting, aggregations, etc.)
-- **mathCalculator**: Use for all arithmetic operations to ensure precision
-- **portfolio**: Get user balances with human-readable values and USD amounts (EVM chains and Solana only)
-- **initiateSwap**: Execute swap with crypto token amounts (e.g., 1 ETH, 0.5 SOL)
-- **initiateSwapUsd**: Execute swap with USD value amounts (e.g., $100 worth, $1.50 worth)
-- **switchNetwork**: Switch the connected wallet to a different blockchain network
-- **receive**: Get a wallet address and QR code for receiving cryptocurrency. The address is the same for all tokens on a given network. After calling this tool, respond with ONE brief sentence (e.g., "Here's your address for receiving ETH on Arbitrum") - the card shows all the details
-- **getShapeShiftKnowledge**: Get information about ShapeShift platform, company, and DAO. Categories: company, platform, swappers, chains, staking, fox-token, features, mobile-app
-
 **Wallet Address Handling:**
 - All tools automatically extract wallet addresses from connected wallet context
 - You only need to specify networks and assets - never addresses
+
+**Tool Categories:**
+- **Market Data**: getAssets (prices/market data), getTrendingTokens, getTopGainersLosers, getNewCoins, getCategories, getTrendingPools
+- **Portfolio**: portfolio (balances), transactionHistoryTool (history/analytics)
+- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR)
+- **Utilities**: switchNetwork (change chains), mathCalculator (arithmetic), getShapeShiftKnowledge (platform info)
+
+**Tool UI Behavior:**
+Many tools render UI cards. Each tool's description specifies what the card displays. Your role is to supplement cards with brief, natural responses - never repeat or list data already shown in the card.
 
 **Swap Workflow:**
 1. Determine if user specified crypto token amount or USD value amount

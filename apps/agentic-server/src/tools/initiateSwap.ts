@@ -18,8 +18,6 @@ import { createTransaction } from '../utils/transactionHelpers'
 import { getAddressForChain } from '../utils/walletContextSimple'
 import type { WalletContext } from '../utils/walletContextSimple'
 
-import { executeGetAssetsBasic } from './getAssets'
-
 interface ResolvedAssets {
   sellAsset: Asset
   buyAsset: Asset
@@ -291,8 +289,18 @@ export async function executeInitiateSwap(
 }
 
 export const initiateSwapTool = {
-  description:
-    'Start a crypto swap using CRYPTO TOKEN amounts. ONLY supports EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, Gnosis) and Solana. NOT supported for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, or Sui. Use initiateSwapUsd for USD-denominated amounts.',
+  description: `Execute a swap between tokens (crypto amounts). EVM and Solana only.
+
+UI CARD DISPLAYS: sell/buy amounts, tokens, exchange rate, network fees, and price impact.
+
+Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+
+Default: Respond with one brief, natural sentence like:
+- "Here's your swap"
+- "I've prepared the swap for you"
+- "Review and confirm the swap above"
+
+Only elaborate if the user asks about something not shown in the card.`,
   inputSchema: initiateSwapSchema,
   execute: executeInitiateSwap,
 }
@@ -316,25 +324,7 @@ export async function executeInitiateSwapUsd(
     throw new Error('USD amount must be a positive number')
   }
 
-  const sellAssetsResult = await executeGetAssetsBasic({
-    searchTerm: sellAssetInput.symbolOrName,
-    network: sellAssetInput.network,
-  })
-
-  if (sellAssetsResult.assets.length === 0) {
-    throw new Error(
-      `No asset found for "${sellAssetInput.symbolOrName}"${sellAssetInput.network ? ` on ${sellAssetInput.network}` : ''}`
-    )
-  }
-  if (sellAssetsResult.assets.length > 1) {
-    throw new Error(`Multiple assets found for "${sellAssetInput.symbolOrName}". Please specify network.`)
-  }
-
-  const sellAsset = sellAssetsResult.assets[0]
-  if (!sellAsset) {
-    throw new Error('Could not resolve sell asset')
-  }
-
+  const sellAsset = await resolveAsset(sellAssetInput)
   const sellAssetPrice = parseFloat(sellAsset.price || '0')
 
   if (sellAssetPrice <= 0) {
@@ -352,8 +342,18 @@ export async function executeInitiateSwapUsd(
 }
 
 export const initiateSwapUsdTool = {
-  description:
-    'Start a crypto swap using USD VALUE amounts (e.g., $100 worth of ETH). Fetches current price and converts to token amount. ONLY supports EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, Gnosis) and Solana. NOT supported for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Cosmos, THORChain, Tron, Cardano, or Sui.',
+  description: `Execute a swap between tokens (USD amounts). EVM and Solana only.
+
+UI CARD DISPLAYS: sell/buy amounts, tokens, exchange rate, network fees, and price impact.
+
+Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+
+Default: Respond with one brief, natural sentence like:
+- "Here's your swap"
+- "I've prepared the swap for you"
+- "Review and confirm the swap above"
+
+Only elaborate if the user asks about something not shown in the card.`,
   inputSchema: initiateSwapUsdSchema,
   execute: executeInitiateSwapUsd,
 }

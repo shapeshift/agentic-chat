@@ -111,7 +111,18 @@ export async function executeTransactionHistory(
 }
 
 export const transactionHistoryTool = {
-  description: `Query and analyze transaction history with filtering, sorting, pagination, and aggregations. Supports filtering by type, status, date range, and assets. Transactions render as UI cards by default - set includeTransactions=false for analytics-only queries.`,
+  description: `Query transaction history with filters.
+
+UI CARD DISPLAYS: transaction list with type, amount, status, and timestamps.
+
+Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+
+Default: Respond with one brief, natural sentence like:
+- "Here's your transaction history"
+- "I found your recent transactions"
+- "Here's what I found"
+
+Only elaborate if the user asks about something not shown in the card.`,
   inputSchema: transactionHistorySchema,
   execute: executeTransactionHistory,
 }
