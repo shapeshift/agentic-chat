@@ -3,6 +3,7 @@ import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
+import { current } from 'immer'
 import { useEffect, useRef } from 'react'
 import { getAddress } from 'viem'
 import { useSwitchChain } from 'wagmi'
@@ -293,7 +294,7 @@ export const useSwapExecution = (
         setState(draft => {
           draft.error = errorMessage
           draft.failedStep = draft.currentStep
-          errorState = { ...draft }
+          errorState = current(draft)
         })
 
         if (errorState && activeConversationId) {

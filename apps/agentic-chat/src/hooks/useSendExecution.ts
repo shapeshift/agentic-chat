@@ -2,6 +2,7 @@ import { useAppKitProvider } from '@reown/appkit/react'
 import type { SendOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import type { DynamicToolUIPart } from 'ai'
+import { current } from 'immer'
 import { useEffect, useRef } from 'react'
 import { useSwitchChain } from 'wagmi'
 
@@ -237,7 +238,7 @@ export const useSendExecution = (
         setState(draft => {
           draft.error = errorMessage
           draft.failedStep = draft.currentStep
-          errorState = { ...draft }
+          errorState = current(draft)
         })
 
         if (errorState && activeConversationId) {
