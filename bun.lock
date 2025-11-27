@@ -36,6 +36,7 @@
         "prettier": "^3.5.3",
         "tsx": "^4.20.2",
         "typescript": "^5.8.3",
+        "vite": "^7.2.4",
       },
     },
     "apps/agentic-chat": {
