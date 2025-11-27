@@ -2,7 +2,16 @@ import type { AssetId } from '@shapeshiftoss/caip'
 import { assetIdToCoingecko } from '@shapeshiftoss/caip'
 import axios from 'axios'
 
-import type { CoinResponse, SimplePriceData, SimplePriceResult } from './types'
+import type {
+  CategoriesResponse,
+  CoinResponse,
+  NewCoinsResponse,
+  SimplePriceData,
+  SimplePriceResult,
+  TopGainersLosersResponse,
+  TrendingPoolsResponse,
+  TrendingSearchResponse,
+} from './types'
 
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
 const BASE_URL = 'https://pro-api.coingecko.com/api/v3'
@@ -14,19 +23,11 @@ const client = axios.create({
   timeout: TIMEOUT,
 })
 
-/**
- * Fetch full market data for a single asset by CoinGecko ID
- * Endpoint: GET /coins/{id}
- */
 export async function getMarketData(coinGeckoId: string): Promise<CoinResponse> {
   const { data } = await client.get<CoinResponse>(`/coins/${coinGeckoId}`)
   return data
 }
 
-/**
- * Fetch simple prices for multiple assets by CoinGecko IDs
- * Endpoint: GET /simple/price?ids={ids}&vs_currencies=usd&include_24hr_change=true
- */
 export async function getBulkPrices(coinGeckoIds: string[]): Promise<SimplePriceData> {
   if (coinGeckoIds.length === 0) return {}
 
@@ -41,9 +42,6 @@ export async function getBulkPrices(coinGeckoIds: string[]): Promise<SimplePrice
   return data
 }
 
-/**
- * Higher-level wrapper: fetch prices for assetIds (maps assetId → coinGeckoId internally)
- */
 export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceResult[]> {
   if (assetIds.length === 0) return []
 
@@ -51,7 +49,6 @@ export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceR
   const coinGeckoIds = new Set<string>()
   const assetIdToCoinGeckoId = new Map<AssetId, string>()
 
-  // Map all assetIds to CoinGecko IDs using the adapter
   for (const assetId of assetIds) {
     const coinGeckoId = assetIdToCoingecko(assetId)
 
@@ -65,7 +62,6 @@ export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceR
     assetIdToCoinGeckoId.set(assetId, coinGeckoId)
   }
 
-  // Batch fetch all prices in a single API call
   if (coinGeckoIds.size > 0) {
     try {
       const data = await getBulkPrices(Array.from(coinGeckoIds))
@@ -78,7 +74,6 @@ export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceR
       }
     } catch (error) {
       console.error('[CoinGecko API] Error fetching prices:', error)
-      // Fill in remaining assets with '0' price
       const processedAssetIds = new Set(results.map(r => r.assetId))
       for (const [assetId] of assetIdToCoinGeckoId) {
         if (!processedAssetIds.has(assetId)) {
@@ -89,4 +84,51 @@ export async function getSimplePrices(assetIds: AssetId[]): Promise<SimplePriceR
   }
 
   return results
+}
+
+export async function getTrendingSearch(): Promise<TrendingSearchResponse> {
+  const { data } = await client.get<TrendingSearchResponse>('/search/trending')
+  return data
+}
+
+export async function getTopGainersLosers(
+  duration: '1h' | '24h' | '7d' | '14d' | '30d' = '24h',
+  topCoins: '300' | '500' | '1000' | 'all' = '1000'
+): Promise<TopGainersLosersResponse> {
+  const { data } = await client.get<TopGainersLosersResponse>('/coins/top_gainers_losers', {
+    params: {
+      vs_currency: 'usd',
+      duration,
+      top_coins: topCoins,
+    },
+  })
+  return data
+}
+
+export async function getTrendingPools(duration: '5m' | '1h' | '6h' | '24h' = '24h'): Promise<TrendingPoolsResponse> {
+  const { data } = await client.get<TrendingPoolsResponse>('/onchain/networks/trending_pools', {
+    params: {
+      include: 'base_token,quote_token,dex,network',
+      duration,
+    },
+  })
+  return data
+}
+
+export async function getCategories(
+  order:
+    | 'market_cap_desc'
+    | 'market_cap_asc'
+    | 'market_cap_change_24h_desc'
+    | 'market_cap_change_24h_asc' = 'market_cap_change_24h_desc'
+): Promise<CategoriesResponse> {
+  const { data } = await client.get<CategoriesResponse>('/coins/categories', {
+    params: { order },
+  })
+  return data
+}
+
+export async function getNewCoins(): Promise<NewCoinsResponse> {
+  const { data } = await client.get<NewCoinsResponse>('/coins/list/new')
+  return data
 }

@@ -31,8 +31,18 @@ export async function executeReceive(input: ReceiveInput, walletContext?: Wallet
 }
 
 export const receiveTool = {
-  description:
-    'Get a wallet address for receiving cryptocurrency. Returns the address and QR code for the specified asset/network. The address is the same for all tokens on a given network (e.g., all ERC-20 tokens share the same Ethereum address).',
+  description: `Get receive address for an asset or network.
+
+UI CARD DISPLAYS: wallet address and QR code for receiving funds.
+
+Your role is to supplement the card, not duplicate it. Do not repeat the address.
+
+Default: Respond with one brief, natural sentence like:
+- "Here's your receive address"
+- "You can receive funds at this address"
+- "Here's where to send your funds"
+
+Only elaborate if the user asks about something not shown in the card.`,
   inputSchema: receiveSchema,
   execute: executeReceive,
 }

@@ -63,3 +63,35 @@ export {
 } from './tools/switchNetwork'
 export { sendTool, executeSend, type SendInput, type SendOutput } from './tools/send'
 export { receiveTool, executeReceive, type ReceiveInput, type ReceiveOutput } from './tools/receive'
+export {
+  getTrendingTokensTool,
+  executeGetTrendingTokens,
+  type GetTrendingTokensInput,
+  type GetTrendingTokensOutput,
+} from './tools/getTrendingTokens'
+export {
+  getTopGainersLosersTool,
+  executeGetTopGainersLosers,
+  type GetTopGainersLosersInput,
+  type GetTopGainersLosersOutput,
+} from './tools/getTopGainersLosers'
+export {
+  getTrendingPoolsTool,
+  executeGetTrendingPools,
+  type GetTrendingPoolsInput,
+  type GetTrendingPoolsOutput,
+} from './tools/getTrendingPools'
+export {
+  getCategoriesTool,
+  executeGetCategories,
+  type GetCategoriesInput,
+  type GetCategoriesOutput,
+} from './tools/getCategories'
+export { getNewCoinsTool, executeGetNewCoins, type GetNewCoinsInput, type GetNewCoinsOutput } from './tools/getNewCoins'
+export type {
+  TrimmedTrendingCoin,
+  TrimmedGainerLoserCoin,
+  TrimmedTrendingPool,
+  TrimmedCategory,
+  TrimmedNewCoin,
+} from './lib/asset/coingecko/types'
