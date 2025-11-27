@@ -15,11 +15,10 @@ const isProduction = import.meta.env.PROD
 const analyticsEnabled = isProduction || import.meta.env.VITE_ENABLE_ANALYTICS === 'true'
 
 mixpanel.init('c7ded934ffc012d90c2c3f3f2e8fd8aa', {
-  debug: !isProduction,
-  track_pageview: analyticsEnabled,
+  debug: !isProduction && analyticsEnabled,
+  track_pageview: false,
   persistence: 'localStorage',
-  autocapture: analyticsEnabled,
-  record_sessions_percent: analyticsEnabled ? 100 : 0,
+  autocapture: false,
   opt_out_tracking_by_default: !analyticsEnabled,
 })
 
