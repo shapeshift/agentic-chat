@@ -105,63 +105,57 @@ export const useNetworkSwitch = (
     }
   }, [toolCallId, store])
 
-  const { state } = useToolExecutionEffect(
-    toolCallId,
-    networkData,
-    initialNetworkState,
-    (data, setState) => {
-      const targetNetwork = networkMap[data.network]
+  const { state } = useToolExecutionEffect(toolCallId, networkData, initialNetworkState, (data, setState) => {
+    const targetNetwork = networkMap[data.network]
 
-      if (!targetNetwork) {
+    if (!targetNetwork) {
+      setState(draft => {
+        draft.phase = 'error'
+        draft.error = `Network "${data.network}" not found`
+      })
+      return
+    }
+
+    setState(draft => {
+      draft.phase = 'switching'
+      draft.error = undefined
+    })
+
+    modal
+      ?.switchNetwork(targetNetwork)
+      .then(() => {
+        setState(draft => {
+          draft.phase = 'success'
+        })
+        if (activeConversationId) {
+          const persisted = networkStateToPersistedState(
+            toolCallId,
+            { phase: 'success' },
+            activeConversationId,
+            data.network,
+            data
+          )
+          store.persistTransaction(persisted)
+        }
+      })
+      .catch((error: Error) => {
+        const errorMessage = error.message
         setState(draft => {
           draft.phase = 'error'
-          draft.error = `Network "${data.network}" not found`
+          draft.error = errorMessage
         })
-        return
-      }
-
-      setState(draft => {
-        draft.phase = 'switching'
-        draft.error = undefined
+        if (activeConversationId) {
+          const persisted = networkStateToPersistedState(
+            toolCallId,
+            { phase: 'error', error: errorMessage },
+            activeConversationId,
+            data.network,
+            data
+          )
+          store.persistTransaction(persisted)
+        }
       })
-
-      modal
-        ?.switchNetwork(targetNetwork)
-        .then(() => {
-          setState(draft => {
-            draft.phase = 'success'
-          })
-          if (activeConversationId) {
-            const persisted = networkStateToPersistedState(
-              toolCallId,
-              { phase: 'success' },
-              activeConversationId,
-              data.network,
-              data
-            )
-            store.persistTransaction(persisted)
-          }
-        })
-        .catch((error: Error) => {
-          const errorMessage = error.message
-          setState(draft => {
-            draft.phase = 'error'
-            draft.error = errorMessage
-          })
-          if (activeConversationId) {
-            const persisted = networkStateToPersistedState(
-              toolCallId,
-              { phase: 'error', error: errorMessage },
-              activeConversationId,
-              data.network,
-              data
-            )
-            store.persistTransaction(persisted)
-          }
-        })
-    },
-    [modal]
-  )
+  })
 
   return {
     phase: state.phase,

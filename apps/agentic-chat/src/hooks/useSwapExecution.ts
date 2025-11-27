@@ -170,147 +170,141 @@ export const useSwapExecution = (
     }
   }, [toolCallId, store])
 
-  const { state } = useToolExecutionEffect(
-    toolCallId,
-    swapData,
-    initialSwapState,
-    async (data, setState) => {
-      let approvalTxHash: string | undefined
-      let swapTxHash: string | undefined
+  const { state } = useToolExecutionEffect(toolCallId, swapData, initialSwapState, async (data, setState) => {
+    let approvalTxHash: string | undefined
+    let swapTxHash: string | undefined
 
-      try {
-        const { needsApproval, approvalTx, swapTx } = data
+    try {
+      const { needsApproval, approvalTx, swapTx } = data
 
-        const sellAssetChainId = data.swapData.sellAsset.chainId
-        const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
+      const sellAssetChainId = data.swapData.sellAsset.chainId
+      const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
 
-        // Step 0: Quote (completed by this point)
+      // Step 0: Quote (completed by this point)
+      setState(draft => {
+        draft.completedSteps.add(SwapStep.QUOTE)
+        draft.currentStep = SwapStep.NETWORK_SWITCH
+        draft.error = undefined
+      })
+
+      // Step 1: Network Switch
+      // Non-EVM: no wallet network switch needed; skip step
+      if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
         setState(draft => {
-          draft.completedSteps.add(SwapStep.QUOTE)
-          draft.currentStep = SwapStep.NETWORK_SWITCH
+          draft.currentStep = (draft.currentStep + 1) as SwapStep
           draft.error = undefined
         })
+      } else {
+        // EVM: always switch to the sell chain to avoid race conditions with WalletConnect
+        const sellChainIdNumber = Number(chainReference)
+        await switchChainAsync({ chainId: sellChainIdNumber })
+        setState(draft => {
+          draft.completedSteps.add(draft.currentStep)
+          draft.currentStep = (draft.currentStep + 1) as SwapStep
+          draft.error = undefined
+        })
+      }
 
-        // Step 1: Network Switch
-        // Non-EVM: no wallet network switch needed; skip step
-        if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
-          setState(draft => {
-            draft.currentStep = (draft.currentStep + 1) as SwapStep
-            draft.error = undefined
-          })
-        } else {
-          // EVM: always switch to the sell chain to avoid race conditions with WalletConnect
-          const sellChainIdNumber = Number(chainReference)
-          await switchChainAsync({ chainId: sellChainIdNumber })
-          setState(draft => {
-            draft.completedSteps.add(draft.currentStep)
-            draft.currentStep = (draft.currentStep + 1) as SwapStep
-            draft.error = undefined
+      // Fetch nonce before approval for EVM chains to prevent race conditions
+      let baseNonce: number | undefined
+      if (chainNamespace === CHAIN_NAMESPACE.Evm && needsApproval && approvalTx) {
+        const publicClient = getPublicClient(wagmiConfig, { chainId: Number(chainReference) })
+        if (publicClient) {
+          baseNonce = await publicClient.getTransactionCount({
+            address: getAddress(approvalTx.from),
+            blockTag: 'pending',
           })
         }
+      }
 
-        // Fetch nonce before approval for EVM chains to prevent race conditions
-        let baseNonce: number | undefined
-        if (chainNamespace === CHAIN_NAMESPACE.Evm && needsApproval && approvalTx) {
-          const publicClient = getPublicClient(wagmiConfig, { chainId: Number(chainReference) })
-          if (publicClient) {
-            baseNonce = await publicClient.getTransactionCount({
-              address: getAddress(approvalTx.from),
-              blockTag: 'pending',
-            })
-          }
-        }
-
-        // Step 2: Approval
-        if (needsApproval && approvalTx) {
-          approvalTxHash = await executeApproval(approvalTx, {
-            solanaProvider,
-            ...(baseNonce !== undefined && { nonce: baseNonce }),
-          })
-          setState(draft => {
-            draft.approvalTxHash = approvalTxHash
-          })
-          setState(draft => {
-            draft.completedSteps.add(draft.currentStep)
-            draft.currentStep = (draft.currentStep + 1) as SwapStep
-            draft.error = undefined
-          })
-        } else {
-          setState(draft => {
-            draft.currentStep = (draft.currentStep + 1) as SwapStep
-            draft.error = undefined
-          })
-        }
-
-        // Step 3: Swap - use nonce + 1 if we did an approval to prevent race condition
-        const swapNonce = baseNonce !== undefined ? baseNonce + 1 : undefined
-        swapTxHash = await executeSwap(swapTx, {
+      // Step 2: Approval
+      if (needsApproval && approvalTx) {
+        approvalTxHash = await executeApproval(approvalTx, {
           solanaProvider,
-          ...(swapNonce !== undefined && { nonce: swapNonce }),
+          ...(baseNonce !== undefined && { nonce: baseNonce }),
         })
         setState(draft => {
-          draft.swapTxHash = swapTxHash
+          draft.approvalTxHash = approvalTxHash
         })
         setState(draft => {
           draft.completedSteps.add(draft.currentStep)
           draft.currentStep = (draft.currentStep + 1) as SwapStep
           draft.error = undefined
         })
-
-        // Track successful swap
-        analytics.trackSwap({
-          sellAsset: data.swapData.sellAsset.symbol,
-          buyAsset: data.swapData.buyAsset.symbol,
-          sellAmount: data.swapData.sellAmountCryptoPrecision,
-          buyAmount: data.swapData.buyAmountCryptoPrecision,
-          network: data.swapData.sellAsset.network,
-        })
-
-        // Save terminal state
-        const finalState: SwapState = {
-          currentStep: SwapStep.COMPLETE,
-          completedSteps: new Set([
-            SwapStep.QUOTE,
-            SwapStep.NETWORK_SWITCH,
-            ...(needsApproval ? [SwapStep.APPROVAL] : []),
-            SwapStep.SWAP,
-          ]),
-          ...(approvalTxHash && { approvalTxHash }),
-          ...(swapTxHash && { swapTxHash }),
-        }
-        if (activeConversationId) {
-          const persisted = swapStateToPersistedState(
-            toolCallId,
-            finalState,
-            activeConversationId,
-            data,
-            data.swapData.sellAsset.network
-          )
-          store.persistTransaction(persisted)
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        let errorState: SwapState | undefined
+      } else {
         setState(draft => {
-          draft.error = errorMessage
-          draft.failedStep = draft.currentStep
-          errorState = current(draft)
+          draft.currentStep = (draft.currentStep + 1) as SwapStep
+          draft.error = undefined
         })
-
-        if (errorState && activeConversationId) {
-          const persisted = swapStateToPersistedState(
-            toolCallId,
-            errorState,
-            activeConversationId,
-            data,
-            data.swapData.sellAsset.network
-          )
-          store.persistTransaction(persisted)
-        }
       }
-    },
-    [switchChainAsync, solanaProvider, toolCallId]
-  )
+
+      // Step 3: Swap - use nonce + 1 if we did an approval to prevent race condition
+      const swapNonce = baseNonce !== undefined ? baseNonce + 1 : undefined
+      swapTxHash = await executeSwap(swapTx, {
+        solanaProvider,
+        ...(swapNonce !== undefined && { nonce: swapNonce }),
+      })
+      setState(draft => {
+        draft.swapTxHash = swapTxHash
+      })
+      setState(draft => {
+        draft.completedSteps.add(draft.currentStep)
+        draft.currentStep = (draft.currentStep + 1) as SwapStep
+        draft.error = undefined
+      })
+
+      // Track successful swap
+      analytics.trackSwap({
+        sellAsset: data.swapData.sellAsset.symbol,
+        buyAsset: data.swapData.buyAsset.symbol,
+        sellAmount: data.swapData.sellAmountCryptoPrecision,
+        buyAmount: data.swapData.buyAmountCryptoPrecision,
+        network: data.swapData.sellAsset.network,
+      })
+
+      // Save terminal state
+      const finalState: SwapState = {
+        currentStep: SwapStep.COMPLETE,
+        completedSteps: new Set([
+          SwapStep.QUOTE,
+          SwapStep.NETWORK_SWITCH,
+          ...(needsApproval ? [SwapStep.APPROVAL] : []),
+          SwapStep.SWAP,
+        ]),
+        ...(approvalTxHash && { approvalTxHash }),
+        ...(swapTxHash && { swapTxHash }),
+      }
+      if (activeConversationId) {
+        const persisted = swapStateToPersistedState(
+          toolCallId,
+          finalState,
+          activeConversationId,
+          data,
+          data.swapData.sellAsset.network
+        )
+        store.persistTransaction(persisted)
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorState: SwapState | undefined
+      setState(draft => {
+        draft.error = errorMessage
+        draft.failedStep = draft.currentStep
+        errorState = current(draft)
+      })
+
+      if (errorState && activeConversationId) {
+        const persisted = swapStateToPersistedState(
+          toolCallId,
+          errorState,
+          activeConversationId,
+          data,
+          data.swapData.sellAsset.network
+        )
+        store.persistTransaction(persisted)
+      }
+    }
+  })
 
   const quoteStepStatus = (() => {
     if (toolState === 'output-error') return StepStatus.FAILED

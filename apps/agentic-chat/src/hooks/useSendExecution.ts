@@ -155,106 +155,100 @@ export const useSendExecution = (
     }
   }, [toolCallId, store])
 
-  const { state } = useToolExecutionEffect(
-    toolCallId,
-    sendData,
-    initialSendState,
-    async (data, setState) => {
-      let sendTxHash: string | undefined
+  const { state } = useToolExecutionEffect(toolCallId, sendData, initialSendState, async (data, setState) => {
+    let sendTxHash: string | undefined
 
-      try {
-        const { tx } = data
+    try {
+      const { tx } = data
 
-        const assetChainId = data.sendData.chainId
-        const { chainNamespace, chainReference } = fromChainId(assetChainId)
+      const assetChainId = data.sendData.chainId
+      const { chainNamespace, chainReference } = fromChainId(assetChainId)
 
-        // Step 0: Preparation (completed by this point)
+      // Step 0: Preparation (completed by this point)
+      setState(draft => {
+        draft.completedSteps.add(SendStep.PREPARATION)
+        draft.currentStep = SendStep.NETWORK_SWITCH
+        draft.error = undefined
+      })
+
+      // Step 1: Network Switch
+      // Non-EVM: no wallet network switch needed; skip step
+      if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
         setState(draft => {
-          draft.completedSteps.add(SendStep.PREPARATION)
-          draft.currentStep = SendStep.NETWORK_SWITCH
+          draft.completedSteps.add(SendStep.NETWORK_SWITCH)
+          draft.currentStep = (draft.currentStep + 1) as SendStep
           draft.error = undefined
         })
-
-        // Step 1: Network Switch
-        // Non-EVM: no wallet network switch needed; skip step
-        if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
-          setState(draft => {
-            draft.completedSteps.add(SendStep.NETWORK_SWITCH)
-            draft.currentStep = (draft.currentStep + 1) as SendStep
-            draft.error = undefined
-          })
-        } else {
-          // EVM: always switch to the chain to avoid race conditions
-          const chainIdNumber = Number(chainReference)
-          await switchChainAsync({ chainId: chainIdNumber })
-          setState(draft => {
-            draft.completedSteps.add(draft.currentStep)
-            draft.currentStep = (draft.currentStep + 1) as SendStep
-            draft.error = undefined
-          })
-        }
-
-        // Step 2: Send
-        sendTxHash = await executeSend(tx, { solanaProvider })
-
-        // Build final state with all completed steps
-        let finalCompletedSteps = new Set(state.completedSteps)
-        finalCompletedSteps.add(SendStep.PREPARATION)
-        finalCompletedSteps.add(SendStep.SEND)
-
+      } else {
+        // EVM: always switch to the chain to avoid race conditions
+        const chainIdNumber = Number(chainReference)
+        await switchChainAsync({ chainId: chainIdNumber })
         setState(draft => {
-          draft.sendTxHash = sendTxHash
           draft.completedSteps.add(draft.currentStep)
-          draft.currentStep = SendStep.COMPLETE
+          draft.currentStep = (draft.currentStep + 1) as SendStep
           draft.error = undefined
         })
-
-        // Track successful send
-        analytics.trackSend({
-          asset: data.sendData.asset.symbol,
-          amount: data.sendData.amount,
-          network: data.sendData.asset.network,
-        })
-
-        // Save terminal state with actual accumulated completedSteps
-        const finalState: SendState = {
-          currentStep: SendStep.COMPLETE,
-          completedSteps: finalCompletedSteps,
-          sendTxHash,
-        }
-        if (activeConversationId) {
-          const persisted = sendStateToPersistedState(
-            toolCallId,
-            finalState,
-            activeConversationId,
-            data,
-            data.sendData.asset.network
-          )
-          store.persistTransaction(persisted)
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        let errorState: SendState | undefined
-        setState(draft => {
-          draft.error = errorMessage
-          draft.failedStep = draft.currentStep
-          errorState = current(draft)
-        })
-
-        if (errorState && activeConversationId) {
-          const persisted = sendStateToPersistedState(
-            toolCallId,
-            errorState,
-            activeConversationId,
-            data,
-            data.sendData.asset.network
-          )
-          store.persistTransaction(persisted)
-        }
       }
-    },
-    [switchChainAsync, solanaProvider, toolCallId]
-  )
+
+      // Step 2: Send
+      sendTxHash = await executeSend(tx, { solanaProvider })
+
+      // Build final state with all completed steps
+      let finalCompletedSteps = new Set(state.completedSteps)
+      finalCompletedSteps.add(SendStep.PREPARATION)
+      finalCompletedSteps.add(SendStep.SEND)
+
+      setState(draft => {
+        draft.sendTxHash = sendTxHash
+        draft.completedSteps.add(draft.currentStep)
+        draft.currentStep = SendStep.COMPLETE
+        draft.error = undefined
+      })
+
+      // Track successful send
+      analytics.trackSend({
+        asset: data.sendData.asset.symbol,
+        amount: data.sendData.amount,
+        network: data.sendData.asset.network,
+      })
+
+      // Save terminal state with actual accumulated completedSteps
+      const finalState: SendState = {
+        currentStep: SendStep.COMPLETE,
+        completedSteps: finalCompletedSteps,
+        sendTxHash,
+      }
+      if (activeConversationId) {
+        const persisted = sendStateToPersistedState(
+          toolCallId,
+          finalState,
+          activeConversationId,
+          data,
+          data.sendData.asset.network
+        )
+        store.persistTransaction(persisted)
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorState: SendState | undefined
+      setState(draft => {
+        draft.error = errorMessage
+        draft.failedStep = draft.currentStep
+        errorState = current(draft)
+      })
+
+      if (errorState && activeConversationId) {
+        const persisted = sendStateToPersistedState(
+          toolCallId,
+          errorState,
+          activeConversationId,
+          data,
+          data.sendData.asset.network
+        )
+        store.persistTransaction(persisted)
+      }
+    }
+  })
 
   const preparationStepStatus = (() => {
     if (toolState === 'output-error') return StepStatus.FAILED

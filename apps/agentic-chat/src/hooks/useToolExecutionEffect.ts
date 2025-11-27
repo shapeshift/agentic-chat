@@ -1,5 +1,4 @@
-import type { DependencyList } from 'react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { useChatStore } from '@/stores/chatStore'
 
@@ -12,8 +11,7 @@ export function useToolExecutionEffect<TData, TState>(
   toolCallId: string,
   data: TData | null,
   initialState: TState,
-  execute: (data: TData, setState: (updater: (draft: TState) => void) => void) => void | Promise<void>,
-  deps: DependencyList
+  execute: (data: TData, setState: (updater: (draft: TState) => void) => void) => void | Promise<void>
 ): UseToolExecutionEffectResult<TState> {
   const { setRuntimeState, hasRuntimeState, initializeRuntimeState } = useChatStore()
 
@@ -25,6 +23,12 @@ export function useToolExecutionEffect<TData, TState>(
   const wrappedSetState = (updater: (draft: TState) => void) => {
     setRuntimeState(toolCallId, updater)
   }
+
+  // Refs to always access latest callbacks (avoids stale closures)
+  const executeRef = useRef(execute)
+  const setStateRef = useRef(wrappedSetState)
+  executeRef.current = execute
+  setStateRef.current = wrappedSetState
 
   useEffect(() => {
     if (!data) {
@@ -38,13 +42,13 @@ export function useToolExecutionEffect<TData, TState>(
     initializeRuntimeState(toolCallId, initialState)
 
     const executeWrapper = async () => {
-      await execute(data, wrappedSetState)
+      await executeRef.current(data, setStateRef.current)
     }
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     executeWrapper()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toolCallId, data, state, hasRuntimeState, setRuntimeState, initializeRuntimeState, ...deps])
+  }, [toolCallId, data])
 
   return {
     state,
