@@ -14,7 +14,7 @@ window.Buffer = Buffer
 // Initialize Sentry
 Sentry.init({
   dsn: 'https://5029b06bf89b9e74ac64b3b8fc3e379d@o4507174990905344.ingest.de.sentry.io/4510434281783376',
-  sendDefaultPii: true,
+  sendDefaultPii: false,
   enableLogs: true,
 })
 

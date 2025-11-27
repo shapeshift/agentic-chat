@@ -33,6 +33,20 @@ jobs:
       - name: Upload Sentry source maps
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: cd apps/agentic-chat && bun run sentry:sourcemaps
+
+      - name: Create Sentry release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: shapeshift-dao
+          SENTRY_PROJECT: agent
+        run: |
+          curl -sL https://sentry.io/get-cli/ | bash
+          VERSION=$(sentry-cli releases propose-version)
+          sentry-cli releases new "$VERSION"
+          sentry-cli releases set-commits "$VERSION" --auto
+          sentry-cli releases finalize "$VERSION"
+
       - run: bun run type-check
       - run: bun run lint
       - run: bun run test
