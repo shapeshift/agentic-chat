@@ -30,6 +30,9 @@ jobs:
 
       - run: bun install --frozen-lockfile
       - run: bun run build
+      - name: Upload Sentry source maps
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: cd apps/agentic-chat && bun run sentry:sourcemaps
       - run: bun run type-check
       - run: bun run lint
       - run: bun run test
