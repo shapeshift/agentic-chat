@@ -5,9 +5,11 @@ import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
+import { toast } from 'sonner'
 import { getAddress } from 'viem'
 import { useSwitchChain } from 'wagmi'
 
+import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import { useChatContext } from '@/providers/ChatProvider'
@@ -262,6 +264,26 @@ export const useSwapExecution = (
         network: data.swapData.sellAsset.network,
       })
 
+      toast.success(
+        <span>
+          Your swap of{' '}
+          <Amount.Crypto
+            value={data.swapData.sellAmountCryptoPrecision}
+            symbol={data.swapData.sellAsset.symbol.toUpperCase()}
+            decimals={6}
+            className="font-bold"
+          />{' '}
+          to{' '}
+          <Amount.Crypto
+            value={data.swapData.buyAmountCryptoPrecision}
+            symbol={data.swapData.buyAsset.symbol.toUpperCase()}
+            decimals={6}
+            className="font-bold"
+          />{' '}
+          is complete
+        </span>
+      )
+
       // Save terminal state
       const finalState: SwapState = {
         currentStep: SwapStep.COMPLETE,
@@ -303,6 +325,26 @@ export const useSwapExecution = (
         )
         store.persistTransaction(persisted)
       }
+
+      toast.error(
+        <span>
+          Your swap of{' '}
+          <Amount.Crypto
+            value={data.swapData.sellAmountCryptoPrecision}
+            symbol={data.swapData.sellAsset.symbol.toUpperCase()}
+            decimals={6}
+            className="font-bold"
+          />{' '}
+          to{' '}
+          <Amount.Crypto
+            value={data.swapData.buyAmountCryptoPrecision}
+            symbol={data.swapData.buyAsset.symbol.toUpperCase()}
+            decimals={6}
+            className="font-bold"
+          />{' '}
+          failed
+        </span>
+      )
     }
   })
 
