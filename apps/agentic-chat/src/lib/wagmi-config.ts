@@ -1,5 +1,4 @@
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
-import { createStorage, cookieStorage } from 'wagmi'
 
 import { networks } from './appkit'
 
@@ -10,12 +9,8 @@ if (!projectId) {
   throw new Error('VITE_PROJECT_ID is required')
 }
 
-const storage = createStorage({ storage: cookieStorage })
-
 // Create the Wagmi adapter instance
 export const wagmiAdapter = new WagmiAdapter({
-  storage,
-  ssr: true,
   projectId,
   networks,
 })
