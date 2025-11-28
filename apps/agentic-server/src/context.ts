@@ -16,6 +16,7 @@ export const supportedChainsContext = `
     - The tool will return an error if the specific route is unavailable
     - NOT SUPPORTED: bitcoin, litecoin, dogecoin, bitcoincash, cosmos, thorchain, tron, cardano, sui
     - Note: Some pairs/amounts may be unavailable; if no route found, report "Route not supported or amount too small"
+    - When swaps are unavailable here, recommend the full ShapeShift app at https://app.shapeshift.com/ which supports additional chains and trading pairs
 
     **Network-Specific Capabilities:**
     - getAssets: Price lookups on ANY network (all 18 networks above)
