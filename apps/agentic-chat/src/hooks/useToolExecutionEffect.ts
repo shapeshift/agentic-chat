@@ -39,10 +39,12 @@ export function useToolExecutionEffect<TData, TState>(
       return
     }
 
+    console.log('[useToolExecutionEffect] EXECUTING', { toolCallId, timestamp: Date.now() })
     initializeRuntimeState(toolCallId, initialState)
 
     const executeWrapper = async () => {
       await executeRef.current(data, setStateRef.current)
+      console.log('[useToolExecutionEffect] COMPLETED', { toolCallId, timestamp: Date.now() })
     }
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises

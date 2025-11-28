@@ -36,9 +36,17 @@ export async function executeApproval(
   approvalTx: TransactionData,
   options?: ExecuteTransactionOptions
 ): Promise<string> {
+  console.log('[swapExecutor] executeApproval CALLED', {
+    nonce: options?.nonce,
+    to: approvalTx.to,
+    timestamp: Date.now(),
+  })
   try {
-    return await executeTransaction(approvalTx, options)
+    const txHash = await executeTransaction(approvalTx, options)
+    console.log('[swapExecutor] executeApproval SUCCESS', { txHash, timestamp: Date.now() })
+    return txHash
   } catch (error) {
+    console.log('[swapExecutor] executeApproval FAILED', { error: String(error), timestamp: Date.now() })
     const message =
       error instanceof Error && error.message?.includes('User rejected')
         ? 'Approval cancelled by user'
@@ -48,9 +56,13 @@ export async function executeApproval(
 }
 
 export async function executeSwap(swapTx: TransactionData, options?: ExecuteTransactionOptions): Promise<string> {
+  console.log('[swapExecutor] executeSwap CALLED', { nonce: options?.nonce, to: swapTx.to, timestamp: Date.now() })
   try {
-    return await executeTransaction(swapTx, options)
+    const txHash = await executeTransaction(swapTx, options)
+    console.log('[swapExecutor] executeSwap SUCCESS', { txHash, timestamp: Date.now() })
+    return txHash
   } catch (error) {
+    console.log('[swapExecutor] executeSwap FAILED', { error: String(error), timestamp: Date.now() })
     const message =
       error instanceof Error && error.message?.includes('User rejected')
         ? 'Transaction cancelled by user'
