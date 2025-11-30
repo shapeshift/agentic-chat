@@ -6,7 +6,6 @@ import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import { getAddress } from 'viem'
 import { useSwitchChain } from 'wagmi'
 
 import { Amount } from '@/components/ui/Amount'
@@ -26,8 +25,9 @@ export enum SwapStep {
   QUOTE = 0,
   NETWORK_SWITCH = 1,
   APPROVAL = 2,
-  SWAP = 3,
-  COMPLETE = 4,
+  APPROVAL_CONFIRMATION = 3,
+  SWAP = 4,
+  COMPLETE = 5,
 }
 
 export enum StepStatus {
@@ -78,6 +78,9 @@ function swapStateToPersistedState(
   if (state.completedSteps.has(SwapStep.APPROVAL)) {
     phases.push('approval_complete')
   }
+  if (state.completedSteps.has(SwapStep.APPROVAL_CONFIRMATION)) {
+    phases.push('approval_confirmed')
+  }
   if (state.currentStep > SwapStep.APPROVAL && !state.completedSteps.has(SwapStep.APPROVAL)) {
     phases.push('approval_skipped')
   }
@@ -116,6 +119,9 @@ function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
   }
   if (persisted.phases.includes('approval_complete')) {
     completedSteps.add(SwapStep.APPROVAL)
+  }
+  if (persisted.phases.includes('approval_confirmed')) {
+    completedSteps.add(SwapStep.APPROVAL_CONFIRMATION)
   }
   if (persisted.phases.includes('swap_complete')) {
     completedSteps.add(SwapStep.SWAP)
@@ -207,23 +213,10 @@ export const useSwapExecution = (
         })
       }
 
-      // Fetch nonce before approval for EVM chains to prevent race conditions
-      let baseNonce: number | undefined
-      if (chainNamespace === CHAIN_NAMESPACE.Evm && needsApproval && approvalTx) {
-        const publicClient = getPublicClient(wagmiConfig, { chainId: Number(chainReference) })
-        if (publicClient) {
-          baseNonce = await publicClient.getTransactionCount({
-            address: getAddress(approvalTx.from),
-            blockTag: 'pending',
-          })
-        }
-      }
-
       // Step 2: Approval
       if (needsApproval && approvalTx) {
         approvalTxHash = await executeApproval(approvalTx, {
           solanaProvider,
-          ...(baseNonce !== undefined && { nonce: baseNonce }),
         })
         setState(draft => {
           draft.approvalTxHash = approvalTxHash
@@ -240,11 +233,35 @@ export const useSwapExecution = (
         })
       }
 
-      // Step 3: Swap - use nonce + 1 if we did an approval to prevent race condition
-      const swapNonce = baseNonce !== undefined ? baseNonce + 1 : undefined
+      // Step 3: Approval Confirmation (EVM only)
+      if (needsApproval && approvalTxHash && chainNamespace === CHAIN_NAMESPACE.Evm) {
+        setState(draft => {
+          draft.currentStep = SwapStep.APPROVAL_CONFIRMATION
+        })
+
+        const publicClient = getPublicClient(wagmiConfig, { chainId: Number(chainReference) })
+        if (publicClient) {
+          await publicClient.waitForTransactionReceipt({
+            hash: approvalTxHash as `0x${string}`,
+            confirmations: 1,
+          })
+        }
+
+        setState(draft => {
+          draft.completedSteps.add(draft.currentStep)
+          draft.currentStep = (draft.currentStep + 1) as SwapStep
+          draft.error = undefined
+        })
+      } else {
+        // Non-EVM or no approval: skip confirmation step
+        setState(draft => {
+          draft.currentStep = (draft.currentStep + 1) as SwapStep
+        })
+      }
+
+      // Step 4: Swap
       swapTxHash = await executeSwap(swapTx, {
         solanaProvider,
-        ...(swapNonce !== undefined && { nonce: swapNonce }),
       })
       setState(draft => {
         draft.swapTxHash = swapTxHash
@@ -290,7 +307,7 @@ export const useSwapExecution = (
         completedSteps: new Set([
           SwapStep.QUOTE,
           SwapStep.NETWORK_SWITCH,
-          ...(needsApproval ? [SwapStep.APPROVAL] : []),
+          ...(needsApproval ? [SwapStep.APPROVAL, SwapStep.APPROVAL_CONFIRMATION] : []),
           SwapStep.SWAP,
         ]),
         ...(approvalTxHash && { approvalTxHash }),
@@ -360,6 +377,7 @@ export const useSwapExecution = (
       { step: SwapStep.QUOTE, status: quoteStepStatus },
       { step: SwapStep.NETWORK_SWITCH, status: getStepStatus(SwapStep.NETWORK_SWITCH, state) },
       { step: SwapStep.APPROVAL, status: getStepStatus(SwapStep.APPROVAL, state) },
+      { step: SwapStep.APPROVAL_CONFIRMATION, status: getStepStatus(SwapStep.APPROVAL_CONFIRMATION, state) },
       { step: SwapStep.SWAP, status: getStepStatus(SwapStep.SWAP, state) },
     ],
     networkName: swapData?.swapData?.sellAsset?.network,
