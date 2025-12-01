@@ -89,7 +89,7 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
   const truncatedAddress = address ? truncateAddress(address) : ''
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
+    <Sheet open={isOpen} onOpenChange={onClose} modal={false}>
       <SheetContent side="right" className="w-full sm:max-w-md p-0 [&>button]:hidden">
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b">
