@@ -11,9 +11,8 @@ import { Button } from './ui/button'
 import { UserMessage } from './UserMessage'
 
 const WELCOME_SUGGESTIONS = [
-  'Swap half my ETH on Arbitrum to USDC',
   'What is my USDC balance on Arbitrum?',
-  'Swap half my USDC on ARB to FOX',
+  'Swap half my USDC on arb to FOX',
   'Give me some info about FOX on Arb',
 ]
 
@@ -122,14 +121,14 @@ export function Chat() {
       {/* Suggestions above composer - only shown when empty */}
       {isEmpty && (
         <div className="bg-background">
-          <div className="mx-auto grid grid-cols-2 md:grid-cols-4 max-w-2xl gap-2 px-4 py-3">
+          <div className="mx-auto flex max-w-2xl gap-2 px-4 py-3">
             {WELCOME_SUGGESTIONS.map((suggestion, index) => (
               <Button
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
                 title={suggestion}
                 variant="outline"
-                className="min-w-0 h-[52px] line-clamp-2 whitespace-normal"
+                className="flex-1 min-w-0 h-[52px] line-clamp-2 whitespace-normal"
               >
                 {suggestion}
               </Button>
