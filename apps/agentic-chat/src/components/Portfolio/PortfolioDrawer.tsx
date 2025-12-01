@@ -1,6 +1,8 @@
-import { useAppKit, useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react'
-import { Power, Wallet, X } from 'lucide-react'
+import { mainnet, solana } from '@reown/appkit/networks'
+import { modal, useAppKit, useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react'
+import { ChevronDown, Power, Wallet, X } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { usePortfolioQuery } from '@/hooks/usePortfolioQuery'
 import { useWalletConnection } from '@/hooks/useWalletConnection'
@@ -17,8 +19,10 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog'
 import { Button } from '../ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Sheet, SheetClose, SheetContent } from '../ui/sheet'
 
+import { NetworkWalletRow } from './NetworkWalletRow'
 import { PortfolioPanel } from './PortfolioPanel'
 
 type PortfolioDrawerProps = {
@@ -29,9 +33,13 @@ type PortfolioDrawerProps = {
 export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
   const { open } = useAppKit()
   const { address } = useAppKitAccount()
+  const evmAccount = useAppKitAccount({ namespace: 'eip155' })
+  const solanaAccount = useAppKitAccount({ namespace: 'solana' })
   const { isConnected } = useWalletConnection()
   const { disconnect } = useDisconnect()
   const { walletInfo } = useWalletInfo()
+  const { walletInfo: evmWalletInfo } = useWalletInfo('eip155')
+  const { walletInfo: solanaWalletInfo } = useWalletInfo('solana')
   const [showDisconnectAlert, setShowDisconnectAlert] = useState(false)
   const { isError, error, refetch } = usePortfolioQuery()
 
@@ -46,6 +54,38 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
     void open()
   }
 
+  const handleConnectEvm = () => {
+    void open({ view: 'Connect', namespace: 'eip155' })
+  }
+
+  const handleConnectSolana = () => {
+    void open({ view: 'Connect', namespace: 'solana' })
+  }
+
+  const handleDisconnectEvm = () => {
+    const solanaWasConnected = solanaAccount.isConnected
+    void disconnect({ namespace: 'eip155' }).then(() => {
+      if (solanaWasConnected) {
+        void modal?.switchNetwork(solana)
+      }
+    })
+  }
+
+  const handleDisconnectSolana = () => {
+    const evmWasConnected = evmAccount.isConnected
+    void disconnect({ namespace: 'solana' }).then(() => {
+      if (evmWasConnected) {
+        void modal?.switchNetwork(mainnet)
+      }
+    })
+  }
+
+  const handleCopyAddress = (addr: string) => {
+    void navigator.clipboard.writeText(addr).then(() => {
+      toast.success('Address copied to clipboard')
+    })
+  }
+
   const truncatedAddress = address ? truncateAddress(address) : ''
 
   return (
@@ -54,15 +94,56 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b">
             {isConnected && (
-              <div className="flex items-center gap-2">
-                {walletInfo?.icon && (
-                  <img src={walletInfo.icon} alt={walletInfo.name || 'Wallet'} className="w-6 h-6 rounded-full" />
-                )}
-                <span className="text-sm font-medium">{truncatedAddress}</span>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer">
+                    {evmAccount.isConnected && solanaAccount.isConnected ? (
+                      <div className="relative w-8 h-8">
+                        <img
+                          src={evmWalletInfo?.icon}
+                          alt="EVM Wallet"
+                          className="absolute top-0 left-0 w-6 h-6 rounded-full border-2 border-background"
+                        />
+                        <img
+                          src={solanaWalletInfo?.icon}
+                          alt="Solana Wallet"
+                          className="absolute bottom-0 right-0 w-6 h-6 rounded-full border-2 border-background"
+                        />
+                      </div>
+                    ) : (
+                      walletInfo?.icon && (
+                        <img src={walletInfo.icon} alt={walletInfo.name || 'Wallet'} className="w-6 h-6 rounded-full" />
+                      )
+                    )}
+                    <span className="text-sm font-medium">{truncatedAddress}</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="start" className="w-64">
+                  <NetworkWalletRow
+                    label="EVM"
+                    address={evmAccount.address}
+                    icon={evmWalletInfo?.icon}
+                    isConnected={evmAccount.isConnected}
+                    onConnect={handleConnectEvm}
+                    onDisconnect={handleDisconnectEvm}
+                    onCopy={handleCopyAddress}
+                  />
+                  <DropdownMenuSeparator />
+                  <NetworkWalletRow
+                    label="Solana"
+                    address={solanaAccount.address}
+                    icon={solanaWalletInfo?.icon}
+                    isConnected={solanaAccount.isConnected}
+                    onConnect={handleConnectSolana}
+                    onDisconnect={handleDisconnectSolana}
+                    onCopy={handleCopyAddress}
+                  />
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-            {!isConnected && <div />}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
               {isConnected && (
                 <Button variant="ghost" size="icon" onClick={() => setShowDisconnectAlert(true)} className="h-8 w-8">
                   <Power className="w-4 h-4" />
