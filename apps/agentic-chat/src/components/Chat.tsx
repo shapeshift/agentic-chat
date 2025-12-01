@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
+import { useStreamPauseDetector } from '../hooks/useStreamPauseDetector'
 import { useChatContext } from '../providers/ChatProvider'
 
 import { AssistantMessage } from './AssistantMessage'
@@ -13,17 +14,30 @@ const WELCOME_SUGGESTIONS = [
   'Swap half my ETH on Arbitrum to USDC',
   'What is my USDC balance on Arbitrum?',
   'Swap half my USDC on ARB to FOX',
-  'Gib me some info about FOX on Arb',
+  'Give me some info about FOX on Arb',
 ]
 
 export function Chat() {
-  const { messages, sendMessage, isLoading, error } = useChatContext()
+  const { messages, sendMessage, status, error } = useChatContext()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
   const shouldAutoScrollRef = useRef(true)
 
   const lastMessage = messages[messages.length - 1]
   const hasMessages = messages.length > 0
+
+  const lastMessageContent = useMemo(() => {
+    const assistantMessages = messages.filter(m => m.role === 'assistant')
+    const lastAssistantMessage = assistantMessages[assistantMessages.length - 1]
+    if (!lastAssistantMessage) return undefined
+    return lastAssistantMessage.parts
+      .filter(part => part.type === 'text')
+      .map(part => (part as { type: 'text'; text: string }).text)
+      .join('')
+  }, [messages])
+
+  const isStreaming = status === 'submitted' || status === 'streaming'
+  const isPaused = useStreamPauseDetector(isStreaming, lastMessageContent)
 
   // Scroll event listener to continuously track user position
   useEffect(() => {
@@ -86,7 +100,7 @@ export function Chat() {
               return null
             })}
 
-            {isLoading && <LoadingIndicator />}
+            {isPaused && <LoadingIndicator />}
 
             {error && (
               <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">

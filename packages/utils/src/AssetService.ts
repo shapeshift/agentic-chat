@@ -70,9 +70,10 @@ class AssetService {
   private scoreMatch(asset: StaticAsset, term: string): number {
     const symbol = asset.symbol.toLowerCase()
     const name = asset.name.toLowerCase()
+    const isNative = asset.assetId.includes('/slip44:')
 
-    // Exact symbol match (highest)
-    if (symbol === term) return 1000
+    // Exact symbol match (highest) - native tokens get a small bonus as tiebreaker
+    if (symbol === term) return isNative ? 1001 : 1000
 
     // Exact name match
     if (name === term) return 500

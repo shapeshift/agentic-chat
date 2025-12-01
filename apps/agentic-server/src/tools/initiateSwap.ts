@@ -174,7 +174,7 @@ function createSwapSummary(sellAsset: Asset, buyAsset: Asset, sellAmount: string
     },
     buyAsset: {
       symbol: buyAsset.symbol.toUpperCase(),
-      estimatedAmount: parseFloat(bestRate.buyAmountCryptoPrecision).toFixed(8),
+      estimatedAmount: bestRate.buyAmountCryptoPrecision,
       network: buyAsset.network,
       chainName: buyAsset.name || 'Unknown Chain',
       estimatedValueUSD: buyEstimatedValueUSD ? `$${buyEstimatedValueUSD}` : 'N/A',

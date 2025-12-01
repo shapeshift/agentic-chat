@@ -32,8 +32,8 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
     )
   }
 
-  const [quoteStep, networkStep, approvalStep, swapStep] = steps
-  if (!quoteStep || !networkStep || !approvalStep || !swapStep) {
+  const [quoteStep, networkStep, approvalStep, confirmationStep, swapStep] = steps
+  if (!quoteStep || !networkStep || !approvalStep || !confirmationStep || !swapStep) {
     return (
       <TxStepCard.Root>
         <div className="text-sm text-muted-foreground font-medium p-4">
@@ -43,9 +43,13 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
     )
   }
 
-  const completedCount = [quoteStep.status, networkStep.status, approvalStep.status, swapStep.status].filter(
-    s => s === StepStatus.COMPLETE || s === StepStatus.SKIPPED
-  ).length
+  const completedCount = [
+    quoteStep.status,
+    networkStep.status,
+    approvalStep.status,
+    confirmationStep.status,
+    swapStep.status,
+  ].filter(s => s === StepStatus.COMPLETE || s === StepStatus.SKIPPED).length
 
   const footerMessage = (() => {
     if (state === 'output-error') return { type: 'error' as const, text: 'Failed to get swap quote' }
@@ -58,6 +62,40 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
   const sellAmount = swap ? bnOrZero(swap.sellAmountCryptoPrecision) : bnOrZero(0)
   const rate = buyAmount.gt(0) && sellAmount.gt(0) ? buyAmount.div(sellAmount).toFixed(6) : '—'
 
+  const hasError = state === 'output-error'
+  const isLoading = !swap && !hasError
+
+  const UsdValue = () => {
+    if (swap?.buyAmountUsd) return <Amount.Fiat value={swap.buyAmountUsd} />
+    if (isLoading) return <Skeleton className="h-5 w-16" />
+    return <>—</>
+  }
+
+  const SwapPair = () => {
+    if (swap) {
+      return (
+        <TxStepCard.SwapPair
+          fromSymbol={swap.sellAsset.symbol.toUpperCase()}
+          toSymbol={swap.buyAsset.symbol.toUpperCase()}
+        />
+      )
+    }
+    if (isLoading) return <Skeleton className="h-7 w-40" />
+    return <div className="text-lg font-semibold text-muted-foreground">—</div>
+  }
+
+  const BuyAmount = () => {
+    if (swap) {
+      return (
+        <TxStepCard.Amount>
+          <Amount.Crypto value={swap.buyAmountCryptoPrecision} symbol={swap.buyAsset.symbol.toUpperCase()} />
+        </TxStepCard.Amount>
+      )
+    }
+    if (isLoading) return <Skeleton className="h-7 w-32" />
+    return <div className="text-lg font-semibold text-muted-foreground">—</div>
+  }
+
   return (
     <TxStepCard.Root>
       <TxStepCard.Header>
@@ -66,25 +104,12 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
             <div className="text-xs text-muted-foreground font-normal">Received from {firstFourLastFour(address)}</div>
           )}
           <div className="text-sm text-muted-foreground font-normal">
-            {swap?.buyAmountUsd ? <Amount.Fiat value={swap.buyAmountUsd} /> : <Skeleton className="h-5 w-16" />}
+            <UsdValue />
           </div>
         </TxStepCard.HeaderRow>
         <TxStepCard.HeaderRow>
-          {swap ? (
-            <TxStepCard.SwapPair
-              fromSymbol={swap.sellAsset.symbol.toUpperCase()}
-              toSymbol={swap.buyAsset.symbol.toUpperCase()}
-            />
-          ) : (
-            <Skeleton className="h-7 w-40" />
-          )}
-          {swap ? (
-            <TxStepCard.Amount>
-              <Amount.Crypto value={swap.buyAmountCryptoPrecision} symbol={swap.buyAsset.symbol.toUpperCase()} />
-            </TxStepCard.Amount>
-          ) : (
-            <Skeleton className="h-7 w-32" />
-          )}
+          <SwapPair />
+          <BuyAmount />
         </TxStepCard.HeaderRow>
       </TxStepCard.Header>
 
@@ -129,7 +154,7 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
         </TxStepCard.Content>
       )}
 
-      <TxStepCard.Stepper completedCount={completedCount} totalCount={4}>
+      <TxStepCard.Stepper completedCount={completedCount} totalCount={5}>
         <TxStepCard.Step status={quoteStep.status} connectorBottom>
           Getting swap quote
         </TxStepCard.Step>
@@ -138,6 +163,9 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
         </TxStepCard.Step>
         <TxStepCard.Step status={approvalStep.status} connectorTop connectorBottom>
           Approve token spending
+        </TxStepCard.Step>
+        <TxStepCard.Step status={confirmationStep.status} connectorTop connectorBottom>
+          Confirming approval
         </TxStepCard.Step>
         <TxStepCard.Step status={swapStep.status} connectorTop>
           Sign swap transaction

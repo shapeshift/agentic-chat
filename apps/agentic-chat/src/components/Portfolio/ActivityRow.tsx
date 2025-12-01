@@ -5,6 +5,7 @@ import { Amount } from '@/components/ui/Amount'
 import { DrawerListItem } from '@/components/ui/DrawerListItem'
 import { ToolCard } from '@/components/ui/ToolCard'
 import { getExplorerUrl } from '@/lib/explorers'
+import { formatCryptoAmount } from '@/lib/number'
 import { truncateAddress } from '@/lib/utils'
 import type { ActivityItem, SwapActivityDetails, SendActivityDetails } from '@/types/activity'
 
@@ -20,9 +21,9 @@ const ACTIVITY_ICONS = {
 function formatActivityTitle(activity: ActivityItem): string {
   switch (activity.type) {
     case 'swap':
-      return `Swapped ${activity.details.sellAsset.amount} ${activity.details.sellAsset.symbol} to ${activity.details.buyAsset.amount} ${activity.details.buyAsset.symbol}`
+      return `Swapped ${formatCryptoAmount(activity.details.sellAsset.amount, { symbol: activity.details.sellAsset.symbol })} to ${formatCryptoAmount(activity.details.buyAsset.amount, { symbol: activity.details.buyAsset.symbol })}`
     case 'send':
-      return `Sent ${activity.details.asset.amount} ${activity.details.asset.symbol}`
+      return `Sent ${formatCryptoAmount(activity.details.asset.amount, { symbol: activity.details.asset.symbol })}`
   }
 }
 
