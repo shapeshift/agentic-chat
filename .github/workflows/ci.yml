@@ -40,7 +40,7 @@ jobs:
           curl -sL https://sentry.io/get-cli/ | bash
           VERSION=$(sentry-cli releases propose-version)
           sentry-cli releases new "$VERSION"
-          sentry-cli releases set-commits "$VERSION" --auto
+          sentry-cli releases set-commits "$VERSION" --auto --ignore-missing
           sentry-cli sourcemaps upload --release="$VERSION" apps/agentic-chat/dist
           sentry-cli releases finalize "$VERSION"
 
