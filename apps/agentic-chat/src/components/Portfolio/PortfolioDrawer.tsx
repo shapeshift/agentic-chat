@@ -2,7 +2,6 @@ import { mainnet, solana } from '@reown/appkit/networks'
 import { modal, useAppKit, useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react'
 import { ChevronDown, Power, Wallet, X } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 
 import { usePortfolioQuery } from '@/hooks/usePortfolioQuery'
 import { useWalletConnection } from '@/hooks/useWalletConnection'
@@ -80,12 +79,6 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
     })
   }
 
-  const handleCopyAddress = (addr: string) => {
-    void navigator.clipboard.writeText(addr).then(() => {
-      toast.success('Address copied to clipboard')
-    })
-  }
-
   const truncatedAddress = address ? truncateAddress(address) : ''
 
   return (
@@ -128,7 +121,6 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
                     isConnected={evmAccount.isConnected}
                     onConnect={handleConnectEvm}
                     onDisconnect={handleDisconnectEvm}
-                    onCopy={handleCopyAddress}
                   />
                   <DropdownMenuSeparator />
                   <NetworkWalletRow
@@ -138,7 +130,6 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
                     isConnected={solanaAccount.isConnected}
                     onConnect={handleConnectSolana}
                     onDisconnect={handleDisconnectSolana}
-                    onCopy={handleCopyAddress}
                   />
                 </DropdownMenuContent>
               </DropdownMenu>

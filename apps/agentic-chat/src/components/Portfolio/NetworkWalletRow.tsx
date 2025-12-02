@@ -1,8 +1,9 @@
-import { Copy, X } from 'lucide-react'
+import { X } from 'lucide-react'
 
 import { truncateAddress } from '@/lib/utils'
 
 import { Button } from '../ui/button'
+import { CopyButton } from '../ui/copy-button'
 import { DropdownMenuLabel } from '../ui/dropdown-menu'
 import { IconButton } from '../ui/icon-button'
 
@@ -13,7 +14,6 @@ type NetworkWalletRowProps = {
   isConnected: boolean
   onConnect: () => void
   onDisconnect: () => void
-  onCopy: (address: string) => void
 }
 
 export function NetworkWalletRow({
@@ -23,7 +23,6 @@ export function NetworkWalletRow({
   isConnected,
   onConnect,
   onDisconnect,
-  onCopy,
 }: NetworkWalletRowProps) {
   return (
     <>
@@ -35,14 +34,7 @@ export function NetworkWalletRow({
             <span className="text-sm font-mono truncate">{address ? truncateAddress(address) : ''}</span>
           </div>
           <div className="flex items-center">
-            <IconButton
-              icon={<Copy className="w-3 h-3" />}
-              label={`Copy ${label} address`}
-              size="sm"
-              variant="ghost"
-              onClick={() => address && onCopy(address)}
-              className="text-muted-foreground hover:text-foreground"
-            />
+            {address && <CopyButton value={address} className="text-muted-foreground hover:text-foreground" />}
             <IconButton
               icon={<X className="w-4 h-4" />}
               label={`Disconnect ${label}`}
