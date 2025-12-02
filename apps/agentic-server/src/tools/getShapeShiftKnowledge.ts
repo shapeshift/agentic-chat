@@ -1,9 +1,6 @@
-import fs from 'fs/promises'
-import path from 'path'
-
 import { z } from 'zod'
 
-const KNOWLEDGE_DIR = path.join(__dirname, '../knowledge/shapeshift')
+import { shapeshiftKnowledge } from '../knowledge/shapeshift'
 
 const CATEGORIES = [
   'company',
@@ -27,34 +24,15 @@ export const getShapeShiftKnowledgeSchema = z.object({
 
 export type GetShapeShiftKnowledgeInput = z.infer<typeof getShapeShiftKnowledgeSchema>
 
-export async function executeGetShapeShiftKnowledge(input: GetShapeShiftKnowledgeInput): Promise<string> {
+export function executeGetShapeShiftKnowledge(input: GetShapeShiftKnowledgeInput): string {
   const { category } = input
+  const selectedCategory = category || 'all'
 
-  try {
-    // Default to "all" if no category specified
-    const selectedCategory = category || 'all'
-
-    if (selectedCategory === 'all') {
-      // Read all knowledge files
-      const allKnowledge = await Promise.all(
-        CATEGORIES.map(async cat => {
-          const filePath = path.join(KNOWLEDGE_DIR, `${cat}.md`)
-          const content = await fs.readFile(filePath, 'utf-8')
-          return `\n\n# ${cat.toUpperCase()} #\n\n${content}`
-        })
-      )
-      return allKnowledge.join('\n\n---\n\n')
-    }
-
-    // Read specific category
-    const filePath = path.join(KNOWLEDGE_DIR, `${selectedCategory}.md`)
-    const content = await fs.readFile(filePath, 'utf-8')
-
-    return content
-  } catch (error) {
-    console.error('Error reading ShapeShift knowledge:', error)
-    return `Failed to retrieve ShapeShift knowledge: ${error instanceof Error ? error.message : 'Unknown error'}`
+  if (selectedCategory === 'all') {
+    return CATEGORIES.map(cat => `\n\n# ${cat.toUpperCase()} #\n\n${shapeshiftKnowledge[cat]}`).join('\n\n---\n\n')
   }
+
+  return shapeshiftKnowledge[selectedCategory]
 }
 
 export const getShapeShiftKnowledgeTool = {
