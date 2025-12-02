@@ -3,7 +3,7 @@ import { Check, Copy } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useCallback, useState } from 'react'
 
-import { Button } from '../ui/button'
+import { Button } from '../ui/Button'
 import { StatusText } from '../ui/StatusText'
 import { ToolCard } from '../ui/ToolCard'
 

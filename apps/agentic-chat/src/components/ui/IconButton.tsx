@@ -1,8 +1,8 @@
 import type { VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 
-import type { buttonVariants } from './button'
-import { Button } from './button'
+import type { buttonVariants } from './Button'
+import { Button } from './Button'
 
 export interface IconButtonProps
   extends Omit<React.ComponentProps<'button'>, 'children'>,

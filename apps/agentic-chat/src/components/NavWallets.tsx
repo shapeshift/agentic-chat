@@ -1,6 +1,6 @@
 import type { Wallet } from '@/types'
 
-import { SidebarGroup, SidebarMenu, SidebarMenuItem } from './ui/sidebar'
+import { SidebarGroup, SidebarMenu, SidebarMenuItem } from './ui/Sidebar'
 import { WalletButton } from './WalletButton'
 
 type NavWalletsProps = {

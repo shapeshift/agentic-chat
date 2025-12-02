@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Button } from './button'
+import { Button } from './Button'
 
 export function CollapsableDetails({
   title,

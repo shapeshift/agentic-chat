@@ -4,8 +4,8 @@ import { useCallback } from 'react'
 
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 
-import { IconButton } from './icon-button'
-import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip'
+import { IconButton } from './IconButton'
+import { Tooltip, TooltipContent, TooltipTrigger } from './Tooltip'
 
 type CopyButtonProps = {
   value: string

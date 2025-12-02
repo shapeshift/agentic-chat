@@ -14,8 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from './ui/alert-dialog'
-import { Button } from './ui/button'
+} from './ui/AlertDialog'
+import { Button } from './ui/Button'
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -23,7 +23,7 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-} from './ui/sidebar'
+} from './ui/Sidebar'
 
 export function ConversationList() {
   const { conversations, activeConversationId, deleteConversation } = useChatContext()

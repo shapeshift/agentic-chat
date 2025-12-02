@@ -3,7 +3,7 @@
 import * as React from 'react'
 
 import { ConversationList } from './ConversationList'
-import { Sidebar, SidebarContent, SidebarHeader, SidebarRail } from './ui/sidebar'
+import { Sidebar, SidebarContent, SidebarHeader, SidebarRail } from './ui/Sidebar'
 
 export const SidebarLeft: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }) => {
   return (

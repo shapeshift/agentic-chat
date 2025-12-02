@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { usePortfolioQuery } from '@/hooks/usePortfolioQuery'
 import { groupPortfolioAssets } from '@/lib/portfolio'
 

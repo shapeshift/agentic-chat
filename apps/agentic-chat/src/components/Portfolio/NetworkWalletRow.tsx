@@ -2,10 +2,10 @@ import { X } from 'lucide-react'
 
 import { truncateAddress } from '@/lib/utils'
 
-import { Button } from '../ui/button'
-import { CopyButton } from '../ui/copy-button'
-import { DropdownMenuLabel } from '../ui/dropdown-menu'
-import { IconButton } from '../ui/icon-button'
+import { Button } from '../ui/Button'
+import { CopyButton } from '../ui/CopyButton'
+import { DropdownMenuLabel } from '../ui/DropdownMenu'
+import { IconButton } from '../ui/IconButton'
 
 type NetworkWalletRowProps = {
   label: string

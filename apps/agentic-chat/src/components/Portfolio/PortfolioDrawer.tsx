@@ -16,10 +16,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../ui/alert-dialog'
-import { Button } from '../ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
-import { Sheet, SheetClose, SheetContent } from '../ui/sheet'
+} from '../ui/AlertDialog'
+import { Button } from '../ui/Button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/DropdownMenu'
+import { Sheet, SheetClose, SheetContent } from '../ui/Sheet'
 
 import { NetworkWalletRow } from './NetworkWalletRow'
 import { PortfolioPanel } from './PortfolioPanel'

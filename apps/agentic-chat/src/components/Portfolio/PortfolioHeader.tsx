@@ -1,5 +1,5 @@
 import { Amount } from '@/components/ui/Amount'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { usePortfolioQuery } from '@/hooks/usePortfolioQuery'
 import { bnOrZero } from '@/lib/bignumber'
 import { cn } from '@/lib/utils'

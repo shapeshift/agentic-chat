@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 
 import { cn } from '@/lib/utils'
 
-import { Skeleton } from './skeleton'
+import { Skeleton } from './Skeleton'
 
 const ToolCardRoot = ({
   children,

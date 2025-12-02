@@ -1,7 +1,7 @@
 import { Chat } from '@/components/Chat'
 import { ConnectWallet } from '@/components/ConnectWallet'
 import { SidebarLeft } from '@/components/SidebarLeft'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/Sidebar'
 import { ChatProvider } from '@/providers/ChatProvider'
 
 const isSidebarLeftEnabled = import.meta.env.VITE_FEATURE_ENABLE_SIDEBAR_LEFT === 'true'

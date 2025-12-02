@@ -6,7 +6,7 @@ import { firstFourLastFour } from '@/lib/utils'
 import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
-import { Skeleton } from '../ui/skeleton'
+import { Skeleton } from '../ui/Skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'

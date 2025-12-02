@@ -7,7 +7,7 @@ import { formatCompactNumber, formatFiat } from '@/lib/number'
 
 import { Amount } from '../ui/Amount'
 import { AssetIcon } from '../ui/AssetIcon'
-import { Skeleton } from '../ui/skeleton'
+import { Skeleton } from '../ui/Skeleton'
 import { ToolCard } from '../ui/ToolCard'
 
 import { useToolStateRender } from './toolUIHelpers'

@@ -7,7 +7,7 @@ import { useChatContext } from '../providers/ChatProvider'
 import { AssistantMessage } from './AssistantMessage'
 import { Composer } from './Composer'
 import { LoadingIndicator } from './LoadingIndicator'
-import { Button } from './ui/button'
+import { Button } from './ui/Button'
 import { UserMessage } from './UserMessage'
 
 const WELCOME_SUGGESTIONS = [

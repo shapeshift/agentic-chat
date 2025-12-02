@@ -1,7 +1,7 @@
 import type { Asset } from '@shapeshiftoss/types'
 
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { SidebarMenuButton } from './ui/sidebar'
+import { Avatar, AvatarFallback, AvatarImage } from './ui/Avatar'
+import { SidebarMenuButton } from './ui/Sidebar'
 
 export const WalletAsset: React.FC<{ asset: Asset }> = ({ asset }) => {
   return (

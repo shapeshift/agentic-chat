@@ -8,8 +8,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenu,
-} from './ui/dropdown-menu'
-import { SidebarMenuAction, SidebarMenuButton, useSidebar } from './ui/sidebar'
+} from './ui/DropdownMenu'
+import { SidebarMenuAction, SidebarMenuButton, useSidebar } from './ui/Sidebar'
 
 export const WalletButton: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
   const { isMobile } = useSidebar()

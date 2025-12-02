@@ -3,7 +3,7 @@ import type { FormEvent, KeyboardEvent } from 'react'
 
 import { useChatContext } from '../providers/ChatProvider'
 
-import { IconButton } from './ui/icon-button'
+import { IconButton } from './ui/IconButton'
 
 export function Composer() {
   const { input, handleInputChange, handleSubmit, isLoading, stop } = useChatContext()

@@ -10,7 +10,7 @@ import remarkMath from 'remark-math'
 
 import { cn } from '@/lib/utils'
 
-import { IconButton } from './ui/icon-button'
+import { IconButton } from './ui/IconButton'
 
 interface MarkdownProps {
   children: string

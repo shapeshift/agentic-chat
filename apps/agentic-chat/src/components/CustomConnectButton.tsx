@@ -4,7 +4,7 @@ import { NETWORK_ICONS } from '@shapeshiftoss/utils'
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { truncateAddress } from '@/lib/utils'
 
-import { Button } from './ui/button'
+import { Button } from './ui/Button'
 
 type CustomConnectButtonProps = {
   onConnectedClick?: () => void
