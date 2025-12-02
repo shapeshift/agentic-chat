@@ -6,7 +6,11 @@ import { SORT_FIELDS, SORT_ORDERS } from './query/sort'
 
 export const evmTokenTransferSchema = z.object({
   contract: z.string(),
-  decimals: z.number().optional(),
+  decimals: z
+    .number()
+    .nullable()
+    .optional()
+    .transform(val => val ?? undefined),
   name: z.string(),
   symbol: z.string(),
   type: z.string(),
