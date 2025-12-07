@@ -101,7 +101,7 @@ export function Chat() {
 
             {isPaused && <LoadingIndicator />}
 
-            {error && (
+            {error && status === 'error' && (
               <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
                 <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
                 <div className="flex flex-col gap-1">
