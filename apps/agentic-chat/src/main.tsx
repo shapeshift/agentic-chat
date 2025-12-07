@@ -7,6 +7,7 @@ import * as ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 
 import App from './app/app'
+import { isUserCancellation } from './utils/walletErrors'
 
 // Polyfill Buffer for Solana SDK
 window.Buffer = Buffer
@@ -16,6 +17,20 @@ Sentry.init({
   dsn: 'https://5029b06bf89b9e74ac64b3b8fc3e379d@o4507174990905344.ingest.de.sentry.io/4510434281783376',
   sendDefaultPii: false,
   enableLogs: true,
+  beforeSend(event, hint) {
+    const error = hint.originalException
+    if (isUserCancellation(error)) {
+      return null
+    }
+
+    // Filter HMR/react-refresh errors (dev-only)
+    const frames = event.exception?.values?.[0]?.stacktrace?.frames
+    if (frames?.some(frame => frame.filename?.includes('@react-refresh'))) {
+      return null
+    }
+
+    return event
+  },
 })
 
 // Initialize Mixpanel (disabled in dev unless VITE_ENABLE_ANALYTICS is set)

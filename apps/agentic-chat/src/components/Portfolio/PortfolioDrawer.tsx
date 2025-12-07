@@ -43,10 +43,12 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
   const { isError, error, refetch } = usePortfolioQuery()
 
   const handleDisconnect = () => {
-    void disconnect().then(() => {
-      setShowDisconnectAlert(false)
-      onClose()
-    })
+    void disconnect()
+      .catch(() => {})
+      .finally(() => {
+        setShowDisconnectAlert(false)
+        onClose()
+      })
   }
 
   const handleConnect = () => {
@@ -63,20 +65,24 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
 
   const handleDisconnectEvm = () => {
     const solanaWasConnected = solanaAccount.isConnected
-    void disconnect({ namespace: 'eip155' }).then(() => {
-      if (solanaWasConnected) {
-        void modal?.switchNetwork(solana)
-      }
-    })
+    void disconnect({ namespace: 'eip155' })
+      .catch(() => {})
+      .finally(() => {
+        if (solanaWasConnected) {
+          void modal?.switchNetwork(solana)
+        }
+      })
   }
 
   const handleDisconnectSolana = () => {
     const evmWasConnected = evmAccount.isConnected
-    void disconnect({ namespace: 'solana' }).then(() => {
-      if (evmWasConnected) {
-        void modal?.switchNetwork(mainnet)
-      }
-    })
+    void disconnect({ namespace: 'solana' })
+      .catch(() => {})
+      .finally(() => {
+        if (evmWasConnected) {
+          void modal?.switchNetwork(mainnet)
+        }
+      })
   }
 
   const truncatedAddress = address ? truncateAddress(address) : ''
