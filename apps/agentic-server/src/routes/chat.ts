@@ -259,11 +259,23 @@ export async function handleChatRequest(c: Context) {
       temperature: 1.0,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),
+      onError: ({ error }) => {
+        console.error('[Stream Error]', {
+          message: error instanceof Error ? error.message : String(error),
+          name: error instanceof Error ? error.name : 'Unknown',
+          cause: error instanceof Error ? error.cause : undefined,
+        })
+      },
     })
 
     return result.toUIMessageStreamResponse()
   } catch (error) {
-    console.error('[Chat API] Error:', error)
-    return c.json({ error: 'Internal server error' }, 500)
+    const errorDetails = {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined,
+    }
+    console.error('[Chat API] Request Error:', errorDetails)
+    return c.json({ error: 'Internal server error', details: errorDetails.message }, 500)
   }
 }

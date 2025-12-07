@@ -79,6 +79,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const chat = useChat({
     id: urlConversationId,
     transport,
+    onError: error => {
+      console.error('[Chat Error]', {
+        message: error.message,
+        name: error.name,
+        cause: error.cause,
+        stack: error.stack,
+      })
+    },
     onFinish: ({ messages }) => {
       if (!messages || messages.length === 0 || !urlConversationId) return
 
