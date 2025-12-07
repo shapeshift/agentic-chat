@@ -1,5 +1,5 @@
 import { assetIdToCoingecko } from '@shapeshiftoss/caip'
-import type { Asset } from '@shapeshiftoss/types'
+import type { Asset, StaticAsset } from '@shapeshiftoss/types'
 import { chainIdToNetwork, NETWORKS } from '@shapeshiftoss/types'
 import { assetService } from '@shapeshiftoss/utils'
 import { z } from 'zod'
@@ -22,9 +22,12 @@ export type AssetWithMarketData = Asset & {
 }
 
 export const getAssetsSchema = z.object({
-  searchTerm: z.string().optional().describe('The search term to find tokens by name or symbol'),
-  assetId: z.string().optional().describe('A caip19 assetId'),
-  network: z.enum(NETWORKS).optional().describe('Optional network to filter tokens by'),
+  searchTerm: z.string().optional().describe('Search by name or symbol'),
+  assetId: z.string().optional().describe('Exact CAIP-19 assetId'),
+  contractAddress: z.string().optional().describe('Contract address'),
+  network: z.enum(NETWORKS).optional().describe('Chain to search on'),
+  assetType: z.enum(['all', 'native', 'token']).optional().describe('Filter by asset type'),
+  pools: z.enum(['exclude', 'include', 'only']).optional().describe('LP pool filtering'),
 })
 
 export type GetAssetsInput = z.infer<typeof getAssetsSchema>
@@ -59,35 +62,54 @@ async function enrichWithMarketData(asset: Asset, coinGeckoId: string): Promise<
   }
 }
 
-async function getAssetWithMarketData(input: GetAssetsInput): Promise<GetAssetsOutput> {
-  const { searchTerm, assetId, network } = input
+async function hydrateAsset(staticAsset: StaticAsset, network?: string): Promise<GetAssetsOutput> {
+  const inferredNetwork = network ?? chainIdToNetwork[staticAsset.chainId] ?? ''
+  const asset: Asset = {
+    ...staticAsset,
+    color: staticAsset.color ?? '',
+    price: '0',
+    network: inferredNetwork,
+  }
 
-  const asset = (() => {
-    if (searchTerm) return assetService.search(searchTerm, network)[0]
-    if (assetId) return assetService.getAsset(assetId)
-    return undefined
-  })()
-
-  if (!asset) return { assets: [] }
-
-  const inferredNetwork = network ?? chainIdToNetwork[asset.chainId] ?? ''
-  const assetWithNetwork: Asset = { ...asset, price: '0', network: inferredNetwork }
-
-  const coinGeckoId = assetIdToCoingecko(asset.assetId)
+  const coinGeckoId = assetIdToCoingecko(staticAsset.assetId)
   if (coinGeckoId) {
-    const enriched = await enrichWithMarketData(assetWithNetwork, coinGeckoId)
+    const enriched = await enrichWithMarketData(asset, coinGeckoId)
     if (enriched) return { assets: [enriched] }
   }
 
-  return { assets: [assetWithNetwork] }
+  return { assets: [asset] }
+}
+
+async function getAssetWithMarketData(input: GetAssetsInput): Promise<GetAssetsOutput> {
+  const { searchTerm, assetId, contractAddress, network, assetType, pools } = input
+
+  if (assetId) {
+    const asset = assetService.getAsset(assetId)
+    if (!asset) return { assets: [] }
+    return hydrateAsset(asset, network)
+  }
+
+  if (contractAddress) {
+    const result = assetService.searchByContract(contractAddress, network)[0]
+    if (!result) return { assets: [] }
+    return hydrateAsset(result, network)
+  }
+
+  if (searchTerm) {
+    const result = assetService.searchWithFilters(searchTerm, { network, assetType, pools })[0]
+    if (!result) return { assets: [] }
+    return hydrateAsset(result, network)
+  }
+
+  return { assets: [] }
 }
 
 export async function executeGetAssets(input: GetAssetsInput): Promise<GetAssetsOutput> {
   console.log('[getAssets]:', input)
 
-  const { searchTerm, assetId } = input
+  const { searchTerm, assetId, contractAddress } = input
 
-  if (searchTerm || assetId) {
+  if (searchTerm || assetId || contractAddress) {
     return getAssetWithMarketData(input)
   }
 
@@ -95,18 +117,23 @@ export async function executeGetAssets(input: GetAssetsInput): Promise<GetAssets
 }
 
 export const getAssetsTool = {
-  description: `Get asset market data by name, symbol, or assetId.
+  description: `Get asset market data.
 
-UI CARD DISPLAYS: token name, symbol, price, 24h change, market cap, volume, and supply info.
+METHODS (pick one):
+- SEARCH: { searchTerm, network?, assetType?, pools? }
+- ASSET ID: { assetId }
+- CONTRACT: { contractAddress, network? }
 
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+FILTERS (search only):
+- assetType: "all" (default), "native", "token"
+- pools: "exclude" (default), "include", "only"
 
-Default: Respond with one brief, natural sentence like:
-- "Here's the market data for [token]"
-- "I found the info on [token]"
-- "Here's what I found for [token]"
+Native assets are prioritized when symbol matches both native and token.
+Use assetType: "token" for wrapped versions (e.g., "wrapped xDAI on gnosis").
+Use pools: "only" for LP pool queries.
 
-Only elaborate if the user asks about something not shown in the card.`,
+UI CARD DISPLAYS: name, symbol, price, 24h change, market cap, volume, supply.
+Supplement the card, don't duplicate it.`,
   inputSchema: getAssetsSchema,
   execute: executeGetAssets,
 }

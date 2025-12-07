@@ -1,6 +1,6 @@
 import type { AssetId } from '@shapeshiftoss/caip'
-import type { StaticAsset } from '@shapeshiftoss/types'
-import { chainIdToNetwork, networkToChainIdMap } from '@shapeshiftoss/types'
+import type { Network, StaticAsset } from '@shapeshiftoss/types'
+import { networkToChainIdMap } from '@shapeshiftoss/types'
 
 import { decodeAssetData } from './assetData/decodeAssetData.js'
 import encodedAssetData from './assetData/encodedAssetData.json'
@@ -11,6 +11,7 @@ class AssetService {
   private readonly assetsById: Record<AssetId, StaticAsset>
   private readonly assetsBySymbol: Map<string, StaticAsset[]>
   private readonly assetsByName: Map<string, StaticAsset[]>
+  private readonly assetsByContract: Map<string, StaticAsset[]>
 
   private readonly sortedAssetIds: AssetId[]
 
@@ -22,6 +23,7 @@ class AssetService {
 
     this.assetsBySymbol = new Map()
     this.assetsByName = new Map()
+    this.assetsByContract = new Map()
 
     for (const asset of Object.values(this.assetsById)) {
       const symbolLower = asset.symbol.toLowerCase()
@@ -35,6 +37,17 @@ class AssetService {
         this.assetsByName.set(nameLower, [])
       }
       this.assetsByName.get(nameLower)!.push(asset)
+
+      if (!asset.assetId.includes('/slip44:')) {
+        const slashIdx = asset.assetId.indexOf('/')
+        const colonIdx = asset.assetId.indexOf(':', slashIdx)
+        const contract = asset.assetId.substring(colonIdx + 1).toLowerCase()
+
+        if (!this.assetsByContract.has(contract)) {
+          this.assetsByContract.set(contract, [])
+        }
+        this.assetsByContract.get(contract)!.push(asset)
+      }
     }
   }
 
@@ -49,19 +62,13 @@ class AssetService {
     return this.assetsById[assetId]
   }
 
-  searchBySymbol(symbol: string, network?: string): StaticAsset[] {
-    const results = this.assetsBySymbol.get(symbol.toLowerCase()) || []
+  searchBySymbol(rawSymbol: string, network?: Network): StaticAsset[] {
+    const symbol = rawSymbol.toLowerCase()
+    const results = this.assetsBySymbol.get(symbol) || []
 
     if (network) {
-      const normalized = network.toLowerCase()
-      const candidateChainId = normalized.includes(':')
-        ? normalized
-        : (networkToChainIdMap as Record<string, string>)[normalized]?.toLowerCase()
-
-      return results.filter(asset => {
-        const assetNetwork = chainIdToNetwork[asset.chainId]
-        return assetNetwork === normalized || asset.chainId === candidateChainId
-      })
+      const chainId = networkToChainIdMap[network]
+      return results.filter(asset => asset.chainId === chainId)
     }
 
     return results
@@ -87,33 +94,26 @@ class AssetService {
     return 0
   }
 
-  searchByName(name: string, network?: string): StaticAsset[] {
-    const nameLower = name.toLowerCase()
-    const exactMatches = this.assetsByName.get(nameLower) || []
+  searchByName(rawName: string, network?: Network): StaticAsset[] {
+    const name = rawName.toLowerCase()
+    const exactMatches = this.assetsByName.get(name) || []
 
     const partialMatches = Array.from(this.assetsByName.entries())
-      .filter(([assetName]) => assetName.includes(nameLower) && assetName !== nameLower)
+      .filter(([assetName]) => assetName.includes(name) && assetName !== name)
       .flatMap(([, assets]) => assets)
 
     const results = [...exactMatches, ...partialMatches]
 
     if (network) {
-      const normalized = network.toLowerCase()
-      const candidateChainId = normalized.includes(':')
-        ? normalized
-        : (networkToChainIdMap as Record<string, string>)[normalized]?.toLowerCase()
-
-      return results.filter(asset => {
-        const assetNetwork = chainIdToNetwork[asset.chainId]
-        return assetNetwork === normalized || asset.chainId === candidateChainId
-      })
+      const chainId = networkToChainIdMap[network]
+      return results.filter(asset => asset.chainId === chainId)
     }
 
     return results
   }
 
-  search(term: string, network?: string): StaticAsset[] {
-    const termLower = term.toLowerCase()
+  search(rawTerm: string, network?: Network): StaticAsset[] {
+    const term = rawTerm.toLowerCase()
     const symbolResults = this.searchBySymbol(term, network)
     const nameResults = this.searchByName(term, network)
 
@@ -123,9 +123,50 @@ class AssetService {
     }
 
     return Array.from(resultMap.values())
-      .map(asset => ({ asset, score: this.scoreMatch(asset, termLower) }))
+      .map(asset => ({ asset, score: this.scoreMatch(asset, term) }))
       .sort((a, b) => b.score - a.score)
       .map(({ asset }) => asset)
+  }
+
+  searchByContract(rawContractAddress: string, network?: Network): StaticAsset[] {
+    const contractAddress = rawContractAddress.toLowerCase()
+    const results = this.assetsByContract.get(contractAddress) || []
+
+    if (!network) return results
+
+    const chainId = networkToChainIdMap[network]
+    return results.filter(asset => asset.chainId === chainId)
+  }
+
+  private isPool(asset: StaticAsset): boolean {
+    return asset.isPool || asset.symbol.includes('/')
+  }
+
+  searchWithFilters(
+    term: string,
+    options?: {
+      network?: Network
+      assetType?: 'all' | 'native' | 'token'
+      pools?: 'exclude' | 'include' | 'only'
+    }
+  ): StaticAsset[] {
+    const { network, assetType = 'all', pools = 'exclude' } = options ?? {}
+
+    let results = this.search(term, network)
+
+    if (assetType === 'native') {
+      results = results.filter(a => a.assetId.includes('/slip44:'))
+    } else if (assetType === 'token') {
+      results = results.filter(a => !a.assetId.includes('/slip44:'))
+    }
+
+    if (pools === 'exclude') {
+      results = results.filter(a => !this.isPool(a))
+    } else if (pools === 'only') {
+      results = results.filter(a => this.isPool(a))
+    }
+
+    return results
   }
 
   getSortedAssetIds(): AssetId[] {
