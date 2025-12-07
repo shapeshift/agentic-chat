@@ -3,6 +3,7 @@ import { hexToBigInt } from 'viem'
 
 import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { sendTransaction } from '@/utils/sendTransaction'
+import { getUserFriendlyErrorMessage } from '@/utils/walletErrors'
 
 type SwapData = InitiateSwapOutput
 type TransactionData = SwapData['swapTx']
@@ -38,11 +39,7 @@ export async function executeApproval(
     const txHash = await executeTransaction(approvalTx, options)
     return txHash
   } catch (error) {
-    const message =
-      error instanceof Error && error.message?.includes('User rejected')
-        ? 'Approval cancelled by user'
-        : `Approval failed: ${error instanceof Error ? error.message : String(error)}`
-    throw new Error(message)
+    throw new Error(getUserFriendlyErrorMessage(error, 'Approval'))
   }
 }
 
@@ -51,10 +48,6 @@ export async function executeSwap(swapTx: TransactionData, options?: ExecuteTran
     const txHash = await executeTransaction(swapTx, options)
     return txHash
   } catch (error) {
-    const message =
-      error instanceof Error && error.message?.includes('User rejected')
-        ? 'Transaction cancelled by user'
-        : `Swap execution failed: ${error instanceof Error ? error.message : String(error)}`
-    throw new Error(message)
+    throw new Error(getUserFriendlyErrorMessage(error, 'Swap'))
   }
 }
