@@ -80,7 +80,8 @@ class AssetService {
     const isNative = asset.assetId.includes('/slip44:')
 
     // Exact symbol match (highest) - native tokens get a small bonus as tiebreaker
-    if (symbol === term) return isNative ? 1001 : 1000
+    // Add bonus if name also matches exactly
+    if (symbol === term) return (isNative ? 1001 : 1000) + (name === term ? 500 : 0)
 
     // Exact name match
     if (name === term) return 500
