@@ -5,7 +5,8 @@ import type { buttonVariants } from './Button'
 import { Button } from './Button'
 
 export interface IconButtonProps
-  extends Omit<React.ComponentProps<'button'>, 'children'>, Omit<VariantProps<typeof buttonVariants>, 'size'> {
+  extends Omit<React.ComponentProps<'button'>, 'children'>,
+    Omit<VariantProps<typeof buttonVariants>, 'size'> {
   icon: React.ReactNode
   label: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
