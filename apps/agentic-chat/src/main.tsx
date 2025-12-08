@@ -6,8 +6,9 @@ import { StrictMode } from 'react'
 import * as ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 
+import { isUserCancellation } from '@/utils/walletErrors'
+
 import App from './app/app'
-import { isUserCancellation } from './utils/walletErrors'
 
 // Polyfill Buffer for Solana SDK
 window.Buffer = Buffer

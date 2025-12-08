@@ -3,6 +3,7 @@ import { hexToBigInt } from 'viem'
 
 import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { sendTransaction } from '@/utils/sendTransaction'
+import { getUserFriendlyErrorMessage } from '@/utils/walletErrors'
 
 type TransactionData = SendOutput['tx']
 
@@ -34,10 +35,6 @@ export async function executeSend(sendTx: TransactionData, options?: ExecuteTran
   try {
     return await executeTransaction(sendTx, options)
   } catch (error) {
-    const message =
-      error instanceof Error && error.message?.includes('User rejected')
-        ? 'Send cancelled by user'
-        : `Send failed: ${error instanceof Error ? error.message : String(error)}`
-    throw new Error(message)
+    throw new Error(getUserFriendlyErrorMessage(error, 'Send'))
   }
 }
