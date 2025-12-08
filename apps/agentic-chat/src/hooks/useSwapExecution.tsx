@@ -1,4 +1,4 @@
-import { useAppKitProvider } from '@reown/appkit/react'
+import { modal, useAppKitProvider } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import { getPublicClient } from '@wagmi/core'
@@ -6,10 +6,10 @@ import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import { useSwitchChain } from 'wagmi'
 
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
+import { chainIdToNetwork } from '@/lib/networks'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
@@ -154,7 +154,6 @@ export const useSwapExecution = (
   toolState: DynamicToolUIPart['state'],
   swapData: SwapData | null
 ): UseSwapExecutionResult => {
-  const { switchChainAsync } = useSwitchChain()
   const { walletProvider } = useAppKitProvider('solana')
   const solanaProvider = walletProvider as SolanaWalletProvider | undefined
   const store = useChatStore()
@@ -205,7 +204,13 @@ export const useSwapExecution = (
       } else {
         // EVM: always switch to the sell chain to avoid race conditions with WalletConnect
         const sellChainIdNumber = Number(chainReference)
-        await switchChainAsync({ chainId: sellChainIdNumber })
+        const targetNetwork = chainIdToNetwork[sellChainIdNumber]
+
+        if (!targetNetwork) {
+          throw new Error(`Unsupported chain ID: ${sellChainIdNumber}`)
+        }
+
+        await modal?.switchNetwork(targetNetwork)
         setState(draft => {
           draft.completedSteps.add(draft.currentStep)
           draft.currentStep = (draft.currentStep + 1) as SwapStep

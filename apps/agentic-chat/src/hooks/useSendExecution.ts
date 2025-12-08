@@ -1,12 +1,12 @@
-import { useAppKitProvider } from '@reown/appkit/react'
+import { modal, useAppKitProvider } from '@reown/appkit/react'
 import type { SendOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
-import { useSwitchChain } from 'wagmi'
 
 import { analytics } from '@/lib/mixpanel'
+import { chainIdToNetwork } from '@/lib/networks'
 import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
@@ -131,7 +131,6 @@ export const useSendExecution = (
   toolState: DynamicToolUIPart['state'],
   sendData: SendData | null
 ): UseSendExecutionResult => {
-  const { switchChainAsync } = useSwitchChain()
   const { walletProvider } = useAppKitProvider('solana')
   const solanaProvider = walletProvider as SolanaWalletProvider | undefined
   const store = useChatStore()
@@ -182,7 +181,13 @@ export const useSendExecution = (
       } else {
         // EVM: always switch to the chain to avoid race conditions
         const chainIdNumber = Number(chainReference)
-        await switchChainAsync({ chainId: chainIdNumber })
+        const targetNetwork = chainIdToNetwork[chainIdNumber]
+
+        if (!targetNetwork) {
+          throw new Error(`Unsupported chain ID: ${chainIdNumber}`)
+        }
+
+        await modal?.switchNetwork(targetNetwork)
         setState(draft => {
           draft.completedSteps.add(draft.currentStep)
           draft.currentStep = (draft.currentStep + 1) as SendStep

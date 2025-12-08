@@ -129,23 +129,26 @@ export function ChatProvider({ children }: ChatProviderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlConversationId])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value)
-  }
+  }, [])
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!input.trim()) return
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault()
+      if (!input.trim()) return
 
-    const messageToSend = input
-    setInput('')
+      const messageToSend = input
+      setInput('')
 
-    analytics.trackChatMessage()
+      analytics.trackChatMessage()
 
-    await chat.sendMessage({
-      text: messageToSend,
-    })
-  }
+      await chat.sendMessage({
+        text: messageToSend,
+      })
+    },
+    [input, chat]
+  )
 
   const createNewConversation = useCallback(() => {
     const newId = generateConversationId()
@@ -171,27 +174,51 @@ export function ChatProvider({ children }: ChatProviderProps) {
     [urlConversationId, navigate, storeDeleteConversation]
   )
 
-  const value: ChatContextValue = {
-    messages: chat.messages,
-    input,
-    handleInputChange,
-    handleSubmit: (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitCallback = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
       void handleSubmit(e)
     },
-    isLoading: chat.status === 'submitted',
-    sendMessage: chat.sendMessage,
-    setInput,
-    status: chat.status,
-    stop: () => {
-      void chat.stop()
-    },
-    error: chat.error,
-    conversations,
-    activeConversationId: urlConversationId || null,
-    createNewConversation,
-    switchConversation,
-    deleteConversation: handleDeleteConversation,
-  }
+    [handleSubmit]
+  )
+
+  const stopCallback = useCallback(() => {
+    void chat.stop()
+  }, [chat])
+
+  const value = useMemo<ChatContextValue>(
+    () => ({
+      messages: chat.messages,
+      input,
+      handleInputChange,
+      handleSubmit: handleSubmitCallback,
+      isLoading: chat.status === 'submitted',
+      sendMessage: chat.sendMessage,
+      setInput,
+      status: chat.status,
+      stop: stopCallback,
+      error: chat.error,
+      conversations,
+      activeConversationId: urlConversationId || null,
+      createNewConversation,
+      switchConversation,
+      deleteConversation: handleDeleteConversation,
+    }),
+    [
+      chat.messages,
+      chat.sendMessage,
+      chat.status,
+      chat.error,
+      input,
+      handleInputChange,
+      handleSubmitCallback,
+      stopCallback,
+      conversations,
+      urlConversationId,
+      createNewConversation,
+      switchConversation,
+      handleDeleteConversation,
+    ]
+  )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>
 }
