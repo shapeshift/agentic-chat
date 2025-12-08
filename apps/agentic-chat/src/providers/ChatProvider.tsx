@@ -43,7 +43,7 @@ interface ChatProviderProps {
 }
 
 export function ChatProvider({ children }: ChatProviderProps) {
-  const { evmAddress, solanaAddress } = useWalletConnection()
+  const { evmAddress, solanaAddress, approvedChainIds } = useWalletConnection()
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
@@ -56,13 +56,16 @@ export function ChatProvider({ children }: ChatProviderProps) {
     clearHistoricalTools,
   } = useChatStore()
 
-  // Use refs to avoid closure capture in transport body function
+  // Refs to hold latest wallet values - allows stable transport while body() reads current values
   const evmAddressRef = useRef(evmAddress)
   const solanaAddressRef = useRef(solanaAddress)
+  const approvedChainIdsRef = useRef(approvedChainIds)
 
-  // Keep refs up-to-date
-  evmAddressRef.current = evmAddress
-  solanaAddressRef.current = solanaAddress
+  useEffect(() => {
+    evmAddressRef.current = evmAddress
+    solanaAddressRef.current = solanaAddress
+    approvedChainIdsRef.current = approvedChainIds
+  }, [evmAddress, solanaAddress, approvedChainIds])
 
   const transport = useMemo(
     () =>
@@ -71,6 +74,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
         body: () => ({
           evmAddress: evmAddressRef.current,
           solanaAddress: solanaAddressRef.current,
+          approvedChainIds: approvedChainIdsRef.current,
         }),
       }),
     []
