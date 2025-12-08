@@ -1,5 +1,4 @@
-import { mainnet, solana } from '@reown/appkit/networks'
-import { modal, useAppKit, useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react'
+import { useAppKit, useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react'
 import { ChevronDown, Power, Wallet, X } from 'lucide-react'
 import { useState } from 'react'
 
@@ -64,25 +63,11 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
   }
 
   const handleDisconnectEvm = () => {
-    const solanaWasConnected = solanaAccount.isConnected
-    void disconnect({ namespace: 'eip155' })
-      .catch(() => {})
-      .finally(() => {
-        if (solanaWasConnected) {
-          void modal?.switchNetwork(solana)
-        }
-      })
+    void disconnect({ namespace: 'eip155' }).catch(() => {})
   }
 
   const handleDisconnectSolana = () => {
-    const evmWasConnected = evmAccount.isConnected
-    void disconnect({ namespace: 'solana' })
-      .catch(() => {})
-      .finally(() => {
-        if (evmWasConnected) {
-          void modal?.switchNetwork(mainnet)
-        }
-      })
+    void disconnect({ namespace: 'solana' }).catch(() => {})
   }
 
   const truncatedAddress = address ? truncateAddress(address) : ''

@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { WagmiProvider } from 'wagmi'
 
+import { useAutoNetworkSwitch } from '@/hooks/useAutoNetworkSwitch'
 import { useWalletAnalytics } from '@/hooks/useWalletAnalytics'
 import { networks } from '@/lib/appkit'
 import { solanaAdapter } from '@/lib/solana-config'
@@ -44,6 +45,7 @@ if (import.meta.env.VITE_PROJECT_ID) {
 
 function AppContent() {
   useWalletAnalytics()
+  useAutoNetworkSwitch()
 
   return (
     <Routes>
