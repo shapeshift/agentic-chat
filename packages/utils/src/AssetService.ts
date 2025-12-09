@@ -151,7 +151,7 @@ class AssetService {
       pools?: 'exclude' | 'include' | 'only'
     }
   ): StaticAsset[] {
-    const { network, assetType = 'all', pools = 'exclude' } = options ?? {}
+    const { network, assetType = 'all', pools = 'include' } = options ?? {}
 
     let results = this.search(term, network)
 

@@ -126,7 +126,7 @@ METHODS (pick one):
 
 FILTERS (search only):
 - assetType: "all" (default), "native", "token"
-- pools: "exclude" (default), "include", "only"
+- pools: "include" (default), "exclude", "only"
 
 Native assets are prioritized when symbol matches both native and token.
 Use assetType: "token" for wrapped versions (e.g., "wrapped xDAI on gnosis").
