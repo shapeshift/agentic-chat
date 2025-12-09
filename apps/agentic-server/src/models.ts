@@ -23,7 +23,7 @@ const models = {
     provider: anthropic,
   },
   venice: {
-    model: 'zai-org-glm-4.6',
+    model: 'claude-opus-45',
     provider: venice,
   },
 } as const

@@ -43,7 +43,10 @@ interface ChatProviderProps {
 }
 
 export function ChatProvider({ children }: ChatProviderProps) {
-  const { evmAddress, solanaAddress, approvedChainIds } = useWalletConnection()
+  const wallet = useWalletConnection()
+  const walletRef = useRef(wallet)
+  walletRef.current = wallet
+
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
@@ -56,25 +59,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
     clearHistoricalTools,
   } = useChatStore()
 
-  // Refs to hold latest wallet values - allows stable transport while body() reads current values
-  const evmAddressRef = useRef(evmAddress)
-  const solanaAddressRef = useRef(solanaAddress)
-  const approvedChainIdsRef = useRef(approvedChainIds)
-
-  useEffect(() => {
-    evmAddressRef.current = evmAddress
-    solanaAddressRef.current = solanaAddress
-    approvedChainIdsRef.current = approvedChainIds
-  }, [evmAddress, solanaAddress, approvedChainIds])
-
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/chat`,
         body: () => ({
-          evmAddress: evmAddressRef.current,
-          solanaAddress: solanaAddressRef.current,
-          approvedChainIds: approvedChainIdsRef.current,
+          evmAddress: walletRef.current.evmAddress,
+          solanaAddress: walletRef.current.solanaAddress,
+          approvedChainIds: walletRef.current.approvedChainIds,
         }),
       }),
     []
