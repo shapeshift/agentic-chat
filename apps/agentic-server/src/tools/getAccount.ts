@@ -86,7 +86,8 @@ export async function executeGetAccount(input: GetAccountInput): Promise<GetAcco
 }
 
 export const getAccountTool = {
-  description: 'Get raw account balances in base units',
+  description:
+    'Get raw account balances in base units for an arbitrary external address. For connected wallet balances, use portfolioTool instead.',
   inputSchema: getAccountSchema,
   execute: executeGetAccount,
 }
