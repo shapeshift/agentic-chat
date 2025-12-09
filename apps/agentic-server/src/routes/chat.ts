@@ -33,6 +33,19 @@ import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
 import type { WalletContext } from '../utils/walletContextSimple'
 
+const allEvmChainIds = [
+  ethChainId,
+  arbitrumChainId,
+  optimismChainId,
+  baseChainId,
+  polygonChainId,
+  avalancheChainId,
+  bscChainId,
+  gnosisChainId,
+]
+
+const allSupportedChainIds = [...allEvmChainIds, solanaChainId]
+
 function wrapToolWithLogging<
   T extends { description: string; inputSchema: unknown; execute: (args: never) => unknown },
 >(name: string, tool: T): T {
@@ -45,30 +58,30 @@ function wrapToolWithLogging<
   } as T
 }
 
-function buildWalletContext(evmAddress?: string, solanaAddress?: string): WalletContext {
+function buildWalletContext(evmAddress?: string, solanaAddress?: string, approvedChainIds?: string[]): WalletContext {
   const connectedWallets: Record<string, { address: string }> = {}
 
   // Add EVM wallet - same address works across all EVM chains
   if (evmAddress) {
-    const evmChains = [
-      ethChainId,
-      arbitrumChainId,
-      optimismChainId,
-      baseChainId,
-      polygonChainId,
-      avalancheChainId,
-      bscChainId,
-      gnosisChainId,
-    ]
+    // If approvedChainIds provided (WalletConnect), filter to only approved chains
+    // Otherwise fall back to all chains (for injected wallets like MetaMask)
+    const chainsToRegister =
+      approvedChainIds && approvedChainIds.length > 0
+        ? allEvmChainIds.filter(chainId => approvedChainIds.includes(chainId))
+        : allEvmChainIds
 
-    evmChains.forEach(chainId => {
+    chainsToRegister.forEach(chainId => {
       connectedWallets[chainId] = { address: evmAddress }
     })
   }
 
-  // Add Solana wallet
+  // Add Solana wallet (only if approved or no filter provided)
   if (solanaAddress) {
-    connectedWallets[solanaChainId] = { address: solanaAddress }
+    const solanaApproved =
+      !approvedChainIds || approvedChainIds.length === 0 || approvedChainIds.includes(solanaChainId)
+    if (solanaApproved) {
+      connectedWallets[solanaChainId] = { address: solanaAddress }
+    }
   }
 
   return { connectedWallets }
@@ -150,20 +163,57 @@ function buildTools(walletContext: WalletContext) {
   }
 }
 
-function buildConnectedWalletsPrompt(evmAddress?: string, solanaAddress?: string): string {
+const chainIdToName: Record<string, string> = {
+  [ethChainId]: 'Ethereum',
+  [arbitrumChainId]: 'Arbitrum',
+  [optimismChainId]: 'Optimism',
+  [baseChainId]: 'Base',
+  [polygonChainId]: 'Polygon',
+  [avalancheChainId]: 'Avalanche',
+  [bscChainId]: 'BNB Chain',
+  [gnosisChainId]: 'Gnosis',
+  [solanaChainId]: 'Solana',
+}
+
+function buildConnectedWalletsPrompt(evmAddress?: string, solanaAddress?: string, approvedChainIds?: string[]): string {
   if (!evmAddress && !solanaAddress) {
     return '**Connected Wallets:** None'
   }
+
   const parts: string[] = []
   if (evmAddress) parts.push(`EVM (${evmAddress.slice(0, 6)}...${evmAddress.slice(-4)})`)
   if (solanaAddress) parts.push(`Solana (${solanaAddress.slice(0, 4)}...${solanaAddress.slice(-4)})`)
-  return `**Connected Wallets:** ${parts.join(', ')}`
+
+  let prompt = `**Connected Wallets:** ${parts.join(', ')}`
+
+  // If we have approved chain IDs (WalletConnect), show which networks are connected
+  if (approvedChainIds && approvedChainIds.length > 0) {
+    const connectedNames = approvedChainIds
+      .map(id => chainIdToName[id])
+      .filter(Boolean)
+      .sort()
+
+    const notConnectedIds = allSupportedChainIds.filter(id => !approvedChainIds.includes(id))
+    const notConnectedNames = notConnectedIds
+      .map(id => chainIdToName[id])
+      .filter(Boolean)
+      .sort()
+
+    if (connectedNames.length > 0) {
+      prompt += `\n**Connected Networks:** ${connectedNames.join(', ')}`
+    }
+    if (notConnectedNames.length > 0) {
+      prompt += `\n**Not Connected by Wallet (user must add these networks in their wallet to use them):** ${notConnectedNames.join(', ')}`
+    }
+  }
+
+  return prompt
 }
 
-function buildSystemPrompt(evmAddress?: string, solanaAddress?: string): string {
+function buildSystemPrompt(evmAddress?: string, solanaAddress?: string, approvedChainIds?: string[]): string {
   return (
     `
-${buildConnectedWalletsPrompt(evmAddress, solanaAddress)}
+${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
 
 **ShapeShift Crypto Assistant**
 
@@ -240,14 +290,15 @@ Examples:
 export async function handleChatRequest(c: Context) {
   try {
     const body = await c.req.json()
-    const { messages, evmAddress, solanaAddress } = body as {
+    const { messages, evmAddress, solanaAddress, approvedChainIds } = body as {
       messages: unknown
       evmAddress?: string
       solanaAddress?: string
+      approvedChainIds?: string[]
     }
 
-    // Build wallet context from addresses
-    const walletContext = buildWalletContext(evmAddress, solanaAddress)
+    // Build wallet context from addresses (filtered by approved chains if provided)
+    const walletContext = buildWalletContext(evmAddress, solanaAddress, approvedChainIds)
 
     // Convert UIMessages to ModelMessages
     const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
@@ -255,7 +306,7 @@ export async function handleChatRequest(c: Context) {
     const result = streamText({
       model: anthropic('claude-haiku-4-5'),
       messages: modelMessages,
-      system: buildSystemPrompt(evmAddress, solanaAddress),
+      system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds),
       temperature: 1.0,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),
