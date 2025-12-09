@@ -160,6 +160,7 @@ export function Markdown({ children }: MarkdownProps) {
           sup: ({ className, ...props }) => (
             <sup className={cn('[&>a]:text-xs [&>a]:no-underline', className)} {...props} />
           ),
+          del: ({ ...props }) => <span {...props} />,
           pre: ({ children, ...props }) => {
             // Extract code content and language
             const codeElement = (children as ReactNode[])?.[0]
