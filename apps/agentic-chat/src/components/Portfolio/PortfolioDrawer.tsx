@@ -43,7 +43,9 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
 
   const handleDisconnect = () => {
     void disconnect()
-      .catch(() => {})
+      .catch(error => {
+        console.error('Failed to disconnect wallet:', error)
+      })
       .finally(() => {
         setShowDisconnectAlert(false)
         onClose()
@@ -63,11 +65,15 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
   }
 
   const handleDisconnectEvm = () => {
-    void disconnect({ namespace: 'eip155' }).catch(() => {})
+    void disconnect({ namespace: 'eip155' }).catch(error => {
+      console.error('Failed to disconnect EVM wallet:', error)
+    })
   }
 
   const handleDisconnectSolana = () => {
-    void disconnect({ namespace: 'solana' }).catch(() => {})
+    void disconnect({ namespace: 'solana' }).catch(error => {
+      console.error('Failed to disconnect Solana wallet:', error)
+    })
   }
 
   const truncatedAddress = address ? truncateAddress(address) : ''
