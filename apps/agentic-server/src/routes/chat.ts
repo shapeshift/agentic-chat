@@ -14,7 +14,7 @@ import { format, getUnixTime } from 'date-fns'
 import type { Context } from 'hono'
 
 import { supportedChainsContext } from '../context'
-import { anthropic } from '../models'
+import { getModel } from '../models'
 import { getAccountTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetsTool } from '../tools/getAssets'
@@ -304,7 +304,7 @@ export async function handleChatRequest(c: Context) {
     const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
 
     const result = streamText({
-      model: anthropic('claude-haiku-4-5'),
+      model: getModel(),
       messages: modelMessages,
       system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds),
       temperature: 1.0,
