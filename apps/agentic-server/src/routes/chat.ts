@@ -231,7 +231,7 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
 - Confirm network only if ambiguous (native tokens like SOL, ETH imply their network)
 - Never display caip10/caip19 IDs - show human names only
 - Preserve exact decimal precision from tool outputs (never round/truncate)
-- Use markdown formatting for all responses
+- Use markdown formatting for all responses - never use HTML tags like <br> (they render as literal text)
 - For mathematical formulas, use LaTeX: wrap block equations with $$...$$
 
 **CRITICAL - Math & Calculations:**
