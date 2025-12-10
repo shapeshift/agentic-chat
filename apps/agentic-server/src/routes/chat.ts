@@ -14,7 +14,7 @@ import { format, getUnixTime } from 'date-fns'
 import type { Context } from 'hono'
 
 import { supportedChainsContext } from '../context'
-import { getModel } from '../models'
+import { getModel, getProviderName } from '../models'
 import { getAccountTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetsTool } from '../tools/getAssets'
@@ -313,6 +313,17 @@ export async function handleChatRequest(c: Context) {
       temperature: 1.0,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),
+      // Venice-specific parameters to disable reasoning for faster responses
+      ...(getProviderName() === 'venice' && {
+        providerOptions: {
+          venice: {
+            venice_parameters: {
+              disable_thinking: true,
+              include_venice_system_prompt: false,
+            },
+          },
+        },
+      }),
       onError: ({ error }) => {
         console.error('[Stream Error]', {
           message: error instanceof Error ? error.message : String(error),
