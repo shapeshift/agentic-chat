@@ -210,10 +210,26 @@ function buildConnectedWalletsPrompt(evmAddress?: string, solanaAddress?: string
   return prompt
 }
 
-function buildSystemPrompt(evmAddress?: string, solanaAddress?: string, approvedChainIds?: string[]): string {
+function buildWcSessionWarning(isWalletConnect?: boolean, wcSessionHealthy?: boolean): string {
+  if (isWalletConnect && wcSessionHealthy === false) {
+    return `
+**WALLET SESSION ISSUE DETECTED**
+The user's WalletConnect session appears to be stale or expired. Before attempting any wallet operations (swaps, sends, etc.), advise them to disconnect and reconnect their wallet. If a wallet operation fails with "method not found" or similar errors, remind them to reconnect their wallet.
+`
+  }
+  return ''
+}
+
+function buildSystemPrompt(
+  evmAddress?: string,
+  solanaAddress?: string,
+  approvedChainIds?: string[],
+  isWalletConnect?: boolean,
+  wcSessionHealthy?: boolean
+): string {
   return (
     `
-${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
+${buildWcSessionWarning(isWalletConnect, wcSessionHealthy)}${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
 
 **ShapeShift Crypto Assistant**
 
@@ -293,11 +309,13 @@ Examples:
 export async function handleChatRequest(c: Context) {
   try {
     const body = await c.req.json()
-    const { messages, evmAddress, solanaAddress, approvedChainIds } = body as {
+    const { messages, evmAddress, solanaAddress, approvedChainIds, isWalletConnect, wcSessionHealthy } = body as {
       messages: unknown
       evmAddress?: string
       solanaAddress?: string
       approvedChainIds?: string[]
+      isWalletConnect?: boolean
+      wcSessionHealthy?: boolean
     }
 
     // Build wallet context from addresses (filtered by approved chains if provided)
@@ -309,7 +327,7 @@ export async function handleChatRequest(c: Context) {
     const result = streamText({
       model: getModel(),
       messages: modelMessages,
-      system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds),
+      system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, isWalletConnect, wcSessionHealthy),
       temperature: 1.0,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),

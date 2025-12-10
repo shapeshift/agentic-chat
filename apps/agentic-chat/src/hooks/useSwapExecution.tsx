@@ -16,7 +16,9 @@ import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
+import { isStaleSessionError } from '@/utils/walletErrors'
 
+import { useForceDisconnect } from './useForceDisconnect'
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
@@ -160,6 +162,7 @@ export const useSwapExecution = (
   const store = useChatStore()
   const { activeConversationId } = useChatContext()
   const { evmAddress, solanaAddress } = useWalletConnection()
+  const { forceDisconnect } = useForceDisconnect()
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
@@ -339,6 +342,12 @@ export const useSwapExecution = (
         store.persistTransaction(persisted)
       }
     } catch (error) {
+      // Check for stale WalletConnect session error and force disconnect
+      if (isStaleSessionError(error)) {
+        void forceDisconnect('Wallet connection expired during swap. Please reconnect and try again.')
+        return
+      }
+
       const errorMessage = error instanceof Error ? error.message : String(error)
       let errorState: SwapState | undefined
       setState(draft => {

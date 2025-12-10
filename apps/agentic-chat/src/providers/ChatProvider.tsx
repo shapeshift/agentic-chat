@@ -1,8 +1,10 @@
 import { useChat } from '@ai-sdk/react'
+import { modal } from '@reown/appkit/react'
 import { DefaultChatTransport, isToolOrDynamicToolUIPart } from 'ai'
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { analytics } from '@/lib/mixpanel'
@@ -67,6 +69,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
           evmAddress: walletRef.current.evmAddress,
           solanaAddress: walletRef.current.solanaAddress,
           approvedChainIds: walletRef.current.approvedChainIds,
+          isWalletConnect: walletRef.current.isWalletConnect,
+          wcSessionHealthy: walletRef.current.wcSessionHealthy,
         }),
       }),
     []
@@ -133,6 +137,23 @@ export function ChatProvider({ children }: ChatProviderProps) {
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
       if (!input.trim()) return
+
+      // Check WC session health before sending if connected via WalletConnect
+      if (walletRef.current.isWalletConnect && walletRef.current.checkWcHealth) {
+        const isHealthy = await walletRef.current.checkWcHealth()
+        if (!isHealthy) {
+          toast.error('Your wallet connection has expired. Please reconnect to continue.', {
+            duration: 8000,
+            action: {
+              label: 'Reconnect',
+              onClick: () => {
+                void modal?.open()
+              },
+            },
+          })
+          return
+        }
+      }
 
       const messageToSend = input
       setInput('')
