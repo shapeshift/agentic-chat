@@ -1,6 +1,7 @@
 import type { EvmSolanaNetwork } from '@shapeshiftoss/types'
 import { chainIdToNetwork, EVM_SOLANA_NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
 import { calculateUsdValue, fromBaseUnit } from '@shapeshiftoss/utils'
+import BigNumber from 'bignumber.js'
 import { z } from 'zod'
 
 import { getAssetPrices } from '../lib/asset/prices'
@@ -38,18 +39,26 @@ export type PortfolioDataFull = {
   }>
 }
 
-export type PortfolioOutput = Array<{
-  network: EvmSolanaNetwork
-  account: string
-  chainId: string
-  balances: Array<{
-    assetId: string
-    name: string
-    symbol: string
-    cryptoAmount: string
-    usdAmount: string
+export type PortfolioTotals = {
+  overall: string
+  byNetwork: Record<EvmSolanaNetwork, string>
+}
+
+export type PortfolioOutput = {
+  networks: Array<{
+    network: EvmSolanaNetwork
+    account: string
+    chainId: string
+    balances: Array<{
+      assetId: string
+      name: string
+      symbol: string
+      cryptoAmount: string
+      usdAmount: string
+    }>
   }>
-}>
+  totals: PortfolioTotals
+}
 
 export function getConnectedNetworks(walletContext?: WalletContext): EvmSolanaNetwork[] {
   if (!walletContext?.connectedWallets) return []
@@ -136,7 +145,7 @@ export async function executeGetPortfolio(
 
   const fullData = await getPortfolioData({ networks }, walletContext)
 
-  return fullData.map(networkData => ({
+  const networkResults = fullData.map(networkData => ({
     network: networkData.network,
     account: networkData.account,
     chainId: networkData.chainId,
@@ -148,11 +157,31 @@ export async function executeGetPortfolio(
       usdAmount: balance.usdAmount,
     })),
   }))
+
+  const byNetwork = {} as Record<EvmSolanaNetwork, string>
+  let overallTotal = new BigNumber(0)
+
+  for (const networkData of networkResults) {
+    let networkTotal = new BigNumber(0)
+    for (const balance of networkData.balances) {
+      networkTotal = networkTotal.plus(balance.usdAmount)
+    }
+    byNetwork[networkData.network] = networkTotal.toFixed(2)
+    overallTotal = overallTotal.plus(networkTotal)
+  }
+
+  return {
+    networks: networkResults,
+    totals: {
+      overall: overallTotal.toFixed(2),
+      byNetwork,
+    },
+  }
 }
 
 export const portfolioTool = {
   description:
-    'Get portfolio balances across connected networks. No UI card - format and present the portfolio data in your response.',
+    'Get portfolio balances across connected networks. Returns balances per network with pre-calculated totals (overall and per-network). No UI card - format and present the data in your response. Use the provided totals directly - do not recalculate them.',
   inputSchema: portfolioSchema,
   execute: executeGetPortfolio,
 }
