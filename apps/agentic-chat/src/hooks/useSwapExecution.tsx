@@ -18,6 +18,7 @@ import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
+import { useWalletConnection } from './useWalletConnection'
 
 type SwapData = InitiateSwapOutput
 
@@ -158,6 +159,7 @@ export const useSwapExecution = (
   const solanaProvider = walletProvider as SolanaWalletProvider | undefined
   const store = useChatStore()
   const { activeConversationId } = useChatContext()
+  const { evmAddress, solanaAddress } = useWalletConnection()
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
@@ -186,6 +188,14 @@ export const useSwapExecution = (
 
       const sellAssetChainId = data.swapData.sellAsset.chainId
       const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
+
+      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm ? evmAddress : solanaAddress
+      if (!currentAddress) {
+        throw new Error('Wallet disconnected. Please reconnect and try again.')
+      }
+      if (currentAddress.toLowerCase() !== swapTx.from.toLowerCase()) {
+        throw new Error('Wallet address changed. Please re-initiate the swap.')
+      }
 
       // Step 0: Quote (completed by this point)
       setState(draft => {

@@ -14,6 +14,7 @@ import type { SolanaWalletProvider } from '@/utils/chains/types'
 import { executeSend } from '@/utils/sendExecutor'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
+import { useWalletConnection } from './useWalletConnection'
 
 type SendData = SendOutput
 
@@ -135,6 +136,7 @@ export const useSendExecution = (
   const solanaProvider = walletProvider as SolanaWalletProvider | undefined
   const store = useChatStore()
   const { activeConversationId } = useChatContext()
+  const { evmAddress, solanaAddress } = useWalletConnection()
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
@@ -162,6 +164,14 @@ export const useSendExecution = (
 
       const assetChainId = data.sendData.chainId
       const { chainNamespace, chainReference } = fromChainId(assetChainId)
+
+      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm ? evmAddress : solanaAddress
+      if (!currentAddress) {
+        throw new Error('Wallet disconnected. Please reconnect and try again.')
+      }
+      if (currentAddress.toLowerCase() !== tx.from.toLowerCase()) {
+        throw new Error('Wallet address changed. Please re-initiate the transaction.')
+      }
 
       // Step 0: Preparation (completed by this point)
       setState(draft => {
@@ -199,7 +209,7 @@ export const useSendExecution = (
       sendTxHash = await executeSend(tx, { solanaProvider })
 
       // Build final state with all completed steps
-      let finalCompletedSteps = new Set(state.completedSteps)
+      const finalCompletedSteps = new Set(state.completedSteps)
       finalCompletedSteps.add(SendStep.PREPARATION)
       finalCompletedSteps.add(SendStep.SEND)
 

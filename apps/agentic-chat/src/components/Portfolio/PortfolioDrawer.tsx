@@ -1,4 +1,5 @@
 import { useAppKit, useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react'
+import { useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, Power, Wallet, X } from 'lucide-react'
 import { useState } from 'react'
 
@@ -40,8 +41,12 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
   const { walletInfo: solanaWalletInfo } = useWalletInfo('solana')
   const [showDisconnectAlert, setShowDisconnectAlert] = useState(false)
   const { isError, error, refetch } = usePortfolioQuery()
+  const queryClient = useQueryClient()
 
   const handleDisconnect = () => {
+    void queryClient.invalidateQueries({ queryKey: ['portfolio'] })
+    void queryClient.invalidateQueries({ queryKey: ['approvedChains'] })
+
     void disconnect()
       .catch(error => {
         console.error('Failed to disconnect wallet:', error)
