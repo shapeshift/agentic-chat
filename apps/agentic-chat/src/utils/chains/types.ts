@@ -3,9 +3,14 @@ import type { Transaction, VersionedTransaction } from '@solana/web3.js'
 
 export type ChainNamespace = 'eip155' | 'solana'
 
-export interface SolanaWalletProvider {
+// Interface for Solana wallet signing capability
+// Compatible with both Dynamic's signer and other wallet providers
+export interface SolanaWalletSigner {
   signTransaction<T extends Transaction | VersionedTransaction>(transaction: T): Promise<T>
 }
+
+// Legacy alias for backward compatibility
+export type SolanaWalletProvider = SolanaWalletSigner
 
 export type TransactionParams = {
   chainId: ChainId
@@ -14,7 +19,7 @@ export type TransactionParams = {
   to: string
   value: string
   gasLimit?: number
-  solanaProvider?: SolanaWalletProvider
+  solanaSigner?: SolanaWalletSigner
 }
 
 export interface ChainTransactionAdapter {

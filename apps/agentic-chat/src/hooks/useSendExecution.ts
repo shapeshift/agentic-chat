@@ -1,4 +1,6 @@
-import { modal, useAppKitProvider } from '@reown/appkit/react'
+import { isEthereumWallet } from '@dynamic-labs/ethereum'
+import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
+import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { SendOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import type { DynamicToolUIPart } from 'ai'
@@ -6,11 +8,10 @@ import { current } from 'immer'
 import { useEffect, useRef } from 'react'
 
 import { analytics } from '@/lib/mixpanel'
-import { chainIdToNetwork } from '@/lib/networks'
 import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
-import type { SolanaWalletProvider } from '@/utils/chains/types'
+import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeSend } from '@/utils/sendExecutor'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
@@ -132,11 +133,11 @@ export const useSendExecution = (
   toolState: DynamicToolUIPart['state'],
   sendData: SendData | null
 ): UseSendExecutionResult => {
-  const { walletProvider } = useAppKitProvider('solana')
-  const solanaProvider = walletProvider as SolanaWalletProvider | undefined
+  const { evmAddress, solanaAddress, solanaWallet, evmWallet } = useWalletConnection()
   const store = useChatStore()
   const { activeConversationId } = useChatContext()
-  const { evmAddress, solanaAddress } = useWalletConnection()
+  const { primaryWallet } = useDynamicContext()
+  const changePrimaryWallet = useSwitchWallet()
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
@@ -183,6 +184,15 @@ export const useSendExecution = (
       // Step 1: Network Switch
       // Non-EVM: no wallet network switch needed; skip step
       if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
+        if (
+          chainNamespace === CHAIN_NAMESPACE.Solana &&
+          solanaWallet &&
+          primaryWallet &&
+          !isSolanaWallet(primaryWallet)
+        ) {
+          await changePrimaryWallet(solanaWallet.id)
+        }
+
         setState(draft => {
           draft.completedSteps.add(SendStep.NETWORK_SWITCH)
           draft.currentStep = (draft.currentStep + 1) as SendStep
@@ -191,13 +201,18 @@ export const useSendExecution = (
       } else {
         // EVM: always switch to the chain to avoid race conditions
         const chainIdNumber = Number(chainReference)
-        const targetNetwork = chainIdToNetwork[chainIdNumber]
 
-        if (!targetNetwork) {
-          throw new Error(`Unsupported chain ID: ${chainIdNumber}`)
+        if (!evmWallet) {
+          throw new Error('EVM wallet not connected')
         }
 
-        await modal?.switchNetwork(targetNetwork)
+        if (primaryWallet && !isEthereumWallet(primaryWallet)) {
+          await changePrimaryWallet(evmWallet.id)
+        }
+
+        // EthereumWallet.connector has switchNetwork properly typed
+        await evmWallet.connector.switchNetwork({ networkChainId: chainIdNumber })
+
         setState(draft => {
           draft.completedSteps.add(draft.currentStep)
           draft.currentStep = (draft.currentStep + 1) as SendStep
@@ -206,7 +221,13 @@ export const useSendExecution = (
       }
 
       // Step 2: Send
-      sendTxHash = await executeSend(tx, { solanaProvider })
+      // Get Solana signer if needed - SolanaWallet has getSigner() directly on the class
+      let solanaSigner: SolanaWalletSigner | undefined
+      if (chainNamespace === CHAIN_NAMESPACE.Solana && solanaWallet) {
+        solanaSigner = await solanaWallet.getSigner()
+      }
+
+      sendTxHash = await executeSend(tx, { solanaSigner })
 
       // Build final state with all completed steps
       const finalCompletedSteps = new Set(state.completedSteps)

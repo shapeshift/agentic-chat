@@ -1,4 +1,3 @@
-import { useAppKitAccount } from '@reown/appkit/react'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
@@ -17,7 +16,7 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
   const { state, output, toolCallId } = toolPart
   const swapOutput = output as InitiateSwapOutput | undefined
   const { isHistorical, getPersistedTransaction } = useChatStore()
-  const { address } = useAppKitAccount()
+  const address = swapOutput?.swapData.sellAccount
 
   const swapData = state === 'output-available' && swapOutput ? swapOutput : null
   const { error, steps, networkName } = useSwapExecution(toolCallId, state, swapData)

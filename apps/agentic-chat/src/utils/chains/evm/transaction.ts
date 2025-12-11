@@ -1,9 +1,9 @@
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import { getPublicClient, getWalletClient } from '@wagmi/core'
-import { extractChain, getAddress } from 'viem'
-import type { Chain, Hex } from 'viem'
+import { getAddress } from 'viem'
+import type { Hex } from 'viem'
 
-import { networks } from '@/lib/appkit'
+import { chainIdToChain } from '@/lib/chains'
 import { wagmiConfig } from '@/lib/wagmi-config'
 
 import type { TransactionParams } from '../types'
@@ -22,7 +22,10 @@ export async function sendEvmTransaction(params: TransactionParams): Promise<str
 
   try {
     const chainId = Number(chainReference)
-    const chain = extractChain({ chains: networks as Chain[], id: chainId })
+    const chain = chainIdToChain[chainId]
+    if (!chain) {
+      throw new Error(`Unsupported chain ID: ${chainId}`)
+    }
 
     const publicClient = getPublicClient(wagmiConfig, { chainId })
     if (!publicClient) throw new Error('Public client not found for the specified chain')

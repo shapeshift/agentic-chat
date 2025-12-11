@@ -1,14 +1,14 @@
 import type { SendOutput } from '@shapeshiftoss/agentic-server'
 import { hexToBigInt } from 'viem'
 
-import type { SolanaWalletProvider } from '@/utils/chains/types'
+import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { sendTransaction } from '@/utils/sendTransaction'
 import { getUserFriendlyErrorMessage } from '@/utils/walletErrors'
 
 type TransactionData = SendOutput['tx']
 
 interface ExecuteTransactionOptions {
-  solanaProvider?: SolanaWalletProvider
+  solanaSigner?: SolanaWalletSigner
 }
 
 async function executeTransaction(tx: TransactionData, options?: ExecuteTransactionOptions) {
@@ -25,7 +25,7 @@ async function executeTransaction(tx: TransactionData, options?: ExecuteTransact
     to: tx.to,
     value: tx.value,
     ...(gasLimit !== undefined && { gasLimit }),
-    ...(options?.solanaProvider && { solanaProvider: options.solanaProvider }),
+    ...(options?.solanaSigner && { solanaSigner: options.solanaSigner }),
   }
 
   return sendTransaction(finalTx)

@@ -1,10 +1,10 @@
-import { useAppKit, useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react'
+import { useDynamicContext, useDynamicModals, useSwitchWallet, useUserWallets } from '@dynamic-labs/sdk-react-core'
 import { useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, Power, Wallet, X } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronDown, Plus, Power, Wallet, X } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { usePortfolioQuery } from '@/hooks/usePortfolioQuery'
-import { useWalletConnection } from '@/hooks/useWalletConnection'
+import { filterEvmWallets, filterSolanaWallets, useWalletConnection } from '@/hooks/useWalletConnection'
 import { truncateAddress } from '@/lib/utils'
 
 import {
@@ -30,24 +30,21 @@ type PortfolioDrawerProps = {
 }
 
 export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
-  const { open } = useAppKit()
-  const { address } = useAppKitAccount()
-  const evmAccount = useAppKitAccount({ namespace: 'eip155' })
-  const solanaAccount = useAppKitAccount({ namespace: 'solana' })
-  const { isConnected } = useWalletConnection()
-  const { disconnect } = useDisconnect()
-  const { walletInfo } = useWalletInfo()
-  const { walletInfo: evmWalletInfo } = useWalletInfo('eip155')
-  const { walletInfo: solanaWalletInfo } = useWalletInfo('solana')
+  const { setShowAuthFlow, handleLogOut, primaryWallet, removeWallet } = useDynamicContext()
+  const changePrimaryWallet = useSwitchWallet()
+  const { setShowLinkNewWalletModal } = useDynamicModals()
+  const userWallets = useUserWallets()
+  const { isConnected, evmAddress, solanaAddress } = useWalletConnection()
   const [showDisconnectAlert, setShowDisconnectAlert] = useState(false)
+  const [walletToDisconnect, setWalletToDisconnect] = useState<string | null>(null)
   const { isError, error, refetch } = usePortfolioQuery()
   const queryClient = useQueryClient()
 
-  const handleDisconnect = () => {
-    void queryClient.invalidateQueries({ queryKey: ['portfolio'] })
-    void queryClient.invalidateQueries({ queryKey: ['approvedChains'] })
+  const handleDisconnect = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['portfolio'] }).catch(console.error)
+    queryClient.invalidateQueries({ queryKey: ['approvedChains'] }).catch(console.error)
 
-    void disconnect()
+    handleLogOut()
       .catch(error => {
         console.error('Failed to disconnect wallet:', error)
       })
@@ -55,33 +52,34 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
         setShowDisconnectAlert(false)
         onClose()
       })
-  }
+  }, [queryClient, handleLogOut, onClose])
 
-  const handleConnect = () => {
-    void open()
-  }
+  const handleWalletDisconnect = useCallback(() => {
+    if (walletToDisconnect) {
+      removeWallet(walletToDisconnect).catch(console.error)
+      setWalletToDisconnect(null)
+    }
+  }, [walletToDisconnect, removeWallet])
 
-  const handleConnectEvm = () => {
-    void open({ view: 'Connect', namespace: 'eip155' })
-  }
+  const handleConnectWallet = useCallback(() => {
+    setShowAuthFlow(true)
+  }, [setShowAuthFlow])
 
-  const handleConnectSolana = () => {
-    void open({ view: 'Connect', namespace: 'solana' })
-  }
+  const handleAddWallet = useCallback(() => {
+    onClose()
+    setShowLinkNewWalletModal(true)
+  }, [onClose, setShowLinkNewWalletModal])
 
-  const handleDisconnectEvm = () => {
-    void disconnect({ namespace: 'eip155' }).catch(error => {
-      console.error('Failed to disconnect EVM wallet:', error)
-    })
-  }
+  const displayAddress = useMemo(
+    () => primaryWallet?.address ?? evmAddress ?? solanaAddress,
+    [primaryWallet?.address, evmAddress, solanaAddress]
+  )
+  const truncatedAddress = useMemo(() => (displayAddress ? truncateAddress(displayAddress) : ''), [displayAddress])
 
-  const handleDisconnectSolana = () => {
-    void disconnect({ namespace: 'solana' }).catch(error => {
-      console.error('Failed to disconnect Solana wallet:', error)
-    })
-  }
+  const primaryWalletIcon = primaryWallet?.connector?.metadata?.icon
 
-  const truncatedAddress = address ? truncateAddress(address) : ''
+  const evmWallets = useMemo(() => filterEvmWallets(userWallets), [userWallets])
+  const solanaWallets = useMemo(() => filterSolanaWallets(userWallets), [userWallets])
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -92,47 +90,68 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer">
-                    {evmAccount.isConnected && solanaAccount.isConnected ? (
-                      <div className="relative w-8 h-8">
-                        <img
-                          src={evmWalletInfo?.icon}
-                          alt="EVM Wallet"
-                          className="absolute top-0 left-0 w-6 h-6 rounded-full border-2 border-background"
-                        />
-                        <img
-                          src={solanaWalletInfo?.icon}
-                          alt="Solana Wallet"
-                          className="absolute bottom-0 right-0 w-6 h-6 rounded-full border-2 border-background"
-                        />
-                      </div>
-                    ) : (
-                      walletInfo?.icon && (
-                        <img src={walletInfo.icon} alt={walletInfo.name || 'Wallet'} className="w-6 h-6 rounded-full" />
-                      )
-                    )}
+                    {primaryWalletIcon && <img src={primaryWalletIcon} alt="Wallet" className="w-6 h-6 rounded-full" />}
                     <span className="text-sm font-medium">{truncatedAddress}</span>
                     <ChevronDown className="w-4 h-4" />
                   </button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="start" className="w-64">
-                  <NetworkWalletRow
-                    label="EVM"
-                    address={evmAccount.address}
-                    icon={evmWalletInfo?.icon}
-                    isConnected={evmAccount.isConnected}
-                    onConnect={handleConnectEvm}
-                    onDisconnect={handleDisconnectEvm}
-                  />
+                <DropdownMenuContent align="start" className="w-80 max-h-[500px] overflow-y-auto">
+                  <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Connected Wallets</div>
+
+                  {evmWallets.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-2 py-1 text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">
+                        EVM
+                      </div>
+                      {evmWallets.map(wallet => (
+                        <div key={wallet.id} className="relative">
+                          <NetworkWalletRow
+                            label={wallet.connector.name}
+                            address={wallet.address}
+                            icon={wallet.connector?.metadata?.icon}
+                            isActive={wallet.id === primaryWallet?.id}
+                            onConnect={() => {
+                              if (wallet.id !== primaryWallet?.id) {
+                                changePrimaryWallet(wallet.id).catch(console.error)
+                              }
+                            }}
+                            onDisconnect={() => setWalletToDisconnect(wallet.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {solanaWallets.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-2 py-1 text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">
+                        Solana
+                      </div>
+                      {solanaWallets.map(wallet => (
+                        <div key={wallet.id} className="relative">
+                          <NetworkWalletRow
+                            label={wallet.connector.name}
+                            address={wallet.address}
+                            icon={wallet.connector?.metadata?.icon}
+                            isActive={wallet.id === primaryWallet?.id}
+                            onConnect={() => {
+                              if (wallet.id !== primaryWallet?.id) {
+                                changePrimaryWallet(wallet.id).catch(console.error)
+                              }
+                            }}
+                            onDisconnect={() => setWalletToDisconnect(wallet.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <DropdownMenuSeparator />
-                  <NetworkWalletRow
-                    label="Solana"
-                    address={solanaAccount.address}
-                    icon={solanaWalletInfo?.icon}
-                    isConnected={solanaAccount.isConnected}
-                    onConnect={handleConnectSolana}
-                    onDisconnect={handleDisconnectSolana}
-                  />
+                  <Button variant="ghost" className="w-full justify-start gap-2 px-2" onClick={handleAddWallet}>
+                    <Plus className="w-4 h-4" />
+                    <span>Connect another wallet</span>
+                  </Button>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -156,7 +175,7 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
                 <Wallet className="w-16 h-16 text-muted-foreground mb-4" />
                 <div className="text-lg font-medium text-foreground">No wallet connected</div>
                 <div className="text-sm text-muted-foreground mt-1">Connect a wallet to view your portfolio</div>
-                <Button onClick={handleConnect} variant="default" className="mt-4">
+                <Button onClick={handleConnectWallet} variant="default" className="mt-4">
                   Connect Wallet
                 </Button>
               </div>
@@ -191,6 +210,18 @@ export function PortfolioDrawer({ isOpen, onClose }: PortfolioDrawerProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDisconnect}>Disconnect</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!walletToDisconnect} onOpenChange={open => !open && setWalletToDisconnect(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect Wallet</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to disconnect this wallet?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleWalletDisconnect}>Disconnect</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
