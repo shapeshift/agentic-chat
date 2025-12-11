@@ -1,7 +1,10 @@
-import { useAppKit, useAppKitAccount, useAppKitNetwork, useWalletInfo } from '@reown/appkit/react'
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { isSolanaWallet } from '@dynamic-labs/solana'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'
+import { useCallback, useMemo } from 'react'
+import { useChainId } from 'wagmi'
 
-import { useWalletConnection } from '@/hooks/useWalletConnection'
+import { SOLANA_CAIP_ID } from '@/lib/chains'
 import { truncateAddress } from '@/lib/utils'
 
 import { Button } from './ui/Button'
@@ -11,25 +14,35 @@ type CustomConnectButtonProps = {
 }
 
 export const CustomConnectButton = ({ onConnectedClick }: CustomConnectButtonProps) => {
-  const { open } = useAppKit()
-  const { address } = useAppKitAccount()
-  const { isConnected } = useWalletConnection()
-  const { caipNetwork } = useAppKitNetwork()
-  const { walletInfo } = useWalletInfo()
+  const { setShowAuthFlow, primaryWallet } = useDynamicContext()
+  const chainId = useChainId()
 
-  const handleConnect = () => {
-    void open()
-  }
+  const handleConnect = useCallback(() => {
+    setShowAuthFlow(true)
+  }, [setShowAuthFlow])
 
-  const handleOpenAccount = () => {
+  const handleOpenAccount = useCallback(() => {
     if (onConnectedClick) {
       onConnectedClick()
-    } else {
-      void open({ view: 'Account' })
     }
-  }
+  }, [onConnectedClick])
 
-  if (!isConnected) {
+  const address = primaryWallet?.address
+  const truncatedAddress = useMemo(() => (address ? truncateAddress(address) : ''), [address])
+
+  const walletIcon = primaryWallet?.connector?.metadata?.icon
+  const walletName = useMemo(() => primaryWallet?.connector?.name, [primaryWallet?.connector?.name])
+
+  const isPrimarySolana = useMemo(() => primaryWallet && isSolanaWallet(primaryWallet), [primaryWallet])
+
+  const caipChainId = useMemo(
+    () => (isPrimarySolana ? SOLANA_CAIP_ID : chainId ? `eip155:${chainId}` : undefined),
+    [isPrimarySolana, chainId]
+  )
+
+  const networkIcon = useMemo(() => (caipChainId ? NETWORK_ICONS[caipChainId] : undefined), [caipChainId])
+
+  if (!primaryWallet) {
     return (
       <Button onClick={handleConnect} variant="default">
         Connect Wallet
@@ -37,20 +50,14 @@ export const CustomConnectButton = ({ onConnectedClick }: CustomConnectButtonPro
     )
   }
 
-  const caipChainId = caipNetwork?.caipNetworkId
-  const networkIcon = caipChainId ? NETWORK_ICONS[caipChainId] : undefined
-  const truncatedAddress = address ? truncateAddress(address) : ''
-
   return (
     <Button onClick={handleOpenAccount} variant="wallet" className="gap-2">
       <div className="relative w-6 h-6">
-        {walletInfo?.icon && (
-          <img src={walletInfo.icon} alt={walletInfo.name || 'Wallet'} className="w-6 h-6 rounded-full" />
-        )}
+        {walletIcon && <img src={walletIcon} alt={walletName || 'Wallet'} className="w-6 h-6 rounded-full" />}
         {networkIcon && (
           <img
             src={networkIcon}
-            alt={caipNetwork?.name || 'Network'}
+            alt="Network"
             className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border border-gray-800"
           />
         )}

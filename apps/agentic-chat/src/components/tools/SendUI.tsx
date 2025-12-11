@@ -1,4 +1,3 @@
-import { useAppKitAccount } from '@reown/appkit/react'
 import type { SendOutput } from '@shapeshiftoss/agentic-server'
 
 import { StepStatus, useSendExecution } from '@/hooks/useSendExecution'
@@ -15,7 +14,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps) {
   const { state, output, toolCallId } = toolPart
   const sendOutput = output as SendOutput | undefined
   const { isHistorical, getPersistedTransaction } = useChatStore()
-  const { address } = useAppKitAccount()
+  const address = sendOutput?.summary.from
 
   const sendData = state === 'output-available' && sendOutput ? sendOutput : null
   const { error, steps, networkName } = useSendExecution(toolCallId, state, sendData)

@@ -1,7 +1,7 @@
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { hexToBigInt } from 'viem'
 
-import type { SolanaWalletProvider } from '@/utils/chains/types'
+import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { sendTransaction } from '@/utils/sendTransaction'
 import { getUserFriendlyErrorMessage } from '@/utils/walletErrors'
 
@@ -9,7 +9,7 @@ type SwapData = InitiateSwapOutput
 type TransactionData = SwapData['swapTx']
 
 interface ExecuteTransactionOptions {
-  solanaProvider?: SolanaWalletProvider
+  solanaSigner?: SolanaWalletSigner
 }
 
 async function executeTransaction(tx: TransactionData, options?: ExecuteTransactionOptions) {
@@ -25,7 +25,7 @@ async function executeTransaction(tx: TransactionData, options?: ExecuteTransact
           ? Number(hexToBigInt(tx.gasLimit as `0x${string}`))
           : Number(tx.gasLimit),
     }),
-    ...(options?.solanaProvider && { solanaProvider: options.solanaProvider }),
+    ...(options?.solanaSigner && { solanaSigner: options.solanaSigner }),
   }
 
   return sendTransaction(finalTx)

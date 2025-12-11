@@ -1,7 +1,7 @@
 import type { ChainId } from '@shapeshiftoss/caip'
 
 import { sendTransactionForChain } from './chains/transactionRegistry'
-import type { SolanaWalletProvider } from './chains/types'
+import type { SolanaWalletSigner } from './chains/types'
 
 type SendTransactionParams = {
   chainId: ChainId
@@ -10,7 +10,7 @@ type SendTransactionParams = {
   to: string
   value: string
   gasLimit?: number
-  solanaProvider?: SolanaWalletProvider
+  solanaSigner?: SolanaWalletSigner
 }
 
 export const sendTransaction = async (params: SendTransactionParams) => {

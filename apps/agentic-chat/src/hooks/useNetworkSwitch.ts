@@ -1,14 +1,16 @@
-import type { AppKitNetwork } from '@reown/appkit/networks'
-import { arbitrum, avalanche, base, bsc, gnosis, mainnet, optimism, polygon, solana } from '@reown/appkit/networks'
-import { modal } from '@reown/appkit/react'
+import { isEthereumWallet } from '@dynamic-labs/ethereum'
+import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
+import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import { useEffect, useRef } from 'react'
 
+import { networkNameToChainId } from '@/lib/chains'
 import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
+import { useWalletConnection } from './useWalletConnection'
 
 type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'
 
@@ -24,18 +26,6 @@ const initialNetworkState: NetworkSwitchState = {
 interface UseNetworkSwitchResult {
   phase: NetworkSwitchPhase
   error?: string
-}
-
-const networkMap: Record<string, AppKitNetwork> = {
-  ethereum: mainnet,
-  arbitrum,
-  polygon,
-  optimism,
-  base,
-  avalanche,
-  bsc,
-  gnosis,
-  solana,
 }
 
 function networkStateToPersistedState(
@@ -86,6 +76,9 @@ export const useNetworkSwitch = (
 ): UseNetworkSwitchResult => {
   const store = useChatStore()
   const { activeConversationId } = useChatContext()
+  const { primaryWallet } = useDynamicContext()
+  const changePrimaryWallet = useSwitchWallet()
+  const { evmWallet, solanaWallet } = useWalletConnection()
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
@@ -105,14 +98,35 @@ export const useNetworkSwitch = (
     }
   }, [toolCallId, store])
 
-  const { state } = useToolExecutionEffect(toolCallId, networkData, initialNetworkState, (data, setState) => {
-    const targetNetwork = networkMap[data.network]
+  const { state } = useToolExecutionEffect(toolCallId, networkData, initialNetworkState, async (data, setState) => {
+    const persistState = (finalState: NetworkSwitchState) => {
+      if (!activeConversationId) return
+      const persisted = networkStateToPersistedState(toolCallId, finalState, activeConversationId, data.network, data)
+      store.persistTransaction(persisted)
+    }
 
-    if (!targetNetwork) {
+    const targetChainId = networkNameToChainId[data.network]
+
+    if (!targetChainId) {
+      const errorState: NetworkSwitchState = { phase: 'error', error: `Network "${data.network}" not found` }
       setState(draft => {
-        draft.phase = 'error'
-        draft.error = `Network "${data.network}" not found`
+        draft.phase = errorState.phase
+        draft.error = errorState.error
       })
+      persistState(errorState)
+      return
+    }
+
+    // Solana doesn't need network switching in the same way, but we might need to switch primary wallet
+    if (data.network === 'solana') {
+      if (solanaWallet && primaryWallet && !isSolanaWallet(primaryWallet)) {
+        await changePrimaryWallet(solanaWallet.id)
+      }
+
+      setState(draft => {
+        draft.phase = 'success'
+      })
+      persistState({ phase: 'success' })
       return
     }
 
@@ -121,40 +135,30 @@ export const useNetworkSwitch = (
       draft.error = undefined
     })
 
-    modal
-      ?.switchNetwork(targetNetwork)
-      .then(() => {
-        setState(draft => {
-          draft.phase = 'success'
-        })
-        if (activeConversationId) {
-          const persisted = networkStateToPersistedState(
-            toolCallId,
-            { phase: 'success' },
-            activeConversationId,
-            data.network,
-            data
-          )
-          store.persistTransaction(persisted)
-        }
+    try {
+      // If primary wallet is Solana, switch to EVM first
+      if (evmWallet && primaryWallet && !isEthereumWallet(primaryWallet)) {
+        await changePrimaryWallet(evmWallet.id)
+      }
+
+      if (!evmWallet) {
+        throw new Error('EVM wallet not connected')
+      }
+
+      await evmWallet.connector.switchNetwork({ networkChainId: targetChainId })
+      setState(draft => {
+        draft.phase = 'success'
       })
-      .catch((error: Error) => {
-        const errorMessage = error.message
-        setState(draft => {
-          draft.phase = 'error'
-          draft.error = errorMessage
-        })
-        if (activeConversationId) {
-          const persisted = networkStateToPersistedState(
-            toolCallId,
-            { phase: 'error', error: errorMessage },
-            activeConversationId,
-            data.network,
-            data
-          )
-          store.persistTransaction(persisted)
-        }
+      persistState({ phase: 'success' })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorState: NetworkSwitchState = { phase: 'error', error: errorMessage }
+      setState(draft => {
+        draft.phase = errorState.phase
+        draft.error = errorState.error
       })
+      persistState(errorState)
+    }
   })
 
   return {

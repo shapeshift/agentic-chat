@@ -1,22 +1,27 @@
+import { isEthereumWallet } from '@dynamic-labs/ethereum'
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { isSolanaWallet } from '@dynamic-labs/solana'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import { bnOrZero } from '@/lib/bignumber'
 import { fetchFullPortfolio } from '@/services/portfolioService'
 
-import { useWalletConnection } from './useWalletConnection'
-
 const REFETCH_INTERVAL = 30_000 // 30 seconds
 
 export function usePortfolioQuery() {
-  const { isConnected, evmAddress, solanaAddress } = useWalletConnection()
+  const { primaryWallet } = useDynamicContext()
 
-  const queryKey = useMemo(() => ['portfolio', evmAddress, solanaAddress] as const, [evmAddress, solanaAddress])
+  const address = primaryWallet?.address
+  const evmAddress = primaryWallet && isEthereumWallet(primaryWallet) ? address : undefined
+  const solanaAddress = primaryWallet && isSolanaWallet(primaryWallet) ? address : undefined
+
+  const queryKey = useMemo(() => ['portfolio', address] as const, [address])
 
   const query = useQuery({
     queryKey,
     queryFn: () => fetchFullPortfolio(evmAddress, solanaAddress),
-    enabled: isConnected,
+    enabled: !!address,
     refetchInterval: REFETCH_INTERVAL,
     refetchOnWindowFocus: true,
     staleTime: 10_000,

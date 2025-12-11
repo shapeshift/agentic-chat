@@ -37,9 +37,11 @@ export async function sendSolanaTransaction(params: TransactionParams): Promise<
       throw new Error('Invalid Solana transaction data structure')
     }
 
-    const provider = params.solanaProvider || window.solana
+    const signer =
+      params.solanaSigner ??
+      (window as { solana?: { signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction> } }).solana
 
-    if (!provider) {
+    if (!signer) {
       throw new Error('No Solana wallet connected. Please connect your wallet first.')
     }
 
@@ -76,7 +78,9 @@ export async function sendSolanaTransaction(params: TransactionParams): Promise<
 
     const transaction = new VersionedTransaction(messageV0)
 
-    const signedTx = await provider.signTransaction<VersionedTransaction>(transaction)
+    const signedTx = await (signer.signTransaction as (tx: VersionedTransaction) => Promise<VersionedTransaction>)(
+      transaction
+    )
     const signature = await connection.sendRawTransaction(signedTx.serialize(), {
       skipPreflight: false,
       preflightCommitment: 'confirmed',
