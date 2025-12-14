@@ -36,6 +36,21 @@ export interface SendActivityDetails {
   feeSymbol?: string
 }
 
+export interface LimitOrderActivityDetails {
+  sellAsset: {
+    symbol: string
+    amount: string
+  }
+  buyAsset: {
+    symbol: string
+    estimatedAmount: string
+  }
+  limitPrice: string
+  expiresAt: string
+  provider: string
+  trackingUrl: string
+}
+
 export type SwapActivityItem = BaseActivityItem & {
   type: 'swap'
   details: SwapActivityDetails
@@ -46,4 +61,10 @@ export type SendActivityItem = BaseActivityItem & {
   details: SendActivityDetails
 }
 
-export type ActivityItem = SwapActivityItem | SendActivityItem
+export type LimitOrderActivityItem = Omit<BaseActivityItem, 'txHash'> & {
+  type: 'limit_order'
+  orderId: string
+  details: LimitOrderActivityDetails
+}
+
+export type ActivityItem = SwapActivityItem | SendActivityItem | LimitOrderActivityItem

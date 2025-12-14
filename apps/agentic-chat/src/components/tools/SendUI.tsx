@@ -67,13 +67,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps) {
           ) : (
             <Skeleton className="h-7 w-40" />
           )}
-          {summary ? (
-            <TxStepCard.Amount>
-              <Amount.Crypto value={summary.amount} symbol={summary.symbol} prefix="-" />
-            </TxStepCard.Amount>
-          ) : (
-            <Skeleton className="h-7 w-32" />
-          )}
+          <TxStepCard.Amount value={summary?.amount} symbol={summary?.symbol} prefix="-" isLoading={!summary} />
         </TxStepCard.HeaderRow>
       </TxStepCard.Header>
 

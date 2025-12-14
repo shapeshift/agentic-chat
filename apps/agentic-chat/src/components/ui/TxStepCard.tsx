@@ -2,8 +2,10 @@ import { Check, ChevronRight, Circle, List, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { StepStatus } from '@/hooks/useSwapExecution'
+import { formatCryptoAmount } from '@/lib/number'
 import { cn } from '@/lib/utils'
 
+import { Skeleton } from './Skeleton'
 import { ToolCard } from './ToolCard'
 
 const TxStepCardStepper = ({
@@ -125,12 +127,17 @@ const TxStepCardStep = ({
 const TxStepCardSwapPair = ({
   fromSymbol,
   toSymbol,
+  isLoading,
   className,
 }: {
-  fromSymbol: string
-  toSymbol: string
+  fromSymbol?: string
+  toSymbol?: string
+  isLoading?: boolean
   className?: string
 }) => {
+  if (isLoading) return <Skeleton className="h-7 w-40" />
+  if (!fromSymbol || !toSymbol) return <div className="text-lg font-semibold text-muted-foreground">—</div>
+
   return (
     <div className={cn('flex items-center gap-3', className)}>
       <span className="text-xl font-bold">{fromSymbol}</span>
@@ -142,8 +149,30 @@ const TxStepCardSwapPair = ({
   )
 }
 
-const TxStepCardAmount = ({ children, className }: { children: ReactNode; className?: string }) => {
-  return <span className={cn('text-xl font-bold text-green-500', className)}>{children}</span>
+const TxStepCardAmount = ({
+  value,
+  symbol,
+  isLoading,
+  prefix,
+  className,
+}: {
+  value?: string
+  symbol?: string
+  isLoading?: boolean
+  prefix?: string
+  className?: string
+}) => {
+  if (isLoading) return <Skeleton className="h-7 w-32" />
+  if (value === undefined) return <div className="text-lg font-semibold text-muted-foreground">—</div>
+
+  const formatted = formatCryptoAmount(value, { symbol })
+
+  return (
+    <span className={cn('text-xl font-bold text-green-500 tabular-nums', className)}>
+      {prefix}
+      {formatted}
+    </span>
+  )
 }
 
 export const TxStepCard = {

@@ -45,6 +45,25 @@ export const analytics = {
     mixpanel.track('Send', props)
   },
 
+  // Track limit order creation
+  trackLimitOrder: (props: {
+    sellAsset: string
+    buyAsset: string
+    sellAmount: string
+    buyAmount: string
+    network: string
+    limitPrice: string
+  }) => {
+    if (!analyticsEnabled) return
+    mixpanel.track('Limit Order', props)
+  },
+
+  // Track limit order cancellation
+  trackCancelLimitOrder: (props: { orderId: string; network: string }) => {
+    if (!analyticsEnabled) return
+    mixpanel.track('Cancel Limit Order', props)
+  },
+
   // Track chat message sent
   trackChatMessage: () => {
     if (!analyticsEnabled) return

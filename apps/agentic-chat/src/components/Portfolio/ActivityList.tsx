@@ -12,7 +12,7 @@ export function ActivityList() {
 
   const activities = useMemo(() => {
     return transactions
-      .filter(tx => tx.toolType === 'swap' || tx.toolType === 'send')
+      .filter(tx => tx.toolType === 'swap' || tx.toolType === 'send' || tx.toolType === 'limit_order')
       .filter(tx => !tx.phases.includes('error'))
       .map(tx => normalizeToActivityItem(tx))
       .filter((item): item is ActivityItem => item !== null)
@@ -23,7 +23,7 @@ export function ActivityList() {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <div className="text-muted-foreground">No activity yet</div>
-        <div className="text-sm text-muted-foreground mt-1">Your swap and send transactions will appear here</div>
+        <div className="text-sm text-muted-foreground mt-1">Your swaps, sends, and limit orders will appear here</div>
       </div>
     )
   }
