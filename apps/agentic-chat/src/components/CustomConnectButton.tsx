@@ -1,7 +1,7 @@
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { useDynamicContext, useUserWallets } from '@dynamic-labs/sdk-react-core'
 import { isSolanaWallet } from '@dynamic-labs/solana'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useChainId } from 'wagmi'
 
 import { SOLANA_CAIP_ID } from '@/lib/chains'
@@ -14,8 +14,32 @@ type CustomConnectButtonProps = {
 }
 
 export const CustomConnectButton = ({ onConnectedClick }: CustomConnectButtonProps) => {
-  const { setShowAuthFlow, primaryWallet } = useDynamicContext()
+  const { setShowAuthFlow, primaryWallet, user, handleLogOut, sdkHasLoaded } = useDynamicContext()
+  const userWallets = useUserWallets()
   const chainId = useChainId()
+  const hasTriggeredResetRef = useRef(false)
+
+  // Auto-detect and fix corrupted Dynamic state
+  // Corrupted state: userWallets has data but user/primaryWallet are null, SDK stuck loading
+  // Wait 2s to allow normal init to complete before resetting
+  useEffect(() => {
+    if (!sdkHasLoaded && userWallets.length > 0 && !primaryWallet && !user) {
+      if (hasTriggeredResetRef.current) return
+
+      const timer = setTimeout(() => {
+        hasTriggeredResetRef.current = true
+        void handleLogOut()
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [sdkHasLoaded, userWallets, primaryWallet, user, handleLogOut])
+
+  // Reset flag when user successfully authenticates
+  useEffect(() => {
+    if (sdkHasLoaded && user && primaryWallet) {
+      hasTriggeredResetRef.current = false
+    }
+  }, [sdkHasLoaded, user, primaryWallet])
 
   const handleConnect = useCallback(() => {
     setShowAuthFlow(true)
