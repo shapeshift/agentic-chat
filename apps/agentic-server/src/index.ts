@@ -9,7 +9,7 @@ export {
   type AssetWithMarketData,
 } from './tools/getAssets'
 export {
-  getAccountTool,
+  lookupExternalAddressTool,
   executeGetAccount,
   type GetAccountInput,
   type GetAccountInput as GetAccountToolInput,

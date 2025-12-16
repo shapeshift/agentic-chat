@@ -26,7 +26,7 @@ export const TOOL_UI_REGISTRY: Record<string, ToolUIComponent> = {
   switchNetworkTool: SwitchNetworkUI,
   portfolioTool: PortfolioUI,
   getAssetsTool: GetAssetsUI,
-  getAccountTool: GetAccountUI,
+  lookupExternalAddress: GetAccountUI,
   getTransactionHistoryTool: GetTransactionHistoryUI,
   transactionHistoryTool: GetTransactionHistoryUI,
   getAllowanceTool: GetAllowanceUI,

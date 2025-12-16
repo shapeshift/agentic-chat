@@ -81,7 +81,7 @@ async function getPortfolioDataSingle(
     return cached
   }
 
-  const { balances } = await executeGetAccount({ account, network })
+  const { balances } = await executeGetAccount({ address: account, network })
 
   const assetIds = Object.keys(balances)
   const assets = await getAssetPrices(assetIds)
