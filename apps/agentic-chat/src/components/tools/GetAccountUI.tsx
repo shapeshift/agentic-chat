@@ -6,21 +6,20 @@ export function GetAccountUI({ toolPart }: ToolUIComponentProps) {
   const { state } = toolPart
 
   const accountDetailsText = (() => {
-    const parts = ['account details']
-    if (input?.account) {
-      const account = String(input.account as string)
-      parts.push(`for ${account}`)
+    const parts = ['external address']
+    const address = input?.address ?? input?.account
+    if (typeof address === 'string') {
+      parts.push(address)
     }
-    if (input?.network) {
-      const network = String(input.network as string)
-      parts.push(`on ${network}`)
+    if (typeof input?.network === 'string') {
+      parts.push(`on ${input.network}`)
     }
     return parts.join(' ')
   })()
 
   const stateRender = useToolStateRender(state, {
-    loading: `Checking ${accountDetailsText}`,
-    error: `Failed to find ${accountDetailsText} ❌`,
+    loading: `Looking up ${accountDetailsText}`,
+    error: `Failed to look up ${accountDetailsText} ❌`,
     success: `Found ${accountDetailsText} ✅`,
   })
 

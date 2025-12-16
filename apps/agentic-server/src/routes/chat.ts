@@ -15,7 +15,7 @@ import type { Context } from 'hono'
 
 import { supportedChainsContext } from '../context'
 import { getModel, getProviderName } from '../models'
-import { getAccountTool } from '../tools/getAccount'
+import { lookupExternalAddressTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetsTool } from '../tools/getAssets'
 import { getCategoriesTool } from '../tools/getCategories'
@@ -91,7 +91,7 @@ function buildTools(walletContext: WalletContext) {
   return {
     mathCalculatorTool: wrapToolWithLogging('mathCalculatorTool', mathCalculator),
     getAssetsTool: wrapToolWithLogging('getAssetsTool', getAssetsTool),
-    getAccountTool: wrapToolWithLogging('getAccountTool', getAccountTool),
+    lookupExternalAddress: wrapToolWithLogging('lookupExternalAddress', lookupExternalAddressTool),
     getAllowanceTool: {
       description: getAllowanceTool.description,
       inputSchema: getAllowanceTool.inputSchema,

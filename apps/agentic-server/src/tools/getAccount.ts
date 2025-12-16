@@ -5,8 +5,14 @@ import { getFeeAssetIdByChainId, getUnchainedHttpUrlEnvVar } from '@shapeshiftos
 import axios from 'axios'
 import { z } from 'zod'
 
+import { validateAddress } from '../utils/addressValidation'
+
 export const getAccountSchema = z.object({
-  account: z.string().describe('The user address or xpub to get account details for'),
+  address: z
+    .string()
+    .describe(
+      'The EXTERNAL wallet address to look up. Must be a valid address format: 0x... for EVM chains, or base58 for Solana. NEVER pass descriptions like "connected wallet" or "my wallet".'
+    ),
   network: z.enum(NETWORKS).describe('Network name (e.g., ethereum, arbitrum, solana)'),
 })
 
@@ -19,10 +25,12 @@ export type GetAccountOutput = {
 }
 
 export async function executeGetAccount(input: GetAccountInput): Promise<GetAccountOutput> {
-  console.log('[getAccount]:', input)
+  console.log('[lookupExternalAddress]:', input)
 
-  const { account, network } = input
+  const { address: account, network } = input
   const chainId = networkToChainIdMap[network]
+
+  validateAddress(account, chainId)
 
   const feeAssetId = getFeeAssetIdByChainId(chainId)
 
@@ -85,9 +93,9 @@ export async function executeGetAccount(input: GetAccountInput): Promise<GetAcco
   throw new Error(`Unsupported chain namespace: ${chainNamespace}`)
 }
 
-export const getAccountTool = {
+export const lookupExternalAddressTool = {
   description:
-    'Get raw account balances in base units for an arbitrary external address. For connected wallet balances, use portfolioTool instead.',
+    "Look up balances for an EXTERNAL third-party wallet address (NOT the connected wallet). Use this ONLY when the user provides a specific external address to check, like a friend's wallet, protocol treasury, or whale address. For the connected wallet's balances, ALWAYS use portfolioTool instead - it automatically uses the connected wallet addresses.",
   inputSchema: getAccountSchema,
   execute: executeGetAccount,
 }
