@@ -42,11 +42,14 @@ export function useToolExecutionEffect<TData, TState>(
     initializeRuntimeState(toolCallId, initialState)
 
     const executeWrapper = async () => {
-      await executeRef.current(data, setStateRef.current)
+      try {
+        await executeRef.current(data, setStateRef.current)
+      } catch (error) {
+        console.error('[useToolExecutionEffect] Tool execution failed:', error)
+      }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    executeWrapper()
+    void executeWrapper()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toolCallId, data])
 

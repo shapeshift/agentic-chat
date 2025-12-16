@@ -26,7 +26,7 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
   if (isHistoricalSkipped) {
     return (
       <TxStepCard.Root>
-        <div className="text-sm text-muted-foreground font-medium p-4">⏭️ Swap execution skipped (no saved data)</div>
+        <div className="text-sm text-muted-foreground font-medium p-4">Swap execution skipped (no saved data)</div>
       </TxStepCard.Root>
     )
   }
@@ -36,7 +36,7 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
     return (
       <TxStepCard.Root>
         <div className="text-sm text-muted-foreground font-medium p-4">
-          ⚠️ Unable to load swap steps. Please try again.
+          Unable to load swap steps. Please try again.
         </div>
       </TxStepCard.Root>
     )
@@ -70,31 +70,6 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
     return <>—</>
   }
 
-  const SwapPair = () => {
-    if (swap) {
-      return (
-        <TxStepCard.SwapPair
-          fromSymbol={swap.sellAsset.symbol.toUpperCase()}
-          toSymbol={swap.buyAsset.symbol.toUpperCase()}
-        />
-      )
-    }
-    if (isLoading) return <Skeleton className="h-7 w-40" />
-    return <div className="text-lg font-semibold text-muted-foreground">—</div>
-  }
-
-  const BuyAmount = () => {
-    if (swap) {
-      return (
-        <TxStepCard.Amount>
-          <Amount.Crypto value={swap.buyAmountCryptoPrecision} symbol={swap.buyAsset.symbol.toUpperCase()} />
-        </TxStepCard.Amount>
-      )
-    }
-    if (isLoading) return <Skeleton className="h-7 w-32" />
-    return <div className="text-lg font-semibold text-muted-foreground">—</div>
-  }
-
   return (
     <TxStepCard.Root>
       <TxStepCard.Header>
@@ -107,8 +82,16 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
           </div>
         </TxStepCard.HeaderRow>
         <TxStepCard.HeaderRow>
-          <SwapPair />
-          <BuyAmount />
+          <TxStepCard.SwapPair
+            fromSymbol={swap?.sellAsset.symbol.toUpperCase()}
+            toSymbol={swap?.buyAsset.symbol.toUpperCase()}
+            isLoading={isLoading}
+          />
+          <TxStepCard.Amount
+            value={swap?.buyAmountCryptoPrecision}
+            symbol={swap?.buyAsset.symbol.toUpperCase()}
+            isLoading={isLoading}
+          />
         </TxStepCard.HeaderRow>
       </TxStepCard.Header>
 

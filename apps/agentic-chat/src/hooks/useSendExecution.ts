@@ -8,6 +8,7 @@ import { current } from 'immer'
 import { useEffect, useRef } from 'react'
 
 import { analytics } from '@/lib/mixpanel'
+import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
@@ -26,13 +27,13 @@ export enum SendStep {
   COMPLETE = 3,
 }
 
-export enum StepStatus {
-  NOT_STARTED = 'not_started',
-  IN_PROGRESS = 'in_progress',
-  COMPLETE = 'complete',
-  SKIPPED = 'skipped',
-  FAILED = 'failed',
-}
+export { StepStatus }
+
+const SEND_PHASES = createStepPhaseMap<SendStep>({
+  [SendStep.PREPARATION]: 'preparation_complete',
+  [SendStep.NETWORK_SWITCH]: 'network_switched',
+  [SendStep.SEND]: 'send_complete',
+})
 
 interface SendState {
   currentStep: SendStep
@@ -47,14 +48,6 @@ const initialSendState: SendState = {
   completedSteps: new Set(),
 }
 
-const getStepStatus = (step: SendStep, state: SendState): StepStatus => {
-  if (state.failedStep === step) return StepStatus.FAILED
-  if (state.currentStep < step) return StepStatus.NOT_STARTED
-  if (state.currentStep === step && !state.error) return StepStatus.IN_PROGRESS
-  if (state.completedSteps.has(step)) return StepStatus.COMPLETE
-  return StepStatus.SKIPPED
-}
-
 function sendStateToPersistedState(
   toolCallId: string,
   state: SendState,
@@ -62,27 +55,12 @@ function sendStateToPersistedState(
   sendOutput: SendOutput | null,
   networkName?: string
 ): PersistedToolState {
-  const phases: string[] = []
-
-  if (state.completedSteps.has(SendStep.PREPARATION)) {
-    phases.push('preparation_complete')
-  }
-  if (state.completedSteps.has(SendStep.NETWORK_SWITCH)) {
-    phases.push('network_switched')
-  }
-  if (state.completedSteps.has(SendStep.SEND)) {
-    phases.push('send_complete')
-  }
-  if (state.error) {
-    phases.push('error')
-  }
-
   return {
     toolCallId,
     toolType: 'send',
     conversationId,
     timestamp: Date.now(),
-    phases,
+    phases: SEND_PHASES.toPhases(state.completedSteps, state.error),
     meta: {
       ...(state.sendTxHash && { sendTxHash: state.sendTxHash }),
       ...(state.error && { error: state.error }),
@@ -94,22 +72,9 @@ function sendStateToPersistedState(
 }
 
 function persistedStateToSendState(persisted: PersistedToolState): SendState {
-  const completedSteps = new Set<SendStep>()
-  let currentStep = SendStep.COMPLETE
-
-  if (persisted.phases.includes('preparation_complete')) {
-    completedSteps.add(SendStep.PREPARATION)
-  }
-  if (persisted.phases.includes('network_switched')) {
-    completedSteps.add(SendStep.NETWORK_SWITCH)
-  }
-  if (persisted.phases.includes('send_complete')) {
-    completedSteps.add(SendStep.SEND)
-  }
-
   return {
-    currentStep,
-    completedSteps,
+    currentStep: SendStep.COMPLETE,
+    completedSteps: SEND_PHASES.fromPhases(persisted.phases),
     sendTxHash: persisted.meta.sendTxHash as string | undefined,
     error: persisted.meta.error as string | undefined,
     failedStep: persisted.meta.failedStep as SendStep | undefined,

@@ -1,6 +1,11 @@
-import type { InitiateSwapOutput, SendOutput } from '@shapeshiftoss/agentic-server'
+import type { CreateLimitOrderOutput, InitiateSwapOutput, SendOutput } from '@shapeshiftoss/agentic-server'
 
-import type { ActivityItem, SwapActivityDetails, SendActivityDetails } from '@/types/activity'
+import type {
+  ActivityItem,
+  LimitOrderActivityDetails,
+  SendActivityDetails,
+  SwapActivityDetails,
+} from '@/types/activity'
 
 import type { PersistedToolState } from '../stores/chatStore'
 
@@ -10,6 +15,8 @@ export function normalizeToActivityItem(tx: PersistedToolState): ActivityItem | 
       return normalizeSwapActivity(tx)
     case 'send':
       return normalizeSendActivity(tx)
+    case 'limit_order':
+      return normalizeLimitOrderActivity(tx)
     default:
       return null
   }
@@ -77,6 +84,38 @@ function normalizeSendActivity(tx: PersistedToolState): ActivityItem | null {
     timestamp: tx.timestamp,
     txHash: sendTxHash,
     chainId: output.sendData.chainId,
+    network: output.summary.network,
+    details,
+  }
+}
+
+function normalizeLimitOrderActivity(tx: PersistedToolState): ActivityItem | null {
+  const output = tx.toolOutput as CreateLimitOrderOutput | undefined
+  const orderId = tx.meta.orderId as string | undefined
+
+  if (!output?.summary || !orderId) return null
+
+  const details: LimitOrderActivityDetails = {
+    sellAsset: {
+      symbol: output.summary.sellAsset.symbol,
+      amount: output.summary.sellAsset.amount,
+    },
+    buyAsset: {
+      symbol: output.summary.buyAsset.symbol,
+      estimatedAmount: output.summary.buyAsset.estimatedAmount,
+    },
+    limitPrice: output.summary.limitPrice,
+    expiresAt: output.summary.expiresAt,
+    provider: output.summary.provider,
+    trackingUrl: `https://explorer.cow.fi/orders/${orderId}`,
+  }
+
+  return {
+    id: tx.toolCallId,
+    type: 'limit_order',
+    timestamp: tx.timestamp,
+    orderId,
+    chainId: `eip155:${output.orderParams.chainId}`,
     network: output.summary.network,
     details,
   }

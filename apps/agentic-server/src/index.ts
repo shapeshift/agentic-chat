@@ -88,6 +88,26 @@ export {
   type GetCategoriesOutput,
 } from './tools/getCategories'
 export { getNewCoinsTool, executeGetNewCoins, type GetNewCoinsInput, type GetNewCoinsOutput } from './tools/getNewCoins'
+export {
+  createLimitOrderTool,
+  executeCreateLimitOrder,
+  type CreateLimitOrderInput,
+  type CreateLimitOrderOutput,
+  type LimitOrderSummary,
+} from './tools/limitOrder'
+export {
+  getLimitOrdersTool,
+  executeGetLimitOrders,
+  type GetLimitOrdersInput,
+  type GetLimitOrdersOutput,
+} from './tools/limitOrder'
+export {
+  cancelLimitOrderTool,
+  executeCancelLimitOrder,
+  type CancelLimitOrderInput,
+  type CancelLimitOrderOutput,
+} from './tools/limitOrder'
+export type { CowOrderSigningData, CowEIP712Domain, CowEIP712Types } from './lib/cow/types'
 export type {
   TrimmedTrendingCoin,
   TrimmedGainerLoserCoin,

@@ -25,6 +25,7 @@ import { getTopGainersLosersTool } from '../tools/getTopGainersLosers'
 import { getTrendingPoolsTool } from '../tools/getTrendingPools'
 import { getTrendingTokensTool } from '../tools/getTrendingTokens'
 import { initiateSwapTool, initiateSwapUsdTool } from '../tools/initiateSwap'
+import { createLimitOrderTool, getLimitOrdersTool, cancelLimitOrderTool } from '../tools/limitOrder'
 import { mathCalculator } from '../tools/mathCalculator'
 import { portfolioTool } from '../tools/portfolio'
 import { receiveTool } from '../tools/receive'
@@ -46,16 +47,19 @@ const allEvmChainIds = [
 
 const allSupportedChainIds = [...allEvmChainIds, solanaChainId]
 
-function wrapToolWithLogging<
-  T extends { description: string; inputSchema: unknown; execute: (args: never) => unknown },
->(name: string, tool: T): T {
+function wrapTool<TSchema, TExecute extends (args: never, walletContext?: WalletContext) => unknown>(
+  name: string,
+  tool: { description: string; inputSchema: TSchema; execute: TExecute },
+  walletContext?: WalletContext
+) {
   return {
-    ...tool,
-    execute: (args: Parameters<T['execute']>[0]) => {
+    description: tool.description,
+    inputSchema: tool.inputSchema,
+    execute: (args: Parameters<TExecute>[0]) => {
       console.log(`[Tool] ${name}:`, JSON.stringify(args, null, 2))
-      return tool.execute(args)
+      return tool.execute(args, walletContext)
     },
-  } as T
+  }
 }
 
 function buildWalletContext(evmAddress?: string, solanaAddress?: string, approvedChainIds?: string[]): WalletContext {
@@ -89,9 +93,30 @@ function buildWalletContext(evmAddress?: string, solanaAddress?: string, approve
 
 function buildTools(walletContext: WalletContext) {
   return {
-    mathCalculatorTool: wrapToolWithLogging('mathCalculatorTool', mathCalculator),
-    getAssetsTool: wrapToolWithLogging('getAssetsTool', getAssetsTool),
-    lookupExternalAddress: wrapToolWithLogging('lookupExternalAddress', lookupExternalAddressTool),
+    // Tools without wallet context
+    mathCalculatorTool: wrapTool('mathCalculatorTool', mathCalculator),
+    getAssetsTool: wrapTool('getAssetsTool', getAssetsTool),
+    lookupExternalAddress: wrapTool('lookupExternalAddress', lookupExternalAddressTool),
+    switchNetworkTool: wrapTool('switchNetworkTool', switchNetworkTool),
+    getShapeShiftKnowledgeTool: wrapTool('getShapeShiftKnowledgeTool', getShapeShiftKnowledgeTool),
+    getTrendingTokensTool: wrapTool('getTrendingTokensTool', getTrendingTokensTool),
+    getTopGainersLosersTool: wrapTool('getTopGainersLosersTool', getTopGainersLosersTool),
+    getTrendingPoolsTool: wrapTool('getTrendingPoolsTool', getTrendingPoolsTool),
+    getCategoriesTool: wrapTool('getCategoriesTool', getCategoriesTool),
+    getNewCoinsTool: wrapTool('getNewCoinsTool', getNewCoinsTool),
+
+    // Tools with wallet context
+    transactionHistoryTool: wrapTool('transactionHistoryTool', transactionHistoryTool, walletContext),
+    portfolioTool: wrapTool('portfolioTool', portfolioTool, walletContext),
+    initiateSwapTool: wrapTool('initiateSwapTool', initiateSwapTool, walletContext),
+    initiateSwapUsdTool: wrapTool('initiateSwapUsdTool', initiateSwapUsdTool, walletContext),
+    sendTool: wrapTool('sendTool', sendTool, walletContext),
+    receiveTool: wrapTool('receiveTool', receiveTool, walletContext),
+    createLimitOrderTool: wrapTool('createLimitOrderTool', createLimitOrderTool, walletContext),
+    getLimitOrdersTool: wrapTool('getLimitOrdersTool', getLimitOrdersTool, walletContext),
+    cancelLimitOrderTool: wrapTool('cancelLimitOrderTool', cancelLimitOrderTool, walletContext),
+
+    // Special case - has custom address resolution logic
     getAllowanceTool: {
       description: getAllowanceTool.description,
       inputSchema: getAllowanceTool.inputSchema,
@@ -105,61 +130,6 @@ function buildTools(walletContext: WalletContext) {
         return getAllowanceTool.execute({ ...args, from })
       },
     },
-    transactionHistoryTool: {
-      description: transactionHistoryTool.description,
-      inputSchema: transactionHistoryTool.inputSchema,
-      execute: async (args: Parameters<typeof transactionHistoryTool.execute>[0]) => {
-        console.log('[Tool] transactionHistoryTool:', JSON.stringify(args, null, 2))
-        return transactionHistoryTool.execute(args, walletContext)
-      },
-    },
-    portfolioTool: {
-      description: portfolioTool.description,
-      inputSchema: portfolioTool.inputSchema,
-      execute: async (args: Parameters<typeof portfolioTool.execute>[0]) => {
-        console.log('[Tool] portfolioTool:', JSON.stringify(args, null, 2))
-        return portfolioTool.execute(args, walletContext)
-      },
-    },
-    initiateSwapTool: {
-      description: initiateSwapTool.description,
-      inputSchema: initiateSwapTool.inputSchema,
-      execute: async (args: Parameters<typeof initiateSwapTool.execute>[0]) => {
-        console.log('[Tool] initiateSwapTool:', JSON.stringify(args, null, 2))
-        return initiateSwapTool.execute(args, walletContext)
-      },
-    },
-    initiateSwapUsdTool: {
-      description: initiateSwapUsdTool.description,
-      inputSchema: initiateSwapUsdTool.inputSchema,
-      execute: async (args: Parameters<typeof initiateSwapUsdTool.execute>[0]) => {
-        console.log('[Tool] initiateSwapUsdTool:', JSON.stringify(args, null, 2))
-        return initiateSwapUsdTool.execute(args, walletContext)
-      },
-    },
-    switchNetworkTool: wrapToolWithLogging('switchNetworkTool', switchNetworkTool),
-    sendTool: {
-      description: sendTool.description,
-      inputSchema: sendTool.inputSchema,
-      execute: async (args: Parameters<typeof sendTool.execute>[0]) => {
-        console.log('[Tool] sendTool:', JSON.stringify(args, null, 2))
-        return sendTool.execute(args, walletContext)
-      },
-    },
-    receiveTool: {
-      description: receiveTool.description,
-      inputSchema: receiveTool.inputSchema,
-      execute: async (args: Parameters<typeof receiveTool.execute>[0]) => {
-        console.log('[Tool] receiveTool:', JSON.stringify(args, null, 2))
-        return receiveTool.execute(args, walletContext)
-      },
-    },
-    getShapeShiftKnowledgeTool: wrapToolWithLogging('getShapeShiftKnowledgeTool', getShapeShiftKnowledgeTool),
-    getTrendingTokensTool: wrapToolWithLogging('getTrendingTokensTool', getTrendingTokensTool),
-    getTopGainersLosersTool: wrapToolWithLogging('getTopGainersLosersTool', getTopGainersLosersTool),
-    getTrendingPoolsTool: wrapToolWithLogging('getTrendingPoolsTool', getTrendingPoolsTool),
-    getCategoriesTool: wrapToolWithLogging('getCategoriesTool', getCategoriesTool),
-    getNewCoinsTool: wrapToolWithLogging('getNewCoinsTool', getNewCoinsTool),
   }
 }
 
@@ -247,7 +217,7 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
 **Tool Categories:**
 - **Market Data**: getAssets (prices/market data), getTrendingTokens, getTopGainersLosers, getNewCoins, getCategories, getTrendingPools
 - **Portfolio**: portfolio (balances), transactionHistoryTool (history/analytics)
-- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR)
+- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders)
 - **Utilities**: switchNetwork (change chains), mathCalculator (arithmetic), getShapeShiftKnowledge (platform info)
 
 **Tool UI Behavior:**
@@ -275,6 +245,14 @@ Examples:
 - "Bridge" = Same asset cross-chain (ETH to Arbitrum = ETH→ETH, not ETH→ARB token)
 - Native L2 tokens (ARB, OP, etc.) are distinct from bridged assets
 - Ask for clarification if ambiguous between native token vs bridged asset
+
+**Limit Orders:**
+- Use createLimitOrder when user wants to trade at a specific price (e.g., "buy ETH when it hits $3000")
+- Limit orders are gasless (off-chain EIP-712 signature via CoW Protocol)
+- Currently supports: Ethereum, Gnosis, Arbitrum (same-chain only, no cross-chain limit orders)
+- Use getLimitOrders to check user's existing orders
+- Use cancelLimitOrder to cancel pending orders
+- Orders auto-execute when market price reaches limit
 
 **Error Handling:**
 - Insufficient balance → Show exact shortage amount

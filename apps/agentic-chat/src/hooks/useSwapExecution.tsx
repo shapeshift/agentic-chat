@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
+import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
@@ -32,13 +33,15 @@ export enum SwapStep {
   COMPLETE = 5,
 }
 
-export enum StepStatus {
-  NOT_STARTED = 'not_started',
-  IN_PROGRESS = 'in_progress',
-  COMPLETE = 'complete',
-  SKIPPED = 'skipped',
-  FAILED = 'failed',
-}
+export { StepStatus }
+
+const SWAP_PHASES = createStepPhaseMap<SwapStep>({
+  [SwapStep.QUOTE]: 'quote_complete',
+  [SwapStep.NETWORK_SWITCH]: 'network_switched',
+  [SwapStep.APPROVAL]: 'approval_complete',
+  [SwapStep.APPROVAL_CONFIRMATION]: 'approval_confirmed',
+  [SwapStep.SWAP]: 'swap_complete',
+})
 
 interface SwapState {
   currentStep: SwapStep
@@ -54,14 +57,6 @@ const initialSwapState: SwapState = {
   completedSteps: new Set(),
 }
 
-const getStepStatus = (step: SwapStep, state: SwapState): StepStatus => {
-  if (state.failedStep === step) return StepStatus.FAILED
-  if (state.currentStep < step) return StepStatus.NOT_STARTED
-  if (state.currentStep === step && !state.error) return StepStatus.IN_PROGRESS
-  if (state.completedSteps.has(step)) return StepStatus.COMPLETE
-  return StepStatus.SKIPPED
-}
-
 function swapStateToPersistedState(
   toolCallId: string,
   state: SwapState,
@@ -69,29 +64,10 @@ function swapStateToPersistedState(
   swapOutput: InitiateSwapOutput | null,
   networkName?: string
 ): PersistedToolState {
-  const phases: string[] = []
-
-  if (state.completedSteps.has(SwapStep.QUOTE)) {
-    phases.push('quote_complete')
-  }
-  if (state.completedSteps.has(SwapStep.NETWORK_SWITCH)) {
-    phases.push('network_switched')
-  }
-  if (state.completedSteps.has(SwapStep.APPROVAL)) {
-    phases.push('approval_complete')
-  }
-  if (state.completedSteps.has(SwapStep.APPROVAL_CONFIRMATION)) {
-    phases.push('approval_confirmed')
-  }
-  if (state.currentStep > SwapStep.APPROVAL && !state.completedSteps.has(SwapStep.APPROVAL)) {
-    phases.push('approval_skipped')
-  }
-  if (state.completedSteps.has(SwapStep.SWAP)) {
-    phases.push('swap_complete')
-  }
-  if (state.error) {
-    phases.push('error')
-  }
+  const phases = [
+    ...SWAP_PHASES.toPhases(state.completedSteps, state.error),
+    state.currentStep > SwapStep.APPROVAL && !state.completedSteps.has(SwapStep.APPROVAL) && 'approval_skipped',
+  ].filter(Boolean) as string[]
 
   return {
     toolCallId,
@@ -110,28 +86,9 @@ function swapStateToPersistedState(
 }
 
 function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
-  const completedSteps = new Set<SwapStep>()
-  let currentStep = SwapStep.COMPLETE
-
-  if (persisted.phases.includes('quote_complete')) {
-    completedSteps.add(SwapStep.QUOTE)
-  }
-  if (persisted.phases.includes('network_switched')) {
-    completedSteps.add(SwapStep.NETWORK_SWITCH)
-  }
-  if (persisted.phases.includes('approval_complete')) {
-    completedSteps.add(SwapStep.APPROVAL)
-  }
-  if (persisted.phases.includes('approval_confirmed')) {
-    completedSteps.add(SwapStep.APPROVAL_CONFIRMATION)
-  }
-  if (persisted.phases.includes('swap_complete')) {
-    completedSteps.add(SwapStep.SWAP)
-  }
-
   return {
-    currentStep,
-    completedSteps,
+    currentStep: SwapStep.COMPLETE,
+    completedSteps: SWAP_PHASES.fromPhases(persisted.phases),
     approvalTxHash: persisted.meta.approvalTxHash as string | undefined,
     swapTxHash: persisted.meta.swapTxHash as string | undefined,
     error: persisted.meta.error as string | undefined,

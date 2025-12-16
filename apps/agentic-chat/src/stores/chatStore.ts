@@ -1,5 +1,11 @@
 import type { useChat } from '@ai-sdk/react'
-import type { InitiateSwapOutput, SendOutput, SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
+import type {
+  CancelLimitOrderOutput,
+  CreateLimitOrderOutput,
+  InitiateSwapOutput,
+  SendOutput,
+  SwitchNetworkOutput,
+} from '@shapeshiftoss/agentic-server'
 import { produce, enableMapSet } from 'immer'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
@@ -15,12 +21,13 @@ type ChatMessage = ReturnType<typeof useChat>['messages'][number]
 
 export interface PersistedToolState {
   toolCallId: string
-  toolType: 'swap' | 'send' | 'network_switch'
+  toolType: 'swap' | 'send' | 'network_switch' | 'limit_order' | 'cancel_limit_order'
   conversationId: string
   timestamp: number
   phases: string[]
   meta: Record<string, unknown>
-  toolOutput?: InitiateSwapOutput | SendOutput | SwitchNetworkOutput
+  toolOutput?: InitiateSwapOutput | SendOutput | SwitchNetworkOutput | CreateLimitOrderOutput | CancelLimitOrderOutput
+  walletAddress?: string
 }
 
 interface ChatState {

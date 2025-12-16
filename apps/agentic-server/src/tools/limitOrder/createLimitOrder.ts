@@ -1,0 +1,247 @@
+import { fromAssetId } from '@shapeshiftoss/caip'
+import type { Asset } from '@shapeshiftoss/types'
+import { toBaseUnit } from '@shapeshiftoss/utils'
+import BigNumber from 'bignumber.js'
+import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
+import { z } from 'zod'
+
+import { COW_VAULT_RELAYER_ADDRESS, prepareCowLimitOrder } from '../../lib/cow'
+import type { CowOrderSigningData } from '../../lib/cow/types'
+import { getCowExplorerUrl, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import { getAllowance } from '../../utils'
+import { resolveAsset } from '../../utils/assetHelpers'
+import { createTransaction } from '../../utils/transactionHelpers'
+import { getAddressForChain } from '../../utils/walletContextSimple'
+import type { WalletContext } from '../../utils/walletContextSimple'
+
+type TransactionData = {
+  chainId: string
+  data: string
+  from: string
+  to: string
+  value: string
+}
+
+function buildApprovalTransaction(
+  needsApproval: boolean,
+  sellAsset: Asset,
+  approvalTarget: string,
+  sellAmountBaseUnit: string,
+  userAddress: string
+): TransactionData | undefined {
+  if (!needsApproval) return undefined
+
+  const data = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [getAddress(approvalTarget), BigInt(sellAmountBaseUnit)],
+  })
+
+  const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
+
+  return createTransaction({
+    chainId: sellAsset.chainId,
+    data,
+    from: userAddress,
+    to: tokenAddress,
+    value: '0',
+  })
+}
+
+export const createLimitOrderSchema = z.object({
+  sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
+  buyAsset: z.string().describe('Token symbol or name to buy (e.g., "USDC", "WETH")'),
+  network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the limit order'),
+  sellAmount: z.string().describe('Amount to sell in human-readable format (e.g., "100" for 100 USDC)'),
+  limitPrice: z
+    .string()
+    .describe(
+      'How much buyAsset you receive per 1 sellAsset. "sell A when worth X B" → limitPrice=X. Example: "worth 2 USDT" → "2"'
+    ),
+  expirationHours: z
+    .number()
+    .min(1)
+    .max(8760)
+    .optional()
+    .default(168)
+    .describe('Hours until order expires. Default is 168 (7 days). Max is 8760 (365 days).'),
+})
+
+export type CreateLimitOrderInput = z.infer<typeof createLimitOrderSchema>
+
+export interface LimitOrderSummary {
+  sellAsset: {
+    symbol: string
+    amount: string
+  }
+  buyAsset: {
+    symbol: string
+    estimatedAmount: string
+  }
+  network: string
+  limitPrice: string
+  expiresAt: string
+  provider: 'cow'
+}
+
+export interface CreateLimitOrderOutput {
+  summary: LimitOrderSummary
+  signingData: CowOrderSigningData
+  orderParams: {
+    sellToken: string
+    buyToken: string
+    sellAmount: string
+    buyAmount: string
+    validTo: number
+    receiver: string
+    chainId: number
+  }
+  needsApproval: boolean
+  approvalTx?: TransactionData
+  approvalTarget: string
+  trackingUrl: string
+}
+
+function calculateBuyAmount(buyAsset: Asset, sellAmount: string, limitPrice: string): string {
+  const buyAmountHuman = new BigNumber(sellAmount).times(limitPrice)
+  if (buyAmountHuman.isNaN()) {
+    throw new Error('Invalid sellAmount or limitPrice')
+  }
+  return toBaseUnit(buyAmountHuman.toString(), buyAsset.precision)
+}
+
+export async function executeCreateLimitOrder(
+  input: CreateLimitOrderInput,
+  walletContext?: WalletContext
+): Promise<CreateLimitOrderOutput> {
+  const expirationSeconds = input.expirationHours * 60 * 60
+
+  // Resolve assets on the specified network
+  const [sellAsset, buyAsset] = await Promise.all([
+    resolveAsset({ symbolOrName: input.sellAsset, network: input.network }),
+    resolveAsset({ symbolOrName: input.buyAsset, network: input.network }),
+  ])
+
+  // Get numeric chain ID directly from network (Zod schema guarantees valid network)
+  const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
+
+  // Get user address for this chain
+  const userAddress = getAddressForChain(walletContext, sellAsset.chainId)
+
+  // Get token addresses
+  const sellTokenAddress = fromAssetId(sellAsset.assetId).assetReference
+  const buyTokenAddress = fromAssetId(buyAsset.assetId).assetReference
+
+  // Native token handling - CoW Protocol requires ERC20 tokens for selling
+  const NATIVE_TOKEN_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+  // CoW Protocol uses this marker address to indicate native asset as buy token
+  const COW_NATIVE_ASSET_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+
+  const isNativeSellToken = sellTokenAddress.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase()
+  const isNativeBuyToken = buyTokenAddress.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase()
+
+  // Block native token as sell asset - CoW requires ERC20 tokens for selling
+  if (isNativeSellToken) {
+    const nativeSymbol = sellAsset.symbol
+    throw new Error(
+      `Native ${nativeSymbol} cannot be used as sell asset for limit orders. ` +
+        `CoW Protocol requires ERC20 tokens. Please wrap your ${nativeSymbol} to W${nativeSymbol} first, ` +
+        `or select W${nativeSymbol} as the sell asset.`
+    )
+  }
+
+  const sellToken = sellTokenAddress
+
+  // Allow native token as buy asset using CoW's native asset marker
+  const buyToken = isNativeBuyToken ? COW_NATIVE_ASSET_MARKER : buyTokenAddress
+
+  // Calculate amounts in base units
+  const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
+  const buyAmountBaseUnit = calculateBuyAmount(buyAsset, input.sellAmount, input.limitPrice)
+
+  // Get approval target (CoW VaultRelayer contract - same address across all chains)
+  const approvalTarget = COW_VAULT_RELAYER_ADDRESS
+
+  // Check allowance for sell token
+  const { isApprovalRequired: needsApproval } = await getAllowance({
+    amount: sellAmountBaseUnit,
+    asset: sellAsset,
+    from: userAddress,
+    spender: approvalTarget,
+  })
+
+  // Build approval transaction if needed
+  const approvalTx = buildApprovalTransaction(needsApproval, sellAsset, approvalTarget, sellAmountBaseUnit, userAddress)
+
+  // Prepare the order for signing
+  const orderResult = prepareCowLimitOrder({
+    sellToken,
+    buyToken,
+    sellAmount: sellAmountBaseUnit,
+    buyAmount: buyAmountBaseUnit,
+    userAddress,
+    chainId: evmChainId,
+    expirationSeconds,
+    receiver: userAddress,
+  })
+
+  // Calculate estimated buy amount in human-readable format using BigNumber for precision
+  const estimatedBuyAmount = new BigNumber(input.sellAmount).times(input.limitPrice).toFixed(6)
+
+  const summary: LimitOrderSummary = {
+    sellAsset: {
+      symbol: sellAsset.symbol,
+      amount: input.sellAmount,
+    },
+    buyAsset: {
+      symbol: buyAsset.symbol,
+      estimatedAmount: estimatedBuyAmount,
+    },
+    network: input.network,
+    limitPrice: input.limitPrice,
+    expiresAt: orderResult.expiresAt,
+    provider: 'cow',
+  }
+
+  return {
+    summary,
+    signingData: orderResult.signingData,
+    orderParams: {
+      sellToken,
+      buyToken,
+      sellAmount: sellAmountBaseUnit,
+      buyAmount: buyAmountBaseUnit,
+      validTo: orderResult.orderToSign.validTo,
+      receiver: userAddress,
+      chainId: evmChainId,
+    },
+    needsApproval,
+    approvalTx,
+    approvalTarget,
+    trackingUrl: getCowExplorerUrl('pending'),
+  }
+}
+
+export const createLimitOrderTool = {
+  description: `Create a limit order to trade at a specific price. Limit orders execute when the market reaches your target price.
+
+UI CARD DISPLAYS: order details (sell/buy assets, amounts), limit price, expiration time, and signing button.
+
+Your role is to supplement the card, not duplicate it.
+
+Default: Respond with one brief sentence like:
+- "I've prepared your limit order"
+- "Your limit order is ready to sign"
+- "Here's the limit order for your approval"
+
+Only elaborate if the user asks about something not shown in the card.
+
+IMPORTANT:
+- Limit orders require EIP-712 signature (gasless, off-chain)
+- Both assets must be on the same EVM network
+- Currently supports: Ethereum, Gnosis, Arbitrum
+- Order executes automatically when market price reaches limit
+- If user specifies total amounts (e.g., "10 USDC for 20 USDT"), use the maths tool to calculate limitPrice (20÷10=2)`,
+  inputSchema: createLimitOrderSchema,
+  execute: executeCreateLimitOrder,
+}
