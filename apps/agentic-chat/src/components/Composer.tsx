@@ -1,7 +1,6 @@
+import { useChatContext } from '@shapeshiftoss/chat'
 import { SendHorizontal, Square } from 'lucide-react'
 import type { FormEvent, KeyboardEvent } from 'react'
-
-import { useChatContext } from '../providers/ChatProvider'
 
 import { IconButton } from './ui/IconButton'
 

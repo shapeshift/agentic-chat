@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import { useChatStore } from '@/stores/chatStore'
+import { useChatStore } from '../store/chatStore'
 
 interface UseToolExecutionEffectResult<TState> {
   state: TState

@@ -5,6 +5,7 @@
     { "path": "./packages/caip" },
     { "path": "./packages/types" },
     { "path": "./packages/utils" },
+    { "path": "./packages/agentic-chat" },
     { "path": "./apps/agentic-server" },
     { "path": "./apps/agentic-chat" }
   ]

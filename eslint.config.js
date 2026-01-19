@@ -84,7 +84,7 @@ export default [
         },
     },
     {
-        files: ['apps/agentic-chat/**/*.{mts,ts,tsx}'],
+        files: ['apps/agentic-chat/**/*.{mts,ts,tsx}', 'packages/agentic-chat/**/*.{mts,ts,tsx}'],
         plugins: {
             react: reactPlugin,
             'react-hooks': reactHooksPlugin,
