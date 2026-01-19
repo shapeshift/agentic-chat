@@ -18,9 +18,15 @@ app.use(
   '/*',
   cors({
     origin: [
+      // Local development
       'http://localhost:3000',
       'http://localhost:4200',
       'http://localhost:5173',
+      // ShapeShift Web deployments
+      'https://app.shapeshift.com',
+      'https://develop.shapeshift.com',
+      'https://private.shapeshift.com',
+      // Agentic Chat deployments
       'https://shapeshift-agentic.vercel.app',
       'https://agent.shapeshift.com',
     ],
