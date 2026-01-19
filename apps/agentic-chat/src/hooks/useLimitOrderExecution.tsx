@@ -1,15 +1,6 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import type { CreateLimitOrderOutput } from '@shapeshiftoss/agentic-server'
-import type { PersistedToolState } from '@shapeshiftoss/chat'
-import {
-  createStepPhaseMap,
-  getStepStatus,
-  StepStatus,
-  useChatContext,
-  useChatStore,
-  useToolExecutionEffect,
-} from '@shapeshiftoss/chat'
 import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
@@ -18,11 +9,15 @@ import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
 import { getCowApiUrl } from '@/lib/cow-config'
-import { signTypedDataWithWallet } from '@/lib/eip712Signing'
 import { analytics } from '@/lib/mixpanel'
+import { createStepPhaseMap, getStepStatus, signTypedDataWithWallet, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
+import { useChatContext } from '@/providers/ChatProvider'
+import type { PersistedToolState } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
 import { executeApproval } from '@/utils/swapExecutor'
 
+import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
 type LimitOrderData = CreateLimitOrderOutput

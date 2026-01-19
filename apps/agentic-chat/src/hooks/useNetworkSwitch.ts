@@ -2,12 +2,14 @@ import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
-import type { PersistedToolState } from '@shapeshiftoss/chat'
-import { useChatContext, useChatStore, useToolExecutionEffect } from '@shapeshiftoss/chat'
 import { useEffect, useRef } from 'react'
 
 import { networkNameToChainId } from '@/lib/chains'
+import { useChatContext } from '@/providers/ChatProvider'
+import type { PersistedToolState } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
 
+import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
 type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'

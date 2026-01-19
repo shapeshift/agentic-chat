@@ -1,7 +1,8 @@
-import { useChatContext } from '@shapeshiftoss/chat'
 import { PlusIcon, Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
+
+import { useChatContext } from '@/providers/ChatProvider'
 
 import {
   AlertDialog,

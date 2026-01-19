@@ -1,9 +1,9 @@
 import type { CancelLimitOrderOutput } from '@shapeshiftoss/agentic-server'
-import { useChatStore } from '@shapeshiftoss/chat'
 import { ExternalLink, XCircle } from 'lucide-react'
 
 import { useCancelLimitOrderExecution } from '@/hooks/useCancelLimitOrderExecution'
 import { StepStatus } from '@/hooks/useSwapExecution'
+import { useChatStore } from '@/stores/chatStore'
 
 import { TruncateText } from '../ui/TruncateText'
 import { TxStepCard } from '../ui/TxStepCard'

@@ -1,13 +1,20 @@
-import type { Conversation } from '../types/conversation'
-import type { Message } from '../types/message'
+import type { useChat } from '@ai-sdk/react'
 
-export function generateConversationId(prefix = 'shapeshift'): string {
+import type { Conversation } from '@/types'
+
+type ChatMessage = ReturnType<typeof useChat>['messages'][number]
+
+export function generateConversationId(): string {
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 9)
-  return `${prefix}-${timestamp}-${random}`
+  return `shapeshift-${timestamp}-${random}`
 }
 
-export function extractTitleFromMessages(messages: Message[], savedChats: Conversation[], sessionId: string): string {
+export function extractTitleFromMessages(
+  messages: ChatMessage[],
+  savedChats: Conversation[],
+  sessionId: string
+): string {
   const existing = savedChats.find(c => c.id === sessionId)
 
   if (existing && existing.title !== 'New Conversation') {

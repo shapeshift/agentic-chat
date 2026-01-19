@@ -1,8 +1,8 @@
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
-import { useChatStore } from '@shapeshiftoss/chat'
 import { ArrowRightLeft } from 'lucide-react'
 
 import { useNetworkSwitch } from '@/hooks/useNetworkSwitch'
+import { useChatStore } from '@/stores/chatStore'
 
 import { CollapsableDetails } from '../ui/CollapsableDetails'
 import { StatusText } from '../ui/StatusText'

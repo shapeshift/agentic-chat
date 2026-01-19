@@ -61,7 +61,6 @@
         "@radix-ui/react-tabs": "^1.1.13",
         "@radix-ui/react-tooltip": "^1.2.7",
         "@sentry/react": "^10.27.0",
-        "@shapeshiftoss/chat": "workspace:^",
         "@solana/web3.js": "^1.95.8",
         "@tanstack/react-query": "^5.75.5",
         "@wagmi/core": "^2.17.2",
@@ -122,26 +121,6 @@
       "devDependencies": {
         "@types/bun": "^1.2.21",
         "tsup": "^8.5.0",
-      },
-    },
-    "packages/agentic-chat": {
-      "name": "@shapeshiftoss/chat",
-      "version": "0.0.0",
-      "dependencies": {
-        "@ai-sdk/react": "^2.0.76",
-        "@ai-sdk/ui-utils": "^1.2.11",
-        "@shapeshiftoss/agentic-server": "workspace:^",
-        "ai": "^5.0.76",
-        "immer": "^10.1.3",
-        "zustand": "^5.0.6",
-      },
-      "devDependencies": {
-        "@types/react": "*",
-        "@types/react-dom": "*",
-      },
-      "peerDependencies": {
-        "react": ">=18.0.0",
-        "react-dom": ">=18.0.0",
       },
     },
     "packages/caip": {
@@ -718,8 +697,6 @@
     "@shapeshiftoss/agentic-server": ["@shapeshiftoss/agentic-server@workspace:apps/agentic-server"],
 
     "@shapeshiftoss/caip": ["@shapeshiftoss/caip@workspace:packages/caip"],
-
-    "@shapeshiftoss/chat": ["@shapeshiftoss/chat@workspace:packages/agentic-chat"],
 
     "@shapeshiftoss/types": ["@shapeshiftoss/types@workspace:packages/types"],
 

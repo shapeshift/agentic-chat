@@ -1,8 +1,8 @@
-import { useChatStore } from '@shapeshiftoss/chat'
 import { useMemo } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 
 import { normalizeToActivityItem } from '@/lib/activityNormalizer'
+import { useChatStore } from '@/stores/chatStore'
 import type { ActivityItem } from '@/types/activity'
 
 import { ActivityRow } from './ActivityRow'

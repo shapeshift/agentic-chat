@@ -1,9 +1,9 @@
 import type { CreateLimitOrderOutput } from '@shapeshiftoss/agentic-server'
-import { useChatStore } from '@shapeshiftoss/chat'
 import { ExternalLink } from 'lucide-react'
 
 import { useLimitOrderExecution } from '@/hooks/useLimitOrderExecution'
 import { StepStatus } from '@/hooks/useSwapExecution'
+import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'

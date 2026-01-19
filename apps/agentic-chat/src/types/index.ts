@@ -1,4 +1,4 @@
-export type { Conversation } from '@shapeshiftoss/chat'
+export * from './conversation'
 export * from './message'
 export * from './quote'
 export * from './transaction'

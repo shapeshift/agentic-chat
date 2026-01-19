@@ -1,9 +1,9 @@
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
-import { useChatStore } from '@shapeshiftoss/chat'
 
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
 import { bnOrZero } from '@/lib/bignumber'
 import { firstFourLastFour } from '@/lib/utils'
+import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'

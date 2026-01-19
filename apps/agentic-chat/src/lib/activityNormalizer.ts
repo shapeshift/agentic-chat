@@ -1,5 +1,4 @@
 import type { CreateLimitOrderOutput, InitiateSwapOutput, SendOutput } from '@shapeshiftoss/agentic-server'
-import type { PersistedToolState } from '@shapeshiftoss/chat'
 
 import type {
   ActivityItem,
@@ -7,6 +6,8 @@ import type {
   SendActivityDetails,
   SwapActivityDetails,
 } from '@/types/activity'
+
+import type { PersistedToolState } from '../stores/chatStore'
 
 export function normalizeToActivityItem(tx: PersistedToolState): ActivityItem | null {
   switch (tx.toolType) {

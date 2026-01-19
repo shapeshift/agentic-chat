@@ -1,8 +1,8 @@
-import { useChatContext } from '@shapeshiftoss/chat'
 import { AlertTriangle } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 
 import { useStreamPauseDetector } from '../hooks/useStreamPauseDetector'
+import { useChatContext } from '../providers/ChatProvider'
 
 import { AssistantMessage } from './AssistantMessage'
 import { Composer } from './Composer'

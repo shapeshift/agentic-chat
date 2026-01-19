@@ -1,12 +1,12 @@
 import type { CreateLimitOrderOutput, GetLimitOrdersOutput } from '@shapeshiftoss/agentic-server'
-import type { PersistedToolState } from '@shapeshiftoss/chat'
-import { useChatStore } from '@shapeshiftoss/chat'
 import BigNumber from 'bignumber.js'
 import { Clock, ExternalLink, Timer, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { useMemo } from 'react'
 
 import { stopPropagationHandler } from '@/lib/eventHandlers'
 import { cn, truncateAddress } from '@/lib/utils'
+import type { PersistedToolState } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
 import { ToolCard } from '../ui/ToolCard'

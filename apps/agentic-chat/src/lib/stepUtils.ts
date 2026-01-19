@@ -1,4 +1,4 @@
-import type { StepState } from '../types/stepState'
+import type { useWalletConnection } from '@/hooks/useWalletConnection'
 
 export enum StepStatus {
   NOT_STARTED = 'not_started',
@@ -35,6 +35,14 @@ export function createStepPhaseMap<TStep extends number>(mapping: Record<number,
   }
 }
 
+// Generic step state interface - works with any step enum
+interface StepState<TStep extends number> {
+  currentStep: TStep
+  completedSteps: Set<TStep>
+  failedStep?: TStep
+  error?: string
+}
+
 // Generic getStepStatus that works with any numeric step enum
 export function getStepStatus<TStep extends number>(step: TStep, state: StepState<TStep>): StepStatus {
   if (state.failedStep === step) return StepStatus.FAILED
@@ -42,4 +50,32 @@ export function getStepStatus<TStep extends number>(step: TStep, state: StepStat
   if (state.currentStep === step && !state.error) return StepStatus.IN_PROGRESS
   if (state.completedSteps.has(step)) return StepStatus.COMPLETE
   return StepStatus.SKIPPED
+}
+
+// EIP-712 signing data interface (compatible with CoW Protocol)
+// Using generic types to accommodate various EIP-712 structured data formats
+interface Eip712SigningData {
+  domain: object
+  types: object
+  primaryType: string
+  message: object
+}
+
+// Shared EIP-712 signing helper for CoW Protocol operations
+export async function signTypedDataWithWallet(
+  evmWallet: NonNullable<ReturnType<typeof useWalletConnection>['evmWallet']>,
+  signingData: Eip712SigningData
+): Promise<string> {
+  const walletClient = await evmWallet.getWalletClient()
+
+  // Type assertions needed: viem's signTypedData expects specific EIP-712 type structures
+  // that differ from CoW Protocol's API response format
+  const signature = await walletClient.signTypedData({
+    domain: signingData.domain as Parameters<typeof walletClient.signTypedData>[0]['domain'],
+    types: signingData.types as unknown as Parameters<typeof walletClient.signTypedData>[0]['types'],
+    primaryType: signingData.primaryType,
+    message: signingData.message as unknown as Record<string, unknown>,
+  })
+
+  return signature
 }

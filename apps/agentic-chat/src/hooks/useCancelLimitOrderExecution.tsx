@@ -1,24 +1,19 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import type { CancelLimitOrderOutput } from '@shapeshiftoss/agentic-server'
-import type { PersistedToolState } from '@shapeshiftoss/chat'
-import {
-  createStepPhaseMap,
-  getStepStatus,
-  StepStatus,
-  useChatContext,
-  useChatStore,
-  useToolExecutionEffect,
-} from '@shapeshiftoss/chat'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 
 import { getCowApiUrl } from '@/lib/cow-config'
-import { signTypedDataWithWallet } from '@/lib/eip712Signing'
 import { analytics } from '@/lib/mixpanel'
+import { createStepPhaseMap, getStepStatus, signTypedDataWithWallet, StepStatus } from '@/lib/stepUtils'
+import { useChatContext } from '@/providers/ChatProvider'
+import type { PersistedToolState } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
 
+import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
 type CancelOrderData = CancelLimitOrderOutput
