@@ -3,19 +3,23 @@ import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core
 import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { SendOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
+import type { PersistedToolState } from '@shapeshiftoss/chat'
+import {
+  createStepPhaseMap,
+  getStepStatus,
+  StepStatus,
+  useChatContext,
+  useChatStore,
+  useToolExecutionEffect,
+} from '@shapeshiftoss/chat'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
 
 import { analytics } from '@/lib/mixpanel'
-import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
-import { useChatContext } from '@/providers/ChatProvider'
-import type { PersistedToolState } from '@/stores/chatStore'
-import { useChatStore } from '@/stores/chatStore'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeSend } from '@/utils/sendExecutor'
 
-import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
 type SendData = SendOutput

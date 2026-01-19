@@ -2,13 +2,15 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, isToolOrDynamicToolUIPart } from 'ai'
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
 
-import { useWalletConnection } from '@/hooks/useWalletConnection'
-import { analytics } from '@/lib/mixpanel'
-import { useChatStore, saveMessages, loadMessages } from '@/stores/chatStore'
-import type { Conversation } from '@/types'
-import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
+import { createChatStore, useChatStore as useDefaultChatStore } from '../store/chatStore'
+import {
+  createMessageStorage,
+  saveMessages as defaultSaveMessages,
+  loadMessages as defaultLoadMessages,
+} from '../store/messageStorage'
+import type { Conversation } from '../types/conversation'
+import { extractTitleFromMessages } from '../utils/conversationStorage'
 
 interface ChatContextValue {
   messages: ReturnType<typeof useChat>['messages']
@@ -23,8 +25,6 @@ interface ChatContextValue {
   error: Error | undefined
   conversations: Conversation[]
   activeConversationId: string | null
-  createNewConversation: () => void
-  switchConversation: (conversationId: string) => void
   deleteConversation: (conversationId: string) => void
 }
 
@@ -38,18 +38,61 @@ export function useChatContext() {
   return context
 }
 
-interface ChatProviderProps {
-  children: ReactNode
+interface WalletState {
+  evmAddress?: string
+  solanaAddress?: string
+  approvedChainIds: string[]
 }
 
-export function ChatProvider({ children }: ChatProviderProps) {
-  const wallet = useWalletConnection()
-  const walletRef = useRef(wallet)
-  walletRef.current = wallet
+interface ChatProviderProps {
+  children: ReactNode
 
-  const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
-  const navigate = useNavigate()
+  // Controlled conversation ID (app reads from URL)
+  conversationId: string | undefined
+
+  // Wallet state (app provides, no library coupling)
+  walletState: WalletState
+
+  // Callback for when conversation is deleted (app decides how to handle navigation)
+  onConversationDelete?: (id: string) => void
+
+  // Server config
+  apiBaseUrl: string
+
+  // Optional storage prefix for localStorage keys (defaults to 'shapeshift-chat' and 'ai-chat-messages')
+  storagePrefix?: string
+}
+
+export function ChatProvider({
+  children,
+  conversationId,
+  walletState,
+  onConversationDelete,
+  apiBaseUrl,
+  storagePrefix,
+}: ChatProviderProps) {
+  const walletRef = useRef(walletState)
+  walletRef.current = walletState
+
   const [input, setInput] = useState('')
+
+  // Create or use default store and message storage based on storagePrefix
+  const useChatStore = useMemo(() => {
+    if (storagePrefix) {
+      return createChatStore(storagePrefix, `${storagePrefix}-messages`)
+    }
+    return useDefaultChatStore
+  }, [storagePrefix])
+
+  const messageStorage = useMemo(() => {
+    if (storagePrefix) {
+      return createMessageStorage(`${storagePrefix}-messages`)
+    }
+    return {
+      saveMessages: defaultSaveMessages,
+      loadMessages: defaultLoadMessages,
+    }
+  }, [storagePrefix])
 
   const {
     conversations,
@@ -62,18 +105,18 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/chat`,
+        api: `${apiBaseUrl}/api/chat`,
         body: () => ({
           evmAddress: walletRef.current.evmAddress,
           solanaAddress: walletRef.current.solanaAddress,
           approvedChainIds: walletRef.current.approvedChainIds,
         }),
       }),
-    []
+    [apiBaseUrl]
   )
 
   const chat = useChat({
-    id: urlConversationId,
+    id: conversationId,
     transport,
     onError: error => {
       console.error('[Chat Error]', {
@@ -84,11 +127,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
       })
     },
     onFinish: ({ messages }) => {
-      if (!messages || messages.length === 0 || !urlConversationId) return
+      if (!messages || messages.length === 0 || !conversationId) return
 
-      const title = extractTitleFromMessages(messages, conversations, urlConversationId)
-      storeConversation(urlConversationId, title)
-      saveMessages(urlConversationId, messages)
+      const title = extractTitleFromMessages(messages, conversations, conversationId)
+      storeConversation(conversationId, title)
+      messageStorage.saveMessages(conversationId, messages)
     },
   })
 
@@ -96,15 +139,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const lastLoadedIdRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
-    if (!urlConversationId) {
-      const newId = generateConversationId()
-      void navigate(`/chats/${newId}`, { replace: true })
-    }
-  }, [urlConversationId, navigate])
-
-  useEffect(() => {
-    if (urlConversationId && urlConversationId !== lastLoadedIdRef.current) {
-      const messages = loadMessages(urlConversationId)
+    if (conversationId && conversationId !== lastLoadedIdRef.current) {
+      const messages = messageStorage.loadMessages(conversationId)
       setMessages(messages)
 
       const toolCallIds = messages.flatMap(message =>
@@ -120,10 +156,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
         markAsHistorical(toolCallIds)
       }
 
-      lastLoadedIdRef.current = urlConversationId
+      lastLoadedIdRef.current = conversationId
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlConversationId])
+  }, [conversationId, setMessages, clearHistoricalTools, markAsHistorical, messageStorage])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value)
@@ -137,8 +172,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
       const messageToSend = input
       setInput('')
 
-      analytics.trackChatMessage()
-
       await chat.sendMessage({
         text: messageToSend,
       })
@@ -146,28 +179,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
     [input, chat]
   )
 
-  const createNewConversation = useCallback(() => {
-    const newId = generateConversationId()
-    void navigate(`/chats/${newId}`)
-  }, [navigate])
-
-  const switchConversation = useCallback(
-    (conversationId: string) => {
-      void navigate(`/chats/${conversationId}`)
-    },
-    [navigate]
-  )
-
   const handleDeleteConversation = useCallback(
     (conversationId: string) => {
       storeDeleteConversation(conversationId)
-
-      if (conversationId === urlConversationId) {
-        const newId = generateConversationId()
-        void navigate(`/chats/${newId}`)
-      }
+      onConversationDelete?.(conversationId)
     },
-    [urlConversationId, navigate, storeDeleteConversation]
+    [storeDeleteConversation, onConversationDelete]
   )
 
   const handleSubmitCallback = useCallback(
@@ -194,9 +211,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       stop: stopCallback,
       error: chat.error,
       conversations,
-      activeConversationId: urlConversationId || null,
-      createNewConversation,
-      switchConversation,
+      activeConversationId: conversationId || null,
       deleteConversation: handleDeleteConversation,
     }),
     [
@@ -209,9 +224,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       handleSubmitCallback,
       stopCallback,
       conversations,
-      urlConversationId,
-      createNewConversation,
-      switchConversation,
+      conversationId,
       handleDeleteConversation,
     ]
   )

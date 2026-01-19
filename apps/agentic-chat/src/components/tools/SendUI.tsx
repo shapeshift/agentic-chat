@@ -1,8 +1,8 @@
 import type { SendOutput } from '@shapeshiftoss/agentic-server'
+import { useChatStore } from '@shapeshiftoss/chat'
 
 import { StepStatus, useSendExecution } from '@/hooks/useSendExecution'
 import { firstFourLastFour } from '@/lib/utils'
-import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'

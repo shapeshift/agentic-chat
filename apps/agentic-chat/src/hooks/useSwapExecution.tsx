@@ -3,6 +3,15 @@ import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core
 import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
+import type { PersistedToolState } from '@shapeshiftoss/chat'
+import {
+  createStepPhaseMap,
+  getStepStatus,
+  StepStatus,
+  useChatContext,
+  useChatStore,
+  useToolExecutionEffect,
+} from '@shapeshiftoss/chat'
 import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
@@ -11,15 +20,10 @@ import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
-import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
-import { useChatContext } from '@/providers/ChatProvider'
-import type { PersistedToolState } from '@/stores/chatStore'
-import { useChatStore } from '@/stores/chatStore'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 
-import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
 type SwapData = InitiateSwapOutput
