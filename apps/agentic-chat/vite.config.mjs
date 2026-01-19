@@ -8,7 +8,6 @@ export default defineConfig(() => ({
     cacheDir: resolve(__dirname, '../../node_modules/.vite/agentic-chat'),
     define: {
         global: 'globalThis',
-        'process.env': {},
     },
     server: {
         port: 4200,
