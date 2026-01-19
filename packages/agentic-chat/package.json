@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "rm -rf dist && tsc --build",
+    "build": "rm -rf dist && tsc --build && find dist -name '*.tsbuildinfo' -delete",
     "dev": "tsc --build --watch --preserveWatchOutput",
     "type-check": "tsc --noEmit",
     "prepublishOnly": "npm run build"
