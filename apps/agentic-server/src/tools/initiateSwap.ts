@@ -23,7 +23,11 @@ interface ResolvedAssets {
   buyAsset: Asset
 }
 
-async function resolveSwapAssets(sellAssetInput: AssetInput, buyAssetInput: AssetInput): Promise<ResolvedAssets> {
+async function resolveSwapAssets(
+  sellAssetInput: AssetInput,
+  buyAssetInput: AssetInput,
+  walletContext?: WalletContext
+): Promise<ResolvedAssets> {
   // If only one network is specified, default to same-chain swap
   const sellInputWithNetwork = {
     ...sellAssetInput,
@@ -35,8 +39,8 @@ async function resolveSwapAssets(sellAssetInput: AssetInput, buyAssetInput: Asse
   }
 
   const [sellAsset, buyAsset] = await Promise.all([
-    resolveAsset(sellInputWithNetwork),
-    resolveAsset(buyInputWithNetwork),
+    resolveAsset(sellInputWithNetwork, walletContext),
+    resolveAsset(buyInputWithNetwork, walletContext),
   ])
 
   return { sellAsset, buyAsset }
@@ -207,7 +211,7 @@ async function executeSwapInternal({
     throw new Error('Sell amount must be a positive number')
   }
 
-  const { sellAsset, buyAsset } = await resolveSwapAssets(sellAssetInput, buyAssetInput)
+  const { sellAsset, buyAsset } = await resolveSwapAssets(sellAssetInput, buyAssetInput, walletContext)
 
   const sellAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const buyAddress = getAddressForChain(walletContext, buyAsset.chainId)
@@ -324,7 +328,7 @@ export async function executeInitiateSwapUsd(
     throw new Error('USD amount must be a positive number')
   }
 
-  const sellAsset = await resolveAsset(sellAssetInput)
+  const sellAsset = await resolveAsset(sellAssetInput, walletContext)
   const sellAssetPrice = parseFloat(sellAsset.price || '0')
 
   if (sellAssetPrice <= 0) {

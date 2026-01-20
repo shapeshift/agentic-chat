@@ -25,8 +25,6 @@ export type GetAccountOutput = {
 }
 
 export async function executeGetAccount(input: GetAccountInput): Promise<GetAccountOutput> {
-  console.log('[lookupExternalAddress]:', input)
-
   const { address: account, network } = input
   const chainId = networkToChainIdMap[network]
 

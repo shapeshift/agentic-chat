@@ -24,8 +24,8 @@ const SOLANA_RPC_URL = (() => {
 export async function executeSend(input: SendInput, walletContext?: WalletContext): Promise<SendOutput> {
   console.log('[send]:', input)
 
-  // 1. Resolve asset
-  const asset = await resolveAsset(input.asset)
+  // 1. Resolve asset (prioritize tokens user owns)
+  const asset = await resolveAsset(input.asset, walletContext)
 
   // 2. Get sender address
   const from = getAddressForChain(walletContext, asset.chainId)

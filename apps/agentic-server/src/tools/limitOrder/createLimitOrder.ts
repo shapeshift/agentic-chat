@@ -118,8 +118,8 @@ export async function executeCreateLimitOrder(
 
   // Resolve assets on the specified network
   const [sellAsset, buyAsset] = await Promise.all([
-    resolveAsset({ symbolOrName: input.sellAsset, network: input.network }),
-    resolveAsset({ symbolOrName: input.buyAsset, network: input.network }),
+    resolveAsset({ symbolOrName: input.sellAsset, network: input.network }, walletContext),
+    resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
 
   // Get numeric chain ID directly from network (Zod schema guarantees valid network)

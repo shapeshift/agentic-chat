@@ -8,7 +8,7 @@ import type { WalletContext } from '../utils/walletContextSimple'
 export async function executeReceive(input: ReceiveInput, walletContext?: WalletContext): Promise<ReceiveOutput> {
   console.log('[receive]:', input)
 
-  const asset = await resolveAsset(input.asset)
+  const asset = await resolveAsset(input.asset, walletContext)
 
   if (!supportsTxOperations(asset.chainId)) {
     throw new Error(
