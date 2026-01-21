@@ -10,15 +10,15 @@ export interface SwapActivityDetails {
   sellAsset: {
     symbol: string
     amount: string
-    valueUSD: string
+    valueUSD: string | null
   }
   buyAsset: {
     symbol: string
     amount: string
-    valueUSD: string
+    valueUSD: string | null
   }
   dex: string
-  fee?: string
+  fee?: string | null
   approval?: {
     txHash: string
     spender: string
@@ -32,7 +32,7 @@ export interface SendActivityDetails {
   }
   from: string
   to: string
-  fee?: string
+  fee?: string | null
   feeSymbol?: string
 }
 
