@@ -97,7 +97,7 @@ function createSendSummary(
   txResult: { tx: TransactionData; needsAtaCreation?: boolean }
 ): SendSummary {
   const assetPrice = parseFloat(asset.price || '0')
-  const valueUSD = assetPrice > 0 ? `$${(parseFloat(amount) * assetPrice).toFixed(2)}` : undefined
+  const valueUSD = assetPrice > 0 ? (parseFloat(amount) * assetPrice).toFixed(2) : null
 
   const feeSymbol = networkToFeeSymbol[asset.network] || asset.symbol.toUpperCase()
   const estimatedFeeCrypto = formatEstimatedFee(asset.chainId, isNativeToken(asset), txResult.needsAtaCreation)

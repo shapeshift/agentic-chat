@@ -21,7 +21,7 @@ export const sendSummarySchema = z.object({
   chainName: z.string(),
   estimatedFeeCrypto: z.string(),
   estimatedFeeSymbol: z.string(),
-  estimatedFeeUsd: z.string().optional(),
+  estimatedFeeUsd: z.string().nullable().optional(),
   ataCreation: z.boolean().optional(), // Solana-specific
 })
 
