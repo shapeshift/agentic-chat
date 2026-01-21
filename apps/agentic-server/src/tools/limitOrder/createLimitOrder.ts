@@ -9,7 +9,7 @@ import { COW_VAULT_RELAYER_ADDRESS, prepareCowLimitOrder } from '../../lib/cow'
 import type { CowOrderSigningData } from '../../lib/cow/types'
 import { getCowExplorerUrl, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getAllowance } from '../../utils'
-import { resolveAsset } from '../../utils/assetHelpers'
+import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { createTransaction } from '../../utils/transactionHelpers'
 import { getAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
@@ -128,17 +128,9 @@ export async function executeCreateLimitOrder(
   // Get user address for this chain
   const userAddress = getAddressForChain(walletContext, sellAsset.chainId)
 
-  // Get token addresses
-  const sellTokenAddress = fromAssetId(sellAsset.assetId).assetReference
-  const buyTokenAddress = fromAssetId(buyAsset.assetId).assetReference
-
-  // Native token handling - CoW Protocol requires ERC20 tokens for selling
-  const NATIVE_TOKEN_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
-  // CoW Protocol uses this marker address to indicate native asset as buy token
-  const COW_NATIVE_ASSET_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
-
-  const isNativeSellToken = sellTokenAddress.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase()
-  const isNativeBuyToken = buyTokenAddress.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase()
+  // Native token validation - CoW Protocol requires ERC20 tokens for selling
+  const isNativeSellToken = isNativeToken(sellAsset)
+  const isNativeBuyToken = isNativeToken(buyAsset)
 
   // Block native token as sell asset - CoW requires ERC20 tokens for selling
   if (isNativeSellToken) {
@@ -149,6 +141,13 @@ export async function executeCreateLimitOrder(
         `or select W${nativeSymbol} as the sell asset.`
     )
   }
+
+  // Get token addresses after validation
+  const sellTokenAddress = fromAssetId(sellAsset.assetId).assetReference
+  const buyTokenAddress = fromAssetId(buyAsset.assetId).assetReference
+
+  // CoW Protocol uses this marker address to indicate native asset as buy token
+  const COW_NATIVE_ASSET_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 
   const sellToken = sellTokenAddress
 
