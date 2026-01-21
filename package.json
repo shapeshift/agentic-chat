@@ -11,7 +11,7 @@
     "clean": "rm -rf node_modules packages/*/dist apps/*/dist",
     "build": "tsc --build && bun run --filter './apps/*' build",
     "build:chat": "tsc --build && bun --filter @shapeshiftoss/agentic-chat build",
-    "build:server": "tsc --build && bun --filter @shapeshiftoss/agentic-server build",
+    "build:server": "tsc --build apps/agentic-server/tsconfig.json && bun --filter @shapeshiftoss/agentic-server build",
     "dev": "tsc --build && bun run --filter './apps/*' dev",
     "dev:backend": "tsc --build && bun --filter @shapeshiftoss/agentic-server --elide-lines=0 dev",
     "dev:frontend": "tsc --build && bun --filter @shapeshiftoss/agentic-chat dev",
