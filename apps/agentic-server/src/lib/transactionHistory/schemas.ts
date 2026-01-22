@@ -271,7 +271,7 @@ export const transactionHistoryToolInput = z.object({
     .union([z.boolean(), z.number().int().min(0)])
     .optional()
     .describe(
-      'Controls which transactions to display as UI cards. true (default): display all transactions; false: display none (text response only); number: display first N transactions (e.g., 1 for "show me the last..."). Only applies when includeTransactions is true.'
+      'Controls which transactions to display as UI cards. IMPORTANT: Set this based on user intent - true/undefined: display all (use for "show all transactions"); false: display none (text-only analysis); number: display first N (use 1 for "last transaction", 3-5 for "recent transactions"). Prevents UI crashes by limiting rendered cards. Only applies when includeTransactions is true.'
     ),
 })
 

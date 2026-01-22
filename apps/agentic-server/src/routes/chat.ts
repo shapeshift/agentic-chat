@@ -223,6 +223,14 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
 **Tool UI Behavior:**
 Many tools render UI cards. Each tool's description specifies what the card displays. Your role is to supplement cards with brief, natural responses - never repeat or list data already shown in the card.
 
+**Transaction History Tool Optimization:**
+When using transactionHistoryTool, always set the renderTransactions parameter based on user intent:
+- "last transaction" / "most recent tx" → renderTransactions: 1
+- "last 3 transactions" / "recent txs" → renderTransactions: 3-5
+- "all transactions" / large queries → renderTransactions: 10-20 (reasonable limit)
+- Aggregation queries (counts, sums) → renderTransactions: false (no UI cards)
+This prevents UI crashes from rendering hundreds of transaction cards.
+
 **Swap Workflow:**
 1. Determine if user specified crypto token amount or USD value amount
 2. Use initiateSwap for crypto token amounts (e.g., "1 SOL", "0.5 ETH", "100 FOX", "50 USDC")
