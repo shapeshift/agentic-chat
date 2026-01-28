@@ -117,7 +117,7 @@ export async function executeGetAssets(input: GetAssetsInput): Promise<GetAssets
 }
 
 export const getAssetsTool = {
-  description: `Get asset market data.
+  description: `Show detailed market data for an asset. Displays a comprehensive UI card with market information. For price-only lookups, use getAssetPrices (no UI card).
 
 METHODS (pick one):
 - SEARCH: { searchTerm, network?, assetType?, pools? }
@@ -132,8 +132,16 @@ Native assets are prioritized when symbol matches both native and token.
 Use assetType: "token" for wrapped versions (e.g., "wrapped xDAI on gnosis").
 Use pools: "only" for LP pool queries.
 
-UI CARD DISPLAYS: name, symbol, price, 24h change, market cap, volume, supply.
-Supplement the card, don't duplicate it.`,
+UI CARD DISPLAYS: name, symbol, price, 24h change, market cap, volume, supply, sentiment, description.
+
+Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+
+Default: Respond with one brief, natural sentence like:
+- "Here's the market data for X"
+- "I found the details for X"
+- "Check out X's current stats"
+
+Only elaborate if the user asks about something not shown in the card.`,
   inputSchema: getAssetsSchema,
   execute: executeGetAssets,
 }

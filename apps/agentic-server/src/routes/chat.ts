@@ -17,6 +17,7 @@ import { supportedChainsContext } from '../context'
 import { getModel, getProviderName } from '../models'
 import { lookupExternalAddressTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
+import { getAssetPricesTool } from '../tools/getAssetPrices'
 import { getAssetsTool } from '../tools/getAssets'
 import { getCategoriesTool } from '../tools/getCategories'
 import { getNewCoinsTool } from '../tools/getNewCoins'
@@ -96,6 +97,7 @@ function buildTools(walletContext: WalletContext) {
     // Tools without wallet context
     mathCalculatorTool: wrapTool('mathCalculatorTool', mathCalculator),
     getAssetsTool: wrapTool('getAssetsTool', getAssetsTool),
+    getAssetPricesTool: wrapTool('getAssetPricesTool', getAssetPricesTool),
     lookupExternalAddress: wrapTool('lookupExternalAddress', lookupExternalAddressTool),
     switchNetworkTool: wrapTool('switchNetworkTool', switchNetworkTool),
     getShapeShiftKnowledgeTool: wrapTool('getShapeShiftKnowledgeTool', getShapeShiftKnowledgeTool),
@@ -215,7 +217,10 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
 - You only need to specify networks and assets - never addresses
 
 **Tool Categories:**
-- **Market Data**: getAssets (prices/market data), getTrendingTokens, getTopGainersLosers, getNewCoins, getCategories, getTrendingPools
+- **Market Data**:
+  - getAssetPrices: Quick price lookups (no UI card) - use when user asks "what's the price of X?" or you need prices for calculations
+  - getAssets: Detailed market data with UI card - use when user wants comprehensive info (volume, market cap, sentiment, etc.)
+  - getTrendingTokens, getTopGainersLosers, getNewCoins, getCategories, getTrendingPools
 - **Portfolio**: portfolio (balances), transactionHistoryTool (history/analytics)
 - **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders)
 - **Utilities**: switchNetwork (change chains), mathCalculator (arithmetic), getShapeShiftKnowledge (platform info)

@@ -9,6 +9,12 @@ export {
   type AssetWithMarketData,
 } from './tools/getAssets'
 export {
+  getAssetPricesTool,
+  executeGetAssetPrices,
+  type GetAssetPricesInput,
+  type GetAssetPricesOutput,
+} from './tools/getAssetPrices'
+export {
   lookupExternalAddressTool,
   executeGetAccount,
   type GetAccountInput,
