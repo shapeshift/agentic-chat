@@ -79,20 +79,30 @@ class AssetService {
     const name = asset.name.toLowerCase()
     const isNative = asset.assetId.includes('/slip44:')
 
-    // Exact symbol match (highest) - native tokens get a small bonus as tiebreaker
-    // Add bonus if name also matches exactly
-    if (symbol === term) return (isNative ? 1001 : 1000) + (name === term ? 500 : 0)
+    let score = 0
 
-    // Exact name match
-    if (name === term) return 500
+    // Symbol matches (mutually exclusive within this group)
+    if (symbol === term) {
+      score += 1000
+    } else if (symbol.startsWith(term)) {
+      score += 500
+    } else if (symbol.includes(term)) {
+      score += 300 - Math.min(symbol.length, 50)
+    }
 
-    // Symbol contains - shorter symbols rank higher (closer match)
-    if (symbol.includes(term)) return 400 - symbol.length
+    // Name matches (cumulative with symbol!)
+    if (name === term) {
+      score += 500
+    } else if (name.startsWith(term)) {
+      score += 250
+    } else if (name.includes(term)) {
+      score += 150 - Math.min(name.length, 50)
+    }
 
-    // Name contains - shorter names rank higher
-    if (name.includes(term)) return 200 - name.length
+    // Additional signals (all cumulative)
+    if (isNative) score += 100
 
-    return 0
+    return score
   }
 
   searchByName(rawName: string, network?: Network): StaticAsset[] {
@@ -113,7 +123,7 @@ class AssetService {
     return results
   }
 
-  search(rawTerm: string, network?: Network): StaticAsset[] {
+  searchWithScores(rawTerm: string, network?: Network): Array<{ asset: StaticAsset; score: number }> {
     const term = rawTerm.toLowerCase()
     const symbolResults = this.searchBySymbol(term, network)
     const nameResults = this.searchByName(term, network)
@@ -126,7 +136,10 @@ class AssetService {
     return Array.from(resultMap.values())
       .map(asset => ({ asset, score: this.scoreMatch(asset, term) }))
       .sort((a, b) => b.score - a.score)
-      .map(({ asset }) => asset)
+  }
+
+  search(rawTerm: string, network?: Network): StaticAsset[] {
+    return this.searchWithScores(rawTerm, network).map(({ asset }) => asset)
   }
 
   searchByContract(rawContractAddress: string, network?: Network): StaticAsset[] {

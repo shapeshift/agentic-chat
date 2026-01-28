@@ -9,34 +9,43 @@ import { executeGetAccount } from '../tools/getAccount'
 import { getAddressForChain } from './walletContextSimple'
 import type { WalletContext } from './walletContextSimple'
 
-export async function resolveAsset(assetInput: AssetInput, walletContext?: WalletContext): Promise<Asset> {
-  const assets = assetService.search(assetInput.symbolOrName, assetInput.network)
+const OWNERSHIP_BONUS = 100
 
-  if (!assets || assets.length === 0) {
+export async function resolveAsset(assetInput: AssetInput, walletContext?: WalletContext): Promise<Asset> {
+  const scoredAssets = assetService.searchWithScores(assetInput.symbolOrName, assetInput.network)
+
+  if (!scoredAssets || scoredAssets.length === 0) {
     throw new Error(
       `No asset found for "${assetInput.symbolOrName}"${assetInput.network ? ` on ${assetInput.network}` : ''}`
     )
   }
 
-  // If user has wallet connected and there are multiple matches, prioritize tokens they own
-  let staticAsset = assets[0]!
+  let selectedResult = scoredAssets[0]!
 
-  if (walletContext && assets.length > 1) {
+  if (walletContext && scoredAssets.length > 1) {
     try {
-      const address = getAddressForChain(walletContext, staticAsset.chainId)
-      const network = chainIdToNetwork[staticAsset.chainId]
+      const address = getAddressForChain(walletContext, selectedResult.asset.chainId)
+      const network = chainIdToNetwork[selectedResult.asset.chainId]
       if (network) {
         const accountData = await executeGetAccount({ address, network })
 
-        // Find first asset the user owns
-        const ownedAsset = assets.find(asset => {
+        const withOwnershipBonus = scoredAssets.map(({ asset, score }) => {
           const balance = accountData.balances[asset.assetId]
-          return balance && BigInt(balance) > 0n
+          const hasBalance = balance && BigInt(balance) > 0n
+          const finalScore = score + (hasBalance ? OWNERSHIP_BONUS : 0)
+
+          return { asset, baseScore: score, finalScore, hasBalance }
         })
 
-        if (ownedAsset) {
-          console.log(`[resolveAsset] Prioritizing owned asset: ${ownedAsset.assetId} (user has balance)`)
-          staticAsset = ownedAsset
+        withOwnershipBonus.sort((a, b) => b.finalScore - a.finalScore)
+
+        const topMatch = withOwnershipBonus[0]!
+        selectedResult = { asset: topMatch.asset, score: topMatch.finalScore }
+
+        if (topMatch.hasBalance) {
+          console.log(
+            `[resolveAsset] Selected owned asset: ${topMatch.asset.assetId} (base: ${topMatch.baseScore}, bonus: ${OWNERSHIP_BONUS}, final: ${topMatch.finalScore})`
+          )
         }
       }
     } catch {
@@ -44,12 +53,12 @@ export async function resolveAsset(assetInput: AssetInput, walletContext?: Walle
     }
   }
 
-  const [priceResult] = await getAssetPrices([staticAsset.assetId])
+  const [priceResult] = await getAssetPrices([selectedResult.asset.assetId])
 
   return {
-    ...staticAsset,
+    ...selectedResult.asset,
     price: priceResult?.price ?? '0',
-    network: assetInput.network ?? chainIdToNetwork[staticAsset.chainId] ?? '',
+    network: assetInput.network ?? chainIdToNetwork[selectedResult.asset.chainId] ?? '',
   }
 }
 
