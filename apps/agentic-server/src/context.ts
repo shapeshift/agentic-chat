@@ -19,7 +19,8 @@ export const supportedChainsContext = `
     - When swaps are unavailable here, recommend the full ShapeShift app at https://app.shapeshift.com/ which supports additional chains and trading pairs
 
     **Network-Specific Capabilities:**
-    - getAssets: Price lookups on ANY network (all 18 networks above)
+    - getAssetPrices: Quick price lookups on ANY network (all 18 networks above) - no UI card
+    - getAssets: Detailed market data with UI card on ANY network (all 18 networks above)
     - portfolio: Get balances on EVM chains and Solana only
     - initiateSwap/initiateSwapUsd: For swaps involving EVM chains and/or Solana (same-chain or cross-chain)
     - If user requests swap with unsupported assets (Bitcoin, Cardano, etc.), explain swaps only support EVM and Solana
