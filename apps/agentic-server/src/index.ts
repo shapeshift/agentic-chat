@@ -67,6 +67,12 @@ export {
   type SwitchNetworkInput,
   type SwitchNetworkOutput,
 } from './tools/switchNetwork'
+export {
+  checkWalletCapabilitiesTool,
+  executeCheckWalletCapabilities,
+  type CheckWalletCapabilitiesInput,
+  type CheckWalletCapabilitiesOutput,
+} from './tools/checkWalletCapabilities'
 export { sendTool, executeSend, type SendInput, type SendOutput } from './tools/send'
 export { receiveTool, executeReceive, type ReceiveInput, type ReceiveOutput } from './tools/receive'
 export {

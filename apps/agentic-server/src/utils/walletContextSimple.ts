@@ -3,6 +3,7 @@ import { networkToChainIdMap } from '@shapeshiftoss/types'
 
 export interface WalletContext {
   connectedWallets?: Record<string, { address: string }>
+  hasEmbeddedWallet?: boolean
 }
 
 export function getAddressForNetwork(walletContext: WalletContext | undefined, network: Network): string {

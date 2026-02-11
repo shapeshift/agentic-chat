@@ -55,6 +55,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
           evmAddress: walletRef.current.evmAddress,
           solanaAddress: walletRef.current.solanaAddress,
           approvedChainIds: walletRef.current.approvedChainIds,
+          hasEmbeddedWallet: walletRef.current.hasEmbeddedWallet,
         }),
       }),
     []

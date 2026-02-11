@@ -22,7 +22,11 @@ export const analytics = {
   },
 
   // Track wallet connection
-  trackWalletConnect: (props: { address: string; walletType: 'evm' | 'solana' }) => {
+  trackWalletConnect: (props: {
+    address: string
+    walletType: 'evm' | 'solana'
+    walletCategory?: 'embedded' | 'external'
+  }) => {
     if (!analyticsEnabled) return
     mixpanel.track('Wallet Connect', props)
   },

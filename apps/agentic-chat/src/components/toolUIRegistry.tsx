@@ -2,6 +2,7 @@ import type { DynamicToolUIPart } from 'ai'
 import type { ComponentType } from 'react'
 
 import { CancelLimitOrderUI } from './tools/CancelLimitOrderUI'
+import { CheckWalletCapabilitiesUI } from './tools/CheckWalletCapabilitiesUI'
 import { GetAccountUI } from './tools/GetAccountUI'
 import { GetAllowanceUI } from './tools/GetAllowanceUI'
 import { GetAssetsUI } from './tools/GetAssetsUI'
@@ -41,6 +42,7 @@ export const TOOL_UI_REGISTRY: Record<string, ToolUIComponent> = {
   createLimitOrderTool: LimitOrderUI,
   getLimitOrdersTool: GetLimitOrdersUI,
   cancelLimitOrderTool: CancelLimitOrderUI,
+  checkWalletCapabilitiesTool: CheckWalletCapabilitiesUI,
 } as const
 
 export function getToolUIComponent(toolName: string): ToolUIComponent | undefined {

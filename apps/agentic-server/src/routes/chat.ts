@@ -15,6 +15,7 @@ import type { Context } from 'hono'
 
 import { supportedChainsContext } from '../context'
 import { getModel, getProviderName } from '../models'
+import { checkWalletCapabilitiesTool } from '../tools/checkWalletCapabilities'
 import { lookupExternalAddressTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetPricesTool } from '../tools/getAssetPrices'
@@ -63,7 +64,12 @@ function wrapTool<TSchema, TExecute extends (args: never, walletContext?: Wallet
   }
 }
 
-function buildWalletContext(evmAddress?: string, solanaAddress?: string, approvedChainIds?: string[]): WalletContext {
+function buildWalletContext(
+  evmAddress?: string,
+  solanaAddress?: string,
+  approvedChainIds?: string[],
+  hasEmbeddedWallet?: boolean
+): WalletContext {
   const connectedWallets: Record<string, { address: string }> = {}
 
   // Add EVM wallet - same address works across all EVM chains
@@ -89,7 +95,7 @@ function buildWalletContext(evmAddress?: string, solanaAddress?: string, approve
     }
   }
 
-  return { connectedWallets }
+  return { connectedWallets, hasEmbeddedWallet }
 }
 
 function buildTools(walletContext: WalletContext) {
@@ -100,6 +106,7 @@ function buildTools(walletContext: WalletContext) {
     getAssetPricesTool: wrapTool('getAssetPricesTool', getAssetPricesTool),
     lookupExternalAddress: wrapTool('lookupExternalAddress', lookupExternalAddressTool),
     switchNetworkTool: wrapTool('switchNetworkTool', switchNetworkTool),
+    checkWalletCapabilitiesTool: wrapTool('checkWalletCapabilitiesTool', checkWalletCapabilitiesTool, walletContext),
     getShapeShiftKnowledgeTool: wrapTool('getShapeShiftKnowledgeTool', getShapeShiftKnowledgeTool),
     getTrendingTokensTool: wrapTool('getTrendingTokensTool', getTrendingTokensTool),
     getTopGainersLosersTool: wrapTool('getTopGainersLosersTool', getTopGainersLosersTool),
@@ -267,6 +274,13 @@ Examples:
 - Use cancelLimitOrder to cancel pending orders
 - Orders auto-execute when market price reaches limit
 
+**Embedded Wallets & Automation:**
+- Users can connect external wallets (MetaMask, etc.) OR create an embedded wallet (email/social login)
+- Embedded wallets are self-custodial MPC wallets - no seed phrase, social recovery available
+- When users ask about automated features (TWAP, DCA, stop-loss, scheduled trades), call checkWalletCapabilitiesTool
+- If user has only external wallet and wants automation, explain embedded wallet benefits conversationally
+- Never pressure users to switch - external wallets work for all non-automation features
+
 **Error Handling:**
 - Insufficient balance → Show exact shortage amount
 - No rates available → "Route not supported or amount too small"
@@ -284,15 +298,16 @@ Examples:
 export async function handleChatRequest(c: Context) {
   try {
     const body = await c.req.json()
-    const { messages, evmAddress, solanaAddress, approvedChainIds } = body as {
+    const { messages, evmAddress, solanaAddress, approvedChainIds, hasEmbeddedWallet } = body as {
       messages: unknown
       evmAddress?: string
       solanaAddress?: string
       approvedChainIds?: string[]
+      hasEmbeddedWallet?: boolean
     }
 
     // Build wallet context from addresses (filtered by approved chains if provided)
-    const walletContext = buildWalletContext(evmAddress, solanaAddress, approvedChainIds)
+    const walletContext = buildWalletContext(evmAddress, solanaAddress, approvedChainIds, hasEmbeddedWallet)
 
     // Convert UIMessages to ModelMessages
     const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])

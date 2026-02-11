@@ -5,27 +5,29 @@ import { analytics } from '@/lib/mixpanel'
 import { useWalletConnection } from './useWalletConnection'
 
 export function useWalletAnalytics() {
-  const { evmAddress, solanaAddress } = useWalletConnection()
+  const { evmAddress, solanaAddress, hasEmbeddedWallet } = useWalletConnection()
   const prevEvmAddress = useRef<string | undefined>(undefined)
   const prevSolanaAddress = useRef<string | undefined>(undefined)
 
   useEffect(() => {
+    const walletCategory = hasEmbeddedWallet ? 'embedded' : 'external'
     // Track EVM wallet connection
     if (evmAddress && evmAddress !== prevEvmAddress.current) {
-      analytics.identify(evmAddress, { walletType: 'evm' })
-      analytics.trackWalletConnect({ address: evmAddress, walletType: 'evm' })
+      analytics.identify(evmAddress, { walletType: 'evm', walletCategory })
+      analytics.trackWalletConnect({ address: evmAddress, walletType: 'evm', walletCategory })
     }
     prevEvmAddress.current = evmAddress
-  }, [evmAddress])
+  }, [evmAddress, hasEmbeddedWallet])
 
   useEffect(() => {
+    const walletCategory = hasEmbeddedWallet ? 'embedded' : 'external'
     // Track Solana wallet connection
     if (solanaAddress && solanaAddress !== prevSolanaAddress.current) {
-      analytics.identify(solanaAddress, { walletType: 'solana' })
-      analytics.trackWalletConnect({ address: solanaAddress, walletType: 'solana' })
+      analytics.identify(solanaAddress, { walletType: 'solana', walletCategory })
+      analytics.trackWalletConnect({ address: solanaAddress, walletType: 'solana', walletCategory })
     }
     prevSolanaAddress.current = solanaAddress
-  }, [solanaAddress])
+  }, [solanaAddress, hasEmbeddedWallet])
 
   useEffect(() => {
     // Reset analytics when both wallets disconnect
