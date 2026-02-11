@@ -1,7 +1,7 @@
-import { useDynamicContext, useEmbeddedWallet } from '@dynamic-labs/sdk-react-core'
+import { useDynamicContext, useDynamicModals } from '@dynamic-labs/sdk-react-core'
 import type { CheckWalletCapabilitiesOutput } from '@shapeshiftoss/agentic-server'
 import { Check, Lock, Shield } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 
 import { Button } from '../ui/Button'
 import { StatusText } from '../ui/StatusText'
@@ -20,22 +20,11 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
   const { state, output, errorText } = toolPart
   const capabilitiesOutput = output as CheckWalletCapabilitiesOutput | undefined
   const { setShowAuthFlow } = useDynamicContext()
-  const { createEmbeddedWallet, userHasEmbeddedWallet } = useEmbeddedWallet()
-  const [isCreating, setIsCreating] = useState(false)
-  const [createError, setCreateError] = useState<string | null>(null)
+  const { setShowLinkNewWalletModal } = useDynamicModals()
 
-  const handleCreateEmbeddedWallet = useCallback(async () => {
-    if (userHasEmbeddedWallet()) return
-    setIsCreating(true)
-    setCreateError(null)
-    try {
-      await createEmbeddedWallet()
-    } catch (err) {
-      setCreateError(err instanceof Error ? err.message : 'Failed to create embedded wallet')
-    } finally {
-      setIsCreating(false)
-    }
-  }, [createEmbeddedWallet, userHasEmbeddedWallet])
+  const handleLinkEmbeddedWallet = useCallback(() => {
+    setShowLinkNewWalletModal(true)
+  }, [setShowLinkNewWalletModal])
 
   const handleConnect = useCallback(() => {
     setShowAuthFlow(true)
@@ -85,20 +74,13 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
               <div className="flex items-start gap-2">
                 <Lock className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-blue-200">
-                  Automated trading features (TWAP, DCA, stop-loss) require an embedded wallet. Create one with email or
+                  Automated trading features (TWAP, DCA, stop-loss) require an embedded wallet. Link one with email or
                   social login — it's self-custodial with no seed phrase.
                 </div>
               </div>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => void handleCreateEmbeddedWallet()}
-                disabled={isCreating}
-                className="w-full"
-              >
-                {isCreating ? 'Creating...' : 'Create Embedded Wallet'}
+              <Button variant="default" size="sm" onClick={handleLinkEmbeddedWallet} className="w-full">
+                Link Embedded Wallet
               </Button>
-              {createError && <div className="text-xs text-red-400">{createError}</div>}
             </div>
           )}
 
