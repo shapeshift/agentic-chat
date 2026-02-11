@@ -1,26 +1,23 @@
 import type { GetStopLossOrdersOutput } from '@shapeshiftoss/agentic-server'
 import type { Clock } from 'lucide-react'
-import { ExternalLink, CheckCircle, XCircle, AlertCircle, AlertTriangle, Eye, Loader } from 'lucide-react'
+import { ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
 
 import { stopPropagationHandler } from '@/lib/eventHandlers'
 import { cn } from '@/lib/utils'
 
-import { Amount } from '../ui/Amount'
 import { ToolCard } from '../ui/ToolCard'
 
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-type StopLossOrderStatus = 'pending' | 'triggered' | 'submitted' | 'filled' | 'cancelled' | 'failed' | 'expired'
+type StopLossOrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired' | 'presignaturePending'
 
 const STATUS_CONFIG: Record<StopLossOrderStatus, { icon: typeof Clock; label: string; className: string }> = {
-  pending: { icon: Eye, label: 'Monitoring', className: 'text-blue-500' },
-  triggered: { icon: AlertTriangle, label: 'Triggered', className: 'text-yellow-500' },
-  submitted: { icon: Loader, label: 'Submitted', className: 'text-orange-500' },
-  filled: { icon: CheckCircle, label: 'Filled', className: 'text-green-500' },
+  open: { icon: Eye, label: 'Active', className: 'text-blue-500' },
+  fulfilled: { icon: CheckCircle, label: 'Filled', className: 'text-green-500' },
   cancelled: { icon: XCircle, label: 'Cancelled', className: 'text-red-500' },
-  failed: { icon: AlertCircle, label: 'Failed', className: 'text-red-500' },
   expired: { icon: AlertCircle, label: 'Expired', className: 'text-muted-foreground' },
+  presignaturePending: { icon: Eye, label: 'Pending', className: 'text-yellow-500' },
 }
 
 function isValidStatus(status: string): status is StopLossOrderStatus {
@@ -28,7 +25,7 @@ function isValidStatus(status: string): status is StopLossOrderStatus {
 }
 
 function OrderStatusBadge({ status }: { status: StopLossOrderStatus }) {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.open
   const Icon = config.icon
 
   return (
@@ -43,69 +40,46 @@ interface StopLossOrderItemProps {
   id: string
   status: StopLossOrderStatus
   network: string
-  sellTokenSymbol: string
-  buyTokenSymbol: string
+  sellToken: string
+  buyToken: string
   sellAmount: string
-  triggerPrice: string
-  expiresAt: string
-  cowTrackingUrl: string | null
-  errorMessage: string | null
+  validTo: number
+  cowTrackingUrl: string
 }
 
-function StopLossOrderItem({
-  status,
-  network,
-  sellTokenSymbol,
-  buyTokenSymbol,
-  sellAmount,
-  triggerPrice,
-  expiresAt,
-  cowTrackingUrl,
-  errorMessage,
-}: StopLossOrderItemProps) {
-  const isActive = status === 'pending'
+function StopLossOrderItem({ status, network, sellToken, buyToken, validTo, cowTrackingUrl }: StopLossOrderItemProps) {
+  const isActive = status === 'open' || status === 'presignaturePending'
+  const expiresDate = new Date(validTo * 1000)
 
   return (
     <div className="flex items-center justify-between py-3 px-1 gap-4">
       <div className="flex flex-col gap-1 min-w-0 flex-1">
         <div className="flex items-center gap-2 text-sm">
-          <span>
-            Sell <Amount.Crypto value={sellAmount} symbol={sellTokenSymbol} className="font-medium" />
-          </span>
+          <span className="font-medium truncate">{sellToken}</span>
           <span className="text-muted-foreground">→</span>
-          <span className="font-medium">{buyTokenSymbol}</span>
-          <span className="text-muted-foreground">|</span>
-          <span className="text-muted-foreground">Trigger: ${triggerPrice}</span>
+          <span className="font-medium">{buyToken}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="capitalize">{network}</span>
           {isActive && (
             <>
               <span>•</span>
-              <span>Expires {new Date(expiresAt).toLocaleDateString()}</span>
-            </>
-          )}
-          {errorMessage && (
-            <>
-              <span>•</span>
-              <span className="text-red-500 truncate max-w-[200px]">{errorMessage}</span>
+              <span>Expires {expiresDate.toLocaleDateString()}</span>
             </>
           )}
         </div>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
         <OrderStatusBadge status={status} />
-        {cowTrackingUrl && (
-          <a
-            href={cowTrackingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-primary transition-colors"
-            onClick={stopPropagationHandler}
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        )}
+        <a
+          href={cowTrackingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-muted-foreground hover:text-primary transition-colors"
+          onClick={stopPropagationHandler}
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
       </div>
     </div>
   )
@@ -142,7 +116,7 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps) {
     )
   }
 
-  const monitoringCount = orders.filter(o => o.status === 'pending').length
+  const activeCount = orders.filter(o => o.status === 'open' || o.status === 'presignaturePending').length
 
   return (
     <ToolCard.Root defaultOpen>
@@ -151,9 +125,7 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps) {
           <div className="flex items-center gap-2">
             <Eye className="w-5 h-5 text-primary" />
             <span className="font-medium">Stop-Loss Orders</span>
-            {monitoringCount > 0 && (
-              <span className="text-xs text-muted-foreground">({monitoringCount} monitoring)</span>
-            )}
+            {activeCount > 0 && <span className="text-xs text-muted-foreground">({activeCount} active)</span>}
           </div>
           <span className="text-sm text-muted-foreground">{orders.length} total</span>
         </ToolCard.HeaderRow>
@@ -165,15 +137,13 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps) {
               <StopLossOrderItem
                 key={order.id}
                 id={order.id}
-                status={isValidStatus(order.status) ? order.status : 'pending'}
+                status={isValidStatus(order.status) ? order.status : 'open'}
                 network={order.network}
-                sellTokenSymbol={order.sellTokenSymbol}
-                buyTokenSymbol={order.buyTokenSymbol}
+                sellToken={order.sellToken}
+                buyToken={order.buyToken}
                 sellAmount={order.sellAmount}
-                triggerPrice={order.triggerPrice}
-                expiresAt={order.expiresAt}
+                validTo={order.validTo}
                 cowTrackingUrl={order.cowTrackingUrl}
-                errorMessage={order.errorMessage}
               />
             ))}
           </div>

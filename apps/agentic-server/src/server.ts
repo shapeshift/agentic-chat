@@ -3,10 +3,8 @@ import util from 'util'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
-import { startPriceMonitor } from './lib/stopLoss/priceMonitor'
 import { handleChatRequest } from './routes/chat'
 import { handlePortfolioRequest } from './routes/portfolio'
-import { stopLossRoutes } from './routes/stopLoss'
 
 // Prevent console.log truncation of deep objects and large arrays
 util.inspect.defaultOptions.depth = null
@@ -47,9 +45,6 @@ app.post('/api/chat', handleChatRequest)
 // Portfolio endpoint
 app.post('/api/portfolio', handlePortfolioRequest)
 
-// Stop-loss endpoints
-app.route('/api/stop-loss', stopLossRoutes)
-
 // 404 handler
 app.notFound(c => {
   return c.json({ error: 'Not found' }, 404)
@@ -63,13 +58,9 @@ app.onError((err, c) => {
 
 const port = Number(process.env.PORT) || 4111
 
-// Start stop-loss price monitor
-startPriceMonitor()
-
-console.log(`🚀 Server starting on port ${port}`)
+console.log(`Server starting on port ${port}`)
 console.log(`   API: /api/chat`)
 console.log(`   API: /api/portfolio`)
-console.log(`   API: /api/stop-loss`)
 console.log(`   Health: /health`)
 
 export default {

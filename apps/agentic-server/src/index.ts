@@ -125,7 +125,6 @@ export {
   type CreateStopLossInput,
   type CreateStopLossOutput,
   type StopLossSummary,
-  type StopLossRegistration,
 } from './tools/stopLoss'
 export {
   getStopLossOrdersTool,

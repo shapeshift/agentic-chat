@@ -1,6 +1,7 @@
 import type { useChat } from '@ai-sdk/react'
 import type {
   CancelLimitOrderOutput,
+  CancelStopLossOutput,
   CreateLimitOrderOutput,
   CreateStopLossOutput,
   InitiateSwapOutput,
@@ -22,7 +23,7 @@ type ChatMessage = ReturnType<typeof useChat>['messages'][number]
 
 export interface PersistedToolState {
   toolCallId: string
-  toolType: 'swap' | 'send' | 'network_switch' | 'limit_order' | 'cancel_limit_order' | 'stop_loss'
+  toolType: 'swap' | 'send' | 'network_switch' | 'limit_order' | 'cancel_limit_order' | 'stop_loss' | 'cancel_stop_loss'
   conversationId: string
   timestamp: number
   phases: string[]
@@ -34,6 +35,7 @@ export interface PersistedToolState {
     | CreateLimitOrderOutput
     | CancelLimitOrderOutput
     | CreateStopLossOutput
+    | CancelStopLossOutput
   walletAddress?: string
 }
 

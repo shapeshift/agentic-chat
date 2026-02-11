@@ -1,7 +1,7 @@
 import type { CreateStopLossOutput } from '@shapeshiftoss/agentic-server'
 
 import { useStopLossExecution } from '@/hooks/useStopLossExecution'
-import { StepStatus } from '@/hooks/useSwapExecution'
+import { StepStatus } from '@/lib/stepUtils'
 import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
@@ -17,7 +17,7 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const orderData = state === 'output-available' && orderOutput ? orderOutput : null
-  const { error, steps, networkName, orderId } = useStopLossExecution(toolCallId, state, orderData)
+  const { error, steps, networkName, submitTxHash } = useStopLossExecution(toolCallId, state, orderData)
   const needsApproval = orderOutput?.needsApproval ?? false
 
   const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedTransaction(toolCallId)
@@ -30,8 +30,16 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
     )
   }
 
-  const [prepareStep, networkStep, approvalStep, approvalConfirmStep, signStep, registerStep] = steps
-  if (!prepareStep || !networkStep || !approvalStep || !approvalConfirmStep || !signStep || !registerStep) {
+  const [prepareStep, safeCheckStep, networkStep, approvalStep, approvalConfirmStep, submitStep, confirmStep] = steps
+  if (
+    !prepareStep ||
+    !safeCheckStep ||
+    !networkStep ||
+    !approvalStep ||
+    !approvalConfirmStep ||
+    !submitStep ||
+    !confirmStep
+  ) {
     return (
       <TxStepCard.Root>
         <div className="text-sm text-muted-foreground font-medium p-4">
@@ -43,11 +51,12 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
 
   const completedCount = [
     prepareStep.status,
+    safeCheckStep.status,
     networkStep.status,
     approvalStep.status,
     approvalConfirmStep.status,
-    signStep.status,
-    registerStep.status,
+    submitStep.status,
+    confirmStep.status,
   ].filter(s => s === StepStatus.COMPLETE || s === StepStatus.SKIPPED).length
 
   const footerMessage = (() => {
@@ -109,20 +118,29 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
               }
             />
             <TxStepCard.DetailItem label="Expires" value={new Date(summary.expiresAt).toLocaleString()} />
+            {orderOutput?.safeAddress && (
+              <TxStepCard.DetailItem
+                label="Safe"
+                value={`${orderOutput.safeAddress.slice(0, 6)}...${orderOutput.safeAddress.slice(-4)}`}
+              />
+            )}
             <TxStepCard.DetailItem label="Provider" value={summary.provider.toUpperCase()} />
           </TxStepCard.Details>
         </TxStepCard.Content>
       )}
 
-      <TxStepCard.Stepper completedCount={completedCount} totalCount={6}>
+      <TxStepCard.Stepper completedCount={completedCount} totalCount={7}>
         <TxStepCard.Step status={prepareStep.status} connectorBottom>
           Preparing stop-loss order
+        </TxStepCard.Step>
+        <TxStepCard.Step status={safeCheckStep.status} connectorTop connectorBottom>
+          Check Safe wallet
         </TxStepCard.Step>
         <TxStepCard.Step status={networkStep.status} connectorTop connectorBottom>
           {networkName ? `Switch to ${networkName}` : 'Switch network'}
         </TxStepCard.Step>
         <TxStepCard.Step status={needsApproval ? approvalStep.status : StepStatus.SKIPPED} connectorTop connectorBottom>
-          Approve token for CoW
+          Approve token via Safe
         </TxStepCard.Step>
         <TxStepCard.Step
           status={needsApproval ? approvalConfirmStep.status : StepStatus.SKIPPED}
@@ -131,16 +149,19 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
         >
           Confirming approval
         </TxStepCard.Step>
-        <TxStepCard.Step status={signStep.status} connectorTop connectorBottom>
-          Sign order message
+        <TxStepCard.Step status={submitStep.status} connectorTop connectorBottom>
+          Submit to ComposableCoW
         </TxStepCard.Step>
-        <TxStepCard.Step status={registerStep.status} connectorTop>
-          Register with price monitor
+        <TxStepCard.Step status={confirmStep.status} connectorTop>
+          Confirming on-chain
         </TxStepCard.Step>
 
-        {orderId && (
+        {submitTxHash && (
           <div className="text-sm text-muted-foreground mt-3">
-            Order <span className="font-mono text-xs">{orderId}</span> is now being monitored
+            Tx:{' '}
+            <span className="font-mono text-xs">
+              {submitTxHash.slice(0, 10)}...{submitTxHash.slice(-8)}
+            </span>
           </div>
         )}
 

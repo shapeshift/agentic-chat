@@ -70,7 +70,10 @@ function buildWalletContext(
   solanaAddress?: string,
   approvedChainIds?: string[],
   hasEmbeddedWallet?: boolean,
-  hasExternalWallet?: boolean
+  hasExternalWallet?: boolean,
+  safeAddress?: string,
+  isSafeDeployed?: boolean,
+  isSafeReady?: boolean
 ): WalletContext {
   const connectedWallets: Record<string, { address: string }> = {}
 
@@ -97,7 +100,7 @@ function buildWalletContext(
     }
   }
 
-  return { connectedWallets, hasEmbeddedWallet, hasExternalWallet }
+  return { connectedWallets, hasEmbeddedWallet, hasExternalWallet, safeAddress, isSafeDeployed, isSafeReady }
 }
 
 function buildTools(walletContext: WalletContext) {
@@ -279,23 +282,27 @@ Examples:
 - Use cancelLimitOrder to cancel pending orders
 - Orders auto-execute when market price reaches limit
 
-**Stop-Loss Orders:**
+**Stop-Loss Orders (ComposableCoW + Safe):**
 - Use createStopLoss when user wants to protect against price drops (e.g., "set stop-loss on ETH at $3000")
+- Requires an embedded wallet + Safe smart account (Safe is deployed automatically on first use)
+- Orders are registered on-chain via ComposableCoW — CoW's watchtower network monitors and executes them
 - Trigger price must be BELOW current market price
-- The order is signed by the user but held server-side until price triggers
-- When price drops to trigger, the pre-signed order is submitted to CoW Protocol
+- Only tokens with Chainlink price feed oracles are supported
 - 2% slippage buffer is applied automatically
-- Supports: Ethereum, Gnosis, Arbitrum (same-chain only, no cross-chain)
+- Supports: Ethereum, Gnosis, Arbitrum (same-chain only)
 - Native tokens (ETH) must be wrapped (WETH) to use as sell asset
-- Use getStopLossOrders to check existing stop-loss orders
-- Use cancelStopLoss to cancel pending (monitoring) orders
-- If a stop-loss was already submitted to CoW, use cancelLimitOrder instead
+- Use getStopLossOrders to check existing stop-loss orders (queries CoW API)
+- Use cancelStopLoss to cancel active orders (requires on-chain transaction via Safe)
+- If user doesn't have a Safe ready, guide them through setup (checkWalletCapabilities)
 
-**Embedded Wallets & Automation:**
+**Embedded Wallets, Safe & Automation:**
 - Users can connect external wallets (MetaMask, etc.) OR create an embedded wallet (email/social login)
 - Embedded wallets are self-custodial MPC wallets - no seed phrase, social recovery available
-- When users ask about automated features (TWAP, DCA, stop-loss, scheduled trades), call checkWalletCapabilitiesTool
-- If user has only external wallet and wants automation, explain embedded wallet benefits conversationally
+- Automation features (stop-loss, TWAP, DCA) require: embedded wallet + Safe smart account
+- Safe is a 1-of-1 smart account owned by the embedded wallet — deployed lazily on first automation request
+- When users ask about automated features, call checkWalletCapabilitiesTool to check readiness
+- Wallet routing: regular swaps/sends → external or embedded EOA, automation → Safe smart account
+- If user has only external wallet and wants automation, explain embedded wallet + Safe benefits conversationally
 - Never pressure users to switch - external wallets work for all non-automation features
 
 **Error Handling:**
@@ -315,13 +322,26 @@ Examples:
 export async function handleChatRequest(c: Context) {
   try {
     const body = await c.req.json()
-    const { messages, evmAddress, solanaAddress, approvedChainIds, hasEmbeddedWallet, hasExternalWallet } = body as {
+    const {
+      messages,
+      evmAddress,
+      solanaAddress,
+      approvedChainIds,
+      hasEmbeddedWallet,
+      hasExternalWallet,
+      safeAddress,
+      isSafeDeployed,
+      isSafeReady,
+    } = body as {
       messages: unknown
       evmAddress?: string
       solanaAddress?: string
       approvedChainIds?: string[]
       hasEmbeddedWallet?: boolean
       hasExternalWallet?: boolean
+      safeAddress?: string
+      isSafeDeployed?: boolean
+      isSafeReady?: boolean
     }
 
     // Build wallet context from addresses (filtered by approved chains if provided)
@@ -330,7 +350,10 @@ export async function handleChatRequest(c: Context) {
       solanaAddress,
       approvedChainIds,
       hasEmbeddedWallet,
-      hasExternalWallet
+      hasExternalWallet,
+      safeAddress,
+      isSafeDeployed,
+      isSafeReady
     )
 
     // Convert UIMessages to ModelMessages

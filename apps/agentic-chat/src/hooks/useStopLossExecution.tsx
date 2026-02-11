@@ -10,11 +10,14 @@ import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
-import { createStepPhaseMap, getStepStatus, signTypedDataWithWallet, StepStatus } from '@/lib/stepUtils'
+import { executeSafeTransaction } from '@/lib/safe'
+import { deploySafe, predictSafeAddress } from '@/lib/safe/safeFactory'
+import { enableComposableCowModules } from '@/lib/safe/safeModules'
+import { getSafeState, setSafeState } from '@/lib/safe/safeStorage'
+import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
-import { executeApproval } from '@/utils/swapExecutor'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
@@ -23,29 +26,30 @@ type StopLossData = CreateStopLossOutput
 
 export enum StopLossStep {
   PREPARE = 0,
-  NETWORK_SWITCH = 1,
-  APPROVAL = 2,
-  APPROVAL_CONFIRMATION = 3,
-  SIGN = 4,
-  REGISTER = 5,
-  COMPLETE = 6,
+  SAFE_CHECK = 1,
+  NETWORK_SWITCH = 2,
+  APPROVAL = 3,
+  APPROVAL_CONFIRMATION = 4,
+  SUBMIT_TO_COMPOSABLE_COW = 5,
+  CONFIRM_TX = 6,
+  COMPLETE = 7,
 }
 
 const STOP_LOSS_PHASES = createStepPhaseMap<StopLossStep>({
   [StopLossStep.PREPARE]: 'prepare_complete',
+  [StopLossStep.SAFE_CHECK]: 'safe_checked',
   [StopLossStep.NETWORK_SWITCH]: 'network_switched',
   [StopLossStep.APPROVAL]: 'approved',
   [StopLossStep.APPROVAL_CONFIRMATION]: 'approval_confirmed',
-  [StopLossStep.SIGN]: 'signed',
-  [StopLossStep.REGISTER]: 'registered',
+  [StopLossStep.SUBMIT_TO_COMPOSABLE_COW]: 'submitted',
+  [StopLossStep.CONFIRM_TX]: 'confirmed',
 })
 
 interface StopLossState {
   currentStep: StopLossStep
   completedSteps: Set<StopLossStep>
   approvalTxHash?: string
-  orderId?: string
-  signature?: string
+  submitTxHash?: string
   error?: string
   failedStep?: StopLossStep
 }
@@ -70,7 +74,7 @@ function stopLossStateToPersistedState(
     timestamp: Date.now(),
     phases: STOP_LOSS_PHASES.toPhases(state.completedSteps, state.error),
     meta: {
-      ...(state.orderId && { orderId: state.orderId }),
+      ...(state.submitTxHash && { submitTxHash: state.submitTxHash }),
       ...(state.approvalTxHash && { approvalTxHash: state.approvalTxHash }),
       ...(state.error && { error: state.error }),
       ...(networkName && { networkName }),
@@ -85,7 +89,7 @@ function persistedStateToStopLossState(persisted: PersistedToolState): StopLossS
   return {
     currentStep: StopLossStep.COMPLETE,
     completedSteps: STOP_LOSS_PHASES.fromPhases(persisted.phases),
-    orderId: persisted.meta.orderId as string | undefined,
+    submitTxHash: persisted.meta.submitTxHash as string | undefined,
     approvalTxHash: persisted.meta.approvalTxHash as string | undefined,
     error: hasError ? (persisted.meta.error as string) : undefined,
   }
@@ -100,68 +104,7 @@ interface UseStopLossExecutionResult {
   steps: StopLossStepInfo[]
   networkName?: string
   error?: string
-  orderId?: string
-}
-
-async function registerStopLossOrder(
-  registration: CreateStopLossOutput['stopLossRegistration'],
-  orderParams: CreateStopLossOutput['orderParams'],
-  signingData: CreateStopLossOutput['signingData'],
-  signature: string
-): Promise<string> {
-  const serverBaseUrl = import.meta.env.VITE_AGENTIC_SERVER_BASE_URL
-
-  const orderPayload = {
-    sellToken: orderParams.sellToken,
-    buyToken: orderParams.buyToken,
-    receiver: orderParams.receiver,
-    sellAmount: orderParams.sellAmount,
-    buyAmount: orderParams.buyAmount,
-    validTo: orderParams.validTo,
-    appData: signingData.message.appData,
-    feeAmount: '0',
-    kind: 'sell',
-    partiallyFillable: true,
-    sellTokenBalance: 'erc20',
-    buyTokenBalance: 'erc20',
-  }
-
-  const body = {
-    id: registration.id,
-    ownerAddress: orderParams.receiver,
-    chainId: orderParams.chainId,
-    sellToken: orderParams.sellToken,
-    buyToken: orderParams.buyToken,
-    sellAmount: orderParams.sellAmount,
-    buyAmount: orderParams.buyAmount,
-    validTo: orderParams.validTo,
-    triggerPrice: registration.triggerPrice,
-    currentPriceAtCreation: registration.currentPriceAtCreation,
-    sellTokenCoingeckoId: registration.sellTokenCoingeckoId,
-    sellTokenSymbol: registration.sellTokenSymbol,
-    buyTokenSymbol: registration.buyTokenSymbol,
-    sellAmountHuman: registration.sellAmountHuman,
-    network: registration.network,
-    signature,
-    orderPayload: JSON.stringify(orderPayload),
-    appData: registration.appData,
-    receiver: orderParams.receiver,
-    expiresAt: registration.expiresAt,
-  }
-
-  const response = await fetch(`${serverBaseUrl}/api/stop-loss/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  if (!response.ok) {
-    const errorData = (await response.json()) as { error: string }
-    throw new Error(errorData.error || 'Failed to register stop-loss order')
-  }
-
-  const result = (await response.json()) as { orderId: string }
-  return result.orderId
+  submitTxHash?: string
 }
 
 export const useStopLossExecution = (
@@ -210,24 +153,54 @@ export const useStopLossExecution = (
     }
 
     try {
-      const { signingData, orderParams, needsApproval, approvalTx, stopLossRegistration } = data
+      const { safeTransaction, needsApproval, approvalTx, safeAddress } = data
 
       if (!evmAddress) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
 
-      if (evmAddress.toLowerCase() !== orderParams.receiver.toLowerCase()) {
-        throw new Error('Wallet address changed. Please re-initiate the stop-loss order.')
-      }
-
       // Step 0: Prepare (completed by this point)
       setState(draft => {
         draft.completedSteps.add(StopLossStep.PREPARE)
+        draft.currentStep = StopLossStep.SAFE_CHECK
+        draft.error = undefined
+      })
+
+      // Step 1: Safe Check — verify Safe is deployed and modules enabled on target chain
+      const targetChainId = safeTransaction.chainId
+      const currentSafeState = getSafeState(evmAddress)
+      const chainSafeState = currentSafeState[targetChainId]
+
+      if (!chainSafeState?.isDeployed) {
+        // Deploy Safe on target chain
+        const predicted = await predictSafeAddress(evmAddress)
+        const deployResult = await deploySafe(evmAddress, targetChainId, evmAddress)
+        if (!deployResult.isDeployed) {
+          throw new Error('Failed to deploy Safe smart account')
+        }
+        setSafeState(evmAddress, targetChainId, {
+          safeAddress: predicted,
+          isDeployed: true,
+          modulesEnabled: false,
+        })
+      }
+
+      const updatedSafeState = getSafeState(evmAddress)
+      const updatedChainState = updatedSafeState[targetChainId]
+
+      if (!updatedChainState?.modulesEnabled) {
+        // Enable modules on target chain
+        const safeAddr = updatedChainState?.safeAddress ?? safeAddress
+        await enableComposableCowModules(safeAddr, targetChainId, evmAddress)
+      }
+
+      setState(draft => {
+        draft.completedSteps.add(StopLossStep.SAFE_CHECK)
         draft.currentStep = StopLossStep.NETWORK_SWITCH
         draft.error = undefined
       })
 
-      // Step 1: Network Switch
+      // Step 2: Network Switch
       if (!evmWallet) {
         throw new Error('EVM wallet not connected')
       }
@@ -236,17 +209,21 @@ export const useStopLossExecution = (
         await changePrimaryWallet(evmWallet.id)
       }
 
-      await evmWallet.connector.switchNetwork({ networkChainId: orderParams.chainId })
+      await evmWallet.connector.switchNetwork({ networkChainId: targetChainId })
 
       setState(draft => {
-        draft.completedSteps.add(draft.currentStep)
+        draft.completedSteps.add(StopLossStep.NETWORK_SWITCH)
         draft.currentStep = StopLossStep.APPROVAL
         draft.error = undefined
       })
 
-      // Step 2: Approval (if needed)
+      // Step 3: Approval via Safe (if needed)
       if (needsApproval && approvalTx) {
-        approvalTxHash = await executeApproval(approvalTx)
+        approvalTxHash = await executeSafeTransaction(
+          safeAddress,
+          { to: approvalTx.to, data: approvalTx.data, value: approvalTx.value },
+          evmAddress
+        )
         setState(draft => {
           draft.approvalTxHash = approvalTxHash
           draft.completedSteps.add(StopLossStep.APPROVAL)
@@ -255,15 +232,16 @@ export const useStopLossExecution = (
         })
       } else {
         setState(draft => {
+          draft.completedSteps.add(StopLossStep.APPROVAL)
           draft.currentStep = StopLossStep.APPROVAL_CONFIRMATION
           draft.error = undefined
         })
       }
 
-      // Step 3: Approval Confirmation (if approval was needed)
+      // Step 4: Approval Confirmation
       if (needsApproval && approvalTxHash) {
         const publicClient = getPublicClient(wagmiConfig, {
-          chainId: orderParams.chainId,
+          chainId: targetChainId,
         })
         if (publicClient) {
           await publicClient.waitForTransactionReceipt({
@@ -273,47 +251,60 @@ export const useStopLossExecution = (
         }
         setState(draft => {
           draft.completedSteps.add(StopLossStep.APPROVAL_CONFIRMATION)
-          draft.currentStep = StopLossStep.SIGN
+          draft.currentStep = StopLossStep.SUBMIT_TO_COMPOSABLE_COW
           draft.error = undefined
         })
       } else {
         setState(draft => {
-          draft.currentStep = StopLossStep.SIGN
+          draft.completedSteps.add(StopLossStep.APPROVAL_CONFIRMATION)
+          draft.currentStep = StopLossStep.SUBMIT_TO_COMPOSABLE_COW
           draft.error = undefined
         })
       }
 
-      // Step 4: Sign EIP-712 message
-      const signature = await signTypedDataWithWallet(evmWallet, signingData)
+      // Step 5: Submit to ComposableCoW via Safe
+      const submitTxHash = await executeSafeTransaction(
+        safeAddress,
+        { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
+        evmAddress
+      )
 
       setState(draft => {
-        draft.signature = signature
-        draft.completedSteps.add(StopLossStep.SIGN)
-        draft.currentStep = StopLossStep.REGISTER
+        draft.submitTxHash = submitTxHash
+        draft.completedSteps.add(StopLossStep.SUBMIT_TO_COMPOSABLE_COW)
+        draft.currentStep = StopLossStep.CONFIRM_TX
         draft.error = undefined
       })
 
-      // Step 5: Register with price monitor
-      const orderId = await registerStopLossOrder(stopLossRegistration, orderParams, signingData, signature)
+      // Step 6: Wait for on-chain confirmation
+      const publicClient = getPublicClient(wagmiConfig, {
+        chainId: targetChainId,
+      })
+      if (publicClient) {
+        await publicClient.waitForTransactionReceipt({
+          hash: submitTxHash as `0x${string}`,
+          confirmations: 1,
+        })
+      }
 
-      // Persist successful state immediately
+      // Persist successful state
       persistState({
         currentStep: StopLossStep.COMPLETE,
         completedSteps: new Set([
           StopLossStep.PREPARE,
+          StopLossStep.SAFE_CHECK,
           StopLossStep.NETWORK_SWITCH,
           ...(needsApproval ? [StopLossStep.APPROVAL, StopLossStep.APPROVAL_CONFIRMATION] : []),
-          StopLossStep.SIGN,
-          StopLossStep.REGISTER,
+          StopLossStep.SUBMIT_TO_COMPOSABLE_COW,
+          StopLossStep.CONFIRM_TX,
         ]),
-        ...(orderId && { orderId }),
+        submitTxHash,
         ...(approvalTxHash && { approvalTxHash }),
       })
 
       // Update runtime state
       setState(draft => {
-        draft.orderId = orderId
-        draft.completedSteps.add(StopLossStep.REGISTER)
+        draft.completedSteps.add(StopLossStep.CONFIRM_TX)
         draft.currentStep = StopLossStep.COMPLETE
         draft.error = undefined
       })
@@ -326,7 +317,7 @@ export const useStopLossExecution = (
             symbol={data.summary.sellAsset.symbol.toUpperCase()}
             className="font-bold"
           />{' '}
-          at ${data.summary.triggerPrice} is now being monitored
+          at ${data.summary.triggerPrice} is now active on-chain
         </span>
       )
 
@@ -366,17 +357,21 @@ export const useStopLossExecution = (
   return {
     steps: [
       { step: StopLossStep.PREPARE, status: prepareStepStatus },
+      { step: StopLossStep.SAFE_CHECK, status: getStepStatus(StopLossStep.SAFE_CHECK, state) },
       { step: StopLossStep.NETWORK_SWITCH, status: getStepStatus(StopLossStep.NETWORK_SWITCH, state) },
       { step: StopLossStep.APPROVAL, status: getStepStatus(StopLossStep.APPROVAL, state) },
       {
         step: StopLossStep.APPROVAL_CONFIRMATION,
         status: getStepStatus(StopLossStep.APPROVAL_CONFIRMATION, state),
       },
-      { step: StopLossStep.SIGN, status: getStepStatus(StopLossStep.SIGN, state) },
-      { step: StopLossStep.REGISTER, status: getStepStatus(StopLossStep.REGISTER, state) },
+      {
+        step: StopLossStep.SUBMIT_TO_COMPOSABLE_COW,
+        status: getStepStatus(StopLossStep.SUBMIT_TO_COMPOSABLE_COW, state),
+      },
+      { step: StopLossStep.CONFIRM_TX, status: getStepStatus(StopLossStep.CONFIRM_TX, state) },
     ],
     networkName: orderData?.summary?.network,
     error: state.error,
-    orderId: state.orderId,
+    submitTxHash: state.submitTxHash,
   }
 }

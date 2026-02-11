@@ -57,6 +57,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
           approvedChainIds: walletRef.current.approvedChainIds,
           hasEmbeddedWallet: walletRef.current.hasEmbeddedWallet,
           hasExternalWallet: walletRef.current.hasExternalWallet,
+          safeAddress: walletRef.current.safeAddress,
+          isSafeDeployed: walletRef.current.isSafeDeployed,
+          isSafeReady: walletRef.current.isSafeReady,
         }),
       }),
     []

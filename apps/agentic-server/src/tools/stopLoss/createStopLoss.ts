@@ -1,4 +1,4 @@
-import { assetIdToCoingecko, fromAssetId } from '@shapeshiftoss/caip'
+import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
 import { toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
@@ -6,8 +6,17 @@ import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
 import { getSimplePrices } from '../../lib/asset/coingecko'
-import { COW_VAULT_RELAYER_ADDRESS, prepareCowLimitOrder } from '../../lib/cow'
-import type { CowOrderSigningData } from '../../lib/cow/types'
+import {
+  buildCreateConditionalOrderTx,
+  CHAINLINK_ORACLE_DECIMALS,
+  computeConditionalOrderHash,
+  COW_VAULT_RELAYER_ADDRESS,
+  encodeStopLossStaticData,
+  generateOrderSalt,
+  getChainlinkOracle,
+  STOP_LOSS_HANDLER_ADDRESS,
+} from '../../lib/composableCow'
+import type { ConditionalOrderParams } from '../../lib/composableCow'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getAllowance } from '../../utils'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
@@ -28,7 +37,7 @@ function buildApprovalTransaction(
   sellAsset: Asset,
   approvalTarget: string,
   sellAmountBaseUnit: string,
-  userAddress: string
+  safeAddress: string
 ): TransactionData | undefined {
   if (!needsApproval) return undefined
 
@@ -43,7 +52,7 @@ function buildApprovalTransaction(
   return createTransaction({
     chainId: sellAsset.chainId,
     data,
-    from: userAddress,
+    from: safeAddress,
     to: tokenAddress,
     value: '0',
   })
@@ -83,51 +92,33 @@ export interface StopLossSummary {
   provider: 'cow'
 }
 
-export interface StopLossRegistration {
-  id: string
-  chainId: number
-  sellToken: string
-  buyToken: string
-  sellAmount: string
-  buyAmount: string
-  validTo: number
-  triggerPrice: string
-  currentPriceAtCreation: string
-  sellTokenCoingeckoId: string
-  sellTokenSymbol: string
-  buyTokenSymbol: string
-  sellAmountHuman: string
-  network: string
-  appData: string
-  receiver: string
-  expiresAt: string
-}
-
 export interface CreateStopLossOutput {
   summary: StopLossSummary
-  signingData: CowOrderSigningData
-  orderParams: {
-    sellToken: string
-    buyToken: string
-    sellAmount: string
-    buyAmount: string
-    validTo: number
-    receiver: string
-    chainId: number
-  }
+  safeTransaction: { to: string; data: string; value: string; chainId: number }
   needsApproval: boolean
   approvalTx?: TransactionData
   approvalTarget: string
-  stopLossRegistration: StopLossRegistration
+  safeAddress: string
+  orderHash: string
+  conditionalOrderParams: ConditionalOrderParams
 }
 
 const SLIPPAGE_BUFFER = 0.98 // 2% slippage buffer
+const DEFAULT_APP_DATA = '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`
+const MAX_ORACLE_STALENESS = BigInt(60 * 60) // 1 hour max oracle staleness
+const VALIDITY_BUCKET_SECONDS = BigInt(15 * 60) // 15-minute validity windows
 
 export async function executeCreateStopLoss(
   input: CreateStopLossInput,
   walletContext?: WalletContext
 ): Promise<CreateStopLossOutput> {
-  const expirationSeconds = input.expirationDays * 24 * 60 * 60
+  // Validate embedded wallet + Safe address are available
+  const safeAddress = walletContext?.safeAddress
+  if (!safeAddress) {
+    throw new Error(
+      'Stop-loss orders require a Safe smart account. Please set up your embedded wallet first — a Safe will be deployed automatically.'
+    )
+  }
 
   // Resolve assets on the specified network
   const [sellAsset, buyAsset] = await Promise.all([
@@ -136,15 +127,33 @@ export async function executeCreateStopLoss(
   ])
 
   const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
-  const userAddress = getAddressForChain(walletContext, sellAsset.chainId)
+  // Validate the user has a connected wallet on this chain
+  getAddressForChain(walletContext, sellAsset.chainId)
 
-  // Native token validation - CoW Protocol requires ERC20 tokens for selling
+  // Native token validation
   if (isNativeToken(sellAsset)) {
     const nativeSymbol = sellAsset.symbol
     throw new Error(
       `Native ${nativeSymbol} cannot be used as sell asset for stop-loss orders. ` +
         `CoW Protocol requires ERC20 tokens. Please wrap your ${nativeSymbol} to W${nativeSymbol} first, ` +
         `or select W${nativeSymbol} as the sell asset.`
+    )
+  }
+
+  // Look up Chainlink oracles for both tokens
+  const sellTokenOracle = getChainlinkOracle(evmChainId, sellAsset.symbol)
+  const buyTokenOracle = getChainlinkOracle(evmChainId, buyAsset.symbol)
+
+  if (!sellTokenOracle) {
+    throw new Error(
+      `No Chainlink price oracle available for ${sellAsset.symbol} on ${input.network}. ` +
+        `Stop-loss orders require on-chain price feeds for condition verification.`
+    )
+  }
+  if (!buyTokenOracle) {
+    throw new Error(
+      `No Chainlink price oracle available for ${buyAsset.symbol} on ${input.network}. ` +
+        `Stop-loss orders require on-chain price feeds for condition verification.`
     )
   }
 
@@ -171,8 +180,7 @@ export async function executeCreateStopLoss(
     )
   }
 
-  // Calculate buy amount: how much buyAsset we get at the trigger price
-  // limitPriceRatio = triggerPrice / buyAssetPrice (how many buyTokens per 1 sellToken at trigger)
+  // Calculate buy amount at trigger price with slippage
   const limitPriceRatio = new BigNumber(input.triggerPrice).div(currentBuyPrice)
   const buyAmountHuman = new BigNumber(input.sellAmount).times(limitPriceRatio).times(SLIPPAGE_BUFFER)
   const buyAmountBaseUnit = toBaseUnit(
@@ -181,41 +189,61 @@ export async function executeCreateStopLoss(
   )
 
   // Get token addresses
-  const sellTokenAddress = fromAssetId(sellAsset.assetId).assetReference
+  const sellTokenAddress = fromAssetId(sellAsset.assetId).assetReference as `0x${string}`
   const isNativeBuyToken = isNativeToken(buyAsset)
-  const COW_NATIVE_ASSET_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
-  const buyTokenAddress = isNativeBuyToken ? COW_NATIVE_ASSET_MARKER : fromAssetId(buyAsset.assetId).assetReference
+  const COW_NATIVE_ASSET_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as `0x${string}`
+  const buyTokenAddress = isNativeBuyToken
+    ? COW_NATIVE_ASSET_MARKER
+    : (fromAssetId(buyAsset.assetId).assetReference as `0x${string}`)
 
   const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
 
-  // Check allowance
+  // Calculate strike price scaled to oracle decimals
+  // Strike = sellTokenPrice / buyTokenPrice at trigger, scaled to 8 decimals (Chainlink standard)
+  // The StopLoss handler checks: sellTokenOraclePrice / buyTokenOraclePrice <= strike
+  const strikePrice = new BigNumber(input.triggerPrice)
+    .div(currentBuyPrice)
+    .times(new BigNumber(10).pow(CHAINLINK_ORACLE_DECIMALS))
+    .integerValue(BigNumber.ROUND_DOWN)
+
+  // Check allowance (from Safe → VaultRelayer)
   const approvalTarget = COW_VAULT_RELAYER_ADDRESS
   const { isApprovalRequired: needsApproval } = await getAllowance({
     amount: sellAmountBaseUnit,
     asset: sellAsset,
-    from: userAddress,
+    from: safeAddress,
     spender: approvalTarget,
   })
 
-  const approvalTx = buildApprovalTransaction(needsApproval, sellAsset, approvalTarget, sellAmountBaseUnit, userAddress)
+  const approvalTx = buildApprovalTransaction(needsApproval, sellAsset, approvalTarget, sellAmountBaseUnit, safeAddress)
 
-  // Prepare the CoW order for signing
-  const orderResult = prepareCowLimitOrder({
+  // Build ComposableCoW conditional order
+  const salt = generateOrderSalt(safeAddress, sellTokenAddress, buyTokenAddress)
+
+  const staticData = encodeStopLossStaticData({
     sellToken: sellTokenAddress,
     buyToken: buyTokenAddress,
-    sellAmount: sellAmountBaseUnit,
-    buyAmount: buyAmountBaseUnit,
-    userAddress,
-    chainId: evmChainId,
-    expirationSeconds,
-    receiver: userAddress,
+    sellAmount: BigInt(sellAmountBaseUnit),
+    buyAmount: BigInt(buyAmountBaseUnit),
+    sellTokenPriceOracle: sellTokenOracle as `0x${string}`,
+    buyTokenPriceOracle: buyTokenOracle as `0x${string}`,
+    strike: BigInt(strikePrice.toString()),
+    maxTimeSinceLastOracleUpdate: MAX_ORACLE_STALENESS,
+    appData: DEFAULT_APP_DATA,
+    receiver: safeAddress as `0x${string}`,
+    isSellOrder: true,
+    isPartiallyFillable: true,
+    validityBucketSeconds: VALIDITY_BUCKET_SECONDS,
   })
 
-  // Get CoinGecko ID for price monitoring
-  const sellTokenCoingeckoId = assetIdToCoingecko(sellAsset.assetId)
-  if (!sellTokenCoingeckoId) {
-    throw new Error(`No CoinGecko price feed available for ${sellAsset.symbol}. Stop-loss requires price monitoring.`)
+  const conditionalOrderParams: ConditionalOrderParams = {
+    handler: STOP_LOSS_HANDLER_ADDRESS as `0x${string}`,
+    salt,
+    staticInput: staticData,
   }
+
+  const orderHash = computeConditionalOrderHash(conditionalOrderParams)
+  const safeTransaction = buildCreateConditionalOrderTx(conditionalOrderParams)
 
   const priceDistancePercent = new BigNumber(currentSellPrice - triggerPriceNum)
     .div(currentSellPrice)
@@ -224,7 +252,8 @@ export async function executeCreateStopLoss(
 
   const estimatedBuyAmount = new BigNumber(input.sellAmount).times(limitPriceRatio).toFixed(6)
 
-  const orderId = `sl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const expirationSeconds = input.expirationDays * 24 * 60 * 60
+  const expiresAt = new Date(Date.now() + expirationSeconds * 1000).toISOString()
 
   const summary: StopLossSummary = {
     sellAsset: { symbol: sellAsset.symbol, amount: input.sellAmount },
@@ -233,68 +262,43 @@ export async function executeCreateStopLoss(
     triggerPrice: input.triggerPrice,
     currentPrice: currentSellPrice.toFixed(2),
     priceDistancePercent,
-    expiresAt: orderResult.expiresAt,
+    expiresAt,
     provider: 'cow',
-  }
-
-  const stopLossRegistration: StopLossRegistration = {
-    id: orderId,
-    chainId: evmChainId,
-    sellToken: sellTokenAddress,
-    buyToken: buyTokenAddress,
-    sellAmount: sellAmountBaseUnit,
-    buyAmount: buyAmountBaseUnit,
-    validTo: orderResult.orderToSign.validTo,
-    triggerPrice: input.triggerPrice,
-    currentPriceAtCreation: currentSellPrice.toFixed(2),
-    sellTokenCoingeckoId,
-    sellTokenSymbol: sellAsset.symbol,
-    buyTokenSymbol: buyAsset.symbol,
-    sellAmountHuman: input.sellAmount,
-    network: input.network,
-    appData: orderResult.orderToSign.appData,
-    receiver: userAddress,
-    expiresAt: orderResult.expiresAt,
   }
 
   return {
     summary,
-    signingData: orderResult.signingData,
-    orderParams: {
-      sellToken: sellTokenAddress,
-      buyToken: buyTokenAddress,
-      sellAmount: sellAmountBaseUnit,
-      buyAmount: buyAmountBaseUnit,
-      validTo: orderResult.orderToSign.validTo,
-      receiver: userAddress,
-      chainId: evmChainId,
-    },
+    safeTransaction: { ...safeTransaction, chainId: evmChainId },
     needsApproval,
     approvalTx,
     approvalTarget,
-    stopLossRegistration,
+    safeAddress,
+    orderHash,
+    conditionalOrderParams,
   }
 }
 
 export const createStopLossTool = {
-  description: `Create a stop-loss order to automatically sell a token when its price drops to a threshold. The order is held server-side and only submitted to CoW Protocol when the price actually triggers.
+  description: `Create a stop-loss order to automatically sell a token when its price drops to a threshold. The order is registered on-chain via ComposableCoW through a Safe smart account. CoW's watchtower network monitors the Chainlink oracle and executes the order when triggered.
 
-UI CARD DISPLAYS: order details (sell/buy assets, amounts), trigger price vs current price with % distance, expiration time, and multi-step signing flow.
+UI CARD DISPLAYS: order details (sell/buy assets, amounts), trigger price vs current price with % distance, Safe address, and multi-step transaction flow.
 
 Your role is to supplement the card, not duplicate it.
 
 Default: Respond with one brief sentence like:
 - "I've prepared your stop-loss order"
-- "Your stop-loss is ready to sign and register"
+- "Your stop-loss is ready to submit on-chain"
 - "Here's your stop-loss for approval"
 
 Only elaborate if the user asks about something not shown in the card.
 
 IMPORTANT:
-- Stop-loss requires EIP-712 signature + registration with price monitor
+- Requires embedded wallet + Safe smart account (check with checkWalletCapabilities first)
+- Stop-loss is submitted as an on-chain transaction via Safe → ComposableCoW
 - Trigger price must be BELOW current market price
 - Both assets must be on the same EVM network (Ethereum, Gnosis, Arbitrum)
-- Order is monitored server-side and submitted to CoW when price drops
+- Only tokens with Chainlink price feeds are supported
+- CoW's watchtower monitors the order and executes when Chainlink reports price <= trigger
 - 2% slippage buffer applied to buy amount
 - Native tokens (ETH) must be wrapped (WETH) to sell
 - Use the maths tool if you need to calculate trigger prices from percentages`,

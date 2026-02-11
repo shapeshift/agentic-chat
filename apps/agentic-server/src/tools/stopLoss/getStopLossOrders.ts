@@ -1,14 +1,13 @@
 import { z } from 'zod'
 
-import { getCowExplorerUrl, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
-import { getStopLossOrdersByOwner } from '../../lib/stopLoss/db'
-import type { StopLossOrder, StopLossStatus } from '../../lib/stopLoss/db'
-import { getAddressForChain } from '../../utils/walletContextSimple'
+import { getCowOrders } from '../../lib/cow'
+import type { CowOrder, CowOrderStatus } from '../../lib/cow/types'
+import { NETWORK_TO_CHAIN_ID, getCowExplorerUrl } from '../../lib/cow/types'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 export const getStopLossOrdersSchema = z.object({
   status: z
-    .enum(['pending', 'triggered', 'submitted', 'filled', 'cancelled', 'failed', 'expired', 'all'])
+    .enum(['open', 'fulfilled', 'cancelled', 'expired', 'all'])
     .optional()
     .default('all')
     .describe('Filter orders by status. Default is "all".'),
@@ -22,19 +21,19 @@ export type GetStopLossOrdersInput = z.infer<typeof getStopLossOrdersSchema>
 
 interface StopLossOrderInfo {
   id: string
-  status: StopLossStatus
+  status: CowOrderStatus
   network: string
-  sellTokenSymbol: string
-  buyTokenSymbol: string
+  sellToken: string
+  buyToken: string
   sellAmount: string
-  triggerPrice: string
-  currentPriceAtCreation: string
+  buyAmount: string
+  executedSellAmount?: string
+  executedBuyAmount?: string
   createdAt: string
-  expiresAt: string
-  cowOrderId: string | null
-  cowTrackingUrl: string | null
-  errorMessage: string | null
-  triggeredAt: string | null
+  validTo: number
+  cowTrackingUrl: string
+  kind: string
+  partiallyFillable: boolean
 }
 
 export interface GetStopLossOrdersOutput {
@@ -42,61 +41,78 @@ export interface GetStopLossOrdersOutput {
   totalCount: number
 }
 
-function formatOrder(order: StopLossOrder): StopLossOrderInfo {
+function formatCowOrder(order: CowOrder, network: string): StopLossOrderInfo {
   return {
-    id: order.id,
+    id: order.uid,
     status: order.status,
-    network: order.network,
-    sellTokenSymbol: order.sellTokenSymbol,
-    buyTokenSymbol: order.buyTokenSymbol,
-    sellAmount: order.sellAmountHuman,
-    triggerPrice: order.triggerPrice,
-    currentPriceAtCreation: order.currentPriceAtCreation,
-    createdAt: order.createdAt,
-    expiresAt: order.expiresAt,
-    cowOrderId: order.cowOrderId,
-    cowTrackingUrl: order.cowOrderId ? getCowExplorerUrl(order.cowOrderId) : null,
-    errorMessage: order.errorMessage,
-    triggeredAt: order.triggeredAt,
+    network,
+    sellToken: order.sellToken,
+    buyToken: order.buyToken,
+    sellAmount: order.sellAmount,
+    buyAmount: order.buyAmount,
+    executedSellAmount: order.executedSellAmount,
+    executedBuyAmount: order.executedBuyAmount,
+    createdAt: order.creationDate,
+    validTo: order.validTo,
+    cowTrackingUrl: getCowExplorerUrl(order.uid),
+    kind: order.kind,
+    partiallyFillable: order.partiallyFillable,
   }
 }
 
-export function executeGetStopLossOrders(
+export async function executeGetStopLossOrders(
   input: GetStopLossOrdersInput,
   walletContext?: WalletContext
-): GetStopLossOrdersOutput {
-  // Try to get the user address from the EVM wallet context
-  const chainIdString = 'eip155:1' // Default to Ethereum for address lookup
-  let userAddress: string
-  try {
-    userAddress = getAddressForChain(walletContext, chainIdString)
-  } catch {
-    throw new Error('No wallet connected. Please connect your wallet to view stop-loss orders.')
+): Promise<GetStopLossOrdersOutput> {
+  const safeAddress = walletContext?.safeAddress
+  if (!safeAddress) {
+    throw new Error('No Safe smart account found. Stop-loss orders require a Safe wallet.')
   }
 
-  const chainId = input.network ? NETWORK_TO_CHAIN_ID[input.network] : undefined
-  const statusFilter = input.status === 'all' ? undefined : (input.status as StopLossStatus)
+  // Determine which chains to query
+  const networksToQuery = input.network
+    ? [{ network: input.network, chainId: NETWORK_TO_CHAIN_ID[input.network]! }]
+    : [
+        { network: 'ethereum', chainId: 1 },
+        { network: 'gnosis', chainId: 100 },
+        { network: 'arbitrum', chainId: 42161 },
+      ]
 
-  const orders = getStopLossOrdersByOwner(userAddress, { status: statusFilter, chainId })
-  const formattedOrders = orders.map(formatOrder)
+  // Query CoW API for orders from the Safe address across all relevant chains
+  const orderResults = await Promise.allSettled(
+    networksToQuery.map(async ({ network, chainId }) => {
+      const orders = await getCowOrders(safeAddress, chainId)
+      return orders.map(order => formatCowOrder(order, network))
+    })
+  )
+
+  const allOrders = orderResults
+    .filter((r): r is PromiseFulfilledResult<StopLossOrderInfo[]> => r.status === 'fulfilled')
+    .flatMap(r => r.value)
+
+  // Filter by status if specified
+  const filteredOrders = input.status === 'all' ? allOrders : allOrders.filter(o => o.status === input.status)
+
+  // Sort by creation date descending
+  filteredOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   return {
-    orders: formattedOrders,
-    totalCount: formattedOrders.length,
+    orders: filteredOrders,
+    totalCount: filteredOrders.length,
   }
 }
 
 export const getStopLossOrdersTool = {
-  description: `Get the user's stop-loss orders from the price monitor.
+  description: `Get the user's stop-loss orders from CoW Protocol.
 
-UI CARD DISPLAYS: list of stop-loss orders with status badges (Monitoring/Triggered/Submitted/Filled/Cancelled/Failed/Expired), trigger prices, amounts, and CoW tracking links for submitted orders.
+UI CARD DISPLAYS: list of stop-loss orders with status badges (Active/Fulfilled/Cancelled/Expired), amounts, and CoW tracking links.
 
 Your role is to supplement the card, not duplicate it.
 
 Default: Respond with one brief sentence like:
 - "Here are your active stop-loss orders"
 - "I found your stop-loss orders"
-- "These are the stop-loss orders being monitored"
+- "These are your current conditional orders"
 
 Only elaborate if the user asks about specific order details.
 

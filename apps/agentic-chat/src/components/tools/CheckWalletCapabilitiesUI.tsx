@@ -45,8 +45,10 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
 
   if (!capabilitiesOutput) return null
 
-  const { walletType, capabilities, automationReady } = capabilitiesOutput
+  const { walletType, capabilities, hasEmbeddedWallet, isSafeReady } = capabilitiesOutput
   const walletTypeLabel = WALLET_TYPE_LABELS[walletType] ?? walletType
+  const needsEmbeddedWallet = !hasEmbeddedWallet && walletType !== 'none'
+  const needsSafeSetup = hasEmbeddedWallet && !isSafeReady
 
   return (
     <ToolCard.Root>
@@ -70,7 +72,7 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
             ))}
           </div>
 
-          {!automationReady && walletType !== 'none' && (
+          {needsEmbeddedWallet && (
             <div className="mt-3 rounded-md border border-blue-500/30 bg-blue-500/10 p-3 space-y-2">
               <div className="flex items-start gap-2">
                 <Lock className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
@@ -82,6 +84,18 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
               <Button variant="default" size="sm" onClick={handleLinkEmbeddedWallet} className="w-full">
                 Link Embedded Wallet
               </Button>
+            </div>
+          )}
+
+          {needsSafeSetup && (
+            <div className="mt-3 rounded-md border border-blue-500/30 bg-blue-500/10 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <Lock className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-blue-200">
+                  Your embedded wallet is ready. A Safe smart account will be deployed automatically when you create
+                  your first stop-loss or automated order.
+                </div>
+              </div>
             </div>
           )}
 
