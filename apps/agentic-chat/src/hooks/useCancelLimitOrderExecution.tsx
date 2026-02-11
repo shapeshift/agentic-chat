@@ -4,12 +4,12 @@ import type { CancelLimitOrderOutput } from '@shapeshiftoss/agentic-server'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
+import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { getCowApiUrl } from '@/lib/cow-config'
 import { analytics } from '@/lib/mixpanel'
 import { createStepPhaseMap, getStepStatus, signTypedDataWithWallet, StepStatus } from '@/lib/stepUtils'
-import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 
@@ -116,7 +116,7 @@ export const useCancelLimitOrderExecution = (
 ): UseCancelLimitOrderExecutionResult => {
   const { evmWallet } = useWalletConnection()
   const store = useChatStore()
-  const { activeConversationId } = useChatContext()
+  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 

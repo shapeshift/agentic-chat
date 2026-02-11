@@ -7,13 +7,13 @@ import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
+import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
-import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
@@ -116,7 +116,7 @@ export const useSwapExecution = (
 ): UseSwapExecutionResult => {
   const { evmAddress, solanaAddress, solanaWallet, evmWallet } = useWalletConnection()
   const store = useChatStore()
-  const { activeConversationId } = useChatContext()
+  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 

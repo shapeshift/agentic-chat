@@ -1,8 +1,9 @@
 import { PlusIcon, Trash2 } from 'lucide-react'
-import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useMemo } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { useChatContext } from '@/providers/ChatProvider'
+import { useChatStore } from '@/stores/chatStore'
+import { generateConversationId } from '@/utils/conversationStorage'
 
 import {
   AlertDialog,
@@ -26,7 +27,22 @@ import {
 } from './ui/Sidebar'
 
 export function ConversationList() {
-  const { conversations, activeConversationId, deleteConversation } = useChatContext()
+  const conversations = useChatStore(state => state.conversations)
+  const storeDeleteConversation = useChatStore(state => state.deleteConversation)
+  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
+  const navigate = useNavigate()
+
+  const deleteConversation = useCallback(
+    (conversationId: string) => {
+      storeDeleteConversation(conversationId)
+
+      if (conversationId === activeConversationId) {
+        const newId = generateConversationId()
+        void navigate(`/chats/${newId}`)
+      }
+    },
+    [activeConversationId, navigate, storeDeleteConversation]
+  )
 
   const sortedConversations = useMemo(() => {
     return [...conversations].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())

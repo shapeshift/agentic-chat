@@ -6,10 +6,10 @@ import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
+import { useParams } from 'react-router-dom'
 
 import { analytics } from '@/lib/mixpanel'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
-import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
@@ -100,7 +100,7 @@ export const useSendExecution = (
 ): UseSendExecutionResult => {
   const { evmAddress, solanaAddress, solanaWallet, evmWallet } = useWalletConnection()
   const store = useChatStore()
-  const { activeConversationId } = useChatContext()
+  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 

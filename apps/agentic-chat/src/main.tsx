@@ -13,29 +13,26 @@ import App from './app/app'
 // Polyfill Buffer for Solana SDK
 window.Buffer = Buffer
 
-// Initialize Sentry
-Sentry.init({
-  dsn: 'https://5029b06bf89b9e74ac64b3b8fc3e379d@o4507174990905344.ingest.de.sentry.io/4510434281783376',
-  sendDefaultPii: false,
-  enableLogs: true,
-  beforeSend(event, hint) {
-    const error = hint.originalException
-    if (isUserCancellation(error)) {
-      return null
-    }
+const isProduction = import.meta.env.PROD
 
-    // Filter HMR/react-refresh errors (dev-only)
-    const frames = event.exception?.values?.[0]?.stacktrace?.frames
-    if (frames?.some(frame => frame.filename?.includes('@react-refresh'))) {
-      return null
-    }
+// Initialize Sentry (production only)
+if (isProduction) {
+  Sentry.init({
+    dsn: 'https://5029b06bf89b9e74ac64b3b8fc3e379d@o4507174990905344.ingest.de.sentry.io/4510434281783376',
+    sendDefaultPii: false,
+    enableLogs: true,
+    beforeSend(event, hint) {
+      const error = hint.originalException
+      if (isUserCancellation(error)) {
+        return null
+      }
 
-    return event
-  },
-})
+      return event
+    },
+  })
+}
 
 // Initialize Mixpanel (disabled in dev unless VITE_ENABLE_ANALYTICS is set)
-const isProduction = import.meta.env.PROD
 const analyticsEnabled = isProduction || import.meta.env.VITE_ENABLE_ANALYTICS === 'true'
 
 if (analyticsEnabled) {

@@ -7,7 +7,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { analytics } from '@/lib/mixpanel'
 import { useChatStore, saveMessages, loadMessages } from '@/stores/chatStore'
-import type { Conversation } from '@/types'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
 interface ChatContextValue {
@@ -21,11 +20,6 @@ interface ChatContextValue {
   status: ReturnType<typeof useChat>['status']
   stop: () => void
   error: Error | undefined
-  conversations: Conversation[]
-  activeConversationId: string | null
-  createNewConversation: () => void
-  switchConversation: (conversationId: string) => void
-  deleteConversation: (conversationId: string) => void
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null)
@@ -51,13 +45,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
 
-  const {
-    conversations,
-    saveConversation: storeConversation,
-    deleteConversation: storeDeleteConversation,
-    markAsHistorical,
-    clearHistoricalTools,
-  } = useChatStore()
+  const { saveConversation: storeConversation, markAsHistorical, clearHistoricalTools } = useChatStore()
 
   const transport = useMemo(
     () =>
@@ -86,7 +74,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     onFinish: ({ messages }) => {
       if (!messages || messages.length === 0 || !urlConversationId) return
 
-      const title = extractTitleFromMessages(messages, conversations, urlConversationId)
+      const title = extractTitleFromMessages(messages, useChatStore.getState().conversations, urlConversationId)
       storeConversation(urlConversationId, title)
       saveMessages(urlConversationId, messages)
     },
@@ -146,30 +134,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
     [input, chat]
   )
 
-  const createNewConversation = useCallback(() => {
-    const newId = generateConversationId()
-    void navigate(`/chats/${newId}`)
-  }, [navigate])
-
-  const switchConversation = useCallback(
-    (conversationId: string) => {
-      void navigate(`/chats/${conversationId}`)
-    },
-    [navigate]
-  )
-
-  const handleDeleteConversation = useCallback(
-    (conversationId: string) => {
-      storeDeleteConversation(conversationId)
-
-      if (conversationId === urlConversationId) {
-        const newId = generateConversationId()
-        void navigate(`/chats/${newId}`)
-      }
-    },
-    [urlConversationId, navigate, storeDeleteConversation]
-  )
-
   const handleSubmitCallback = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       void handleSubmit(e)
@@ -193,11 +157,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
       status: chat.status,
       stop: stopCallback,
       error: chat.error,
-      conversations,
-      activeConversationId: urlConversationId || null,
-      createNewConversation,
-      switchConversation,
-      deleteConversation: handleDeleteConversation,
     }),
     [
       chat.messages,
@@ -208,11 +167,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
       handleInputChange,
       handleSubmitCallback,
       stopCallback,
-      conversations,
-      urlConversationId,
-      createNewConversation,
-      switchConversation,
-      handleDeleteConversation,
     ]
   )
 

@@ -3,9 +3,9 @@ import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core
 import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import { useEffect, useRef } from 'react'
+import { useParams } from 'react-router-dom'
 
 import { networkNameToChainId } from '@/lib/chains'
-import { useChatContext } from '@/providers/ChatProvider'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 
@@ -75,7 +75,7 @@ export const useNetworkSwitch = (
   networkData: SwitchNetworkOutput | null
 ): UseNetworkSwitchResult => {
   const store = useChatStore()
-  const { activeConversationId } = useChatContext()
+  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
   const { evmWallet, solanaWallet } = useWalletConnection()
