@@ -1,7 +1,7 @@
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { useDynamicContext, useEmbeddedWallet } from '@dynamic-labs/sdk-react-core'
 import type { CheckWalletCapabilitiesOutput } from '@shapeshiftoss/agentic-server'
 import { Check, Lock, Shield } from 'lucide-react'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 import { Button } from '../ui/Button'
 import { StatusText } from '../ui/StatusText'
@@ -20,8 +20,24 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
   const { state, output, errorText } = toolPart
   const capabilitiesOutput = output as CheckWalletCapabilitiesOutput | undefined
   const { setShowAuthFlow } = useDynamicContext()
+  const { createEmbeddedWallet, userHasEmbeddedWallet } = useEmbeddedWallet()
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
 
-  const handleCreateEmbeddedWallet = useCallback(() => {
+  const handleCreateEmbeddedWallet = useCallback(async () => {
+    if (userHasEmbeddedWallet()) return
+    setIsCreating(true)
+    setCreateError(null)
+    try {
+      await createEmbeddedWallet()
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create embedded wallet')
+    } finally {
+      setIsCreating(false)
+    }
+  }, [createEmbeddedWallet, userHasEmbeddedWallet])
+
+  const handleConnect = useCallback(() => {
     setShowAuthFlow(true)
   }, [setShowAuthFlow])
 
@@ -73,9 +89,16 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
                   social login — it's self-custodial with no seed phrase.
                 </div>
               </div>
-              <Button variant="default" size="sm" onClick={handleCreateEmbeddedWallet} className="w-full">
-                Create Embedded Wallet
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => void handleCreateEmbeddedWallet()}
+                disabled={isCreating}
+                className="w-full"
+              >
+                {isCreating ? 'Creating...' : 'Create Embedded Wallet'}
               </Button>
+              {createError && <div className="text-xs text-red-400">{createError}</div>}
             </div>
           )}
 
@@ -84,7 +107,7 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
               <div className="text-xs text-blue-200">
                 Connect a wallet to get started with trading and portfolio management.
               </div>
-              <Button variant="default" size="sm" onClick={handleCreateEmbeddedWallet} className="w-full">
+              <Button variant="default" size="sm" onClick={handleConnect} className="w-full">
                 Connect Wallet
               </Button>
             </div>
