@@ -56,6 +56,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
           solanaAddress: walletRef.current.solanaAddress,
           approvedChainIds: walletRef.current.approvedChainIds,
           hasEmbeddedWallet: walletRef.current.hasEmbeddedWallet,
+          hasExternalWallet: walletRef.current.hasExternalWallet,
         }),
       }),
     []

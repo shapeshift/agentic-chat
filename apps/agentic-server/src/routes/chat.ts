@@ -68,7 +68,8 @@ function buildWalletContext(
   evmAddress?: string,
   solanaAddress?: string,
   approvedChainIds?: string[],
-  hasEmbeddedWallet?: boolean
+  hasEmbeddedWallet?: boolean,
+  hasExternalWallet?: boolean
 ): WalletContext {
   const connectedWallets: Record<string, { address: string }> = {}
 
@@ -95,7 +96,7 @@ function buildWalletContext(
     }
   }
 
-  return { connectedWallets, hasEmbeddedWallet }
+  return { connectedWallets, hasEmbeddedWallet, hasExternalWallet }
 }
 
 function buildTools(walletContext: WalletContext) {
@@ -298,16 +299,23 @@ Examples:
 export async function handleChatRequest(c: Context) {
   try {
     const body = await c.req.json()
-    const { messages, evmAddress, solanaAddress, approvedChainIds, hasEmbeddedWallet } = body as {
+    const { messages, evmAddress, solanaAddress, approvedChainIds, hasEmbeddedWallet, hasExternalWallet } = body as {
       messages: unknown
       evmAddress?: string
       solanaAddress?: string
       approvedChainIds?: string[]
       hasEmbeddedWallet?: boolean
+      hasExternalWallet?: boolean
     }
 
     // Build wallet context from addresses (filtered by approved chains if provided)
-    const walletContext = buildWalletContext(evmAddress, solanaAddress, approvedChainIds, hasEmbeddedWallet)
+    const walletContext = buildWalletContext(
+      evmAddress,
+      solanaAddress,
+      approvedChainIds,
+      hasEmbeddedWallet,
+      hasExternalWallet
+    )
 
     // Convert UIMessages to ModelMessages
     const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])

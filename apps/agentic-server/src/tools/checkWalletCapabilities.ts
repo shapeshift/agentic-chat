@@ -7,8 +7,9 @@ export const checkWalletCapabilitiesSchema = z.object({})
 export type CheckWalletCapabilitiesInput = z.infer<typeof checkWalletCapabilitiesSchema>
 
 export type CheckWalletCapabilitiesOutput = {
-  walletType: 'embedded' | 'external' | 'none'
+  walletType: 'embedded' | 'external' | 'both' | 'none'
   hasEmbeddedWallet: boolean
+  hasExternalWallet: boolean
   capabilities: string[]
   automationReady: boolean
 }
@@ -19,12 +20,15 @@ export function executeCheckWalletCapabilities(
 ): CheckWalletCapabilitiesOutput {
   const hasWallet = !!walletContext?.connectedWallets && Object.keys(walletContext.connectedWallets).length > 0
   const hasEmbeddedWallet = walletContext?.hasEmbeddedWallet ?? false
+  const hasExternalWallet = walletContext?.hasExternalWallet ?? false
 
   const walletType: CheckWalletCapabilitiesOutput['walletType'] = !hasWallet
     ? 'none'
-    : hasEmbeddedWallet
-      ? 'embedded'
-      : 'external'
+    : hasEmbeddedWallet && hasExternalWallet
+      ? 'both'
+      : hasEmbeddedWallet
+        ? 'embedded'
+        : 'external'
 
   const baseCapabilities = ['Swap tokens', 'Send & receive', 'View portfolio', 'Limit orders']
   const automationCapabilities = ['TWAP orders', 'DCA (dollar-cost averaging)', 'Stop-loss orders']
@@ -32,6 +36,7 @@ export function executeCheckWalletCapabilities(
   return {
     walletType,
     hasEmbeddedWallet,
+    hasExternalWallet,
     capabilities: hasEmbeddedWallet ? [...baseCapabilities, ...automationCapabilities] : baseCapabilities,
     automationReady: hasEmbeddedWallet,
   }
