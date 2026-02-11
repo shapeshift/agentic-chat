@@ -165,6 +165,19 @@ export const useChatStore = create<ChatState>()(
 
           let updated: PersistedToolState[]
           if (existingIndex >= 0) {
+            const existing = storeState.persistedTransactions[existingIndex]
+            if (existing) {
+              // Don't overwrite terminal states - they're immutable
+              // A state is terminal if it has a tx hash (swap) or order ID (limit order) - the critical operation completed
+              const hasTxHash = existing.meta.swapTxHash || existing.meta.approvalTxHash
+              const hasOrderId = existing.meta.orderId
+
+              if (hasTxHash || hasOrderId) {
+                // Terminal state - don't overwrite, keep existing
+                return storeState
+              }
+            }
+
             updated = [...storeState.persistedTransactions]
             updated[existingIndex] = state
           } else {

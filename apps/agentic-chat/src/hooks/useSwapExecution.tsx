@@ -86,12 +86,13 @@ function swapStateToPersistedState(
 }
 
 function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
+  const hasError = persisted.phases.includes('error')
   return {
     currentStep: SwapStep.COMPLETE,
     completedSteps: SWAP_PHASES.fromPhases(persisted.phases),
     approvalTxHash: persisted.meta.approvalTxHash as string | undefined,
     swapTxHash: persisted.meta.swapTxHash as string | undefined,
-    error: persisted.meta.error as string | undefined,
+    error: hasError ? (persisted.meta.error as string) : undefined,
   }
 }
 
@@ -269,6 +270,21 @@ export const useSwapExecution = (
       swapTxHash = await executeSwap(swapTx, {
         solanaSigner,
       })
+
+      // Persist successful state immediately after getting tx hash
+      persistState({
+        currentStep: SwapStep.COMPLETE,
+        completedSteps: new Set([
+          SwapStep.QUOTE,
+          SwapStep.NETWORK_SWITCH,
+          ...(needsApproval ? [SwapStep.APPROVAL, SwapStep.APPROVAL_CONFIRMATION] : []),
+          SwapStep.SWAP,
+        ]),
+        ...(approvalTxHash && { approvalTxHash }),
+        ...(swapTxHash && { swapTxHash }),
+      })
+
+      // Update runtime state
       setState(draft => {
         draft.swapTxHash = swapTxHash
         draft.completedSteps.add(draft.currentStep)
@@ -304,18 +320,6 @@ export const useSwapExecution = (
           is complete
         </span>
       )
-
-      persistState({
-        currentStep: SwapStep.COMPLETE,
-        completedSteps: new Set([
-          SwapStep.QUOTE,
-          SwapStep.NETWORK_SWITCH,
-          ...(needsApproval ? [SwapStep.APPROVAL, SwapStep.APPROVAL_CONFIRMATION] : []),
-          SwapStep.SWAP,
-        ]),
-        ...(approvalTxHash && { approvalTxHash }),
-        ...(swapTxHash && { swapTxHash }),
-      })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       let errorState: SwapState | undefined

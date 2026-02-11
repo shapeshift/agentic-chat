@@ -82,12 +82,13 @@ function limitOrderStateToPersistedState(
 }
 
 function persistedStateToLimitOrderState(persisted: PersistedToolState): LimitOrderState {
+  const hasError = persisted.phases.includes('error')
   return {
     currentStep: LimitOrderStep.COMPLETE,
     completedSteps: LIMIT_ORDER_PHASES.fromPhases(persisted.phases),
     orderId: persisted.meta.orderId as string | undefined,
     approvalTxHash: persisted.meta.approvalTxHash as string | undefined,
-    error: persisted.meta.error as string | undefined,
+    error: hasError ? (persisted.meta.error as string) : undefined,
   }
 }
 
@@ -280,6 +281,21 @@ export const useLimitOrderExecution = (
       // Step 5: Submit to CoW
       orderId = await submitSignedOrder(orderParams.chainId, orderParams, signingData, signature)
 
+      // Persist successful state immediately after order submission succeeds
+      persistState({
+        currentStep: LimitOrderStep.COMPLETE,
+        completedSteps: new Set([
+          LimitOrderStep.PREPARE,
+          LimitOrderStep.NETWORK_SWITCH,
+          ...(needsApproval ? [LimitOrderStep.APPROVAL, LimitOrderStep.APPROVAL_CONFIRMATION] : []),
+          LimitOrderStep.SIGN,
+          LimitOrderStep.SUBMIT,
+        ]),
+        ...(orderId && { orderId }),
+        ...(approvalTxHash && { approvalTxHash }),
+      })
+
+      // Update runtime state
       setState(draft => {
         draft.orderId = orderId
         draft.completedSteps.add(LimitOrderStep.SUBMIT)
@@ -306,19 +322,6 @@ export const useLimitOrderExecution = (
         buyAmount: data.summary.buyAsset.estimatedAmount,
         network: data.summary.network,
         limitPrice: data.summary.limitPrice,
-      })
-
-      persistState({
-        currentStep: LimitOrderStep.COMPLETE,
-        completedSteps: new Set([
-          LimitOrderStep.PREPARE,
-          LimitOrderStep.NETWORK_SWITCH,
-          ...(needsApproval ? [LimitOrderStep.APPROVAL, LimitOrderStep.APPROVAL_CONFIRMATION] : []),
-          LimitOrderStep.SIGN,
-          LimitOrderStep.SUBMIT,
-        ]),
-        ...(orderId && { orderId }),
-        ...(approvalTxHash && { approvalTxHash }),
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)

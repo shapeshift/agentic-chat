@@ -20,6 +20,8 @@ export function useToolExecutionEffect<TData, TState>(
     return toolState !== undefined ? (toolState as TState) : initialState
   })
 
+  const persistedTransaction = useChatStore(store => store.getPersistedTransaction(toolCallId))
+
   const wrappedSetState = (updater: (draft: TState) => void) => {
     setRuntimeState(toolCallId, updater)
   }
@@ -31,6 +33,10 @@ export function useToolExecutionEffect<TData, TState>(
   setStateRef.current = wrappedSetState
 
   useEffect(() => {
+    if (persistedTransaction) {
+      return
+    }
+
     if (!data) {
       return
     }
@@ -51,7 +57,7 @@ export function useToolExecutionEffect<TData, TState>(
 
     void executeWrapper()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toolCallId, data])
+  }, [toolCallId, data, persistedTransaction])
 
   return {
     state,
