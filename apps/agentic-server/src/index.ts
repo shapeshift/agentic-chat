@@ -119,6 +119,26 @@ export {
   type CancelLimitOrderInput,
   type CancelLimitOrderOutput,
 } from './tools/limitOrder'
+export {
+  createStopLossTool,
+  executeCreateStopLoss,
+  type CreateStopLossInput,
+  type CreateStopLossOutput,
+  type StopLossSummary,
+  type StopLossRegistration,
+} from './tools/stopLoss'
+export {
+  getStopLossOrdersTool,
+  executeGetStopLossOrders,
+  type GetStopLossOrdersInput,
+  type GetStopLossOrdersOutput,
+} from './tools/stopLoss'
+export {
+  cancelStopLossTool,
+  executeCancelStopLoss,
+  type CancelStopLossInput,
+  type CancelStopLossOutput,
+} from './tools/stopLoss'
 export type { CowOrderSigningData, CowEIP712Domain, CowEIP712Types } from './lib/cow/types'
 export type {
   TrimmedTrendingCoin,

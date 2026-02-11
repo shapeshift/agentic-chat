@@ -32,6 +32,7 @@ import { mathCalculator } from '../tools/mathCalculator'
 import { portfolioTool } from '../tools/portfolio'
 import { receiveTool } from '../tools/receive'
 import { sendTool } from '../tools/send'
+import { createStopLossTool, getStopLossOrdersTool, cancelStopLossTool } from '../tools/stopLoss'
 import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
 import type { WalletContext } from '../utils/walletContextSimple'
@@ -125,6 +126,9 @@ function buildTools(walletContext: WalletContext) {
     createLimitOrderTool: wrapTool('createLimitOrderTool', createLimitOrderTool, walletContext),
     getLimitOrdersTool: wrapTool('getLimitOrdersTool', getLimitOrdersTool, walletContext),
     cancelLimitOrderTool: wrapTool('cancelLimitOrderTool', cancelLimitOrderTool, walletContext),
+    createStopLossTool: wrapTool('createStopLossTool', createStopLossTool, walletContext),
+    getStopLossOrdersTool: wrapTool('getStopLossOrdersTool', getStopLossOrdersTool, walletContext),
+    cancelStopLossTool: wrapTool('cancelStopLossTool', cancelStopLossTool, walletContext),
 
     // Special case - has custom address resolution logic
     getAllowanceTool: {
@@ -230,7 +234,7 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
   - getAssets: Detailed market data with UI card - use when user wants comprehensive info (volume, market cap, sentiment, etc.)
   - getTrendingTokens, getTopGainersLosers, getNewCoins, getCategories, getTrendingPools
 - **Portfolio**: portfolio (balances), transactionHistoryTool (history/analytics)
-- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders)
+- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders), createStopLoss/getStopLossOrders/cancelStopLoss (stop-loss orders)
 - **Utilities**: switchNetwork (change chains), mathCalculator (arithmetic), getShapeShiftKnowledge (platform info)
 
 **Tool UI Behavior:**
@@ -274,6 +278,18 @@ Examples:
 - Use getLimitOrders to check user's existing orders
 - Use cancelLimitOrder to cancel pending orders
 - Orders auto-execute when market price reaches limit
+
+**Stop-Loss Orders:**
+- Use createStopLoss when user wants to protect against price drops (e.g., "set stop-loss on ETH at $3000")
+- Trigger price must be BELOW current market price
+- The order is signed by the user but held server-side until price triggers
+- When price drops to trigger, the pre-signed order is submitted to CoW Protocol
+- 2% slippage buffer is applied automatically
+- Supports: Ethereum, Gnosis, Arbitrum (same-chain only, no cross-chain)
+- Native tokens (ETH) must be wrapped (WETH) to use as sell asset
+- Use getStopLossOrders to check existing stop-loss orders
+- Use cancelStopLoss to cancel pending (monitoring) orders
+- If a stop-loss was already submitted to CoW, use cancelLimitOrder instead
 
 **Embedded Wallets & Automation:**
 - Users can connect external wallets (MetaMask, etc.) OR create an embedded wallet (email/social login)
