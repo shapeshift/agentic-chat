@@ -1,16 +1,16 @@
-import { encodeAbiParameters, encodeFunctionData, keccak256, parseAbiParameters } from 'viem'
+import { encodeAbiParameters, encodeFunctionData, getAddress, keccak256, parseAbiParameters } from 'viem'
 
 // ComposableCoW contract address (same across all supported chains)
-export const COMPOSABLE_COW_ADDRESS = '0xfdaFc9d1902f4e0b84f65f49f244b32b31013b74'
+export const COMPOSABLE_COW_ADDRESS = getAddress('0xfdaFc9d1902f4e0b84f65f49f244b32b31013b74')
 
 // StopLoss handler address from cowprotocol/composable-cow deployments
-export const STOP_LOSS_HANDLER_ADDRESS = '0xE8212F30C28B4AAB467DF3725C14d6e89C2eB967'
+export const STOP_LOSS_HANDLER_ADDRESS = getAddress('0xE8212F30C28B4AAB467DF3725C14d6e89C2eB967')
 
 // CoW Settlement contract (for VaultRelayer approvals)
-export const COW_SETTLEMENT_ADDRESS = '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'
+export const COW_SETTLEMENT_ADDRESS = getAddress('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')
 
 // VaultRelayer address (approvals target, same across all chains)
-export const COW_VAULT_RELAYER_ADDRESS = '0xc92e8bdf79f0507f65a392b0ab4667716bfe0110'
+export const COW_VAULT_RELAYER_ADDRESS = getAddress('0xc92e8bdf79f0507f65a392b0ab4667716bfe0110')
 
 export interface ConditionalOrderParams {
   handler: `0x${string}`
