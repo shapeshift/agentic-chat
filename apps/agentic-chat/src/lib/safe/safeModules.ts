@@ -1,4 +1,5 @@
 import Safe from '@safe-global/protocol-kit'
+import { encodeFunctionData, getAddress } from 'viem'
 
 import { setSafeState, getSafeState } from './safeStorage'
 
@@ -14,8 +15,18 @@ function getProvider(): SafeProvider {
 
 // ExtensibleFallbackHandler — required for ComposableCoW ERC-1271 verification
 // This is the handler that allows ComposableCoW to verify signatures via the Safe
-// Same address across Ethereum, Gnosis, Arbitrum
-const EXTENSIBLE_FALLBACK_HANDLER = '0x2f870a80647BbC554F3a0EBD093f11B4d2a7571c'
+// Same address across Ethereum, Gnosis, Arbitrum (checksummed)
+const EXTENSIBLE_FALLBACK_HANDLER = getAddress('0x2f870a80647BbC554F3a0EBD093f11B4d2a7571c')
+
+const SET_FALLBACK_HANDLER_ABI = [
+  {
+    name: 'setFallbackHandler',
+    type: 'function',
+    inputs: [{ name: 'handler', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const
 
 export async function enableComposableCowModules(
   safeAddress: string,
@@ -28,10 +39,25 @@ export async function enableComposableCowModules(
     safeAddress,
   })
 
-  // Set the ExtensibleFallbackHandler as the Safe's fallback handler
-  // This enables ERC-1271 signature verification for ComposableCoW
-  const enableFallbackHandlerTx = await protocolKit.createEnableFallbackHandlerTx(EXTENSIBLE_FALLBACK_HANDLER)
-  const result = await protocolKit.executeTransaction(enableFallbackHandlerTx)
+  // Encode setFallbackHandler(address) calldata manually to bypass SDK validation
+  // The Safe SDK's createEnableFallbackHandlerTx rejects non-whitelisted handler addresses
+  const calldata = encodeFunctionData({
+    abi: SET_FALLBACK_HANDLER_ABI,
+    functionName: 'setFallbackHandler',
+    args: [EXTENSIBLE_FALLBACK_HANDLER],
+  })
+
+  const setFallbackHandlerTx = await protocolKit.createTransaction({
+    transactions: [
+      {
+        to: safeAddress,
+        value: '0',
+        data: calldata,
+      },
+    ],
+  })
+
+  const result = await protocolKit.executeTransaction(setFallbackHandlerTx)
   const txHash = typeof result === 'string' ? result : result.hash
 
   // Update storage to reflect modules are enabled
