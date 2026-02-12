@@ -20,6 +20,8 @@ import { StopLossUI } from './tools/StopLossUI'
 import { SwitchNetworkUI } from './tools/SwitchNetworkUI'
 import { TopGainersLosersUI } from './tools/TopGainersLosersUI'
 import { TrendingTokensUI } from './tools/TrendingTokensUI'
+import { VaultDepositUI } from './tools/VaultDepositUI'
+import { VaultWithdrawUI } from './tools/VaultWithdrawUI'
 
 interface ToolUIProps {
   toolPart: DynamicToolUIPart
@@ -49,6 +51,8 @@ export const TOOL_UI_REGISTRY: Record<string, ToolUIComponent> = {
   getStopLossOrdersTool: GetStopLossOrdersUI,
   cancelStopLossTool: CancelStopLossUI,
   checkWalletCapabilitiesTool: CheckWalletCapabilitiesUI,
+  vaultDepositTool: VaultDepositUI,
+  vaultWithdrawTool: VaultWithdrawUI,
 } as const
 
 export function getToolUIComponent(toolName: string): ToolUIComponent | undefined {

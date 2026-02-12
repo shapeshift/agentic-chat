@@ -42,13 +42,12 @@ export function executeCheckWalletCapabilities(
     hasExternalWallet,
     safeAddress: walletContext?.safeAddress,
     isSafeReady,
-    capabilities:
-      hasEmbeddedWallet && isSafeReady
-        ? [...baseCapabilities, ...automationCapabilities]
-        : hasEmbeddedWallet
-          ? [...baseCapabilities, 'Safe wallet setup needed for automation']
-          : baseCapabilities,
-    automationReady: hasEmbeddedWallet && isSafeReady,
+    capabilities: isSafeReady
+      ? [...baseCapabilities, ...automationCapabilities]
+      : hasWallet
+        ? [...baseCapabilities, 'Safe smart account setup needed for automation']
+        : baseCapabilities,
+    automationReady: isSafeReady,
   }
 }
 
@@ -57,7 +56,7 @@ export const checkWalletCapabilitiesTool = {
 
 Call this tool when the user asks about automated trading features (TWAP, DCA, stop-loss, scheduled trades), or asks what their wallet can do, or asks about embedded vs external wallets.
 
-UI CARD DISPLAYS: wallet type, Safe smart account status, capability checklist, and setup prompts if automation features require an embedded wallet + Safe.
+UI CARD DISPLAYS: wallet type, Safe smart account status, capability checklist, and setup prompts if automation features require a Safe smart account.
 
 Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
 
@@ -65,8 +64,7 @@ Default: Respond with one brief, natural sentence like:
 - "Here's what your wallet supports"
 - "Let me check your wallet's capabilities"
 
-If the user has an external wallet and wants automation, explain that embedded wallets + Safe smart accounts enable these features.
-If the user has an embedded wallet but no Safe, explain that a Safe smart account needs to be deployed first (happens automatically on first stop-loss order).`,
+If the user wants automation and doesn't have a Safe yet, explain that a Safe smart account needs to be deployed first (happens automatically on first stop-loss order). Any connected wallet (MetaMask, Rabby, embedded, etc.) can own a Safe.`,
   inputSchema: checkWalletCapabilitiesSchema,
   execute: executeCheckWalletCapabilities,
 }

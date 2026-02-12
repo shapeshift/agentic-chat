@@ -30,11 +30,24 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
     )
   }
 
-  const [prepareStep, safeCheckStep, networkStep, approvalStep, approvalConfirmStep, submitStep, confirmStep] = steps
+  const needsDeposit = orderOutput?.needsDeposit ?? false
+  const [
+    prepareStep,
+    safeCheckStep,
+    networkStep,
+    depositStep,
+    depositConfirmStep,
+    approvalStep,
+    approvalConfirmStep,
+    submitStep,
+    confirmStep,
+  ] = steps
   if (
     !prepareStep ||
     !safeCheckStep ||
     !networkStep ||
+    !depositStep ||
+    !depositConfirmStep ||
     !approvalStep ||
     !approvalConfirmStep ||
     !submitStep ||
@@ -53,6 +66,8 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
     prepareStep.status,
     safeCheckStep.status,
     networkStep.status,
+    depositStep.status,
+    depositConfirmStep.status,
     approvalStep.status,
     approvalConfirmStep.status,
     submitStep.status,
@@ -129,7 +144,7 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
         </TxStepCard.Content>
       )}
 
-      <TxStepCard.Stepper completedCount={completedCount} totalCount={7}>
+      <TxStepCard.Stepper completedCount={completedCount} totalCount={9}>
         <TxStepCard.Step status={prepareStep.status} connectorBottom>
           Preparing stop-loss order
         </TxStepCard.Step>
@@ -138,6 +153,16 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
         </TxStepCard.Step>
         <TxStepCard.Step status={networkStep.status} connectorTop connectorBottom>
           {networkName ? `Switch to ${networkName}` : 'Switch network'}
+        </TxStepCard.Step>
+        <TxStepCard.Step status={needsDeposit ? depositStep.status : StepStatus.SKIPPED} connectorTop connectorBottom>
+          Deposit tokens to vault
+        </TxStepCard.Step>
+        <TxStepCard.Step
+          status={needsDeposit ? depositConfirmStep.status : StepStatus.SKIPPED}
+          connectorTop
+          connectorBottom
+        >
+          Confirming deposit
         </TxStepCard.Step>
         <TxStepCard.Step status={needsApproval ? approvalStep.status : StepStatus.SKIPPED} connectorTop connectorBottom>
           Approve token via Safe

@@ -138,6 +138,28 @@ export {
   type CancelStopLossInput,
   type CancelStopLossOutput,
 } from './tools/stopLoss'
+export {
+  vaultBalanceTool,
+  executeVaultBalance,
+  vaultBalanceSchema,
+  type VaultBalanceInput,
+  type VaultBalanceOutput,
+  type VaultBalanceEntry,
+} from './tools/vault'
+export {
+  vaultDepositTool,
+  executeVaultDeposit,
+  vaultDepositSchema,
+  type VaultDepositInput,
+  type VaultDepositOutput,
+} from './tools/vault'
+export {
+  vaultWithdrawTool,
+  executeVaultWithdraw,
+  vaultWithdrawSchema,
+  type VaultWithdrawInput,
+  type VaultWithdrawOutput,
+} from './tools/vault'
 export type { CowOrderSigningData, CowEIP712Domain, CowEIP712Types } from './lib/cow/types'
 export type {
   TrimmedTrendingCoin,

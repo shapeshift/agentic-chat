@@ -18,6 +18,7 @@ import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
+import { sendTransaction } from '@/utils/sendTransaction'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
@@ -28,17 +29,21 @@ export enum StopLossStep {
   PREPARE = 0,
   SAFE_CHECK = 1,
   NETWORK_SWITCH = 2,
-  APPROVAL = 3,
-  APPROVAL_CONFIRMATION = 4,
-  SUBMIT_TO_COMPOSABLE_COW = 5,
-  CONFIRM_TX = 6,
-  COMPLETE = 7,
+  VAULT_DEPOSIT = 3,
+  VAULT_DEPOSIT_CONFIRMATION = 4,
+  APPROVAL = 5,
+  APPROVAL_CONFIRMATION = 6,
+  SUBMIT_TO_COMPOSABLE_COW = 7,
+  CONFIRM_TX = 8,
+  COMPLETE = 9,
 }
 
 const STOP_LOSS_PHASES = createStepPhaseMap<StopLossStep>({
   [StopLossStep.PREPARE]: 'prepare_complete',
   [StopLossStep.SAFE_CHECK]: 'safe_checked',
   [StopLossStep.NETWORK_SWITCH]: 'network_switched',
+  [StopLossStep.VAULT_DEPOSIT]: 'deposited',
+  [StopLossStep.VAULT_DEPOSIT_CONFIRMATION]: 'deposit_confirmed',
   [StopLossStep.APPROVAL]: 'approved',
   [StopLossStep.APPROVAL_CONFIRMATION]: 'approval_confirmed',
   [StopLossStep.SUBMIT_TO_COMPOSABLE_COW]: 'submitted',
@@ -48,6 +53,7 @@ const STOP_LOSS_PHASES = createStepPhaseMap<StopLossStep>({
 interface StopLossState {
   currentStep: StopLossStep
   completedSteps: Set<StopLossStep>
+  depositTxHash?: string
   approvalTxHash?: string
   submitTxHash?: string
   error?: string
@@ -76,6 +82,7 @@ function stopLossStateToPersistedState(
     meta: {
       ...(state.submitTxHash && { submitTxHash: state.submitTxHash }),
       ...(state.approvalTxHash && { approvalTxHash: state.approvalTxHash }),
+      ...(state.depositTxHash && { depositTxHash: state.depositTxHash }),
       ...(state.error && { error: state.error }),
       ...(networkName && { networkName }),
     },
@@ -91,6 +98,7 @@ function persistedStateToStopLossState(persisted: PersistedToolState): StopLossS
     completedSteps: STOP_LOSS_PHASES.fromPhases(persisted.phases),
     submitTxHash: persisted.meta.submitTxHash as string | undefined,
     approvalTxHash: persisted.meta.approvalTxHash as string | undefined,
+    depositTxHash: persisted.meta.depositTxHash as string | undefined,
     error: hasError ? (persisted.meta.error as string) : undefined,
   }
 }
@@ -213,11 +221,52 @@ export const useStopLossExecution = (
 
       setState(draft => {
         draft.completedSteps.add(StopLossStep.NETWORK_SWITCH)
-        draft.currentStep = StopLossStep.APPROVAL
+        draft.currentStep = StopLossStep.VAULT_DEPOSIT
         draft.error = undefined
       })
 
-      // Step 3: Approval via Safe (if needed)
+      // Step 3: Vault Deposit — transfer sell tokens from EOA to Safe (if needed)
+      const needsDeposit = data.needsDeposit
+      if (needsDeposit && data.depositTx) {
+        const depositHash = await sendTransaction({
+          chainId: data.depositTx.chainId,
+          data: data.depositTx.data,
+          from: data.depositTx.from,
+          to: data.depositTx.to,
+          value: data.depositTx.value,
+        })
+
+        setState(draft => {
+          draft.depositTxHash = depositHash
+          draft.completedSteps.add(StopLossStep.VAULT_DEPOSIT)
+          draft.currentStep = StopLossStep.VAULT_DEPOSIT_CONFIRMATION
+          draft.error = undefined
+        })
+
+        // Step 4: Wait for deposit confirmation
+        const depositPublicClient = getPublicClient(wagmiConfig, { chainId: targetChainId })
+        if (depositPublicClient) {
+          await depositPublicClient.waitForTransactionReceipt({
+            hash: depositHash as `0x${string}`,
+            confirmations: 1,
+          })
+        }
+
+        setState(draft => {
+          draft.completedSteps.add(StopLossStep.VAULT_DEPOSIT_CONFIRMATION)
+          draft.currentStep = StopLossStep.APPROVAL
+          draft.error = undefined
+        })
+      } else {
+        setState(draft => {
+          draft.completedSteps.add(StopLossStep.VAULT_DEPOSIT)
+          draft.completedSteps.add(StopLossStep.VAULT_DEPOSIT_CONFIRMATION)
+          draft.currentStep = StopLossStep.APPROVAL
+          draft.error = undefined
+        })
+      }
+
+      // Step 5: Approval via Safe (if needed)
       if (needsApproval && approvalTx) {
         approvalTxHash = await executeSafeTransaction(
           safeAddress,
@@ -294,6 +343,8 @@ export const useStopLossExecution = (
           StopLossStep.PREPARE,
           StopLossStep.SAFE_CHECK,
           StopLossStep.NETWORK_SWITCH,
+          StopLossStep.VAULT_DEPOSIT,
+          StopLossStep.VAULT_DEPOSIT_CONFIRMATION,
           ...(needsApproval ? [StopLossStep.APPROVAL, StopLossStep.APPROVAL_CONFIRMATION] : []),
           StopLossStep.SUBMIT_TO_COMPOSABLE_COW,
           StopLossStep.CONFIRM_TX,
@@ -359,6 +410,11 @@ export const useStopLossExecution = (
       { step: StopLossStep.PREPARE, status: prepareStepStatus },
       { step: StopLossStep.SAFE_CHECK, status: getStepStatus(StopLossStep.SAFE_CHECK, state) },
       { step: StopLossStep.NETWORK_SWITCH, status: getStepStatus(StopLossStep.NETWORK_SWITCH, state) },
+      { step: StopLossStep.VAULT_DEPOSIT, status: getStepStatus(StopLossStep.VAULT_DEPOSIT, state) },
+      {
+        step: StopLossStep.VAULT_DEPOSIT_CONFIRMATION,
+        status: getStepStatus(StopLossStep.VAULT_DEPOSIT_CONFIRMATION, state),
+      },
       { step: StopLossStep.APPROVAL, status: getStepStatus(StopLossStep.APPROVAL, state) },
       {
         step: StopLossStep.APPROVAL_CONFIRMATION,

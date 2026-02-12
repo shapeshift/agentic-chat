@@ -7,6 +7,8 @@ import type {
   InitiateSwapOutput,
   SendOutput,
   SwitchNetworkOutput,
+  VaultDepositOutput,
+  VaultWithdrawOutput,
 } from '@shapeshiftoss/agentic-server'
 import { produce, enableMapSet } from 'immer'
 import { create } from 'zustand'
@@ -23,7 +25,16 @@ type ChatMessage = ReturnType<typeof useChat>['messages'][number]
 
 export interface PersistedToolState {
   toolCallId: string
-  toolType: 'swap' | 'send' | 'network_switch' | 'limit_order' | 'cancel_limit_order' | 'stop_loss' | 'cancel_stop_loss'
+  toolType:
+    | 'swap'
+    | 'send'
+    | 'network_switch'
+    | 'limit_order'
+    | 'cancel_limit_order'
+    | 'stop_loss'
+    | 'cancel_stop_loss'
+    | 'vault_deposit'
+    | 'vault_withdraw'
   conversationId: string
   timestamp: number
   phases: string[]
@@ -36,6 +47,8 @@ export interface PersistedToolState {
     | CancelLimitOrderOutput
     | CreateStopLossOutput
     | CancelStopLossOutput
+    | VaultDepositOutput
+    | VaultWithdrawOutput
   walletAddress?: string
 }
 

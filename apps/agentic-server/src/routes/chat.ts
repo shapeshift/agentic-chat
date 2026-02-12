@@ -35,6 +35,7 @@ import { sendTool } from '../tools/send'
 import { createStopLossTool, getStopLossOrdersTool, cancelStopLossTool } from '../tools/stopLoss'
 import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
+import { vaultBalanceTool, vaultDepositTool, vaultWithdrawTool } from '../tools/vault'
 import type { WalletContext } from '../utils/walletContextSimple'
 
 const allEvmChainIds = [
@@ -132,6 +133,9 @@ function buildTools(walletContext: WalletContext) {
     createStopLossTool: wrapTool('createStopLossTool', createStopLossTool, walletContext),
     getStopLossOrdersTool: wrapTool('getStopLossOrdersTool', getStopLossOrdersTool, walletContext),
     cancelStopLossTool: wrapTool('cancelStopLossTool', cancelStopLossTool, walletContext),
+    vaultBalanceTool: wrapTool('vaultBalanceTool', vaultBalanceTool, walletContext),
+    vaultDepositTool: wrapTool('vaultDepositTool', vaultDepositTool, walletContext),
+    vaultWithdrawTool: wrapTool('vaultWithdrawTool', vaultWithdrawTool, walletContext),
 
     // Special case - has custom address resolution logic
     getAllowanceTool: {
@@ -237,7 +241,7 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
   - getAssets: Detailed market data with UI card - use when user wants comprehensive info (volume, market cap, sentiment, etc.)
   - getTrendingTokens, getTopGainersLosers, getNewCoins, getCategories, getTrendingPools
 - **Portfolio**: portfolio (balances), transactionHistoryTool (history/analytics)
-- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders), createStopLoss/getStopLossOrders/cancelStopLoss (stop-loss orders)
+- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders), createStopLoss/getStopLossOrders/cancelStopLoss (stop-loss orders), vaultDeposit/vaultWithdraw/vaultBalance (Safe vault management)
 - **Utilities**: switchNetwork (change chains), mathCalculator (arithmetic), getShapeShiftKnowledge (platform info)
 
 **Tool UI Behavior:**
@@ -284,7 +288,7 @@ Examples:
 
 **Stop-Loss Orders (ComposableCoW + Safe):**
 - Use createStopLoss when user wants to protect against price drops (e.g., "set stop-loss on ETH at $3000")
-- Requires an embedded wallet + Safe smart account (Safe is deployed automatically on first use)
+- Requires a Safe smart account (deployed automatically on first use — works with any connected wallet)
 - Orders are registered on-chain via ComposableCoW — CoW's watchtower network monitors and executes them
 - Trigger price must be BELOW current market price
 - Only tokens with Chainlink price feed oracles are supported
@@ -295,15 +299,21 @@ Examples:
 - Use cancelStopLoss to cancel active orders (requires on-chain transaction via Safe)
 - If user doesn't have a Safe ready, guide them through setup (checkWalletCapabilities)
 
-**Embedded Wallets, Safe & Automation:**
-- Users can connect external wallets (MetaMask, etc.) OR create an embedded wallet (email/social login)
-- Embedded wallets are self-custodial MPC wallets - no seed phrase, social recovery available
-- Automation features (stop-loss, TWAP, DCA) require: embedded wallet + Safe smart account
-- Safe is a 1-of-1 smart account owned by the embedded wallet — deployed lazily on first automation request
+**Safe & Automation:**
+- Automation features (stop-loss, TWAP, DCA) require a Safe smart account
+- Safe is a 1-of-1 smart account owned by the connected wallet (any EOA — MetaMask, Rabby, embedded, etc.)
+- Safe is deployed lazily on first automation request
 - When users ask about automated features, call checkWalletCapabilitiesTool to check readiness
-- Wallet routing: regular swaps/sends → external or embedded EOA, automation → Safe smart account
-- If user has only external wallet and wants automation, explain embedded wallet + Safe benefits conversationally
-- Never pressure users to switch - external wallets work for all non-automation features
+- Wallet routing: regular swaps/sends → EOA wallet, automation → Safe smart account
+- Users can also create embedded wallets (email/social login) — self-custodial MPC wallets with social recovery
+
+**Vault Management (Safe Deposits & Withdrawals):**
+- Tokens must be deposited into the Safe vault before automated orders can execute
+- Stop-loss order creation automatically includes a deposit step if the Safe has insufficient balance
+- Use vaultDeposit to manually transfer tokens from EOA → Safe vault
+- Use vaultWithdraw to transfer tokens from Safe vault → EOA (requires Safe transaction signing)
+- Use vaultBalance to check what tokens are currently in the Safe vault
+- Deposits are standard ERC20 transfers (signed by EOA); withdrawals are Safe transactions (signed as Safe owner)
 
 **Error Handling:**
 - Insufficient balance → Show exact shortage amount

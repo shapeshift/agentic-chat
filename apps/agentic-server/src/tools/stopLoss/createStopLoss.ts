@@ -20,6 +20,7 @@ import type { ConditionalOrderParams } from '../../lib/composableCow'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getAllowance } from '../../utils'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
+import { getBalance } from '../../utils/balanceHelpers'
 import { createTransaction } from '../../utils/transactionHelpers'
 import { getAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
@@ -101,6 +102,8 @@ export interface CreateStopLossOutput {
   safeAddress: string
   orderHash: string
   conditionalOrderParams: ConditionalOrderParams
+  needsDeposit: boolean
+  depositTx?: TransactionData
 }
 
 const SLIPPAGE_BUFFER = 0.98 // 2% slippage buffer
@@ -112,11 +115,11 @@ export async function executeCreateStopLoss(
   input: CreateStopLossInput,
   walletContext?: WalletContext
 ): Promise<CreateStopLossOutput> {
-  // Validate embedded wallet + Safe address are available
+  // Validate Safe address is available
   const safeAddress = walletContext?.safeAddress
   if (!safeAddress) {
     throw new Error(
-      'Stop-loss orders require a Safe smart account. Please set up your embedded wallet first — a Safe will be deployed automatically.'
+      'Stop-loss orders require a Safe smart account. A Safe will be deployed automatically when you submit this order.'
     )
   }
 
@@ -245,6 +248,30 @@ export async function executeCreateStopLoss(
   const orderHash = computeConditionalOrderHash(conditionalOrderParams)
   const safeTransaction = buildCreateConditionalOrderTx(conditionalOrderParams)
 
+  // Check if Safe has sufficient balance of the sell token
+  const eoaAddress = getAddressForChain(walletContext, sellAsset.chainId)
+  const safeBalance = await getBalance(safeAddress, sellAsset)
+  const needsDeposit = BigInt(safeBalance) < BigInt(sellAmountBaseUnit)
+
+  let depositTx: TransactionData | undefined
+  if (needsDeposit) {
+    const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
+    const transferData = encodeFunctionData({
+      abi: erc20Abi,
+      functionName: 'transfer',
+      args: [getAddress(safeAddress), BigInt(sellAmountBaseUnit)],
+    })
+
+    depositTx = createTransaction({
+      chainId: sellAsset.chainId,
+      data: transferData,
+      from: getAddress(eoaAddress),
+      to: getAddress(tokenAddress),
+      value: '0',
+      gasLimit: '65000',
+    })
+  }
+
   const priceDistancePercent = new BigNumber(currentSellPrice - triggerPriceNum)
     .div(currentSellPrice)
     .times(100)
@@ -275,6 +302,8 @@ export async function executeCreateStopLoss(
     safeAddress,
     orderHash,
     conditionalOrderParams,
+    needsDeposit,
+    depositTx,
   }
 }
 
@@ -293,7 +322,7 @@ Default: Respond with one brief sentence like:
 Only elaborate if the user asks about something not shown in the card.
 
 IMPORTANT:
-- Requires embedded wallet + Safe smart account (check with checkWalletCapabilities first)
+- Requires a Safe smart account (deployed automatically on first use, works with any connected wallet)
 - Stop-loss is submitted as an on-chain transaction via Safe → ComposableCoW
 - Trigger price must be BELOW current market price
 - Both assets must be on the same EVM network (Ethereum, Gnosis, Arbitrum)

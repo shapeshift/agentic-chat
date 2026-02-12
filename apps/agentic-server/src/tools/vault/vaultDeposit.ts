@@ -1,0 +1,113 @@
+import { fromAssetId } from '@shapeshiftoss/caip'
+import type { Asset } from '@shapeshiftoss/types'
+import { toBaseUnit } from '@shapeshiftoss/utils'
+import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
+import { z } from 'zod'
+
+import type { TransactionData } from '../../lib/schemas/swapSchemas'
+import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
+import { validateSufficientBalance } from '../../utils/balanceHelpers'
+import { createTransaction } from '../../utils/transactionHelpers'
+import { getAddressForChain } from '../../utils/walletContextSimple'
+import type { WalletContext } from '../../utils/walletContextSimple'
+
+export const vaultDepositSchema = z.object({
+  asset: z.string().describe('Token symbol or name to deposit (e.g., "WETH", "USDC")'),
+  amount: z.string().describe('Amount to deposit in human-readable format (e.g., "1" for 1 WETH)'),
+  network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the deposit'),
+})
+
+export type VaultDepositInput = z.infer<typeof vaultDepositSchema>
+
+export interface VaultDepositOutput {
+  summary: {
+    asset: { symbol: string; amount: string }
+    network: string
+    fromAddress: string
+    safeAddress: string
+  }
+  depositTx: TransactionData
+}
+
+function buildDepositTx(
+  asset: Asset,
+  fromAddress: string,
+  safeAddress: string,
+  amount: string,
+  isNative: boolean
+): TransactionData {
+  if (isNative) {
+    return createTransaction({
+      chainId: asset.chainId,
+      data: '0x',
+      from: getAddress(fromAddress),
+      to: getAddress(safeAddress),
+      value: toBaseUnit(amount, asset.precision),
+      gasLimit: '21000',
+    })
+  }
+
+  const tokenAddress = fromAssetId(asset.assetId).assetReference
+  const data = encodeFunctionData({
+    abi: erc20Abi,
+    functionName: 'transfer',
+    args: [getAddress(safeAddress), BigInt(toBaseUnit(amount, asset.precision))],
+  })
+
+  return createTransaction({
+    chainId: asset.chainId,
+    data,
+    from: getAddress(fromAddress),
+    to: getAddress(tokenAddress),
+    value: '0',
+    gasLimit: '65000',
+  })
+}
+
+export async function executeVaultDeposit(
+  input: VaultDepositInput,
+  walletContext?: WalletContext
+): Promise<VaultDepositOutput> {
+  const safeAddress = walletContext?.safeAddress
+  if (!safeAddress) {
+    throw new Error(
+      'No Safe vault found. A Safe smart account is deployed automatically when you create your first automated order.'
+    )
+  }
+
+  const asset = await resolveAsset({ symbolOrName: input.asset, network: input.network }, walletContext)
+  const fromAddress = getAddressForChain(walletContext, asset.chainId)
+
+  await validateSufficientBalance(fromAddress, asset, input.amount)
+
+  const isNative = isNativeToken(asset)
+  const depositTx = buildDepositTx(asset, fromAddress, safeAddress, input.amount, isNative)
+
+  return {
+    summary: {
+      asset: { symbol: asset.symbol, amount: input.amount },
+      network: input.network,
+      fromAddress,
+      safeAddress,
+    },
+    depositTx,
+  }
+}
+
+export const vaultDepositTool = {
+  description: `Deposit tokens from your wallet into the Safe automation vault.
+
+UI CARD DISPLAYS: deposit amount, asset, source wallet, and vault address.
+
+Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+
+Default: Respond with one brief, natural sentence like:
+- "Here's your deposit to the vault"
+- "I've prepared the vault deposit for you"
+
+Tokens must be in the Safe vault before automated orders (stop-loss, TWAP, DCA) can execute. This transfers tokens from your EOA wallet to the Safe.
+
+Only elaborate if the user asks about something not shown in the card.`,
+  inputSchema: vaultDepositSchema,
+  execute: executeVaultDeposit,
+}

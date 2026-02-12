@@ -18,7 +18,6 @@ export interface UseSafeAccountResult {
 export function useSafeAccount(): UseSafeAccountResult {
   // Get wallet info directly from Dynamic SDK to avoid circular dependency with useWalletConnection
   const userWallets = useUserWallets()
-  const hasEmbeddedWallet = userWallets.some(w => w.connector?.isEmbeddedWallet === true)
   const evmAddress = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- SDK type variance
     const evmWallet = userWallets.find(w => isEthereumWallet(w))
@@ -31,16 +30,16 @@ export function useSafeAccount(): UseSafeAccountResult {
 
   // Load Safe state from localStorage when address changes
   useEffect(() => {
-    if (evmAddress && hasEmbeddedWallet) {
+    if (evmAddress) {
       setSafeStateLocal(getSafeState(evmAddress))
     } else {
       setSafeStateLocal({})
     }
-  }, [evmAddress, hasEmbeddedWallet])
+  }, [evmAddress])
 
   // Predict Safe address on load (same address across all chains)
   useEffect(() => {
-    if (!evmAddress || !hasEmbeddedWallet) return
+    if (!evmAddress) return
 
     void predictSafeAddress(evmAddress)
       .then(predicted => {
@@ -49,7 +48,7 @@ export function useSafeAccount(): UseSafeAccountResult {
       .catch(() => {
         // Prediction may fail if no provider available
       })
-  }, [evmAddress, hasEmbeddedWallet])
+  }, [evmAddress])
 
   // Check if Safe is deployed + modules enabled on any chain
   const deploymentInfo = useMemo(() => {
@@ -67,7 +66,7 @@ export function useSafeAccount(): UseSafeAccountResult {
 
   const handleDeploySafe = useCallback(
     async (chainId: number): Promise<SafeDeploymentResult> => {
-      if (!evmAddress) throw new Error('No embedded wallet connected')
+      if (!evmAddress) throw new Error('No EVM wallet connected')
 
       setIsDeploying(true)
       try {
@@ -83,7 +82,7 @@ export function useSafeAccount(): UseSafeAccountResult {
 
   const handleEnableModules = useCallback(
     async (chainId: number): Promise<string> => {
-      if (!evmAddress) throw new Error('No embedded wallet connected')
+      if (!evmAddress) throw new Error('No EVM wallet connected')
 
       const chainState = safeState[chainId]
       if (!chainState?.safeAddress) throw new Error(`Safe not deployed on chain ${chainId}`)
