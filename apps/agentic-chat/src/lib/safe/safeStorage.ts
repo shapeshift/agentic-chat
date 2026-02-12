@@ -1,4 +1,4 @@
-// localStorage-based cache for Safe deployment state, keyed by embedded wallet address
+// localStorage-based cache for Safe deployment state, keyed by wallet address
 
 const STORAGE_KEY_PREFIX = 'safe_deployment_'
 

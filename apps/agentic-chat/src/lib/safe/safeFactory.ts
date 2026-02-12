@@ -44,7 +44,7 @@ export async function predictSafeAddress(ownerAddress: string): Promise<string> 
   return protocolKit.getAddress()
 }
 
-// Deploy a 1-of-1 Safe owned by the embedded wallet EOA
+// Deploy a 1-of-1 Safe owned by the connected wallet EOA
 export async function deploySafe(
   ownerAddress: string,
   chainId: number,
