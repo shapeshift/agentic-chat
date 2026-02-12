@@ -6,6 +6,9 @@ export const COMPOSABLE_COW_ADDRESS = getAddress('0xfdaFc9d1902f4e0b84f65f49f244
 // StopLoss handler address from cowprotocol/composable-cow deployments
 export const STOP_LOSS_HANDLER_ADDRESS = getAddress('0xE8212F30C28B4AAB467DF3725C14d6e89C2eB967')
 
+// TWAP handler address from cowprotocol/composable-cow deployments (same across all chains)
+export const TWAP_HANDLER_ADDRESS = getAddress('0x6cF1e9cA41f7611dEf408122793c358a3d11E5a5')
+
 // CoW Settlement contract (for VaultRelayer approvals)
 export const COW_SETTLEMENT_ADDRESS = getAddress('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')
 
@@ -33,6 +36,19 @@ export interface StopLossStaticData {
   isSellOrder: boolean
   isPartiallyFillable: boolean
   validityBucketSeconds: bigint // order validity window in seconds
+}
+
+export interface TwapStaticData {
+  sellToken: `0x${string}`
+  buyToken: `0x${string}`
+  receiver: `0x${string}`
+  partSellAmount: bigint
+  minPartLimit: bigint
+  t0: bigint // start time (0 = start immediately)
+  n: bigint // number of parts
+  t: bigint // interval between trades in seconds
+  span: bigint // time window for each part (0 = full interval)
+  appData: `0x${string}`
 }
 
 // ABI fragment for ComposableCoW.create()
@@ -83,6 +99,26 @@ export function encodeStopLossStaticData(data: StopLossStaticData): `0x${string}
       data.isSellOrder,
       data.isPartiallyFillable,
       data.validityBucketSeconds,
+    ]
+  )
+}
+
+export function encodeTwapStaticData(data: TwapStaticData): `0x${string}` {
+  return encodeAbiParameters(
+    parseAbiParameters(
+      'address sellToken, address buyToken, address receiver, uint256 partSellAmount, uint256 minPartLimit, uint256 t0, uint256 n, uint256 t, uint256 span, bytes32 appData'
+    ),
+    [
+      data.sellToken,
+      data.buyToken,
+      data.receiver,
+      data.partSellAmount,
+      data.minPartLimit,
+      data.t0,
+      data.n,
+      data.t,
+      data.span,
+      data.appData,
     ]
   )
 }

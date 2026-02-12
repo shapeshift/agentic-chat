@@ -3,6 +3,7 @@ import type { ComponentType } from 'react'
 
 import { CancelLimitOrderUI } from './tools/CancelLimitOrderUI'
 import { CancelStopLossUI } from './tools/CancelStopLossUI'
+import { CancelTwapUI } from './tools/CancelTwapUI'
 import { CheckWalletCapabilitiesUI } from './tools/CheckWalletCapabilitiesUI'
 import { GetAccountUI } from './tools/GetAccountUI'
 import { GetAllowanceUI } from './tools/GetAllowanceUI'
@@ -10,6 +11,7 @@ import { GetAssetsUI } from './tools/GetAssetsUI'
 import { GetLimitOrdersUI } from './tools/GetLimitOrdersUI'
 import { GetStopLossOrdersUI } from './tools/GetStopLossOrdersUI'
 import { GetTransactionHistoryUI } from './tools/GetTransactionHistoryUI'
+import { GetTwapOrdersUI } from './tools/GetTwapOrdersUI'
 import { InitiateSwapUI } from './tools/InitiateSwapUI'
 import { LimitOrderUI } from './tools/LimitOrderUI'
 import { NewCoinsUI } from './tools/NewCoinsUI'
@@ -20,6 +22,7 @@ import { StopLossUI } from './tools/StopLossUI'
 import { SwitchNetworkUI } from './tools/SwitchNetworkUI'
 import { TopGainersLosersUI } from './tools/TopGainersLosersUI'
 import { TrendingTokensUI } from './tools/TrendingTokensUI'
+import { TwapUI } from './tools/TwapUI'
 import { VaultDepositUI } from './tools/VaultDepositUI'
 import { VaultWithdrawUI } from './tools/VaultWithdrawUI'
 
@@ -50,6 +53,9 @@ export const TOOL_UI_REGISTRY: Record<string, ToolUIComponent> = {
   createStopLossTool: StopLossUI,
   getStopLossOrdersTool: GetStopLossOrdersUI,
   cancelStopLossTool: CancelStopLossUI,
+  createTwapTool: TwapUI,
+  getTwapOrdersTool: GetTwapOrdersUI,
+  cancelTwapTool: CancelTwapUI,
   checkWalletCapabilitiesTool: CheckWalletCapabilitiesUI,
   vaultDepositTool: VaultDepositUI,
   vaultWithdrawTool: VaultWithdrawUI,

@@ -139,6 +139,28 @@ export {
   type CancelStopLossOutput,
 } from './tools/stopLoss'
 export {
+  createTwapTool,
+  executeCreateTwap,
+  createTwapSchema,
+  type CreateTwapInput,
+  type CreateTwapOutput,
+  type TwapSummary,
+} from './tools/twap'
+export {
+  getTwapOrdersTool,
+  executeGetTwapOrders,
+  getTwapOrdersSchema,
+  type GetTwapOrdersInput,
+  type GetTwapOrdersOutput,
+} from './tools/twap'
+export {
+  cancelTwapTool,
+  executeCancelTwap,
+  cancelTwapSchema,
+  type CancelTwapInput,
+  type CancelTwapOutput,
+} from './tools/twap'
+export {
   vaultBalanceTool,
   executeVaultBalance,
   vaultBalanceSchema,

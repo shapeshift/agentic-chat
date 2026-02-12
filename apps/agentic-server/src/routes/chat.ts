@@ -35,6 +35,7 @@ import { sendTool } from '../tools/send'
 import { createStopLossTool, getStopLossOrdersTool, cancelStopLossTool } from '../tools/stopLoss'
 import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
+import { createTwapTool, getTwapOrdersTool, cancelTwapTool } from '../tools/twap'
 import { vaultBalanceTool, vaultDepositTool, vaultWithdrawTool } from '../tools/vault'
 import type { WalletContext } from '../utils/walletContextSimple'
 
@@ -133,6 +134,9 @@ function buildTools(walletContext: WalletContext) {
     createStopLossTool: wrapTool('createStopLossTool', createStopLossTool, walletContext),
     getStopLossOrdersTool: wrapTool('getStopLossOrdersTool', getStopLossOrdersTool, walletContext),
     cancelStopLossTool: wrapTool('cancelStopLossTool', cancelStopLossTool, walletContext),
+    createTwapTool: wrapTool('createTwapTool', createTwapTool, walletContext),
+    getTwapOrdersTool: wrapTool('getTwapOrdersTool', getTwapOrdersTool, walletContext),
+    cancelTwapTool: wrapTool('cancelTwapTool', cancelTwapTool, walletContext),
     vaultBalanceTool: wrapTool('vaultBalanceTool', vaultBalanceTool, walletContext),
     vaultDepositTool: wrapTool('vaultDepositTool', vaultDepositTool, walletContext),
     vaultWithdrawTool: wrapTool('vaultWithdrawTool', vaultWithdrawTool, walletContext),
@@ -241,7 +245,7 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
   - getAssets: Detailed market data with UI card - use when user wants comprehensive info (volume, market cap, sentiment, etc.)
   - getTrendingTokens, getTopGainersLosers, getNewCoins, getCategories, getTrendingPools
 - **Portfolio**: portfolio (balances), transactionHistoryTool (history/analytics)
-- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders), createStopLoss/getStopLossOrders/cancelStopLoss (stop-loss orders), vaultDeposit/vaultWithdraw/vaultBalance (Safe vault management)
+- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders), createStopLoss/getStopLossOrders/cancelStopLoss (stop-loss orders), createTwap/getTwapOrders/cancelTwap (TWAP/DCA orders), vaultDeposit/vaultWithdraw/vaultBalance (Safe vault management)
 - **Utilities**: switchNetwork (change chains), mathCalculator (arithmetic), getShapeShiftKnowledge (platform info)
 
 **Tool UI Behavior:**
@@ -298,6 +302,19 @@ Examples:
 - Use getStopLossOrders to check existing stop-loss orders (queries CoW API)
 - Use cancelStopLoss to cancel active orders (requires on-chain transaction via Safe)
 - If user doesn't have a Safe ready, guide them through setup (checkWalletCapabilities)
+
+**TWAP/DCA Orders (ComposableCoW + Safe):**
+- Use createTwap when user wants to split a large trade over time or DCA into a position
+- "TWAP" = Time-Weighted Average Price (hours), "DCA" = Dollar Cost Averaging (days/weeks) — same tool
+- Examples: "buy $1000 of ETH over 24 hours", "DCA $200 into BTC every day for a week"
+- Requires a Safe smart account (deployed automatically on first use)
+- Orders are time-based (no price oracle needed) — each sub-order executes at market price
+- CoW's watchtower generates and executes sub-orders at each interval
+- CoW solver network provides MEV protection on each sub-order
+- Supports: Ethereum, Gnosis, Arbitrum (same-chain only)
+- Native tokens (ETH) must be wrapped (WETH) to use as sell asset
+- Use getTwapOrders to check existing TWAP/DCA orders
+- Use cancelTwap to cancel active orders (requires on-chain transaction via Safe)
 
 **Safe & Automation:**
 - Automation features (stop-loss, TWAP, DCA) require a Safe smart account

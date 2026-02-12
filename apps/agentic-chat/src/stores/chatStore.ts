@@ -2,8 +2,10 @@ import type { useChat } from '@ai-sdk/react'
 import type {
   CancelLimitOrderOutput,
   CancelStopLossOutput,
+  CancelTwapOutput,
   CreateLimitOrderOutput,
   CreateStopLossOutput,
+  CreateTwapOutput,
   InitiateSwapOutput,
   SendOutput,
   SwitchNetworkOutput,
@@ -33,6 +35,8 @@ export interface PersistedToolState {
     | 'cancel_limit_order'
     | 'stop_loss'
     | 'cancel_stop_loss'
+    | 'twap'
+    | 'cancel_twap'
     | 'vault_deposit'
     | 'vault_withdraw'
   conversationId: string
@@ -47,6 +51,8 @@ export interface PersistedToolState {
     | CancelLimitOrderOutput
     | CreateStopLossOutput
     | CancelStopLossOutput
+    | CreateTwapOutput
+    | CancelTwapOutput
     | VaultDepositOutput
     | VaultWithdrawOutput
   walletAddress?: string

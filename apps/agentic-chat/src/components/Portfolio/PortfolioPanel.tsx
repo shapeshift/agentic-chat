@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { ActivityList } from './ActivityList'
 import { PortfolioAssetList } from './PortfolioAssetList'
 import { PortfolioHeader } from './PortfolioHeader'
+import { VaultPanel } from './VaultPanel'
 
 export function PortfolioPanel() {
   return (
@@ -15,6 +16,9 @@ export function PortfolioPanel() {
             <TabsTrigger value="balances" className="px-4 py-2">
               Balances
             </TabsTrigger>
+            <TabsTrigger value="vault" className="px-4 py-2">
+              Vault
+            </TabsTrigger>
             <TabsTrigger value="activity" className="px-4 py-2">
               Activity
             </TabsTrigger>
@@ -23,6 +27,10 @@ export function PortfolioPanel() {
 
         <TabsContent value="balances" className="flex-1 mt-0 min-h-0 overflow-y-auto">
           <PortfolioAssetList />
+        </TabsContent>
+
+        <TabsContent value="vault" className="flex-1 mt-0 min-h-0 overflow-y-auto">
+          <VaultPanel />
         </TabsContent>
 
         <TabsContent value="activity" className="flex-1 mt-0 min-h-0 overflow-y-auto">

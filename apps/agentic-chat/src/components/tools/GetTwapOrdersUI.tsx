@@ -1,0 +1,154 @@
+import type { GetTwapOrdersOutput } from '@shapeshiftoss/agentic-server'
+import type { Clock } from 'lucide-react'
+import { ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
+
+import { stopPropagationHandler } from '@/lib/eventHandlers'
+import { cn } from '@/lib/utils'
+
+import { ToolCard } from '../ui/ToolCard'
+
+import { useToolStateRender } from './toolUIHelpers'
+import type { ToolUIComponentProps } from './toolUIHelpers'
+
+type TwapOrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired' | 'presignaturePending'
+
+const STATUS_CONFIG: Record<TwapOrderStatus, { icon: typeof Clock; label: string; className: string }> = {
+  open: { icon: Eye, label: 'Active', className: 'text-blue-500' },
+  fulfilled: { icon: CheckCircle, label: 'Filled', className: 'text-green-500' },
+  cancelled: { icon: XCircle, label: 'Cancelled', className: 'text-red-500' },
+  expired: { icon: AlertCircle, label: 'Expired', className: 'text-muted-foreground' },
+  presignaturePending: { icon: Eye, label: 'Pending', className: 'text-yellow-500' },
+}
+
+function isValidStatus(status: string): status is TwapOrderStatus {
+  return status in STATUS_CONFIG
+}
+
+function OrderStatusBadge({ status }: { status: TwapOrderStatus }) {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.open
+  const Icon = config.icon
+
+  return (
+    <div className={cn('flex items-center gap-1 text-xs font-medium', config.className)}>
+      <Icon className="h-3 w-3" />
+      <span>{config.label}</span>
+    </div>
+  )
+}
+
+interface TwapOrderItemProps {
+  id: string
+  status: TwapOrderStatus
+  network: string
+  sellToken: string
+  buyToken: string
+  sellAmount: string
+  validTo: number
+  cowTrackingUrl: string
+}
+
+function TwapOrderItem({ status, network, sellToken, buyToken, validTo, cowTrackingUrl }: TwapOrderItemProps) {
+  const isActive = status === 'open' || status === 'presignaturePending'
+  const expiresDate = new Date(validTo * 1000)
+
+  return (
+    <div className="flex items-center justify-between py-3 px-1 gap-4">
+      <div className="flex flex-col gap-1 min-w-0 flex-1">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="font-medium truncate">{sellToken}</span>
+          <span className="text-muted-foreground">→</span>
+          <span className="font-medium">{buyToken}</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="capitalize">{network}</span>
+          {isActive && (
+            <>
+              <span>•</span>
+              <span>Expires {expiresDate.toLocaleDateString()}</span>
+            </>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <OrderStatusBadge status={status} />
+        <a
+          href={cowTrackingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-muted-foreground hover:text-primary transition-colors"
+          onClick={stopPropagationHandler}
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      </div>
+    </div>
+  )
+}
+
+export function GetTwapOrdersUI({ toolPart }: ToolUIComponentProps) {
+  const { state, output } = toolPart
+
+  const stateRender = useToolStateRender(state, {
+    loading: 'Fetching your TWAP/DCA orders...',
+    error: 'Failed to fetch TWAP/DCA orders',
+  })
+
+  if (stateRender) return stateRender
+
+  const data = output as GetTwapOrdersOutput | undefined
+  const orders = data?.orders ?? []
+
+  if (orders.length === 0) {
+    return (
+      <ToolCard.Root defaultOpen>
+        <ToolCard.Header>
+          <ToolCard.HeaderRow>
+            <div className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              <span className="font-medium">TWAP/DCA Orders</span>
+            </div>
+          </ToolCard.HeaderRow>
+        </ToolCard.Header>
+        <ToolCard.Content>
+          <div className="text-sm text-muted-foreground pb-4">No TWAP/DCA orders found.</div>
+        </ToolCard.Content>
+      </ToolCard.Root>
+    )
+  }
+
+  const activeCount = orders.filter(o => o.status === 'open' || o.status === 'presignaturePending').length
+
+  return (
+    <ToolCard.Root defaultOpen>
+      <ToolCard.Header>
+        <ToolCard.HeaderRow>
+          <div className="flex items-center gap-2">
+            <Eye className="w-5 h-5 text-primary" />
+            <span className="font-medium">TWAP/DCA Orders</span>
+            {activeCount > 0 && <span className="text-xs text-muted-foreground">({activeCount} active)</span>}
+          </div>
+          <span className="text-sm text-muted-foreground">{orders.length} total</span>
+        </ToolCard.HeaderRow>
+      </ToolCard.Header>
+      <ToolCard.Content>
+        <ToolCard.Details>
+          <div className="divide-y divide-border">
+            {orders.map(order => (
+              <TwapOrderItem
+                key={order.id}
+                id={order.id}
+                status={isValidStatus(order.status) ? order.status : 'open'}
+                network={order.network}
+                sellToken={order.sellToken}
+                buyToken={order.buyToken}
+                sellAmount={order.sellAmount}
+                validTo={order.validTo}
+                cowTrackingUrl={order.cowTrackingUrl}
+              />
+            ))}
+          </div>
+        </ToolCard.Details>
+      </ToolCard.Content>
+    </ToolCard.Root>
+  )
+}
