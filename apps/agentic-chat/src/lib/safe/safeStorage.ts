@@ -6,6 +6,7 @@ interface SafeChainState {
   safeAddress: string
   isDeployed: boolean
   modulesEnabled: boolean
+  domainVerifierSet: boolean
 }
 
 export type SafeDeploymentState = Record<number, SafeChainState>
@@ -40,4 +41,8 @@ export function isSafeDeployedOnChain(ownerAddress: string, chainId: number): bo
 
 export function areModulesEnabledOnChain(ownerAddress: string, chainId: number): boolean {
   return getSafeState(ownerAddress)[chainId]?.modulesEnabled ?? false
+}
+
+export function isDomainVerifierSetOnChain(ownerAddress: string, chainId: number): boolean {
+  return getSafeState(ownerAddress)[chainId]?.domainVerifierSet ?? false
 }

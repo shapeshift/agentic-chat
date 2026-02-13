@@ -190,14 +190,14 @@ export const useStopLossExecution = (
           safeAddress: predicted,
           isDeployed: true,
           modulesEnabled: false,
+          domainVerifierSet: false,
         })
       }
 
       const updatedSafeState = getSafeState(evmAddress)
       const updatedChainState = updatedSafeState[targetChainId]
 
-      if (!updatedChainState?.modulesEnabled) {
-        // Enable modules on target chain
+      if (!updatedChainState?.modulesEnabled || !updatedChainState?.domainVerifierSet) {
         const safeAddr = updatedChainState?.safeAddress ?? safeAddress
         await enableComposableCowModules(safeAddr, targetChainId, evmAddress)
       }

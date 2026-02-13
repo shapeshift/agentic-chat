@@ -186,13 +186,14 @@ export const useTwapExecution = (
           safeAddress: predicted,
           isDeployed: true,
           modulesEnabled: false,
+          domainVerifierSet: false,
         })
       }
 
       const updatedSafeState = getSafeState(evmAddress)
       const updatedChainState = updatedSafeState[targetChainId]
 
-      if (!updatedChainState?.modulesEnabled) {
+      if (!updatedChainState?.modulesEnabled || !updatedChainState?.domainVerifierSet) {
         const safeAddr = updatedChainState?.safeAddress ?? safeAddress
         await enableComposableCowModules(safeAddr, targetChainId, evmAddress)
       }

@@ -75,6 +75,7 @@ export async function deploySafe(
       safeAddress: predictedAddress,
       isDeployed: true,
       modulesEnabled: false,
+      domainVerifierSet: false,
     })
     return { safeAddress: predictedAddress, isDeployed: true }
   }
@@ -100,6 +101,7 @@ export async function deploySafe(
     safeAddress: predictedAddress,
     isDeployed: true,
     modulesEnabled: false,
+    domainVerifierSet: false,
   })
 
   return {

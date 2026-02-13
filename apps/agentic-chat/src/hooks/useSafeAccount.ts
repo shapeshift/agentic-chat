@@ -11,6 +11,7 @@ export interface UseSafeAccountResult {
   isModulesEnabled: boolean
   isSafeReady: boolean // deployed + modules enabled on any chain
   isDeploying: boolean
+  deployedChainIds: number[]
   deploySafe: (chainId: number) => Promise<SafeDeploymentResult>
   enableModules: (chainId: number) => Promise<string>
 }
@@ -54,8 +55,11 @@ export function useSafeAccount(): UseSafeAccountResult {
   const deploymentInfo = useMemo(() => {
     const entries = Object.values(safeState)
     const deployed = entries.some(s => s.isDeployed)
-    const modulesEnabled = entries.some(s => s.modulesEnabled)
-    return { deployed, modulesEnabled }
+    const modulesEnabled = entries.some(s => s.modulesEnabled && s.domainVerifierSet)
+    const deployedChainIds = Object.entries(safeState)
+      .filter(([, s]) => s.isDeployed)
+      .map(([chainId]) => Number(chainId))
+    return { deployed, modulesEnabled, deployedChainIds }
   }, [safeState])
 
   // Safe address: prefer stored address from deployment, fall back to predicted
@@ -100,6 +104,7 @@ export function useSafeAccount(): UseSafeAccountResult {
     isModulesEnabled: deploymentInfo.modulesEnabled,
     isSafeReady: deploymentInfo.deployed && deploymentInfo.modulesEnabled,
     isDeploying,
+    deployedChainIds: deploymentInfo.deployedChainIds,
     deploySafe: handleDeploySafe,
     enableModules: handleEnableModules,
   }

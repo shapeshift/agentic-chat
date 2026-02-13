@@ -7,5 +7,6 @@ export {
   getSafeAddress,
   isSafeDeployedOnChain,
   areModulesEnabledOnChain,
+  isDomainVerifierSetOnChain,
   type SafeDeploymentState,
 } from './safeStorage'
