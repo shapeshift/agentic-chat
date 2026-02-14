@@ -28,7 +28,10 @@ const isSolanaTransactionData = (data: unknown): data is SolanaTransactionData =
 }
 
 export async function sendSolanaTransaction(params: TransactionParams): Promise<string> {
-  const connection = new Connection(import.meta.env.VITE_SOLANA_RPC_URL as string, 'confirmed')
+  if (!params.data) throw new Error('Invalid Solana transaction: missing data field')
+  if (!params.from) throw new Error('Invalid Solana transaction: missing from address')
+
+  const connection = new Connection(import.meta.env.VITE_SOLANA_RPC_URL, 'confirmed')
 
   try {
     const txData = JSON.parse(params.data) as unknown

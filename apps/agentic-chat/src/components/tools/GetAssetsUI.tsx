@@ -1,4 +1,3 @@
-import type { AssetWithMarketData } from '@shapeshiftoss/agentic-server'
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import React, { useState } from 'react'
 
@@ -39,12 +38,11 @@ function StatMetric({ label, value, isLoading }: { label: string; value: React.R
   )
 }
 
-export function GetAssetsUI({ toolPart }: ToolUIComponentProps) {
+export function GetAssetsUI({ toolPart }: ToolUIComponentProps<'getAssetsTool'>) {
   const { state, output, input } = toolPart
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
 
-  const assetData = output as { assets: AssetWithMarketData[] } | undefined
-  const asset = assetData?.assets?.[0]
+  const asset = output?.assets?.[0]
   const searchTerm = (input as { searchTerm?: string })?.searchTerm
 
   const stateRender = useToolStateRender(state, {

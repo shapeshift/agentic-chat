@@ -216,9 +216,9 @@ function useCancelTwapExecution(
   }
 }
 
-export function CancelTwapUI({ toolPart }: ToolUIComponentProps) {
+export function CancelTwapUI({ toolPart }: ToolUIComponentProps<'cancelTwapTool'>) {
   const { state, output, toolCallId } = toolPart
-  const cancelOutput = output as CancelTwapOutput | undefined
+  const cancelOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const cancelData = state === 'output-available' && cancelOutput ? cancelOutput : null

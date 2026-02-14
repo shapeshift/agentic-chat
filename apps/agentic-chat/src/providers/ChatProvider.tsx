@@ -58,8 +58,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
           hasEmbeddedWallet: walletRef.current.hasEmbeddedWallet,
           hasExternalWallet: walletRef.current.hasExternalWallet,
           safeAddress: walletRef.current.safeAddress,
-          isSafeDeployed: walletRef.current.isSafeDeployed,
-          isSafeReady: walletRef.current.isSafeReady,
+          safeDeploymentState: walletRef.current.safeDeploymentState,
         }),
       }),
     []

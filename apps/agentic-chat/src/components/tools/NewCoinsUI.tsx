@@ -1,4 +1,3 @@
-import type { TrimmedNewCoin } from '@shapeshiftoss/agentic-server'
 import { Sparkles } from 'lucide-react'
 
 import { AssetListItem } from '../ui/AssetListItem'
@@ -7,7 +6,7 @@ import { ToolCard } from '../ui/ToolCard'
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function NewCoinsUI({ toolPart }: ToolUIComponentProps) {
+export function NewCoinsUI({ toolPart }: ToolUIComponentProps<'getNewCoinsTool'>) {
   const { state, output } = toolPart
 
   const stateRender = useToolStateRender(state, {
@@ -17,8 +16,7 @@ export function NewCoinsUI({ toolPart }: ToolUIComponentProps) {
 
   if (stateRender) return stateRender
 
-  const data = output as { coins: TrimmedNewCoin[] } | undefined
-  const coins = data?.coins
+  const coins = output?.coins
 
   if (!coins || coins.length === 0) {
     return null

@@ -1,5 +1,5 @@
 import Safe from '@safe-global/protocol-kit'
-import { keccak256, encodePacked, createWalletClient, custom } from 'viem'
+import { keccak256, encodePacked, createPublicClient, createWalletClient, custom } from 'viem'
 
 import { setSafeState } from './safeStorage'
 
@@ -51,9 +51,18 @@ export async function deploySafe(
   signerAddress: string
 ): Promise<SafeDeploymentResult> {
   const saltNonce = computeSafeSalt(ownerAddress)
+  const provider = getProvider()
+
+  // Validate provider is on the target chain before deploying
+  const providerChainId = Number(await provider.request({ method: 'eth_chainId' }))
+  if (providerChainId !== chainId) {
+    throw new Error(
+      `Provider is on chain ${providerChainId} but Safe deployment targets chain ${chainId}. Switch networks first.`
+    )
+  }
 
   const protocolKit = await Safe.init({
-    provider: getProvider(),
+    provider,
     signer: signerAddress,
     predictedSafe: {
       safeAccountConfig: {
@@ -85,7 +94,7 @@ export async function deploySafe(
 
   // Send the deployment transaction via viem wallet client
   const walletClient = createWalletClient({
-    transport: custom(getProvider()),
+    transport: custom(provider),
     account: signerAddress as `0x${string}`,
     chain: undefined,
   })
@@ -96,6 +105,12 @@ export async function deploySafe(
     value: BigInt(deploymentTransaction.value),
     chain: null,
   })
+
+  // Wait for deployment to be confirmed on-chain before marking as deployed.
+  // Without this, subsequent steps (like token deposits to the Safe) would
+  // prompt the wallet before the Safe contract exists, triggering warnings.
+  const publicClient = createPublicClient({ transport: custom(provider) })
+  await publicClient.waitForTransactionReceipt({ hash: txHash, confirmations: 1 })
 
   setSafeState(ownerAddress, chainId, {
     safeAddress: predictedAddress,

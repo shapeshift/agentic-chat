@@ -7,6 +7,7 @@ import type { SolanaWallet } from '@dynamic-labs/solana-core'
 import { findEvmWallet, findSolanaWallet } from '@/lib/walletUtils'
 
 import { useApprovedChains } from './useApprovedChains'
+import type { SafeChainDeployment } from './useSafeAccount'
 import { useSafeAccount } from './useSafeAccount'
 
 export { filterEvmWallets, filterSolanaWallets, findEvmWallet, findSolanaWallet } from '@/lib/walletUtils'
@@ -22,8 +23,7 @@ interface WalletConnectionResult {
   hasEmbeddedWallet: boolean
   hasExternalWallet: boolean
   safeAddress: string | undefined
-  isSafeDeployed: boolean
-  isSafeReady: boolean
+  safeDeploymentState: Record<number, SafeChainDeployment>
 }
 
 export function useWalletConnection(): WalletConnectionResult {
@@ -56,7 +56,6 @@ export function useWalletConnection(): WalletConnectionResult {
     hasEmbeddedWallet,
     hasExternalWallet,
     safeAddress: safeAccount.safeAddress,
-    isSafeDeployed: safeAccount.isDeployed,
-    isSafeReady: safeAccount.isSafeReady,
+    safeDeploymentState: safeAccount.safeDeploymentState,
   }
 }

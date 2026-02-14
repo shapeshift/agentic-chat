@@ -161,7 +161,7 @@ export const useStopLossExecution = (
     }
 
     try {
-      const { safeTransaction, needsApproval, approvalTx, safeAddress } = data
+      const { safeTransaction, needsApproval, approvalTx } = data
 
       if (!evmAddress) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
@@ -201,12 +201,13 @@ export const useStopLossExecution = (
         throw new Error('Failed to deploy Safe smart account')
       }
 
+      const deployedSafeAddress = deployResult.safeAddress
+
       const currentSafeState = getSafeState(evmAddress)
       const chainSafeState = currentSafeState[targetChainId]
 
       if (!chainSafeState?.modulesEnabled || !chainSafeState?.domainVerifierSet) {
-        const safeAddr = chainSafeState?.safeAddress ?? safeAddress
-        await enableComposableCowModules(safeAddr, targetChainId, evmAddress)
+        await enableComposableCowModules(deployedSafeAddress, targetChainId, evmAddress)
       }
 
       setState(draft => {
@@ -259,7 +260,7 @@ export const useStopLossExecution = (
       // Step 5: Approval via Safe (if needed)
       if (needsApproval && approvalTx) {
         approvalTxHash = await executeSafeTransaction(
-          safeAddress,
+          deployedSafeAddress,
           { to: approvalTx.to, data: approvalTx.data, value: approvalTx.value },
           evmAddress
         )
@@ -303,7 +304,7 @@ export const useStopLossExecution = (
 
       // Step 5: Submit to ComposableCoW via Safe
       const submitTxHash = await executeSafeTransaction(
-        safeAddress,
+        deployedSafeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
         evmAddress
       )

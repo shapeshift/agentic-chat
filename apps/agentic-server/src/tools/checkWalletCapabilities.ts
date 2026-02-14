@@ -23,7 +23,11 @@ export function executeCheckWalletCapabilities(
   const hasWallet = !!walletContext?.connectedWallets && Object.keys(walletContext.connectedWallets).length > 0
   const hasEmbeddedWallet = walletContext?.hasEmbeddedWallet ?? false
   const hasExternalWallet = walletContext?.hasExternalWallet ?? false
-  const isSafeReady = walletContext?.isSafeReady ?? false
+  const isSafeReady = walletContext?.safeDeploymentState
+    ? Object.values(walletContext.safeDeploymentState).some(
+        s => s.isDeployed && s.modulesEnabled && s.domainVerifierSet
+      )
+    : false
 
   const walletType: CheckWalletCapabilitiesOutput['walletType'] = !hasWallet
     ? 'none'

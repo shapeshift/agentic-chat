@@ -1,5 +1,4 @@
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
-import type { CheckWalletCapabilitiesOutput } from '@shapeshiftoss/agentic-server'
 import { Check, Lock, Shield } from 'lucide-react'
 import { useCallback } from 'react'
 
@@ -17,9 +16,9 @@ const WALLET_TYPE_LABELS: Record<string, string> = {
   none: 'No Wallet Connected',
 }
 
-export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
+export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps<'checkWalletCapabilitiesTool'>) {
   const { state, output, errorText } = toolPart
-  const capabilitiesOutput = output as CheckWalletCapabilitiesOutput | undefined
+  const capabilitiesOutput = output
   const { setShowAuthFlow } = useDynamicContext()
 
   const handleConnect = useCallback(() => {

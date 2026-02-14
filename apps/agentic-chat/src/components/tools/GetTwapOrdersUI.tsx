@@ -1,4 +1,3 @@
-import type { GetTwapOrdersOutput } from '@shapeshiftoss/agentic-server'
 import type { Clock } from 'lucide-react'
 import { ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
 
@@ -85,7 +84,7 @@ function TwapOrderItem({ status, network, sellToken, buyToken, validTo, cowTrack
   )
 }
 
-export function GetTwapOrdersUI({ toolPart }: ToolUIComponentProps) {
+export function GetTwapOrdersUI({ toolPart }: ToolUIComponentProps<'getTwapOrdersTool'>) {
   const { state, output } = toolPart
 
   const stateRender = useToolStateRender(state, {
@@ -95,8 +94,7 @@ export function GetTwapOrdersUI({ toolPart }: ToolUIComponentProps) {
 
   if (stateRender) return stateRender
 
-  const data = output as GetTwapOrdersOutput | undefined
-  const orders = data?.orders ?? []
+  const orders = output?.orders ?? []
 
   if (orders.length === 0) {
     return (

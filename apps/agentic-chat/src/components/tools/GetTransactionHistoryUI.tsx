@@ -191,12 +191,9 @@ function TransactionCard({
   )
 }
 
-export function GetTransactionHistoryUI({ toolPart }: ToolUIComponentProps) {
+export function GetTransactionHistoryUI({ toolPart }: ToolUIComponentProps<'transactionHistoryTool'>) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
-  const output = toolPart.output as
-    | { transactions?: ParsedTransaction[]; metadata?: { networksChecked?: string[] } }
-    | undefined
-  const { state } = toolPart
+  const { output, state } = toolPart
 
   const stateRender = useToolStateRender(state, {
     loading: `Fetching transaction history...`,

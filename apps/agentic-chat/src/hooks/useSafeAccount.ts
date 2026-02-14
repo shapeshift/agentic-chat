@@ -5,6 +5,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { deploySafe, enableComposableCowModules, getSafeState, predictSafeAddress } from '@/lib/safe'
 import type { SafeDeploymentResult } from '@/lib/safe'
 
+export interface SafeChainDeployment {
+  isDeployed: boolean
+  modulesEnabled: boolean
+  domainVerifierSet: boolean
+}
+
 export interface UseSafeAccountResult {
   safeAddress: string | undefined
   isDeployed: boolean
@@ -12,6 +18,7 @@ export interface UseSafeAccountResult {
   isSafeReady: boolean // deployed + modules enabled on any chain
   isDeploying: boolean
   deployedChainIds: number[]
+  safeDeploymentState: Record<number, SafeChainDeployment>
   deploySafe: (chainId: number) => Promise<SafeDeploymentResult>
   enableModules: (chainId: number) => Promise<string>
 }
@@ -59,7 +66,18 @@ export function useSafeAccount(): UseSafeAccountResult {
     const deployedChainIds = Object.entries(safeState)
       .filter(([, s]) => s.isDeployed)
       .map(([chainId]) => Number(chainId))
-    return { deployed, modulesEnabled, deployedChainIds }
+
+    // Per-chain deployment state (strip safeAddress since it's always the same)
+    const perChainState: Record<number, SafeChainDeployment> = {}
+    for (const [chainId, state] of Object.entries(safeState)) {
+      perChainState[Number(chainId)] = {
+        isDeployed: state.isDeployed,
+        modulesEnabled: state.modulesEnabled,
+        domainVerifierSet: state.domainVerifierSet,
+      }
+    }
+
+    return { deployed, modulesEnabled, deployedChainIds, perChainState }
   }, [safeState])
 
   // Safe address: prefer stored address from deployment, fall back to predicted
@@ -105,6 +123,7 @@ export function useSafeAccount(): UseSafeAccountResult {
     isSafeReady: deploymentInfo.deployed && deploymentInfo.modulesEnabled,
     isDeploying,
     deployedChainIds: deploymentInfo.deployedChainIds,
+    safeDeploymentState: deploymentInfo.perChainState,
     deploySafe: handleDeploySafe,
     enableModules: handleEnableModules,
   }

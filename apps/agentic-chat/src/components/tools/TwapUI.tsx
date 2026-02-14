@@ -1,4 +1,3 @@
-import type { CreateTwapOutput } from '@shapeshiftoss/agentic-server'
 import { ExternalLink } from 'lucide-react'
 
 import { useTwapExecution } from '@/hooks/useTwapExecution'
@@ -13,9 +12,9 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function TwapUI({ toolPart }: ToolUIComponentProps) {
+export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
   const { state, output, toolCallId } = toolPart
-  const orderOutput = output as CreateTwapOutput | undefined
+  const orderOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const orderData = state === 'output-available' && orderOutput ? orderOutput : null
@@ -35,8 +34,8 @@ export function TwapUI({ toolPart }: ToolUIComponentProps) {
   const needsDeposit = orderOutput?.needsDeposit ?? false
   const [
     prepareStep,
-    safeCheckStep,
     networkStep,
+    safeCheckStep,
     depositStep,
     depositConfirmStep,
     approvalStep,
@@ -159,11 +158,11 @@ export function TwapUI({ toolPart }: ToolUIComponentProps) {
         <TxStepCard.Step status={prepareStep.status} connectorBottom>
           Preparing TWAP order
         </TxStepCard.Step>
-        <TxStepCard.Step status={safeCheckStep.status} connectorTop connectorBottom>
-          Check Safe wallet
-        </TxStepCard.Step>
         <TxStepCard.Step status={networkStep.status} connectorTop connectorBottom>
           {networkName ? `Switch to ${networkName}` : 'Switch network'}
+        </TxStepCard.Step>
+        <TxStepCard.Step status={safeCheckStep.status} connectorTop connectorBottom>
+          Check Safe wallet
         </TxStepCard.Step>
         <TxStepCard.Step status={needsDeposit ? depositStep.status : StepStatus.SKIPPED} connectorTop connectorBottom>
           Deposit tokens to vault

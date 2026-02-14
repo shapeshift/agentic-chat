@@ -14,6 +14,7 @@ import { format, getUnixTime } from 'date-fns'
 import type { Context } from 'hono'
 
 import { supportedChainsContext } from '../context'
+import { CHAIN_ID_TO_NETWORK } from '../lib/cow/types'
 import { getModel, getProviderName } from '../models'
 import { checkWalletCapabilitiesTool } from '../tools/checkWalletCapabilities'
 import { lookupExternalAddressTool } from '../tools/getAccount'
@@ -37,7 +38,7 @@ import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
 import { createTwapTool, getTwapOrdersTool, cancelTwapTool } from '../tools/twap'
 import { vaultBalanceTool, vaultDepositTool, vaultWithdrawTool } from '../tools/vault'
-import type { WalletContext } from '../utils/walletContextSimple'
+import type { SafeChainDeployment, WalletContext } from '../utils/walletContextSimple'
 
 const allEvmChainIds = [
   ethChainId,
@@ -74,8 +75,7 @@ function buildWalletContext(
   hasEmbeddedWallet?: boolean,
   hasExternalWallet?: boolean,
   safeAddress?: string,
-  isSafeDeployed?: boolean,
-  isSafeReady?: boolean
+  safeDeploymentState?: Record<number, SafeChainDeployment>
 ): WalletContext {
   const connectedWallets: Record<string, { address: string }> = {}
 
@@ -102,7 +102,13 @@ function buildWalletContext(
     }
   }
 
-  return { connectedWallets, hasEmbeddedWallet, hasExternalWallet, safeAddress, isSafeDeployed, isSafeReady }
+  return {
+    connectedWallets,
+    hasEmbeddedWallet,
+    hasExternalWallet,
+    safeAddress,
+    safeDeploymentState,
+  }
 }
 
 function buildTools(walletContext: WalletContext) {
@@ -205,7 +211,51 @@ function buildConnectedWalletsPrompt(evmAddress?: string, solanaAddress?: string
   return prompt
 }
 
-function buildSystemPrompt(evmAddress?: string, solanaAddress?: string, approvedChainIds?: string[]): string {
+function buildSafeStatusPrompt(
+  safeAddress?: string,
+  safeDeploymentState?: Record<number, SafeChainDeployment>
+): string {
+  if (!safeAddress) return '- No Safe smart account configured yet'
+
+  const lines: string[] = [`- Safe address: ${safeAddress}`]
+
+  const readyChains: string[] = []
+  const deployedNotReadyChains: string[] = []
+  const allCoWChains = [1, 100, 42161] // ethereum, gnosis, arbitrum
+  const notDeployedChains: string[] = []
+
+  for (const chainId of allCoWChains) {
+    const state = safeDeploymentState?.[chainId]
+    const networkName = CHAIN_ID_TO_NETWORK[chainId] ?? `chain ${chainId}`
+    if (state?.isDeployed && state.modulesEnabled && state.domainVerifierSet) {
+      readyChains.push(networkName)
+    } else if (state?.isDeployed) {
+      deployedNotReadyChains.push(networkName)
+    } else {
+      notDeployedChains.push(networkName)
+    }
+  }
+
+  if (readyChains.length > 0) lines.push(`- Safe ready on: ${readyChains.join(', ')}`)
+  if (deployedNotReadyChains.length > 0)
+    lines.push(`- Safe deployed but NOT ready (modules/verifier missing) on: ${deployedNotReadyChains.join(', ')}`)
+  if (notDeployedChains.length > 0) lines.push(`- Safe NOT deployed on: ${notDeployedChains.join(', ')}`)
+
+  return lines.join('\n')
+}
+
+function isSafeReadyOnAnyChain(safeDeploymentState?: Record<number, SafeChainDeployment>): boolean {
+  if (!safeDeploymentState) return false
+  return Object.values(safeDeploymentState).some(s => s.isDeployed && s.modulesEnabled && s.domainVerifierSet)
+}
+
+function buildSystemPrompt(
+  evmAddress?: string,
+  solanaAddress?: string,
+  approvedChainIds?: string[],
+  safeAddress?: string,
+  safeDeploymentState?: Record<number, SafeChainDeployment>
+): string {
   return (
     `
 ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
@@ -316,6 +366,10 @@ Examples:
 - Use getTwapOrders to check existing TWAP/DCA orders
 - Use cancelTwap to cancel active orders (requires on-chain transaction via Safe)
 
+**Safe Wallet Status:**
+${buildSafeStatusPrompt(safeAddress, safeDeploymentState)}
+${!safeAddress || !isSafeReadyOnAnyChain(safeDeploymentState) ? '- IMPORTANT: Safe-dependent tools (createStopLoss, cancelStopLoss, createTwap, cancelTwap, vaultDeposit, vaultWithdraw) will fail without a ready Safe. Guide the user to set up their Safe first using checkWalletCapabilities.' : '- Safe is ready for automation tools (stop-loss, TWAP/DCA, vault operations)'}
+
 **Safe & Automation:**
 - Automation features (stop-loss, TWAP, DCA) require a Safe smart account
 - Safe is a 1-of-1 smart account owned by the connected wallet (any EOA — MetaMask, Rabby, embedded, etc.)
@@ -357,8 +411,7 @@ export async function handleChatRequest(c: Context) {
       hasEmbeddedWallet,
       hasExternalWallet,
       safeAddress,
-      isSafeDeployed,
-      isSafeReady,
+      safeDeploymentState,
     } = body as {
       messages: unknown
       evmAddress?: string
@@ -367,8 +420,7 @@ export async function handleChatRequest(c: Context) {
       hasEmbeddedWallet?: boolean
       hasExternalWallet?: boolean
       safeAddress?: string
-      isSafeDeployed?: boolean
-      isSafeReady?: boolean
+      safeDeploymentState?: Record<number, SafeChainDeployment>
     }
 
     // Build wallet context from addresses (filtered by approved chains if provided)
@@ -379,8 +431,7 @@ export async function handleChatRequest(c: Context) {
       hasEmbeddedWallet,
       hasExternalWallet,
       safeAddress,
-      isSafeDeployed,
-      isSafeReady
+      safeDeploymentState
     )
 
     // Convert UIMessages to ModelMessages
@@ -389,7 +440,7 @@ export async function handleChatRequest(c: Context) {
     const result = streamText({
       model: getModel(),
       messages: modelMessages,
-      system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds),
+      system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeAddress, safeDeploymentState),
       temperature: 1.0,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),

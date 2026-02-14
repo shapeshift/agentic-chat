@@ -1,5 +1,3 @@
-import type { VaultWithdrawOutput } from '@shapeshiftoss/agentic-server'
-
 import { StepStatus, useVaultWithdrawExecution } from '@/hooks/useVaultWithdrawExecution'
 import { firstFourLastFour } from '@/lib/utils'
 import { useChatStore } from '@/stores/chatStore'
@@ -10,9 +8,9 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps) {
+export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdrawTool'>) {
   const { state, output, toolCallId } = toolPart
-  const withdrawOutput = output as VaultWithdrawOutput | undefined
+  const withdrawOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const withdrawData = state === 'output-available' && withdrawOutput ? withdrawOutput : null

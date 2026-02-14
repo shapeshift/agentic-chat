@@ -1,13 +1,13 @@
 import 'katex/dist/katex.min.css'
 
 import { CheckIcon, CopyIcon } from 'lucide-react'
-import { useState } from 'react'
 import type { ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 import { cn } from '@/lib/utils'
 
 import { IconButton } from './ui/IconButton'
@@ -16,31 +16,17 @@ interface MarkdownProps {
   children: string
 }
 
-function useCopyToClipboard({ copiedDuration = 3000 }: { copiedDuration?: number } = {}) {
-  const [isCopied, setIsCopied] = useState<boolean>(false)
-
-  const copyToClipboard = async (value: string) => {
-    if (!value) return
-
-    await navigator.clipboard.writeText(value)
-    setIsCopied(true)
-    setTimeout(() => setIsCopied(false), copiedDuration)
-  }
-
-  return { isCopied, copyToClipboard }
-}
-
 interface CodeHeaderProps {
   language?: string
   code: string
 }
 
 function CodeHeader({ language, code }: CodeHeaderProps) {
-  const { isCopied, copyToClipboard } = useCopyToClipboard()
+  const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 3000 })
 
   const onCopy = () => {
     if (!code || isCopied) return
-    void copyToClipboard(code)
+    copyToClipboard(code)
   }
 
   return (

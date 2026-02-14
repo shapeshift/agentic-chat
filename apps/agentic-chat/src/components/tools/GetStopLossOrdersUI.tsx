@@ -1,4 +1,3 @@
-import type { GetStopLossOrdersOutput } from '@shapeshiftoss/agentic-server'
 import type { Clock } from 'lucide-react'
 import { ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
 
@@ -85,7 +84,7 @@ function StopLossOrderItem({ status, network, sellToken, buyToken, validTo, cowT
   )
 }
 
-export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps) {
+export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopLossOrdersTool'>) {
   const { state, output } = toolPart
 
   const stateRender = useToolStateRender(state, {
@@ -95,8 +94,7 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps) {
 
   if (stateRender) return stateRender
 
-  const data = output as GetStopLossOrdersOutput | undefined
-  const orders = data?.orders ?? []
+  const orders = output?.orders ?? []
 
   if (orders.length === 0) {
     return (

@@ -3,9 +3,10 @@ import { toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
+import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { validateSufficientBalance } from '../../utils/balanceHelpers'
-import { getAddressForChain } from '../../utils/walletContextSimple'
+import { getAddressForChain, isSafeReadyOnChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 export const vaultWithdrawSchema = z.object({
@@ -34,6 +35,13 @@ export async function executeVaultWithdraw(
   if (!safeAddress) {
     throw new Error(
       'No Safe vault found. A Safe smart account is deployed automatically when you create your first automated order.'
+    )
+  }
+
+  const chainId = NETWORK_TO_CHAIN_ID[input.network]!
+  if (!isSafeReadyOnChain(walletContext, chainId)) {
+    throw new Error(
+      `Safe is not deployed on ${input.network}. Cannot withdraw on a chain where the Safe doesn't exist.`
     )
   }
 
@@ -68,9 +76,6 @@ export async function executeVaultWithdraw(
     }
   }
 
-  const { NETWORK_TO_CHAIN_ID } = await import('../../lib/cow/types')
-  const chainId = NETWORK_TO_CHAIN_ID[input.network]!
-
   return {
     summary: {
       asset: { symbol: asset.symbol, amount: input.amount },
@@ -87,15 +92,9 @@ export const vaultWithdrawTool = {
 
 UI CARD DISPLAYS: withdrawal amount, asset, vault address, and destination wallet.
 
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+IMPORTANT: Do NOT write any response text alongside this tool call. Wait for the tool result before responding. If the tool succeeds, the UI card will show the result — supplement it with one brief sentence, do not duplicate card data. If the tool fails, tell the user what went wrong and suggest alternatives.
 
-Default: Respond with one brief, natural sentence like:
-- "Here's your vault withdrawal"
-- "I've prepared the withdrawal for you"
-
-This executes a Safe transaction (you sign as the Safe owner) to transfer tokens from the vault to your EOA wallet.
-
-Only elaborate if the user asks about something not shown in the card.`,
+This executes a Safe transaction (you sign as the Safe owner) to transfer tokens from the vault to your EOA wallet.`,
   inputSchema: vaultWithdrawSchema,
   execute: executeVaultWithdraw,
 }

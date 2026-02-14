@@ -1,7 +1,7 @@
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function PortfolioUI({ toolPart }: ToolUIComponentProps) {
+export function PortfolioUI({ toolPart }: ToolUIComponentProps<'portfolioTool'>) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
   const { state } = toolPart
 

@@ -1,5 +1,3 @@
-import type { SendOutput } from '@shapeshiftoss/agentic-server'
-
 import { StepStatus, useSendExecution } from '@/hooks/useSendExecution'
 import { firstFourLastFour } from '@/lib/utils'
 import { useChatStore } from '@/stores/chatStore'
@@ -10,9 +8,9 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function SendUI({ toolPart }: ToolUIComponentProps) {
+export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
   const { state, output, toolCallId } = toolPart
-  const sendOutput = output as SendOutput | undefined
+  const sendOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
   const address = sendOutput?.summary.from
 

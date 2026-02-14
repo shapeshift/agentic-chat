@@ -17,7 +17,8 @@ export function useToolExecutionEffect<TData, TState>(
 
   const state = useChatStore(store => {
     const toolState = store.runtimeToolStates.get(toolCallId)
-    return toolState !== undefined ? (toolState as TState) : initialState
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return toolState !== undefined ? toolState : initialState
   })
 
   const persistedTransaction = useChatStore(store => store.getPersistedTransaction(toolCallId))

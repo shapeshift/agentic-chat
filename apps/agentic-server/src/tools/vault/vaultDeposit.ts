@@ -99,15 +99,9 @@ export const vaultDepositTool = {
 
 UI CARD DISPLAYS: deposit amount, asset, source wallet, and vault address.
 
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+IMPORTANT: Do NOT write any response text alongside this tool call. Wait for the tool result before responding. If the tool succeeds, the UI card will show the result — supplement it with one brief sentence, do not duplicate card data. If the tool fails, tell the user what went wrong and suggest alternatives.
 
-Default: Respond with one brief, natural sentence like:
-- "Here's your deposit to the vault"
-- "I've prepared the vault deposit for you"
-
-Tokens must be in the Safe vault before automated orders (stop-loss, TWAP, DCA) can execute. This transfers tokens from your EOA wallet to the Safe.
-
-Only elaborate if the user asks about something not shown in the card.`,
+Tokens must be in the Safe vault before automated orders (stop-loss, TWAP, DCA) can execute. This transfers tokens from your EOA wallet to the Safe.`,
   inputSchema: vaultDepositSchema,
   execute: executeVaultDeposit,
 }

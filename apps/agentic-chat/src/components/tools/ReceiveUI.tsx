@@ -1,7 +1,8 @@
-import type { ReceiveOutput } from '@shapeshiftoss/agentic-server'
 import { Check, Copy } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
+
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 
 import { Button } from '../ui/Button'
 import { StatusText } from '../ui/StatusText'
@@ -10,10 +11,10 @@ import { ToolCard } from '../ui/ToolCard'
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function ReceiveUI({ toolPart }: ToolUIComponentProps) {
+export function ReceiveUI({ toolPart }: ToolUIComponentProps<'receiveTool'>) {
   const { state, output, errorText } = toolPart
-  const receiveOutput = output as ReceiveOutput | undefined
-  const [copied, setCopied] = useState(false)
+  const receiveOutput = output
+  const { isCopied: copied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 })
 
   const stateRender = useToolStateRender(state, {
     loading: 'Getting receive address...',
@@ -23,10 +24,8 @@ export function ReceiveUI({ toolPart }: ToolUIComponentProps) {
   const handleCopy = useCallback(() => {
     const addr = receiveOutput?.address
     if (!addr) return
-    void navigator.clipboard.writeText(addr)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [receiveOutput?.address])
+    copyToClipboard(addr)
+  }, [receiveOutput?.address, copyToClipboard])
 
   if (stateRender) return stateRender
 

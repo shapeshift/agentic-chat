@@ -1,13 +1,18 @@
 import type { Network } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
 
+export interface SafeChainDeployment {
+  isDeployed: boolean
+  modulesEnabled: boolean
+  domainVerifierSet: boolean
+}
+
 export interface WalletContext {
   connectedWallets?: Record<string, { address: string }>
   hasEmbeddedWallet?: boolean
   hasExternalWallet?: boolean
   safeAddress?: string
-  isSafeDeployed?: boolean
-  isSafeReady?: boolean
+  safeDeploymentState?: Record<number, SafeChainDeployment>
 }
 
 export function getAddressForNetwork(walletContext: WalletContext | undefined, network: Network): string {
@@ -28,4 +33,10 @@ export function getAddressForChain(walletContext: WalletContext | undefined, cha
   }
 
   return wallet.address
+}
+
+export function isSafeReadyOnChain(walletContext: WalletContext | undefined, chainId: number): boolean {
+  const chainState = walletContext?.safeDeploymentState?.[chainId]
+  if (!chainState) return false
+  return chainState.isDeployed && chainState.modulesEnabled && chainState.domainVerifierSet
 }

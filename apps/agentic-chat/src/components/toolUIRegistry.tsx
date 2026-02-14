@@ -1,5 +1,6 @@
-import type { DynamicToolUIPart } from 'ai'
 import type { ComponentType } from 'react'
+
+import type { ToolName } from '@/types/toolOutput'
 
 import { CancelLimitOrderUI } from './tools/CancelLimitOrderUI'
 import { CancelStopLossUI } from './tools/CancelStopLossUI'
@@ -20,47 +21,43 @@ import { ReceiveUI } from './tools/ReceiveUI'
 import { SendUI } from './tools/SendUI'
 import { StopLossUI } from './tools/StopLossUI'
 import { SwitchNetworkUI } from './tools/SwitchNetworkUI'
+import type { ToolRendererProps } from './tools/toolUIHelpers'
 import { TopGainersLosersUI } from './tools/TopGainersLosersUI'
 import { TrendingTokensUI } from './tools/TrendingTokensUI'
 import { TwapUI } from './tools/TwapUI'
 import { VaultDepositUI } from './tools/VaultDepositUI'
 import { VaultWithdrawUI } from './tools/VaultWithdrawUI'
 
-interface ToolUIProps {
-  toolPart: DynamicToolUIPart
+type ToolUIComponent = ComponentType<ToolRendererProps>
+
+const TOOL_UI_REGISTRY: Record<ToolName, ToolUIComponent | null> = {
+  sendTool: SendUI as ToolUIComponent,
+  initiateSwapTool: InitiateSwapUI as ToolUIComponent,
+  initiateSwapUsdTool: InitiateSwapUI as ToolUIComponent,
+  switchNetworkTool: SwitchNetworkUI as ToolUIComponent,
+  portfolioTool: PortfolioUI as ToolUIComponent,
+  getAssetsTool: GetAssetsUI as ToolUIComponent,
+  lookupExternalAddress: GetAccountUI as ToolUIComponent,
+  transactionHistoryTool: GetTransactionHistoryUI as ToolUIComponent,
+  getAllowanceTool: GetAllowanceUI as ToolUIComponent,
+  receiveTool: ReceiveUI as ToolUIComponent,
+  getTrendingTokensTool: TrendingTokensUI as ToolUIComponent,
+  getTopGainersLosersTool: TopGainersLosersUI as ToolUIComponent,
+  getNewCoinsTool: NewCoinsUI as ToolUIComponent,
+  createLimitOrderTool: LimitOrderUI as ToolUIComponent,
+  getLimitOrdersTool: GetLimitOrdersUI as ToolUIComponent,
+  cancelLimitOrderTool: CancelLimitOrderUI as ToolUIComponent,
+  createStopLossTool: StopLossUI as ToolUIComponent,
+  getStopLossOrdersTool: GetStopLossOrdersUI as ToolUIComponent,
+  cancelStopLossTool: CancelStopLossUI as ToolUIComponent,
+  createTwapTool: TwapUI as ToolUIComponent,
+  getTwapOrdersTool: GetTwapOrdersUI as ToolUIComponent,
+  cancelTwapTool: CancelTwapUI as ToolUIComponent,
+  checkWalletCapabilitiesTool: CheckWalletCapabilitiesUI as ToolUIComponent,
+  vaultDepositTool: VaultDepositUI as ToolUIComponent,
+  vaultWithdrawTool: VaultWithdrawUI as ToolUIComponent,
 }
 
-type ToolUIComponent = ComponentType<ToolUIProps>
-
-export const TOOL_UI_REGISTRY: Record<string, ToolUIComponent> = {
-  initiateSwapTool: InitiateSwapUI,
-  initiateSwapUsdTool: InitiateSwapUI,
-  switchNetworkTool: SwitchNetworkUI,
-  portfolioTool: PortfolioUI,
-  getAssetsTool: GetAssetsUI,
-  lookupExternalAddress: GetAccountUI,
-  getTransactionHistoryTool: GetTransactionHistoryUI,
-  transactionHistoryTool: GetTransactionHistoryUI,
-  getAllowanceTool: GetAllowanceUI,
-  sendTool: SendUI,
-  receiveTool: ReceiveUI,
-  getTrendingTokensTool: TrendingTokensUI,
-  getTopGainersLosersTool: TopGainersLosersUI,
-  getNewCoinsTool: NewCoinsUI,
-  createLimitOrderTool: LimitOrderUI,
-  getLimitOrdersTool: GetLimitOrdersUI,
-  cancelLimitOrderTool: CancelLimitOrderUI,
-  createStopLossTool: StopLossUI,
-  getStopLossOrdersTool: GetStopLossOrdersUI,
-  cancelStopLossTool: CancelStopLossUI,
-  createTwapTool: TwapUI,
-  getTwapOrdersTool: GetTwapOrdersUI,
-  cancelTwapTool: CancelTwapUI,
-  checkWalletCapabilitiesTool: CheckWalletCapabilitiesUI,
-  vaultDepositTool: VaultDepositUI,
-  vaultWithdrawTool: VaultWithdrawUI,
-} as const
-
-export function getToolUIComponent(toolName: string): ToolUIComponent | undefined {
-  return TOOL_UI_REGISTRY[toolName]
+export function getToolUIComponent(toolName: string): ComponentType<ToolRendererProps> | null | undefined {
+  return TOOL_UI_REGISTRY[toolName as ToolName]
 }

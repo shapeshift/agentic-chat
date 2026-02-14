@@ -1,4 +1,4 @@
-import type { CreateLimitOrderOutput, GetLimitOrdersOutput } from '@shapeshiftoss/agentic-server'
+import type { CreateLimitOrderOutput } from '@shapeshiftoss/agentic-server'
 import BigNumber from 'bignumber.js'
 import { Clock, ExternalLink, Timer, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { useMemo } from 'react'
@@ -171,7 +171,7 @@ const toDisplayOrder = (tx: PersistedToolState): DisplayOrder => {
 const selectHistoricalOrders = (transactions: PersistedToolState[]): DisplayOrder[] =>
   transactions.filter(isLimitOrderTx).map(toDisplayOrder)
 
-export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps) {
+export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps<'getLimitOrdersTool'>) {
   const { state, output } = toolPart
   const input = toolPart.input as { accountScope?: string } | undefined
   const isHistoryMode = input?.accountScope === 'history'
@@ -185,10 +185,9 @@ export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps) {
 
   if (stateRender) return stateRender
 
-  const serverData = output as GetLimitOrdersOutput | undefined
   const orders: DisplayOrder[] = isHistoryMode
     ? historicalOrders
-    : (serverData?.orders ?? []).map(o => ({
+    : (output?.orders ?? []).map(o => ({
         ...o,
         status: isValidOrderStatus(o.status) ? o.status : 'open',
       }))

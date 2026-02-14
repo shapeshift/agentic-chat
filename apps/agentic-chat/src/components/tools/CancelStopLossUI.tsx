@@ -220,9 +220,9 @@ function useCancelStopLossExecution(
   }
 }
 
-export function CancelStopLossUI({ toolPart }: ToolUIComponentProps) {
+export function CancelStopLossUI({ toolPart }: ToolUIComponentProps<'cancelStopLossTool'>) {
   const { state, output, toolCallId } = toolPart
-  const cancelOutput = output as CancelStopLossOutput | undefined
+  const cancelOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const cancelData = state === 'output-available' && cancelOutput ? cancelOutput : null

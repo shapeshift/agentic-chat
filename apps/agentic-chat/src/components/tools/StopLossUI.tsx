@@ -1,6 +1,7 @@
-import type { CreateStopLossOutput } from '@shapeshiftoss/agentic-server'
+import { ExternalLink } from 'lucide-react'
 
 import { useStopLossExecution } from '@/hooks/useStopLossExecution'
+import { getExplorerUrl, getSafeAppUrl } from '@/lib/explorers'
 import { StepStatus } from '@/lib/stepUtils'
 import { useChatStore } from '@/stores/chatStore'
 
@@ -11,9 +12,9 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function StopLossUI({ toolPart }: ToolUIComponentProps) {
+export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossTool'>) {
   const { state, output, toolCallId } = toolPart
-  const orderOutput = output as CreateStopLossOutput | undefined
+  const orderOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const orderData = state === 'output-available' && orderOutput ? orderOutput : null
@@ -33,8 +34,8 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
   const needsDeposit = orderOutput?.needsDeposit ?? false
   const [
     prepareStep,
-    safeCheckStep,
     networkStep,
+    safeCheckStep,
     depositStep,
     depositConfirmStep,
     approvalStep,
@@ -133,10 +134,20 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
               }
             />
             <TxStepCard.DetailItem label="Expires" value={new Date(summary.expiresAt).toLocaleString()} />
-            {orderOutput?.safeAddress && (
+            {orderOutput?.safeAddress && summary && (
               <TxStepCard.DetailItem
-                label="Safe"
-                value={`${orderOutput.safeAddress.slice(0, 6)}...${orderOutput.safeAddress.slice(-4)}`}
+                label="Safe Vault"
+                value={
+                  <a
+                    href={getSafeAppUrl(summary.network, orderOutput.safeAddress)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-primary hover:underline"
+                  >
+                    {orderOutput.safeAddress.slice(0, 6)}...{orderOutput.safeAddress.slice(-4)}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                }
               />
             )}
             <TxStepCard.DetailItem label="Provider" value={summary.provider.toUpperCase()} />
@@ -148,11 +159,11 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
         <TxStepCard.Step status={prepareStep.status} connectorBottom>
           Preparing stop-loss order
         </TxStepCard.Step>
-        <TxStepCard.Step status={safeCheckStep.status} connectorTop connectorBottom>
-          Check Safe wallet
-        </TxStepCard.Step>
         <TxStepCard.Step status={networkStep.status} connectorTop connectorBottom>
           {networkName ? `Switch to ${networkName}` : 'Switch network'}
+        </TxStepCard.Step>
+        <TxStepCard.Step status={safeCheckStep.status} connectorTop connectorBottom>
+          Check Safe wallet
         </TxStepCard.Step>
         <TxStepCard.Step status={needsDeposit ? depositStep.status : StepStatus.SKIPPED} connectorTop connectorBottom>
           Deposit tokens to vault
@@ -181,13 +192,18 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps) {
           Confirming on-chain
         </TxStepCard.Step>
 
-        {submitTxHash && (
-          <div className="text-sm text-muted-foreground mt-3">
-            Tx:{' '}
+        {submitTxHash && networkName && (
+          <a
+            href={getExplorerUrl(networkName, submitTxHash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-3"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
             <span className="font-mono text-xs">
               {submitTxHash.slice(0, 10)}...{submitTxHash.slice(-8)}
             </span>
-          </div>
+          </a>
         )}
 
         {footerMessage && (

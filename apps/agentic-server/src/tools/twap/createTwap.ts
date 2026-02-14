@@ -268,14 +268,7 @@ export const createTwapTool = {
 
 UI CARD DISPLAYS: order details (sell/buy assets, total and per-trade amounts), duration, intervals, frequency, Safe address, and multi-step transaction flow.
 
-Your role is to supplement the card, not duplicate it.
-
-Default: Respond with one brief sentence like:
-- "I've prepared your TWAP order"
-- "Your DCA strategy is ready to submit"
-- "Here's your split order for approval"
-
-Only elaborate if the user asks about something not shown in the card.
+IMPORTANT: Do NOT write any response text alongside this tool call. Wait for the tool result before responding. If the tool succeeds, the UI card will show the result — supplement it with one brief sentence, do not duplicate card data. If the tool fails, tell the user what went wrong and suggest alternatives.
 
 IMPORTANT:
 - TWAP = short duration (hours), DCA = long duration (days/weeks) — same mechanism

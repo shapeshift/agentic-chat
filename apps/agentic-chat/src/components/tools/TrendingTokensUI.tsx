@@ -1,4 +1,3 @@
-import type { TrimmedTrendingCoin } from '@shapeshiftoss/agentic-server'
 import { Flame } from 'lucide-react'
 
 import { AssetListItem } from '../ui/AssetListItem'
@@ -7,7 +6,7 @@ import { ToolCard } from '../ui/ToolCard'
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function TrendingTokensUI({ toolPart }: ToolUIComponentProps) {
+export function TrendingTokensUI({ toolPart }: ToolUIComponentProps<'getTrendingTokensTool'>) {
   const { state, output } = toolPart
 
   const stateRender = useToolStateRender(state, {
@@ -17,8 +16,7 @@ export function TrendingTokensUI({ toolPart }: ToolUIComponentProps) {
 
   if (stateRender) return stateRender
 
-  const data = output as { tokens: TrimmedTrendingCoin[] } | undefined
-  const tokens = data?.tokens
+  const tokens = output?.tokens
 
   if (!tokens || tokens.length === 0) {
     return null

@@ -1,5 +1,3 @@
-import type { VaultDepositOutput } from '@shapeshiftoss/agentic-server'
-
 import { StepStatus, useVaultDepositExecution } from '@/hooks/useVaultDepositExecution'
 import { firstFourLastFour } from '@/lib/utils'
 import { useChatStore } from '@/stores/chatStore'
@@ -10,9 +8,9 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function VaultDepositUI({ toolPart }: ToolUIComponentProps) {
+export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositTool'>) {
   const { state, output, toolCallId } = toolPart
-  const depositOutput = output as VaultDepositOutput | undefined
+  const depositOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const depositData = state === 'output-available' && depositOutput ? depositOutput : null

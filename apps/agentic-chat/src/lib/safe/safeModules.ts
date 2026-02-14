@@ -1,5 +1,5 @@
 import Safe from '@safe-global/protocol-kit'
-import { domainSeparator, encodeFunctionData, getAddress } from 'viem'
+import { createPublicClient, custom, domainSeparator, encodeFunctionData, getAddress } from 'viem'
 
 import { getSafeState, setSafeState } from './safeStorage'
 
@@ -112,6 +112,10 @@ export async function enableComposableCowModules(
   const signedTx = await protocolKit.signTransaction(safeTx)
   const result = await protocolKit.executeTransaction(signedTx)
   const txHash = typeof result === 'string' ? result : result.hash
+
+  // Wait for module enable tx to be confirmed before updating state
+  const publicClient = createPublicClient({ transport: custom(getProvider()) })
+  await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}`, confirmations: 1 })
 
   if (ownerAddress) {
     const currentState = getSafeState(ownerAddress)

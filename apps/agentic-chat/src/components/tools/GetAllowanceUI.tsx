@@ -5,7 +5,7 @@ import { CollapsableDetails } from '../ui/CollapsableDetails'
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function GetAllowanceUI({ toolPart }: ToolUIComponentProps) {
+export function GetAllowanceUI({ toolPart }: ToolUIComponentProps<'getAllowanceTool'>) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
   const output = toolPart.output
   const { state, toolName } = toolPart

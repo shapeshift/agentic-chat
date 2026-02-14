@@ -1,4 +1,3 @@
-import type { CancelLimitOrderOutput } from '@shapeshiftoss/agentic-server'
 import { ExternalLink, XCircle } from 'lucide-react'
 
 import { useCancelLimitOrderExecution } from '@/hooks/useCancelLimitOrderExecution'
@@ -10,9 +9,9 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function CancelLimitOrderUI({ toolPart }: ToolUIComponentProps) {
+export function CancelLimitOrderUI({ toolPart }: ToolUIComponentProps<'cancelLimitOrderTool'>) {
   const { state, output, toolCallId } = toolPart
-  const cancelOutput = output as CancelLimitOrderOutput | undefined
+  const cancelOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const cancelData = state === 'output-available' && cancelOutput ? cancelOutput : null
