@@ -42,7 +42,7 @@ const initialState: VaultWithdrawState = {
   completedSteps: new Set(),
 }
 
-function toPersistedState(
+export function toPersistedState(
   toolCallId: string,
   state: VaultWithdrawState,
   conversationId: string,
@@ -64,7 +64,7 @@ function toPersistedState(
   }
 }
 
-function fromPersistedState(persisted: PersistedToolState): VaultWithdrawState {
+export function fromPersistedState(persisted: PersistedToolState): VaultWithdrawState {
   return {
     currentStep: VaultWithdrawStep.COMPLETE,
     completedSteps: VAULT_WITHDRAW_PHASES.fromPhases(persisted.phases),

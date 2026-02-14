@@ -57,7 +57,7 @@ const initialSwapState: SwapState = {
   completedSteps: new Set(),
 }
 
-function swapStateToPersistedState(
+export function swapStateToPersistedState(
   toolCallId: string,
   state: SwapState,
   conversationId: string,
@@ -85,7 +85,7 @@ function swapStateToPersistedState(
   }
 }
 
-function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
+export function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
   const hasError = persisted.phases.includes('error')
   return {
     currentStep: SwapStep.COMPLETE,
@@ -156,6 +156,10 @@ export const useSwapExecution = (
 
     try {
       const { needsApproval, approvalTx, swapTx } = data
+
+      if (!swapTx?.from) throw new Error('Invalid swap output: missing swapTx.from')
+      if (!swapTx?.chainId) throw new Error('Invalid swap output: missing swapTx.chainId')
+      if (!data.swapData?.sellAsset?.chainId) throw new Error('Invalid swap output: missing swapData.sellAsset.chainId')
 
       const sellAssetChainId = data.swapData.sellAsset.chainId
       const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)

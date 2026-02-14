@@ -48,7 +48,7 @@ const initialSendState: SendState = {
   completedSteps: new Set(),
 }
 
-function sendStateToPersistedState(
+export function sendStateToPersistedState(
   toolCallId: string,
   state: SendState,
   conversationId: string,
@@ -71,7 +71,7 @@ function sendStateToPersistedState(
   }
 }
 
-function persistedStateToSendState(persisted: PersistedToolState): SendState {
+export function persistedStateToSendState(persisted: PersistedToolState): SendState {
   return {
     currentStep: SendStep.COMPLETE,
     completedSteps: SEND_PHASES.fromPhases(persisted.phases),
@@ -127,6 +127,10 @@ export const useSendExecution = (
 
     try {
       const { tx } = data
+
+      if (!tx?.from) throw new Error('Invalid send output: missing tx.from')
+      if (!tx?.chainId) throw new Error('Invalid send output: missing tx.chainId')
+      if (!data.sendData?.chainId) throw new Error('Invalid send output: missing sendData.chainId')
 
       const assetChainId = data.sendData.chainId
       const { chainNamespace, chainReference } = fromChainId(assetChainId)

@@ -5,7 +5,7 @@ import { bnOrZero } from './bignumber'
 export { formatCryptoAmount } from '@shapeshiftoss/utils'
 export type { FormatCryptoAmountOptions } from '@shapeshiftoss/utils'
 
-const getFiatNumberFractionDigits = (num: number): number => {
+export const getFiatNumberFractionDigits = (num: number): number => {
   if (num >= 1 || 0.000001 > num) return 0
   if (1 > num && num >= 0.1) return 3
   if (0.1 > num && num >= 0.01) return 4

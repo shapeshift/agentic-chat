@@ -9,6 +9,7 @@
     "dev": "bun vite",
     "preview": "bun build && bun vite preview",
     "type-check": "tsc --noEmit",
+    "test": "bun test",
     "sentry:sourcemaps": "npx @sentry/wizard@latest -i sourcemaps --saas --org shapeshift-dao --project agent"
   },
   "dependencies": {

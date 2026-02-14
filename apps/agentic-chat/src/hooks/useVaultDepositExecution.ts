@@ -43,7 +43,7 @@ const initialState: VaultDepositState = {
   completedSteps: new Set(),
 }
 
-function toPersistedState(
+export function toPersistedState(
   toolCallId: string,
   state: VaultDepositState,
   conversationId: string,
@@ -65,7 +65,7 @@ function toPersistedState(
   }
 }
 
-function fromPersistedState(persisted: PersistedToolState): VaultDepositState {
+export function fromPersistedState(persisted: PersistedToolState): VaultDepositState {
   return {
     currentStep: VaultDepositStep.COMPLETE,
     completedSteps: VAULT_DEPOSIT_PHASES.fromPhases(persisted.phases),

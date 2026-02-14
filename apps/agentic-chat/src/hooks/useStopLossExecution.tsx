@@ -11,9 +11,9 @@ import { toast } from 'sonner'
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
 import { executeSafeTransaction } from '@/lib/safe'
-import { deploySafe, predictSafeAddress } from '@/lib/safe/safeFactory'
+import { deploySafe } from '@/lib/safe/safeFactory'
 import { enableComposableCowModules } from '@/lib/safe/safeModules'
-import { getSafeState, setSafeState } from '@/lib/safe/safeStorage'
+import { getSafeState } from '@/lib/safe/safeStorage'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
@@ -27,8 +27,8 @@ type StopLossData = CreateStopLossOutput
 
 export enum StopLossStep {
   PREPARE = 0,
-  SAFE_CHECK = 1,
-  NETWORK_SWITCH = 2,
+  NETWORK_SWITCH = 1,
+  SAFE_CHECK = 2,
   VAULT_DEPOSIT = 3,
   VAULT_DEPOSIT_CONFIRMATION = 4,
   APPROVAL = 5,
@@ -40,8 +40,8 @@ export enum StopLossStep {
 
 const STOP_LOSS_PHASES = createStepPhaseMap<StopLossStep>({
   [StopLossStep.PREPARE]: 'prepare_complete',
-  [StopLossStep.SAFE_CHECK]: 'safe_checked',
   [StopLossStep.NETWORK_SWITCH]: 'network_switched',
+  [StopLossStep.SAFE_CHECK]: 'safe_checked',
   [StopLossStep.VAULT_DEPOSIT]: 'deposited',
   [StopLossStep.VAULT_DEPOSIT_CONFIRMATION]: 'deposit_confirmed',
   [StopLossStep.APPROVAL]: 'approved',
@@ -65,7 +65,7 @@ const initialStopLossState: StopLossState = {
   completedSteps: new Set(),
 }
 
-function stopLossStateToPersistedState(
+export function stopLossStateToPersistedState(
   toolCallId: string,
   state: StopLossState,
   conversationId: string,
@@ -91,7 +91,7 @@ function stopLossStateToPersistedState(
   }
 }
 
-function persistedStateToStopLossState(persisted: PersistedToolState): StopLossState {
+export function persistedStateToStopLossState(persisted: PersistedToolState): StopLossState {
   const hasError = persisted.phases.includes('error')
   return {
     currentStep: StopLossStep.COMPLETE,
@@ -170,45 +170,13 @@ export const useStopLossExecution = (
       // Step 0: Prepare (completed by this point)
       setState(draft => {
         draft.completedSteps.add(StopLossStep.PREPARE)
-        draft.currentStep = StopLossStep.SAFE_CHECK
-        draft.error = undefined
-      })
-
-      // Step 1: Safe Check — verify Safe is deployed and modules enabled on target chain
-      const targetChainId = safeTransaction.chainId
-      const currentSafeState = getSafeState(evmAddress)
-      const chainSafeState = currentSafeState[targetChainId]
-
-      if (!chainSafeState?.isDeployed) {
-        // Deploy Safe on target chain
-        const predicted = await predictSafeAddress(evmAddress)
-        const deployResult = await deploySafe(evmAddress, targetChainId, evmAddress)
-        if (!deployResult.isDeployed) {
-          throw new Error('Failed to deploy Safe smart account')
-        }
-        setSafeState(evmAddress, targetChainId, {
-          safeAddress: predicted,
-          isDeployed: true,
-          modulesEnabled: false,
-          domainVerifierSet: false,
-        })
-      }
-
-      const updatedSafeState = getSafeState(evmAddress)
-      const updatedChainState = updatedSafeState[targetChainId]
-
-      if (!updatedChainState?.modulesEnabled || !updatedChainState?.domainVerifierSet) {
-        const safeAddr = updatedChainState?.safeAddress ?? safeAddress
-        await enableComposableCowModules(safeAddr, targetChainId, evmAddress)
-      }
-
-      setState(draft => {
-        draft.completedSteps.add(StopLossStep.SAFE_CHECK)
         draft.currentStep = StopLossStep.NETWORK_SWITCH
         draft.error = undefined
       })
 
-      // Step 2: Network Switch
+      const targetChainId = safeTransaction.chainId
+
+      // Step 1: Network Switch — must happen BEFORE Safe check so deploySafe runs on the correct chain
       if (!evmWallet) {
         throw new Error('EVM wallet not connected')
       }
@@ -221,6 +189,28 @@ export const useStopLossExecution = (
 
       setState(draft => {
         draft.completedSteps.add(StopLossStep.NETWORK_SWITCH)
+        draft.currentStep = StopLossStep.SAFE_CHECK
+        draft.error = undefined
+      })
+
+      // Step 2: Safe Check — verify Safe is deployed and modules enabled on target chain
+      // Always verify on-chain via deploySafe (handles already-deployed case gracefully).
+      // Never trust localStorage alone — stale entries from prior bugs can skip deployment.
+      const deployResult = await deploySafe(evmAddress, targetChainId, evmAddress)
+      if (!deployResult.isDeployed) {
+        throw new Error('Failed to deploy Safe smart account')
+      }
+
+      const currentSafeState = getSafeState(evmAddress)
+      const chainSafeState = currentSafeState[targetChainId]
+
+      if (!chainSafeState?.modulesEnabled || !chainSafeState?.domainVerifierSet) {
+        const safeAddr = chainSafeState?.safeAddress ?? safeAddress
+        await enableComposableCowModules(safeAddr, targetChainId, evmAddress)
+      }
+
+      setState(draft => {
+        draft.completedSteps.add(StopLossStep.SAFE_CHECK)
         draft.currentStep = StopLossStep.VAULT_DEPOSIT
         draft.error = undefined
       })
@@ -408,8 +398,8 @@ export const useStopLossExecution = (
   return {
     steps: [
       { step: StopLossStep.PREPARE, status: prepareStepStatus },
-      { step: StopLossStep.SAFE_CHECK, status: getStepStatus(StopLossStep.SAFE_CHECK, state) },
       { step: StopLossStep.NETWORK_SWITCH, status: getStepStatus(StopLossStep.NETWORK_SWITCH, state) },
+      { step: StopLossStep.SAFE_CHECK, status: getStepStatus(StopLossStep.SAFE_CHECK, state) },
       { step: StopLossStep.VAULT_DEPOSIT, status: getStepStatus(StopLossStep.VAULT_DEPOSIT, state) },
       {
         step: StopLossStep.VAULT_DEPOSIT_CONFIRMATION,

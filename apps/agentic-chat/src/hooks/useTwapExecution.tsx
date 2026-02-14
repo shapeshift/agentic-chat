@@ -10,9 +10,9 @@ import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
 import { executeSafeTransaction } from '@/lib/safe'
-import { deploySafe, predictSafeAddress } from '@/lib/safe/safeFactory'
+import { deploySafe } from '@/lib/safe/safeFactory'
 import { enableComposableCowModules } from '@/lib/safe/safeModules'
-import { getSafeState, setSafeState } from '@/lib/safe/safeStorage'
+import { getSafeState } from '@/lib/safe/safeStorage'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
@@ -26,8 +26,8 @@ type TwapData = CreateTwapOutput
 
 export enum TwapStep {
   PREPARE = 0,
-  SAFE_CHECK = 1,
-  NETWORK_SWITCH = 2,
+  NETWORK_SWITCH = 1,
+  SAFE_CHECK = 2,
   VAULT_DEPOSIT = 3,
   VAULT_DEPOSIT_CONFIRMATION = 4,
   APPROVAL = 5,
@@ -39,8 +39,8 @@ export enum TwapStep {
 
 const TWAP_PHASES = createStepPhaseMap<TwapStep>({
   [TwapStep.PREPARE]: 'prepare_complete',
-  [TwapStep.SAFE_CHECK]: 'safe_checked',
   [TwapStep.NETWORK_SWITCH]: 'network_switched',
+  [TwapStep.SAFE_CHECK]: 'safe_checked',
   [TwapStep.VAULT_DEPOSIT]: 'deposited',
   [TwapStep.VAULT_DEPOSIT_CONFIRMATION]: 'deposit_confirmed',
   [TwapStep.APPROVAL]: 'approved',
@@ -64,7 +64,7 @@ const initialTwapState: TwapState = {
   completedSteps: new Set(),
 }
 
-function twapStateToPersistedState(
+export function twapStateToPersistedState(
   toolCallId: string,
   state: TwapState,
   conversationId: string,
@@ -90,7 +90,7 @@ function twapStateToPersistedState(
   }
 }
 
-function persistedStateToTwapState(persisted: PersistedToolState): TwapState {
+export function persistedStateToTwapState(persisted: PersistedToolState): TwapState {
   const hasError = persisted.phases.includes('error')
   return {
     currentStep: TwapStep.COMPLETE,
@@ -168,42 +168,13 @@ export const useTwapExecution = (
 
       setState(draft => {
         draft.completedSteps.add(TwapStep.PREPARE)
-        draft.currentStep = TwapStep.SAFE_CHECK
-        draft.error = undefined
-      })
-
-      const targetChainId = safeTransaction.chainId
-      const currentSafeState = getSafeState(evmAddress)
-      const chainSafeState = currentSafeState[targetChainId]
-
-      if (!chainSafeState?.isDeployed) {
-        const predicted = await predictSafeAddress(evmAddress)
-        const deployResult = await deploySafe(evmAddress, targetChainId, evmAddress)
-        if (!deployResult.isDeployed) {
-          throw new Error('Failed to deploy Safe smart account')
-        }
-        setSafeState(evmAddress, targetChainId, {
-          safeAddress: predicted,
-          isDeployed: true,
-          modulesEnabled: false,
-          domainVerifierSet: false,
-        })
-      }
-
-      const updatedSafeState = getSafeState(evmAddress)
-      const updatedChainState = updatedSafeState[targetChainId]
-
-      if (!updatedChainState?.modulesEnabled || !updatedChainState?.domainVerifierSet) {
-        const safeAddr = updatedChainState?.safeAddress ?? safeAddress
-        await enableComposableCowModules(safeAddr, targetChainId, evmAddress)
-      }
-
-      setState(draft => {
-        draft.completedSteps.add(TwapStep.SAFE_CHECK)
         draft.currentStep = TwapStep.NETWORK_SWITCH
         draft.error = undefined
       })
 
+      const targetChainId = safeTransaction.chainId
+
+      // Network Switch — must happen BEFORE Safe check so deploySafe runs on the correct chain
       if (!evmWallet) {
         throw new Error('EVM wallet not connected')
       }
@@ -216,6 +187,28 @@ export const useTwapExecution = (
 
       setState(draft => {
         draft.completedSteps.add(TwapStep.NETWORK_SWITCH)
+        draft.currentStep = TwapStep.SAFE_CHECK
+        draft.error = undefined
+      })
+
+      // Safe Check — verify Safe is deployed and modules enabled on target chain
+      // Always verify on-chain via deploySafe (handles already-deployed case gracefully).
+      // Never trust localStorage alone — stale entries from prior bugs can skip deployment.
+      const deployResult = await deploySafe(evmAddress, targetChainId, evmAddress)
+      if (!deployResult.isDeployed) {
+        throw new Error('Failed to deploy Safe smart account')
+      }
+
+      const currentSafeState = getSafeState(evmAddress)
+      const chainSafeState = currentSafeState[targetChainId]
+
+      if (!chainSafeState?.modulesEnabled || !chainSafeState?.domainVerifierSet) {
+        const safeAddr = chainSafeState?.safeAddress ?? safeAddress
+        await enableComposableCowModules(safeAddr, targetChainId, evmAddress)
+      }
+
+      setState(draft => {
+        draft.completedSteps.add(TwapStep.SAFE_CHECK)
         draft.currentStep = TwapStep.VAULT_DEPOSIT
         draft.error = undefined
       })
@@ -387,8 +380,8 @@ export const useTwapExecution = (
   return {
     steps: [
       { step: TwapStep.PREPARE, status: prepareStepStatus },
-      { step: TwapStep.SAFE_CHECK, status: getStepStatus(TwapStep.SAFE_CHECK, state) },
       { step: TwapStep.NETWORK_SWITCH, status: getStepStatus(TwapStep.NETWORK_SWITCH, state) },
+      { step: TwapStep.SAFE_CHECK, status: getStepStatus(TwapStep.SAFE_CHECK, state) },
       { step: TwapStep.VAULT_DEPOSIT, status: getStepStatus(TwapStep.VAULT_DEPOSIT, state) },
       {
         step: TwapStep.VAULT_DEPOSIT_CONFIRMATION,

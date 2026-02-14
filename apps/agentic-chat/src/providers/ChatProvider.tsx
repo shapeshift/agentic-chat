@@ -6,7 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { analytics } from '@/lib/mixpanel'
-import { useChatStore, saveMessages, loadMessages } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
 interface ChatContextValue {
@@ -81,7 +81,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
       const title = extractTitleFromMessages(messages, useChatStore.getState().conversations, urlConversationId)
       storeConversation(urlConversationId, title)
-      saveMessages(urlConversationId, messages)
+      useChatStore.getState().setMessages(urlConversationId, messages)
     },
   })
 
@@ -97,7 +97,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   useEffect(() => {
     if (urlConversationId && urlConversationId !== lastLoadedIdRef.current) {
-      const messages = loadMessages(urlConversationId)
+      const messages = useChatStore.getState().getMessages(urlConversationId)
       setMessages(messages)
 
       const toolCallIds = messages.flatMap(message =>

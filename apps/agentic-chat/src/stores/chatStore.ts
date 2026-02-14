@@ -20,8 +20,8 @@ import type { Conversation } from '@/types'
 
 enableMapSet()
 
-const STORE_VERSION = 1
-const MESSAGES_KEY_PREFIX = 'ai-chat-messages-'
+const STORE_VERSION = 2
+const MAX_MESSAGES_PER_CONVERSATION = 500
 
 type ChatMessage = ReturnType<typeof useChat>['messages'][number]
 
@@ -62,14 +62,22 @@ interface ChatState {
   // Conversation metadata (persisted)
   conversations: Conversation[]
 
+  // Messages (persisted)
+  messagesByConversation: Record<string, ChatMessage[]>
+
   // Tool execution state
   historicalToolIds: Set<string>
-  runtimeToolStates: Map<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  runtimeToolStates: Map<string, any>
   persistedTransactions: PersistedToolState[]
 
   // Conversation methods
   saveConversation: (id: string, title: string) => void
   deleteConversation: (id: string) => void
+
+  // Message methods
+  setMessages: (conversationId: string, messages: ChatMessage[]) => void
+  getMessages: (conversationId: string) => ChatMessage[]
 
   // Tool execution methods
   markAsHistorical: (toolCallIds: string[]) => void
@@ -83,28 +91,11 @@ interface ChatState {
   getPersistedTransaction: (toolCallId: string) => PersistedToolState | undefined
 }
 
-// Message helpers (non-reactive, direct localStorage access to avoid size issues in zustand)
-export const saveMessages = (conversationId: string, messages: ChatMessage[]): void => {
-  localStorage.setItem(`${MESSAGES_KEY_PREFIX}${conversationId}`, JSON.stringify(messages))
-}
-
-export const loadMessages = (conversationId: string): ChatMessage[] => {
-  try {
-    const stored = localStorage.getItem(`${MESSAGES_KEY_PREFIX}${conversationId}`)
-    return stored ? (JSON.parse(stored) as ChatMessage[]) : []
-  } catch {
-    return []
-  }
-}
-
-const deleteMessages = (conversationId: string): void => {
-  localStorage.removeItem(`${MESSAGES_KEY_PREFIX}${conversationId}`)
-}
-
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
       conversations: [],
+      messagesByConversation: {},
       historicalToolIds: new Set(),
       runtimeToolStates: new Map(),
       persistedTransactions: [],
@@ -134,8 +125,23 @@ export const useChatStore = create<ChatState>()(
         set(state => ({
           conversations: state.conversations.filter(c => c.id !== id),
           persistedTransactions: state.persistedTransactions.filter(tx => tx.conversationId !== id),
+          messagesByConversation: Object.fromEntries(
+            Object.entries(state.messagesByConversation).filter(([key]) => key !== id)
+          ),
         }))
-        deleteMessages(id)
+      },
+
+      setMessages: (conversationId: string, messages: ChatMessage[]) => {
+        set(state => ({
+          messagesByConversation: {
+            ...state.messagesByConversation,
+            [conversationId]: messages.slice(-MAX_MESSAGES_PER_CONVERSATION),
+          },
+        }))
+      },
+
+      getMessages: (conversationId: string) => {
+        return get().messagesByConversation[conversationId] ?? []
       },
 
       markAsHistorical: (toolCallIds: string[]) => {
@@ -169,12 +175,13 @@ export const useChatStore = create<ChatState>()(
 
       getRuntimeState: <T>(toolCallId: string, initialState: T): T => {
         const state = get().runtimeToolStates.get(toolCallId)
-        return state !== undefined ? (state as T) : initialState
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return state !== undefined ? state : initialState
       },
 
       setRuntimeState: <T>(toolCallId: string, updater: (draft: T) => void) => {
         const currentStates = get().runtimeToolStates
-        const currentState = currentStates.get(toolCallId) as T | undefined
+        const currentState = currentStates.get(toolCallId)
 
         if (currentState === undefined) {
           console.error(`[chatStore] Attempted to update uninitialized state for toolCallId: ${toolCallId}`)
@@ -230,7 +237,15 @@ export const useChatStore = create<ChatState>()(
       partialize: state => ({
         conversations: state.conversations,
         persistedTransactions: state.persistedTransactions,
+        messagesByConversation: state.messagesByConversation,
       }),
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>
+        if (version < 2) {
+          state.messagesByConversation = {}
+        }
+        return state as unknown as ChatState
+      },
     }
   )
 )

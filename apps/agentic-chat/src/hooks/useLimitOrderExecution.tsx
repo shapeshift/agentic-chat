@@ -56,7 +56,7 @@ const initialLimitOrderState: LimitOrderState = {
   completedSteps: new Set(),
 }
 
-function limitOrderStateToPersistedState(
+export function limitOrderStateToPersistedState(
   toolCallId: string,
   state: LimitOrderState,
   conversationId: string,
@@ -81,7 +81,7 @@ function limitOrderStateToPersistedState(
   }
 }
 
-function persistedStateToLimitOrderState(persisted: PersistedToolState): LimitOrderState {
+export function persistedStateToLimitOrderState(persisted: PersistedToolState): LimitOrderState {
   const hasError = persisted.phases.includes('error')
   return {
     currentStep: LimitOrderStep.COMPLETE,
@@ -105,7 +105,7 @@ interface UseLimitOrderExecutionResult {
   trackingUrl?: string
 }
 
-async function submitSignedOrder(
+export async function submitSignedOrder(
   chainId: number,
   orderParams: CreateLimitOrderOutput['orderParams'],
   signingData: CreateLimitOrderOutput['signingData'],
@@ -145,7 +145,11 @@ async function submitSignedOrder(
   }
 
   const orderId = await response.text()
-  return orderId.replace(/"/g, '')
+  const cleanOrderId = orderId.replace(/"/g, '')
+  if (!cleanOrderId || cleanOrderId.length < 10) {
+    throw new Error(`Invalid order ID received from CoW: ${cleanOrderId}`)
+  }
+  return cleanOrderId
 }
 
 export const useLimitOrderExecution = (
@@ -196,6 +200,10 @@ export const useLimitOrderExecution = (
 
     try {
       const { signingData, orderParams, needsApproval, approvalTx } = data
+
+      if (!orderParams?.chainId) throw new Error('Invalid limit order output: missing orderParams.chainId')
+      if (!orderParams?.receiver) throw new Error('Invalid limit order output: missing orderParams.receiver')
+      if (!signingData) throw new Error('Invalid limit order output: missing signingData')
 
       if (!evmAddress) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')

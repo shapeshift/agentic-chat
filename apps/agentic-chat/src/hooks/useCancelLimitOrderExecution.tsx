@@ -45,7 +45,7 @@ const initialCancelOrderState: CancelOrderState = {
   completedSteps: new Set(),
 }
 
-function cancelOrderStateToPersistedState(
+export function cancelOrderStateToPersistedState(
   toolCallId: string,
   state: CancelOrderState,
   conversationId: string,
@@ -67,7 +67,7 @@ function cancelOrderStateToPersistedState(
   }
 }
 
-function persistedStateToCancelOrderState(persisted: PersistedToolState): CancelOrderState {
+export function persistedStateToCancelOrderState(persisted: PersistedToolState): CancelOrderState {
   return {
     currentStep: CancelOrderStep.COMPLETE,
     completedSteps: CANCEL_ORDER_PHASES.fromPhases(persisted.phases),
@@ -88,7 +88,7 @@ interface UseCancelLimitOrderExecutionResult {
   trackingUrl?: string
 }
 
-async function submitCancellation(chainId: number, orderUids: string[], signature: string): Promise<void> {
+export async function submitCancellation(chainId: number, orderUids: string[], signature: string): Promise<void> {
   const apiUrl = getCowApiUrl(chainId)
 
   const response = await fetch(`${apiUrl}/api/v1/orders`, {
@@ -153,6 +153,9 @@ export const useCancelLimitOrderExecution = (
 
     try {
       const { signingData, chainId } = data
+
+      if (!signingData) throw new Error('Invalid cancel order output: missing signingData')
+      if (!chainId) throw new Error('Invalid cancel order output: missing chainId')
 
       if (!evmWallet) {
         throw new Error('EVM wallet not connected')
