@@ -22,7 +22,7 @@ import { getAllowance } from '../../utils'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { getBalance } from '../../utils/balanceHelpers'
 import { createTransaction } from '../../utils/transactionHelpers'
-import { getAddressForChain } from '../../utils/walletContextSimple'
+import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 type TransactionData = {
@@ -115,8 +115,10 @@ export async function executeCreateStopLoss(
   input: CreateStopLossInput,
   walletContext?: WalletContext
 ): Promise<CreateStopLossOutput> {
-  // Validate Safe address is available
-  const safeAddress = walletContext?.safeAddress
+  const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
+
+  // Validate Safe address is available on the target chain
+  const safeAddress = getSafeAddressForChain(walletContext, evmChainId)
   if (!safeAddress) {
     throw new Error(
       'Stop-loss orders require a Safe smart account. A Safe will be deployed automatically when you submit this order.'
@@ -128,8 +130,6 @@ export async function executeCreateStopLoss(
     resolveAsset({ symbolOrName: input.sellAsset, network: input.network }, walletContext),
     resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
-
-  const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
   // Validate the user has a connected wallet on this chain
   getAddressForChain(walletContext, sellAsset.chainId)
 

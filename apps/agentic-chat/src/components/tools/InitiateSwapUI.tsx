@@ -10,7 +10,7 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapTool'>) {
+export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapTool' | 'initiateSwapUsdTool'>) {
   const { state, output, toolCallId } = toolPart
   const swapOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()

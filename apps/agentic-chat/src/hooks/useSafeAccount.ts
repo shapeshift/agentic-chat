@@ -2,13 +2,14 @@ import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useUserWallets } from '@dynamic-labs/sdk-react-core'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { deploySafe, enableComposableCowModules, getSafeState, predictSafeAddress } from '@/lib/safe'
+import { deploySafe, enableComposableCowModules, getSafeState } from '@/lib/safe'
 import type { SafeDeploymentResult } from '@/lib/safe'
 
 export interface SafeChainDeployment {
   isDeployed: boolean
   modulesEnabled: boolean
   domainVerifierSet: boolean
+  safeAddress: string
 }
 
 export interface UseSafeAccountResult {
@@ -32,7 +33,6 @@ export function useSafeAccount(): UseSafeAccountResult {
     return evmWallet?.address
   }, [userWallets])
 
-  const [predictedAddress, setPredictedAddress] = useState<string | undefined>()
   const [safeState, setSafeStateLocal] = useState<ReturnType<typeof getSafeState>>({})
   const [isDeploying, setIsDeploying] = useState(false)
 
@@ -45,19 +45,6 @@ export function useSafeAccount(): UseSafeAccountResult {
     }
   }, [evmAddress])
 
-  // Predict Safe address on load (same address across all chains)
-  useEffect(() => {
-    if (!evmAddress) return
-
-    void predictSafeAddress(evmAddress)
-      .then(predicted => {
-        setPredictedAddress(predicted)
-      })
-      .catch(() => {
-        // Prediction may fail if no provider available
-      })
-  }, [evmAddress])
-
   // Check if Safe is deployed + modules enabled on any chain
   const deploymentInfo = useMemo(() => {
     const entries = Object.values(safeState)
@@ -67,24 +54,25 @@ export function useSafeAccount(): UseSafeAccountResult {
       .filter(([, s]) => s.isDeployed)
       .map(([chainId]) => Number(chainId))
 
-    // Per-chain deployment state (strip safeAddress since it's always the same)
     const perChainState: Record<number, SafeChainDeployment> = {}
     for (const [chainId, state] of Object.entries(safeState)) {
+      if (!state.safeAddress) continue
       perChainState[Number(chainId)] = {
         isDeployed: state.isDeployed,
         modulesEnabled: state.modulesEnabled,
         domainVerifierSet: state.domainVerifierSet,
+        safeAddress: state.safeAddress,
       }
     }
 
     return { deployed, modulesEnabled, deployedChainIds, perChainState }
   }, [safeState])
 
-  // Safe address: prefer stored address from deployment, fall back to predicted
+  // Primary Safe address for display: use the first stored address
   const safeAddress = useMemo(() => {
     const storedEntry = Object.values(safeState).find(s => s.safeAddress)
-    return storedEntry?.safeAddress ?? predictedAddress
-  }, [safeState, predictedAddress])
+    return storedEntry?.safeAddress
+  }, [safeState])
 
   const handleDeploySafe = useCallback(
     async (chainId: number): Promise<SafeDeploymentResult> => {

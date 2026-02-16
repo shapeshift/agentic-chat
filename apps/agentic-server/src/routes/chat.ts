@@ -211,24 +211,23 @@ function buildConnectedWalletsPrompt(evmAddress?: string, solanaAddress?: string
   return prompt
 }
 
-function buildSafeStatusPrompt(
-  safeAddress?: string,
-  safeDeploymentState?: Record<number, SafeChainDeployment>
-): string {
-  if (!safeAddress) return '- No Safe smart account configured yet'
+function buildSafeStatusPrompt(safeDeploymentState?: Record<number, SafeChainDeployment>): string {
+  if (!safeDeploymentState || Object.keys(safeDeploymentState).length === 0) {
+    return '- No Safe smart account configured yet'
+  }
 
-  const lines: string[] = [`- Safe address: ${safeAddress}`]
-
+  const lines: string[] = []
   const readyChains: string[] = []
   const deployedNotReadyChains: string[] = []
   const allCoWChains = [1, 100, 42161] // ethereum, gnosis, arbitrum
   const notDeployedChains: string[] = []
 
   for (const chainId of allCoWChains) {
-    const state = safeDeploymentState?.[chainId]
+    const state = safeDeploymentState[chainId]
     const networkName = CHAIN_ID_TO_NETWORK[chainId] ?? `chain ${chainId}`
     if (state?.isDeployed && state.modulesEnabled && state.domainVerifierSet) {
-      readyChains.push(networkName)
+      const shortAddr = `${state.safeAddress.slice(0, 6)}...${state.safeAddress.slice(-4)}`
+      readyChains.push(`${networkName} (${shortAddr})`)
     } else if (state?.isDeployed) {
       deployedNotReadyChains.push(networkName)
     } else {
@@ -253,7 +252,6 @@ function buildSystemPrompt(
   evmAddress?: string,
   solanaAddress?: string,
   approvedChainIds?: string[],
-  safeAddress?: string,
   safeDeploymentState?: Record<number, SafeChainDeployment>
 ): string {
   return (
@@ -367,8 +365,8 @@ Examples:
 - Use cancelTwap to cancel active orders (requires on-chain transaction via Safe)
 
 **Safe Wallet Status:**
-${buildSafeStatusPrompt(safeAddress, safeDeploymentState)}
-${!safeAddress || !isSafeReadyOnAnyChain(safeDeploymentState) ? '- IMPORTANT: Safe-dependent tools (createStopLoss, cancelStopLoss, createTwap, cancelTwap, vaultDeposit, vaultWithdraw) will fail without a ready Safe. Guide the user to set up their Safe first using checkWalletCapabilities.' : '- Safe is ready for automation tools (stop-loss, TWAP/DCA, vault operations)'}
+${buildSafeStatusPrompt(safeDeploymentState)}
+${!isSafeReadyOnAnyChain(safeDeploymentState) ? '- IMPORTANT: Safe-dependent tools (createStopLoss, cancelStopLoss, createTwap, cancelTwap, vaultDeposit, vaultWithdraw) will fail without a ready Safe. Guide the user to set up their Safe first using checkWalletCapabilities.' : '- Safe is ready for automation tools (stop-loss, TWAP/DCA, vault operations)'}
 
 **Safe & Automation:**
 - Automation features (stop-loss, TWAP, DCA) require a Safe smart account
@@ -440,7 +438,7 @@ export async function handleChatRequest(c: Context) {
     const result = streamText({
       model: getModel(),
       messages: modelMessages,
-      system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeAddress, safeDeploymentState),
+      system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeDeploymentState),
       temperature: 1.0,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),

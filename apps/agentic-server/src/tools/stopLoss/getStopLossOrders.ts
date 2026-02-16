@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getCowOrders } from '../../lib/cow'
 import type { CowOrder, CowOrderStatus } from '../../lib/cow/types'
 import { NETWORK_TO_CHAIN_ID, getCowExplorerUrl } from '../../lib/cow/types'
+import { getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 export const getStopLossOrdersSchema = z.object({
@@ -64,11 +65,6 @@ export async function executeGetStopLossOrders(
   input: GetStopLossOrdersInput,
   walletContext?: WalletContext
 ): Promise<GetStopLossOrdersOutput> {
-  const safeAddress = walletContext?.safeAddress
-  if (!safeAddress) {
-    throw new Error('No Safe smart account found. Stop-loss orders require a Safe wallet.')
-  }
-
   // Determine which chains to query
   const networksToQuery = input.network
     ? [{ network: input.network, chainId: NETWORK_TO_CHAIN_ID[input.network]! }]
@@ -78,9 +74,11 @@ export async function executeGetStopLossOrders(
         { network: 'arbitrum', chainId: 42161 },
       ]
 
-  // Query CoW API for orders from the Safe address across all relevant chains
+  // Query CoW API for orders using per-chain Safe addresses
   const orderResults = await Promise.allSettled(
     networksToQuery.map(async ({ network, chainId }) => {
+      const safeAddress = getSafeAddressForChain(walletContext, chainId)
+      if (!safeAddress) return []
       const orders = await getCowOrders(safeAddress, chainId)
       return orders.map(order => formatCowOrder(order, network))
     })

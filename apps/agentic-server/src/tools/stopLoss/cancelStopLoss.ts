@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { buildRemoveConditionalOrderTx } from '../../lib/composableCow'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
-import { isSafeReadyOnChain } from '../../utils/walletContextSimple'
+import { getSafeAddressForChain, isSafeReadyOnChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 export const cancelStopLossSchema = z.object({
@@ -20,12 +20,11 @@ export interface CancelStopLossOutput {
 }
 
 export function executeCancelStopLoss(input: CancelStopLossInput, walletContext?: WalletContext): CancelStopLossOutput {
-  const safeAddress = walletContext?.safeAddress
+  const chainId = NETWORK_TO_CHAIN_ID[input.network]!
+  const safeAddress = getSafeAddressForChain(walletContext, chainId)
   if (!safeAddress) {
     throw new Error('No Safe smart account found. Cannot cancel stop-loss without a Safe wallet.')
   }
-
-  const chainId = NETWORK_TO_CHAIN_ID[input.network]!
   if (!isSafeReadyOnChain(walletContext, chainId)) {
     throw new Error(
       `Safe is not deployed on ${input.network}. Cannot cancel stop-loss on a chain where the Safe doesn't exist.`

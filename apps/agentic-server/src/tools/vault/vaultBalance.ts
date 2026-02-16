@@ -5,6 +5,7 @@ import BigNumber from 'bignumber.js'
 import { z } from 'zod'
 
 import { getAssetPrices } from '../../lib/asset/prices'
+import { getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 import { executeGetAccount } from '../getAccount'
 
@@ -32,27 +33,60 @@ export interface VaultBalanceOutput {
   totalUsd: string
 }
 
-const EVM_NETWORKS = EVM_SOLANA_NETWORKS.filter(n => n !== 'solana') as EvmSolanaNetwork[]
-
 export async function executeVaultBalance(
   input: VaultBalanceInput,
   walletContext?: WalletContext
 ): Promise<VaultBalanceOutput> {
-  const safeAddress = walletContext?.safeAddress
-  if (!safeAddress) {
-    throw new Error(
-      'No Safe vault found. A Safe smart account is deployed automatically when you create your first automated order.'
-    )
-  }
+  // Build list of networks to query with their per-chain Safe addresses
+  const networksWithAddresses: Array<{ network: EvmSolanaNetwork; safeAddress: string; chainId: string }> = []
 
-  const networks = input.network ? [input.network] : EVM_NETWORKS
+  if (input.network) {
+    const numericChainId = Number(networkToChainIdMap[input.network].split(':').pop())
+    const safeAddress = getSafeAddressForChain(walletContext, numericChainId)
+    if (!safeAddress) {
+      throw new Error(
+        `No Safe vault found on ${input.network}. A Safe smart account is deployed automatically when you create your first automated order.`
+      )
+    }
+    networksWithAddresses.push({
+      network: input.network,
+      safeAddress,
+      chainId: networkToChainIdMap[input.network],
+    })
+  } else {
+    // Query all deployed chains
+    const deploymentState = walletContext?.safeDeploymentState
+    if (!deploymentState || Object.keys(deploymentState).length === 0) {
+      throw new Error(
+        'No Safe vault found. A Safe smart account is deployed automatically when you create your first automated order.'
+      )
+    }
+    for (const [numericChainIdStr, state] of Object.entries(deploymentState)) {
+      if (!state.safeAddress || !state.isDeployed) continue
+      const numericChainId = Number(numericChainIdStr)
+      const network = chainIdToNetwork[`eip155:${numericChainId}`] as EvmSolanaNetwork | undefined
+      if (!network || network === 'solana') continue
+      networksWithAddresses.push({
+        network,
+        safeAddress: state.safeAddress,
+        chainId: `eip155:${numericChainId}`,
+      })
+    }
+    if (networksWithAddresses.length === 0) {
+      throw new Error(
+        'No Safe vault found on any network. A Safe smart account is deployed automatically when you create your first automated order.'
+      )
+    }
+  }
 
   const allBalances: VaultBalanceEntry[] = []
   let totalUsd = new BigNumber(0)
 
+  // Use the first Safe address as the representative address for the response
+  const primarySafeAddress = networksWithAddresses[0]!.safeAddress
+
   const results = await Promise.all(
-    networks.map(async network => {
-      const chainId = networkToChainIdMap[network]
+    networksWithAddresses.map(async ({ network, safeAddress, chainId }) => {
       try {
         const { balances } = await executeGetAccount({ address: safeAddress, network })
         const assetIds = Object.keys(balances)
@@ -96,7 +130,7 @@ export async function executeVaultBalance(
   allBalances.sort((a, b) => new BigNumber(b.usdAmount).minus(a.usdAmount).toNumber())
 
   return {
-    safeAddress,
+    safeAddress: primarySafeAddress,
     balances: allBalances,
     totalUsd: totalUsd.toFixed(2),
   }

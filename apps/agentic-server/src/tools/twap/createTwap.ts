@@ -19,7 +19,7 @@ import { getAllowance } from '../../utils'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { getBalance } from '../../utils/balanceHelpers'
 import { createTransaction } from '../../utils/transactionHelpers'
-import { getAddressForChain } from '../../utils/walletContextSimple'
+import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 type TransactionData = {
@@ -134,7 +134,9 @@ export async function executeCreateTwap(
   input: CreateTwapInput,
   walletContext?: WalletContext
 ): Promise<CreateTwapOutput> {
-  const safeAddress = walletContext?.safeAddress
+  const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
+
+  const safeAddress = getSafeAddressForChain(walletContext, evmChainId)
   if (!safeAddress) {
     throw new Error(
       'TWAP/DCA orders require a Safe smart account. A Safe will be deployed automatically when you submit this order.'
@@ -145,8 +147,6 @@ export async function executeCreateTwap(
     resolveAsset({ symbolOrName: input.sellAsset, network: input.network }, walletContext),
     resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
-
-  const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
   getAddressForChain(walletContext, sellAsset.chainId)
 
   if (isNativeToken(sellAsset)) {

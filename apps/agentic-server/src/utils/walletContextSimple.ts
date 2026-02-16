@@ -5,6 +5,7 @@ export interface SafeChainDeployment {
   isDeployed: boolean
   modulesEnabled: boolean
   domainVerifierSet: boolean
+  safeAddress: string
 }
 
 export interface WalletContext {
@@ -39,4 +40,8 @@ export function isSafeReadyOnChain(walletContext: WalletContext | undefined, cha
   const chainState = walletContext?.safeDeploymentState?.[chainId]
   if (!chainState) return false
   return chainState.isDeployed && chainState.modulesEnabled && chainState.domainVerifierSet
+}
+
+export function getSafeAddressForChain(walletContext: WalletContext | undefined, chainId: number): string | undefined {
+  return walletContext?.safeDeploymentState?.[chainId]?.safeAddress
 }

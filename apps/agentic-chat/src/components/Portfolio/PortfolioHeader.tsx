@@ -28,7 +28,7 @@ type DeployedChain = {
 export function PortfolioHeader({ isVaultMode }: PortfolioHeaderProps) {
   const { totalBalance: walletBalance, delta24h, isLoading: isWalletLoading } = usePortfolioQuery()
   const { totalBalance: vaultBalance, isLoading: isVaultLoading } = useVaultBalances()
-  const { safeAddress, isDeployed, deployedChainIds } = useSafeAccount()
+  const { safeAddress, isDeployed, deployedChainIds, safeDeploymentState } = useSafeAccount()
 
   const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 })
 
@@ -39,9 +39,10 @@ export function PortfolioHeader({ isVaultMode }: PortfolioHeaderProps) {
   }
 
   const deployedChains: DeployedChain[] = useMemo(() => {
-    if (!safeAddress) return []
     return deployedChainIds
       .map(chainId => {
+        const chainSafeAddress = safeDeploymentState[chainId]?.safeAddress
+        if (!chainSafeAddress) return null
         const chainConfig = SUPPORTED_EVM_CHAINS.find(c => c.chain.id === chainId)
         if (!chainConfig) return null
         return {
@@ -49,11 +50,11 @@ export function PortfolioHeader({ isVaultMode }: PortfolioHeaderProps) {
           networkName: chainConfig.networkName,
           vanityName: chainConfig.vanityName,
           iconUrl: chainConfig.iconUrl,
-          safeUrl: getSafeAppUrl(chainConfig.networkName, safeAddress),
+          safeUrl: getSafeAppUrl(chainConfig.networkName, chainSafeAddress),
         }
       })
       .filter((c): c is DeployedChain => c !== null)
-  }, [deployedChainIds, safeAddress])
+  }, [deployedChainIds, safeDeploymentState])
 
   const isLoading = isVaultMode ? isVaultLoading : isWalletLoading
   const displayBalance = isVaultMode ? vaultBalance : walletBalance

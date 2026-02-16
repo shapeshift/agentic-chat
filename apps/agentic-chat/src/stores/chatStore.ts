@@ -67,8 +67,7 @@ interface ChatState {
 
   // Tool execution state
   historicalToolIds: Set<string>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  runtimeToolStates: Map<string, any>
+  runtimeToolStates: Map<string, unknown>
   persistedTransactions: PersistedToolState[]
 
   // Conversation methods
@@ -175,13 +174,12 @@ export const useChatStore = create<ChatState>()(
 
       getRuntimeState: <T>(toolCallId: string, initialState: T): T => {
         const state = get().runtimeToolStates.get(toolCallId)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return state !== undefined ? state : initialState
+        return state !== undefined ? (state as T) : initialState
       },
 
       setRuntimeState: <T>(toolCallId: string, updater: (draft: T) => void) => {
         const currentStates = get().runtimeToolStates
-        const currentState = currentStates.get(toolCallId)
+        const currentState = currentStates.get(toolCallId) as T | undefined
 
         if (currentState === undefined) {
           console.error(`[chatStore] Attempted to update uninitialized state for toolCallId: ${toolCallId}`)
