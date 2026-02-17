@@ -1,4 +1,11 @@
-import { encodeAbiParameters, encodeFunctionData, getAddress, keccak256, parseAbiParameters } from 'viem'
+import {
+  decodeAbiParameters,
+  encodeAbiParameters,
+  encodeFunctionData,
+  getAddress,
+  keccak256,
+  parseAbiParameters,
+} from 'viem'
 
 // ComposableCoW contract address (same across all supported chains)
 export const COMPOSABLE_COW_ADDRESS = getAddress('0xfdaFc9d1902f4e0b84f65f49f244b32b31013b74')
@@ -81,26 +88,59 @@ const COMPOSABLE_COW_ABI = [
 ] as const
 
 export function encodeStopLossStaticData(data: StopLossStaticData): `0x${string}` {
-  return encodeAbiParameters(
-    parseAbiParameters(
-      'address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmount, address sellTokenPriceOracle, address buyTokenPriceOracle, int256 strike, uint256 maxTimeSinceLastOracleUpdate, bytes32 appData, address receiver, bool isSellOrder, bool isPartiallyFillable, uint256 validityBucketSeconds'
-    ),
-    [
-      data.sellToken,
-      data.buyToken,
-      data.sellAmount,
-      data.buyAmount,
-      data.sellTokenPriceOracle,
-      data.buyTokenPriceOracle,
-      data.strike,
-      data.maxTimeSinceLastOracleUpdate,
-      data.appData,
-      data.receiver,
-      data.isSellOrder,
-      data.isPartiallyFillable,
-      data.validityBucketSeconds,
-    ]
-  )
+  return encodeAbiParameters(STOP_LOSS_STATIC_DATA_PARAMS, [
+    data.sellToken,
+    data.buyToken,
+    data.sellAmount,
+    data.buyAmount,
+    data.sellTokenPriceOracle,
+    data.buyTokenPriceOracle,
+    data.strike,
+    data.maxTimeSinceLastOracleUpdate,
+    data.appData,
+    data.receiver,
+    data.isSellOrder,
+    data.isPartiallyFillable,
+    data.validityBucketSeconds,
+  ])
+}
+
+const STOP_LOSS_STATIC_DATA_PARAMS = parseAbiParameters(
+  'address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmount, address sellTokenPriceOracle, address buyTokenPriceOracle, int256 strike, uint256 maxTimeSinceLastOracleUpdate, bytes32 appData, address receiver, bool isSellOrder, bool isPartiallyFillable, uint256 validityBucketSeconds'
+)
+
+export function decodeStopLossStaticData(staticInput: `0x${string}`): StopLossStaticData {
+  const [
+    sellToken,
+    buyToken,
+    sellAmount,
+    buyAmount,
+    sellTokenPriceOracle,
+    buyTokenPriceOracle,
+    strike,
+    maxTimeSinceLastOracleUpdate,
+    appData,
+    receiver,
+    isSellOrder,
+    isPartiallyFillable,
+    validityBucketSeconds,
+  ] = decodeAbiParameters(STOP_LOSS_STATIC_DATA_PARAMS, staticInput)
+
+  return {
+    sellToken,
+    buyToken,
+    sellAmount,
+    buyAmount,
+    sellTokenPriceOracle,
+    buyTokenPriceOracle,
+    strike,
+    maxTimeSinceLastOracleUpdate,
+    appData,
+    receiver,
+    isSellOrder,
+    isPartiallyFillable,
+    validityBucketSeconds,
+  }
 }
 
 export function encodeTwapStaticData(data: TwapStaticData): `0x${string}` {

@@ -1,5 +1,4 @@
-import type { Clock } from 'lucide-react'
-import { ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
+import { Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
 
 import { stopPropagationHandler } from '@/lib/eventHandlers'
 import { cn } from '@/lib/utils'
@@ -9,7 +8,7 @@ import { ToolCard } from '../ui/ToolCard'
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-type StopLossOrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired' | 'presignaturePending'
+type StopLossOrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired' | 'presignaturePending' | 'watching'
 
 const STATUS_CONFIG: Record<StopLossOrderStatus, { icon: typeof Clock; label: string; className: string }> = {
   open: { icon: Eye, label: 'Active', className: 'text-blue-500' },
@@ -17,6 +16,7 @@ const STATUS_CONFIG: Record<StopLossOrderStatus, { icon: typeof Clock; label: st
   cancelled: { icon: XCircle, label: 'Cancelled', className: 'text-red-500' },
   expired: { icon: AlertCircle, label: 'Expired', className: 'text-muted-foreground' },
   presignaturePending: { icon: Eye, label: 'Pending', className: 'text-yellow-500' },
+  watching: { icon: Clock, label: 'Watching', className: 'text-orange-500' },
 }
 
 function isValidStatus(status: string): status is StopLossOrderStatus {
@@ -44,22 +44,48 @@ interface StopLossOrderItemProps {
   sellAmount: string
   validTo: number
   cowTrackingUrl: string
+  strikePrice?: string
+  orderHash?: string
 }
 
-function StopLossOrderItem({ status, network, sellToken, buyToken, validTo, cowTrackingUrl }: StopLossOrderItemProps) {
+function StopLossOrderItem({
+  status,
+  network,
+  sellToken,
+  buyToken,
+  sellAmount,
+  validTo,
+  cowTrackingUrl,
+  strikePrice,
+}: StopLossOrderItemProps) {
   const isActive = status === 'open' || status === 'presignaturePending'
+  const isWatching = status === 'watching'
   const expiresDate = new Date(validTo * 1000)
 
   return (
     <div className="flex items-center justify-between py-3 px-1 gap-4">
       <div className="flex flex-col gap-1 min-w-0 flex-1">
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-medium truncate">{sellToken}</span>
+          <span className="font-medium truncate">
+            {sellAmount} {sellToken}
+          </span>
           <span className="text-muted-foreground">→</span>
           <span className="font-medium">{buyToken}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="capitalize">{network}</span>
+          {isWatching && strikePrice && (
+            <>
+              <span>•</span>
+              <span>Strike: {strikePrice}</span>
+            </>
+          )}
+          {isWatching && !strikePrice && (
+            <>
+              <span>•</span>
+              <span>Watching for trigger</span>
+            </>
+          )}
           {isActive && (
             <>
               <span>•</span>
@@ -70,15 +96,17 @@ function StopLossOrderItem({ status, network, sellToken, buyToken, validTo, cowT
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
         <OrderStatusBadge status={status} />
-        <a
-          href={cowTrackingUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-muted-foreground hover:text-primary transition-colors"
-          onClick={stopPropagationHandler}
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-        </a>
+        {cowTrackingUrl && (
+          <a
+            href={cowTrackingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-primary transition-colors"
+            onClick={stopPropagationHandler}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        )}
       </div>
     </div>
   )
@@ -114,7 +142,9 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopL
     )
   }
 
-  const activeCount = orders.filter(o => o.status === 'open' || o.status === 'presignaturePending').length
+  const activeCount = orders.filter(
+    o => o.status === 'open' || o.status === 'presignaturePending' || o.status === 'watching'
+  ).length
 
   return (
     <ToolCard.Root defaultOpen>
@@ -142,6 +172,8 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopL
                 sellAmount={order.sellAmount}
                 validTo={order.validTo}
                 cowTrackingUrl={order.cowTrackingUrl}
+                strikePrice={order.strikePrice}
+                orderHash={order.orderHash}
               />
             ))}
           </div>
