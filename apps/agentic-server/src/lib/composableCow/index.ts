@@ -11,7 +11,7 @@ import {
 export const COMPOSABLE_COW_ADDRESS = getAddress('0xfdaFc9d1902f4e0b84f65f49f244b32b31013b74')
 
 // StopLoss handler address from cowprotocol/composable-cow deployments
-export const STOP_LOSS_HANDLER_ADDRESS = getAddress('0xE8212F30C28B4AAB467DF3725C14d6e89C2eB967')
+export const STOP_LOSS_HANDLER_ADDRESS = getAddress('0x412c36e5011cd2517016d243a2dfb37f73a242e7')
 
 // TWAP handler address from cowprotocol/composable-cow deployments (same across all chains)
 export const TWAP_HANDLER_ADDRESS = getAddress('0x6cF1e9cA41f7611dEf408122793c358a3d11E5a5')
@@ -28,21 +28,21 @@ export interface ConditionalOrderParams {
   staticInput: `0x${string}`
 }
 
-// StopLoss handler static data structure
+// StopLoss handler static data structure (canonical composable-cow deployment)
 export interface StopLossStaticData {
   sellToken: `0x${string}`
   buyToken: `0x${string}`
   sellAmount: bigint
   buyAmount: bigint
-  sellTokenPriceOracle: `0x${string}`
-  buyTokenPriceOracle: `0x${string}`
-  strike: bigint // strike price scaled to oracle decimals (8 decimals for Chainlink)
-  maxTimeSinceLastOracleUpdate: bigint
   appData: `0x${string}`
   receiver: `0x${string}`
   isSellOrder: boolean
   isPartiallyFillable: boolean
-  validityBucketSeconds: bigint // order validity window in seconds
+  validTo: number // UNIX timestamp — order expires after this
+  sellTokenPriceOracle: `0x${string}`
+  buyTokenPriceOracle: `0x${string}`
+  strike: bigint // strike price scaled to oracle decimals (8 decimals for Chainlink)
+  maxTimeSinceLastOracleUpdate: bigint
 }
 
 export interface TwapStaticData {
@@ -93,20 +93,20 @@ export function encodeStopLossStaticData(data: StopLossStaticData): `0x${string}
     data.buyToken,
     data.sellAmount,
     data.buyAmount,
-    data.sellTokenPriceOracle,
-    data.buyTokenPriceOracle,
-    data.strike,
-    data.maxTimeSinceLastOracleUpdate,
     data.appData,
     data.receiver,
     data.isSellOrder,
     data.isPartiallyFillable,
-    data.validityBucketSeconds,
+    data.validTo,
+    data.sellTokenPriceOracle,
+    data.buyTokenPriceOracle,
+    data.strike,
+    data.maxTimeSinceLastOracleUpdate,
   ])
 }
 
 const STOP_LOSS_STATIC_DATA_PARAMS = parseAbiParameters(
-  'address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmount, address sellTokenPriceOracle, address buyTokenPriceOracle, int256 strike, uint256 maxTimeSinceLastOracleUpdate, bytes32 appData, address receiver, bool isSellOrder, bool isPartiallyFillable, uint256 validityBucketSeconds'
+  'address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmount, bytes32 appData, address receiver, bool isSellOrder, bool isPartiallyFillable, uint32 validTo, address sellTokenPriceOracle, address buyTokenPriceOracle, int256 strike, uint256 maxTimeSinceLastOracleUpdate'
 )
 
 export function decodeStopLossStaticData(staticInput: `0x${string}`): StopLossStaticData {
@@ -115,15 +115,15 @@ export function decodeStopLossStaticData(staticInput: `0x${string}`): StopLossSt
     buyToken,
     sellAmount,
     buyAmount,
-    sellTokenPriceOracle,
-    buyTokenPriceOracle,
-    strike,
-    maxTimeSinceLastOracleUpdate,
     appData,
     receiver,
     isSellOrder,
     isPartiallyFillable,
-    validityBucketSeconds,
+    validTo,
+    sellTokenPriceOracle,
+    buyTokenPriceOracle,
+    strike,
+    maxTimeSinceLastOracleUpdate,
   ] = decodeAbiParameters(STOP_LOSS_STATIC_DATA_PARAMS, staticInput)
 
   return {
@@ -131,15 +131,15 @@ export function decodeStopLossStaticData(staticInput: `0x${string}`): StopLossSt
     buyToken,
     sellAmount,
     buyAmount,
-    sellTokenPriceOracle,
-    buyTokenPriceOracle,
-    strike,
-    maxTimeSinceLastOracleUpdate,
     appData,
     receiver,
     isSellOrder,
     isPartiallyFillable,
-    validityBucketSeconds,
+    validTo,
+    sellTokenPriceOracle,
+    buyTokenPriceOracle,
+    strike,
+    maxTimeSinceLastOracleUpdate,
   }
 }
 
@@ -218,15 +218,22 @@ export function buildRemoveConditionalOrderTx(orderHash: `0x${string}`): {
   }
 }
 
+// Encode as a tuple to match Solidity's abi.encode(struct) — struct encoding includes
+// an extra 32-byte offset for the dynamic `bytes` field that flat parameter encoding omits
+const CONDITIONAL_ORDER_PARAMS_ABI = [
+  {
+    type: 'tuple',
+    components: [
+      { name: 'handler', type: 'address' },
+      { name: 'salt', type: 'bytes32' },
+      { name: 'staticInput', type: 'bytes' },
+    ],
+  },
+] as const
+
 // Compute the order hash that identifies this conditional order on-chain
 export function computeConditionalOrderHash(params: ConditionalOrderParams): `0x${string}` {
-  return keccak256(
-    encodeAbiParameters(parseAbiParameters('address handler, bytes32 salt, bytes staticInput'), [
-      params.handler,
-      params.salt,
-      params.staticInput,
-    ])
-  )
+  return keccak256(encodeAbiParameters(CONDITIONAL_ORDER_PARAMS_ABI, [params]))
 }
 
 export { getChainlinkOracle, getSupportedOracleTokens, CHAINLINK_ORACLE_DECIMALS } from './oracles'
