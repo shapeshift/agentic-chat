@@ -1,7 +1,11 @@
+import type { CreateStopLossOutput } from '@shapeshiftoss/agentic-server'
 import { Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
+import { useMemo } from 'react'
 
 import { stopPropagationHandler } from '@/lib/eventHandlers'
 import { cn } from '@/lib/utils'
+import type { PersistedToolState } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
 
 import { ToolCard } from '../ui/ToolCard'
 
@@ -112,17 +116,59 @@ function StopLossOrderItem({
   )
 }
 
+interface DisplayOrder {
+  id: string
+  status: StopLossOrderStatus
+  network: string
+  sellToken: string
+  buyToken: string
+  sellAmount: string
+  validTo: number
+  cowTrackingUrl: string
+  strikePrice?: string
+  orderHash?: string
+}
+
+const isStopLossTx = (tx: PersistedToolState): boolean => tx.toolType === 'stop_loss' && Boolean(tx.meta.submitTxHash)
+
+const toDisplayOrder = (tx: PersistedToolState): DisplayOrder => {
+  const output = tx.toolOutput as CreateStopLossOutput | undefined
+  return {
+    id: tx.toolCallId,
+    status: 'watching' as StopLossOrderStatus,
+    network: output?.summary?.network ?? 'unknown',
+    sellToken: output?.summary?.sellAsset?.symbol ?? 'Unknown',
+    buyToken: output?.summary?.buyAsset?.symbol ?? 'Unknown',
+    sellAmount: output?.summary?.sellAsset?.amount ?? '0',
+    validTo: output?.summary?.expiresAt ? Math.floor(new Date(output.summary.expiresAt).getTime() / 1000) : 0,
+    cowTrackingUrl: '',
+    strikePrice: output?.summary?.triggerPrice,
+  }
+}
+
+const selectHistoricalOrders = (transactions: PersistedToolState[]): DisplayOrder[] =>
+  transactions.filter(isStopLossTx).map(toDisplayOrder)
+
 export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopLossOrdersTool'>) {
   const { state, output } = toolPart
+  const input = toolPart.input as { accountScope?: string } | undefined
+  const isHistoryMode = input?.accountScope === 'history'
+  const persistedTransactions = useChatStore(state => state.persistedTransactions)
+  const historicalOrders = useMemo(() => selectHistoricalOrders(persistedTransactions), [persistedTransactions])
 
   const stateRender = useToolStateRender(state, {
-    loading: 'Fetching your stop-loss orders...',
+    loading: isHistoryMode ? 'Loading order history...' : 'Fetching your stop-loss orders...',
     error: 'Failed to fetch stop-loss orders',
   })
 
   if (stateRender) return stateRender
 
-  const orders = output?.orders ?? []
+  const orders: DisplayOrder[] = isHistoryMode
+    ? historicalOrders
+    : (output?.orders ?? []).map(o => ({
+        ...o,
+        status: isValidStatus(o.status) ? o.status : 'open',
+      }))
 
   if (orders.length === 0) {
     return (
@@ -132,6 +178,7 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopL
             <div className="flex items-center gap-2">
               <Eye className="w-5 h-5 text-primary" />
               <span className="font-medium">Stop-Loss Orders</span>
+              {isHistoryMode && <span className="text-xs text-muted-foreground">(History)</span>}
             </div>
           </ToolCard.HeaderRow>
         </ToolCard.Header>
@@ -153,7 +200,10 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopL
           <div className="flex items-center gap-2">
             <Eye className="w-5 h-5 text-primary" />
             <span className="font-medium">Stop-Loss Orders</span>
-            {activeCount > 0 && <span className="text-xs text-muted-foreground">({activeCount} active)</span>}
+            {isHistoryMode && <span className="text-xs text-muted-foreground">(History)</span>}
+            {!isHistoryMode && activeCount > 0 && (
+              <span className="text-xs text-muted-foreground">({activeCount} active)</span>
+            )}
           </div>
           <span className="text-sm text-muted-foreground">{orders.length} total</span>
         </ToolCard.HeaderRow>

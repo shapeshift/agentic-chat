@@ -74,10 +74,10 @@ export const createStopLossSchema = z.object({
   expirationDays: z
     .number()
     .min(1)
-    .max(365)
+    .max(30)
     .optional()
     .default(30)
-    .describe('Days until the stop-loss expires. Default is 30. Max is 365.'),
+    .describe('Days until the stop-loss expires. Default is 30. Max is 30.'),
 })
 
 export type CreateStopLossInput = z.infer<typeof createStopLossSchema>

@@ -25,6 +25,13 @@ export const getStopLossOrdersSchema = z.object({
     .enum(['ethereum', 'gnosis', 'arbitrum'])
     .optional()
     .describe('Filter by network. If not specified, shows orders from all networks.'),
+  accountScope: z
+    .enum(['connected', 'history'])
+    .optional()
+    .default('connected')
+    .describe(
+      'Which orders to show. "connected" (default) fetches live orders for the currently connected wallet via on-chain scanning and CoW API. "history" shows orders created through this app across all wallets (rendered client-side from activity history).'
+    ),
 })
 
 export type GetStopLossOrdersInput = z.infer<typeof getStopLossOrdersSchema>
@@ -142,6 +149,11 @@ export async function executeGetStopLossOrders(
   input: GetStopLossOrdersInput,
   walletContext?: WalletContext
 ): Promise<GetStopLossOrdersOutput> {
+  // History mode is handled client-side from local storage
+  if (input.accountScope === 'history') {
+    return { orders: [], totalCount: 0 }
+  }
+
   const networksToQuery = input.network
     ? [{ network: input.network, chainId: NETWORK_TO_CHAIN_ID[input.network]! }]
     : [
@@ -210,6 +222,10 @@ Default: Respond with one brief sentence like:
 - "These are your current conditional orders"
 
 Only elaborate if the user asks about specific order details.
+
+ACCOUNT SCOPE:
+- Use accountScope="connected" (default) to fetch live order status from on-chain events and CoW Protocol for the connected wallet
+- Use accountScope="history" when user asks about "all my orders" or "orders from all wallets" to show orders placed through this assistant across all wallets, stored locally in the browser
 
 Use this tool when:
 - User asks about their stop-loss orders

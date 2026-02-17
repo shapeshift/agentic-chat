@@ -22,12 +22,17 @@ const PUBLIC_RPC_CLIENTS: Record<number, PublicClient> = {
   42161: createPublicClient({ chain: arbitrum, transport: http('https://arbitrum-one-rpc.publicnode.com') }),
 }
 
-const BLOCKS_PER_CHUNK = 50_000n
+const DEFAULT_BLOCKS_PER_CHUNK = 50_000n
+const BLOCKS_PER_CHUNK: Record<number, bigint> = {
+  1: DEFAULT_BLOCKS_PER_CHUNK,
+  100: DEFAULT_BLOCKS_PER_CHUNK,
+  42161: 500_000n, // Arbitrum: indexed lookup on specific contract + owner topic is efficient for large ranges
+}
 const MAX_CONCURRENT_CHUNKS = 10
-const SIX_MONTHS_BLOCKS: Record<number, bigint> = {
-  1: 1_300_000n, // ~6 months at 12s/block
-  100: 3_100_000n, // ~6 months at 5s/block
-  42161: 65_000_000n, // ~6 months at 0.25s/block
+const ONE_MONTH_BLOCKS: Record<number, bigint> = {
+  1: 216_000n, // ~1 month at 12s/block
+  100: 518_000n, // ~1 month at 5s/block
+  42161: 10_500_000n, // ~1 month at 0.25s/block
 }
 
 function getPublicClient(chainId: number): PublicClient {
@@ -42,14 +47,15 @@ export async function getConditionalOrderCreatedEvents(
 ): Promise<ConditionalOrderCreatedEvent[]> {
   const client = getPublicClient(chainId)
   const currentBlock = await client.getBlockNumber()
-  const lookbackBlocks = SIX_MONTHS_BLOCKS[chainId] ?? 1_300_000n
+  const lookbackBlocks = ONE_MONTH_BLOCKS[chainId] ?? 216_000n
   const fromBlock = currentBlock > lookbackBlocks ? currentBlock - lookbackBlocks : 0n
+  const chunkSize = BLOCKS_PER_CHUNK[chainId] ?? DEFAULT_BLOCKS_PER_CHUNK
 
   const ownerAddress = safeAddress as `0x${string}`
 
   const chunks: Array<{ from: bigint; to: bigint }> = []
-  for (let start = fromBlock; start <= currentBlock; start += BLOCKS_PER_CHUNK) {
-    const end = start + BLOCKS_PER_CHUNK - 1n > currentBlock ? currentBlock : start + BLOCKS_PER_CHUNK - 1n
+  for (let start = fromBlock; start <= currentBlock; start += chunkSize) {
+    const end = start + chunkSize - 1n > currentBlock ? currentBlock : start + chunkSize - 1n
     chunks.push({ from: start, to: end })
   }
 
