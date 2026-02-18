@@ -6,6 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { analytics } from '@/lib/mixpanel'
+import { orderRegistry } from '@/lib/orderRegistry'
 import { useChatStore } from '@/stores/chatStore'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
@@ -51,15 +52,24 @@ export function ChatProvider({ children }: ChatProviderProps) {
     () =>
       new DefaultChatTransport({
         api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/chat`,
-        body: () => ({
-          evmAddress: walletRef.current.evmAddress,
-          solanaAddress: walletRef.current.solanaAddress,
-          approvedChainIds: walletRef.current.approvedChainIds,
-          hasEmbeddedWallet: walletRef.current.hasEmbeddedWallet,
-          hasExternalWallet: walletRef.current.hasExternalWallet,
-          safeAddress: walletRef.current.safeAddress,
-          safeDeploymentState: walletRef.current.safeDeploymentState,
-        }),
+        body: () => {
+          const wallet = walletRef.current
+          const safeAddresses = Object.values(wallet.safeDeploymentState ?? {})
+            .filter(s => s.safeAddress)
+            .map(s => s.safeAddress)
+          const activeOrders = safeAddresses.length > 0 ? orderRegistry.getActiveOrderSummaries(safeAddresses) : []
+
+          return {
+            evmAddress: wallet.evmAddress,
+            solanaAddress: wallet.solanaAddress,
+            approvedChainIds: wallet.approvedChainIds,
+            hasEmbeddedWallet: wallet.hasEmbeddedWallet,
+            hasExternalWallet: wallet.hasExternalWallet,
+            safeAddress: wallet.safeAddress,
+            safeDeploymentState: wallet.safeDeploymentState,
+            activeOrders,
+          }
+        },
       }),
     []
   )

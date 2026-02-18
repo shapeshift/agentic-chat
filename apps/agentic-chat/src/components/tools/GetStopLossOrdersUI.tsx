@@ -2,8 +2,11 @@ import type { CreateStopLossOutput } from '@shapeshiftoss/agentic-server'
 import { Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
 import { useMemo } from 'react'
 
+import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { stopPropagationHandler } from '@/lib/eventHandlers'
-import { cn } from '@/lib/utils'
+import { getExplorerUrl } from '@/lib/explorers'
+import { orderRegistry } from '@/lib/orderRegistry'
+import { cn, truncateAddress } from '@/lib/utils'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 
@@ -50,6 +53,7 @@ interface StopLossOrderItemProps {
   cowTrackingUrl: string
   strikePrice?: string
   orderHash?: string
+  walletAddress?: string
 }
 
 function StopLossOrderItem({
@@ -61,10 +65,12 @@ function StopLossOrderItem({
   validTo,
   cowTrackingUrl,
   strikePrice,
+  walletAddress,
 }: StopLossOrderItemProps) {
   const isActive = status === 'open' || status === 'presignaturePending'
   const isWatching = status === 'watching'
   const expiresDate = new Date(validTo * 1000)
+  const truncatedWallet = walletAddress ? truncateAddress(walletAddress) : undefined
 
   return (
     <div className="flex items-center justify-between py-3 px-1 gap-4">
@@ -73,26 +79,32 @@ function StopLossOrderItem({
           <span className="font-medium truncate">
             {sellAmount} {sellToken}
           </span>
-          <span className="text-muted-foreground">→</span>
+          <span className="text-muted-foreground">&rarr;</span>
           <span className="font-medium">{buyToken}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="capitalize">{network}</span>
+          {truncatedWallet && (
+            <>
+              <span>&bull;</span>
+              <span>{truncatedWallet}</span>
+            </>
+          )}
           {isWatching && strikePrice && (
             <>
-              <span>•</span>
+              <span>&bull;</span>
               <span>Strike: {strikePrice}</span>
             </>
           )}
           {isWatching && !strikePrice && (
             <>
-              <span>•</span>
+              <span>&bull;</span>
               <span>Watching for trigger</span>
             </>
           )}
           {isActive && (
             <>
-              <span>•</span>
+              <span>&bull;</span>
               <span>Expires {expiresDate.toLocaleDateString()}</span>
             </>
           )}
@@ -127,32 +139,60 @@ interface DisplayOrder {
   cowTrackingUrl: string
   strikePrice?: string
   orderHash?: string
+  walletAddress?: string
 }
 
 const isStopLossTx = (tx: PersistedToolState): boolean => tx.toolType === 'stop_loss' && Boolean(tx.meta.submitTxHash)
 
 const toDisplayOrder = (tx: PersistedToolState): DisplayOrder => {
   const output = tx.toolOutput as CreateStopLossOutput | undefined
+  const network = output?.summary?.network ?? 'unknown'
+  const submitTxHash = tx.meta.submitTxHash as string | undefined
+  const explorerUrl = submitTxHash ? getExplorerUrl(network, submitTxHash) : ''
+
   return {
     id: tx.toolCallId,
     status: 'watching' as StopLossOrderStatus,
-    network: output?.summary?.network ?? 'unknown',
+    network,
     sellToken: output?.summary?.sellAsset?.symbol ?? 'Unknown',
     buyToken: output?.summary?.buyAsset?.symbol ?? 'Unknown',
     sellAmount: output?.summary?.sellAsset?.amount ?? '0',
     validTo: output?.summary?.expiresAt ? Math.floor(new Date(output.summary.expiresAt).getTime() / 1000) : 0,
-    cowTrackingUrl: '',
+    cowTrackingUrl: explorerUrl,
     strikePrice: output?.summary?.triggerPrice,
+    walletAddress: tx.walletAddress,
   }
 }
 
 const selectHistoricalOrders = (transactions: PersistedToolState[]): DisplayOrder[] =>
   transactions.filter(isStopLossTx).map(toDisplayOrder)
 
+function selectRegistryOrders(safeDeploymentState: Record<number, { safeAddress: string }>): DisplayOrder[] {
+  const safeAddresses = Object.values(safeDeploymentState)
+    .filter(s => s.safeAddress)
+    .map(s => s.safeAddress)
+  if (safeAddresses.length === 0) return []
+
+  const allOrders = safeAddresses.flatMap(addr => orderRegistry.getActiveOrders(addr))
+  return allOrders.map(record => ({
+    id: record.orderHash,
+    status: 'watching' as StopLossOrderStatus,
+    network: record.network,
+    sellToken: record.sellToken.symbol,
+    buyToken: record.buyToken.symbol,
+    sellAmount: record.sellToken.amount,
+    validTo: record.validTo,
+    cowTrackingUrl: getExplorerUrl(record.network, record.submitTxHash),
+    strikePrice: record.strikePrice,
+    orderHash: record.orderHash,
+  }))
+}
+
 export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopLossOrdersTool'>) {
   const { state, output } = toolPart
   const input = toolPart.input as { accountScope?: string } | undefined
   const isHistoryMode = input?.accountScope === 'history'
+  const { evmAddress, safeDeploymentState } = useWalletConnection()
   const persistedTransactions = useChatStore(state => state.persistedTransactions)
   const historicalOrders = useMemo(() => selectHistoricalOrders(persistedTransactions), [persistedTransactions])
 
@@ -165,10 +205,39 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopL
 
   const orders: DisplayOrder[] = isHistoryMode
     ? historicalOrders
-    : (output?.orders ?? []).map(o => ({
-        ...o,
-        status: isValidStatus(o.status) ? o.status : 'open',
-      }))
+    : (() => {
+        // Server orders from CoW API and registry-based watching orders
+        const serverOrders: DisplayOrder[] = (output?.orders ?? []).map(o => {
+          const watchingExplorerUrl =
+            o.status === 'watching' && o.submitTxHash ? getExplorerUrl(o.network, o.submitTxHash) : ''
+
+          return {
+            ...o,
+            status: isValidStatus(o.status) ? o.status : 'open',
+            cowTrackingUrl: o.cowTrackingUrl || watchingExplorerUrl,
+          }
+        })
+
+        if (!evmAddress) return serverOrders
+
+        // Supplement with local registry orders not already in server results
+        const registryOrders = selectRegistryOrders(safeDeploymentState)
+        const serverOrderKeys = new Set(
+          serverOrders.map(o => `${o.network}|${o.sellToken}|${o.buyToken}|${o.sellAmount}`)
+        )
+        const uniqueRegistryOrders = registryOrders.filter(
+          o => !serverOrderKeys.has(`${o.network}|${o.sellToken}|${o.buyToken}|${o.sellAmount}`)
+        )
+
+        const merged = [...uniqueRegistryOrders, ...serverOrders]
+        merged.sort((a, b) => {
+          if (a.status === 'watching' && b.status !== 'watching') return -1
+          if (a.status !== 'watching' && b.status === 'watching') return 1
+          return b.validTo - a.validTo
+        })
+
+        return merged
+      })()
 
   if (orders.length === 0) {
     return (
@@ -224,6 +293,7 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopL
                 cowTrackingUrl={order.cowTrackingUrl}
                 strikePrice={order.strikePrice}
                 orderHash={order.orderHash}
+                walletAddress={isHistoryMode ? order.walletAddress : undefined}
               />
             ))}
           </div>

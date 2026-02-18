@@ -10,10 +10,10 @@ import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
+import { orderRegistry } from '@/lib/orderRegistry'
 import { executeSafeTransaction } from '@/lib/safe'
 import { deploySafe } from '@/lib/safe/safeFactory'
 import { enableComposableCowModules } from '@/lib/safe/safeModules'
-import { getSafeState } from '@/lib/safe/safeStorage'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
@@ -203,11 +203,12 @@ export const useStopLossExecution = (
 
       const deployedSafeAddress = deployResult.safeAddress
 
-      const currentSafeState = getSafeState(evmAddress)
-      const chainSafeState = currentSafeState[targetChainId]
-
-      if (!chainSafeState?.modulesEnabled || !chainSafeState?.domainVerifierSet) {
+      // Always verify on-chain — catches "already enabled" gracefully
+      try {
         await enableComposableCowModules(deployedSafeAddress, targetChainId, evmAddress)
+      } catch (moduleError) {
+        const isAlreadyEnabled = moduleError instanceof Error && moduleError.message.includes('already fully enabled')
+        if (!isAlreadyEnabled) throw moduleError
       }
 
       setState(draft => {
@@ -326,6 +327,38 @@ export const useStopLossExecution = (
           confirmations: 1,
         })
       }
+
+      // Save to order registry for sideband discovery
+      orderRegistry.saveOrder({
+        orderHash: data.orderHash,
+        safeAddress: deployedSafeAddress,
+        chainId: targetChainId,
+        sellToken: {
+          address: data.sellTokenAddress,
+          symbol: data.summary.sellAsset.symbol,
+          amount: data.summary.sellAsset.amount,
+          precision: data.sellPrecision,
+        },
+        buyToken: {
+          address: data.buyTokenAddress,
+          symbol: data.summary.buyAsset.symbol,
+          amount: data.summary.buyAsset.estimatedAmount,
+          precision: data.buyPrecision,
+        },
+        sellAmountBaseUnit: data.sellAmountBaseUnit,
+        strikePrice: data.summary.triggerPrice,
+        validTo: data.validTo,
+        submitTxHash,
+        createdAt: Date.now(),
+        status: 'watching',
+        conditionalOrderParams: {
+          handler: data.conditionalOrderParams.handler,
+          salt: data.conditionalOrderParams.salt,
+          staticInput: data.conditionalOrderParams.staticInput,
+        },
+        orderType: 'stopLoss',
+        network: data.summary.network,
+      })
 
       // Persist successful state
       persistState({

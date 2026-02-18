@@ -2,18 +2,12 @@ import type { Network } from '@shapeshiftoss/types'
 import { assetService, fromBaseUnit } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
-import { computeConditionalOrderHash, decodeStopLossStaticData } from '../../lib/composableCow'
-import {
-  getConditionalOrderCreatedEvents,
-  getBlockTimestamp,
-  isConditionalOrderActive,
-} from '../../lib/composableCow/events'
-import { CHAINLINK_ORACLE_DECIMALS } from '../../lib/composableCow/oracles'
+import { isConditionalOrderActive } from '../../lib/composableCow/events'
 import { getCowOrders } from '../../lib/cow'
 import type { CowOrder, CowOrderStatus } from '../../lib/cow/types'
 import { NETWORK_TO_CHAIN_ID, CHAIN_ID_TO_NETWORK, getCowExplorerUrl } from '../../lib/cow/types'
 import { getSafeAddressForChain } from '../../utils/walletContextSimple'
-import type { WalletContext } from '../../utils/walletContextSimple'
+import type { ActiveOrderSummary, WalletContext } from '../../utils/walletContextSimple'
 
 export const getStopLossOrdersSchema = z.object({
   status: z
@@ -30,7 +24,7 @@ export const getStopLossOrdersSchema = z.object({
     .optional()
     .default('connected')
     .describe(
-      'Which orders to show. "connected" (default) fetches live orders for the currently connected wallet via on-chain scanning and CoW API. "history" shows orders created through this app across all wallets (rendered client-side from activity history).'
+      'Which orders to show. "connected" (default) fetches live orders for the currently connected wallet via on-chain verification and CoW API. "history" shows orders created through this app across all wallets (rendered client-side from activity history).'
     ),
 })
 
@@ -53,6 +47,7 @@ interface StopLossOrderInfo {
   partiallyFillable: boolean
   strikePrice?: string
   orderHash?: string
+  submitTxHash?: string
 }
 
 export interface GetStopLossOrdersOutput {
@@ -94,55 +89,38 @@ function formatCowOrder(order: CowOrder, network: string, chainId: number): Stop
   }
 }
 
-async function getPendingOnChainOrders(
+async function getRegistryWatchingOrders(
+  activeOrders: ActiveOrderSummary[],
   safeAddress: string,
   chainId: number,
   network: string
 ): Promise<StopLossOrderInfo[]> {
-  const events = await getConditionalOrderCreatedEvents(safeAddress, chainId)
-  if (events.length === 0) return []
-
-  const eventsWithHash = events.map(event => ({
-    ...event,
-    orderHash: computeConditionalOrderHash(event.params),
-  }))
+  const chainOrders = activeOrders.filter(o => o.chainId === chainId)
+  if (chainOrders.length === 0) return []
 
   const activeResults = await Promise.all(
-    eventsWithHash.map(e => isConditionalOrderActive(safeAddress, e.orderHash, chainId))
+    chainOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, chainId))
   )
 
-  const activeEvents = eventsWithHash.filter((_, i) => activeResults[i])
-  if (activeEvents.length === 0) return []
-
-  const timestamps = await Promise.all(activeEvents.map(e => getBlockTimestamp(e.blockNumber, chainId)))
-
-  return activeEvents.map((event, i) => {
-    const data = decodeStopLossStaticData(event.params.staticInput)
-    const sellMeta = resolveTokenMetadata(data.sellToken, chainId)
-    const buyMeta = resolveTokenMetadata(data.buyToken, chainId)
-    const sellPrecision = sellMeta?.precision ?? DEFAULT_DECIMALS
-    const buyPrecision = buyMeta?.precision ?? DEFAULT_DECIMALS
-
-    const strikeRaw = Number(data.strike) / 10 ** CHAINLINK_ORACLE_DECIMALS
-    const strikePrice = strikeRaw.toFixed(4)
-
-    return {
-      id: event.orderHash,
+  return chainOrders
+    .filter((_, i) => activeResults[i])
+    .map(order => ({
+      id: order.orderHash,
       status: 'watching' as CowOrderStatus,
       network,
-      sellToken: sellMeta?.symbol ?? data.sellToken.slice(0, 10),
-      buyToken: buyMeta?.symbol ?? data.buyToken.slice(0, 10),
-      sellAmount: fromBaseUnit(data.sellAmount.toString(), sellPrecision),
-      buyAmount: fromBaseUnit(data.buyAmount.toString(), buyPrecision),
-      createdAt: new Date(timestamps[i]! * 1000).toISOString(),
-      validTo: 0,
+      sellToken: order.sellTokenSymbol,
+      buyToken: order.buyTokenSymbol,
+      sellAmount: order.sellAmountHuman,
+      buyAmount: order.buyAmountHuman,
+      createdAt: new Date(order.createdAt).toISOString(),
+      validTo: order.validTo,
       cowTrackingUrl: '',
-      kind: data.isSellOrder ? 'sell' : 'buy',
-      partiallyFillable: data.isPartiallyFillable,
-      strikePrice,
-      orderHash: event.orderHash,
-    }
-  })
+      kind: 'sell',
+      partiallyFillable: true,
+      strikePrice: order.strikePrice,
+      orderHash: order.orderHash,
+      submitTxHash: order.submitTxHash,
+    }))
 }
 
 export async function executeGetStopLossOrders(
@@ -162,36 +140,38 @@ export async function executeGetStopLossOrders(
         { network: 'arbitrum', chainId: 42161 },
       ]
 
+  const registryOrders = walletContext?.activeOrders ?? []
+
   const orderResults = await Promise.allSettled(
     networksToQuery.map(async ({ network, chainId }) => {
       const safeAddress = getSafeAddressForChain(walletContext, chainId)
-      if (!safeAddress) return { apiOrders: [] as StopLossOrderInfo[], onChainOrders: [] as StopLossOrderInfo[] }
+      if (!safeAddress) return { apiOrders: [] as StopLossOrderInfo[], watchingOrders: [] as StopLossOrderInfo[] }
 
-      const [apiOrders, onChainOrders] = await Promise.all([
+      const [apiOrders, watchingOrders] = await Promise.all([
         getCowOrders(safeAddress, chainId).then(orders => orders.map(order => formatCowOrder(order, network, chainId))),
-        getPendingOnChainOrders(safeAddress, chainId, network).catch(() => [] as StopLossOrderInfo[]),
+        getRegistryWatchingOrders(registryOrders, safeAddress, chainId, network).catch(() => [] as StopLossOrderInfo[]),
       ])
 
-      return { apiOrders, onChainOrders }
+      return { apiOrders, watchingOrders }
     })
   )
 
   const allApiOrders: StopLossOrderInfo[] = []
-  const allOnChainOrders: StopLossOrderInfo[] = []
+  const allWatchingOrders: StopLossOrderInfo[] = []
 
   for (const result of orderResults) {
     if (result.status !== 'fulfilled') continue
     allApiOrders.push(...result.value.apiOrders)
-    allOnChainOrders.push(...result.value.onChainOrders)
+    allWatchingOrders.push(...result.value.watchingOrders)
   }
 
-  // Dedup: remove on-chain "watching" orders that already appear in CoW API (meaning they've been triggered)
+  // Dedup: remove watching orders that already appear in CoW API (meaning they've been triggered)
   const apiOrderKeys = new Set(allApiOrders.map(o => `${o.network}|${o.sellToken}|${o.buyToken}|${o.sellAmount}`))
-  const uniqueOnChainOrders = allOnChainOrders.filter(
+  const uniqueWatchingOrders = allWatchingOrders.filter(
     o => !apiOrderKeys.has(`${o.network}|${o.sellToken}|${o.buyToken}|${o.sellAmount}`)
   )
 
-  const allOrders = [...uniqueOnChainOrders, ...allApiOrders]
+  const allOrders = [...uniqueWatchingOrders, ...allApiOrders]
 
   // Filter by status if specified
   const filteredOrders = input.status === 'all' ? allOrders : allOrders.filter(o => o.status === input.status)
@@ -224,7 +204,7 @@ Default: Respond with one brief sentence like:
 Only elaborate if the user asks about specific order details.
 
 ACCOUNT SCOPE:
-- Use accountScope="connected" (default) to fetch live order status from on-chain events and CoW Protocol for the connected wallet
+- Use accountScope="connected" (default) to fetch live order status from the order registry and CoW Protocol for the connected wallet
 - Use accountScope="history" when user asks about "all my orders" or "orders from all wallets" to show orders placed through this assistant across all wallets, stored locally in the browser
 
 Use this tool when:

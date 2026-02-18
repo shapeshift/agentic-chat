@@ -182,6 +182,7 @@ export {
   type VaultWithdrawInput,
   type VaultWithdrawOutput,
 } from './tools/vault'
+export type { ActiveOrderSummary } from './utils/walletContextSimple'
 export type { CowOrderSigningData, CowEIP712Domain, CowEIP712Types } from './lib/cow/types'
 export type {
   TrimmedTrendingCoin,

@@ -17,6 +17,7 @@ import {
   STOP_LOSS_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
+import { isConditionalOrderActive } from '../../lib/composableCow/events'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getAllowance } from '../../utils'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
@@ -104,12 +105,17 @@ export interface CreateStopLossOutput {
   conditionalOrderParams: ConditionalOrderParams
   needsDeposit: boolean
   depositTx?: TransactionData
+  sellTokenAddress: string
+  buyTokenAddress: string
+  sellAmountBaseUnit: string
+  sellPrecision: number
+  buyPrecision: number
+  validTo: number
 }
 
 const SLIPPAGE_BUFFER = 0.98 // 2% slippage buffer
 const DEFAULT_APP_DATA = '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`
-const MAX_ORACLE_STALENESS = BigInt(60 * 60) // 1 hour max oracle staleness
-const VALIDITY_BUCKET_SECONDS = BigInt(15 * 60) // 15-minute validity windows
+const MAX_ORACLE_STALENESS = BigInt(24 * 60 * 60) // 24 hours — must exceed Chainlink's longest heartbeat (USDC/USD = 24h)
 
 export async function executeCreateStopLoss(
   input: CreateStopLossInput,
@@ -209,34 +215,58 @@ export async function executeCreateStopLoss(
     .times(new BigNumber(10).pow(CHAINLINK_ORACLE_DECIMALS))
     .integerValue(BigNumber.ROUND_DOWN)
 
-  // Check allowance (from Safe → VaultRelayer)
+  // Calculate cumulative committed amount from existing active orders for same sell token
+  let committedAmount = 0n
+  const existingOrders = (walletContext?.activeOrders ?? []).filter(
+    o => o.chainId === evmChainId && o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
+  )
+  if (existingOrders.length > 0) {
+    const activeResults = await Promise.all(
+      existingOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, evmChainId))
+    )
+    committedAmount = existingOrders
+      .filter((_, i) => activeResults[i])
+      .reduce((sum, o) => sum + BigInt(o.sellAmountBaseUnit), 0n)
+  }
+
+  const totalNeeded = committedAmount + BigInt(sellAmountBaseUnit)
+
+  // Check allowance (from Safe → VaultRelayer) against total needed
   const approvalTarget = COW_VAULT_RELAYER_ADDRESS
   const { isApprovalRequired: needsApproval } = await getAllowance({
-    amount: sellAmountBaseUnit,
+    amount: totalNeeded.toString(),
     asset: sellAsset,
     from: safeAddress,
     spender: approvalTarget,
   })
 
-  const approvalTx = buildApprovalTransaction(needsApproval, sellAsset, approvalTarget, sellAmountBaseUnit, safeAddress)
+  const approvalTx = buildApprovalTransaction(
+    needsApproval,
+    sellAsset,
+    approvalTarget,
+    totalNeeded.toString(),
+    safeAddress
+  )
 
   // Build ComposableCoW conditional order
   const salt = generateOrderSalt(safeAddress, sellTokenAddress, buyTokenAddress)
+
+  const validTo = Math.floor(Date.now() / 1000) + input.expirationDays * 86400
 
   const staticData = encodeStopLossStaticData({
     sellToken: sellTokenAddress,
     buyToken: buyTokenAddress,
     sellAmount: BigInt(sellAmountBaseUnit),
     buyAmount: BigInt(buyAmountBaseUnit),
-    sellTokenPriceOracle: sellTokenOracle as `0x${string}`,
-    buyTokenPriceOracle: buyTokenOracle as `0x${string}`,
-    strike: BigInt(strikePrice.toString()),
-    maxTimeSinceLastOracleUpdate: MAX_ORACLE_STALENESS,
     appData: DEFAULT_APP_DATA,
     receiver: safeAddress as `0x${string}`,
     isSellOrder: true,
     isPartiallyFillable: true,
-    validityBucketSeconds: VALIDITY_BUCKET_SECONDS,
+    validTo,
+    sellTokenPriceOracle: sellTokenOracle as `0x${string}`,
+    buyTokenPriceOracle: buyTokenOracle as `0x${string}`,
+    strike: BigInt(strikePrice.toString()),
+    maxTimeSinceLastOracleUpdate: MAX_ORACLE_STALENESS,
   })
 
   const conditionalOrderParams: ConditionalOrderParams = {
@@ -248,10 +278,11 @@ export async function executeCreateStopLoss(
   const orderHash = computeConditionalOrderHash(conditionalOrderParams)
   const safeTransaction = buildCreateConditionalOrderTx(conditionalOrderParams)
 
-  // Check if Safe has sufficient balance of the sell token
+  // Check if Safe has sufficient balance for this order plus existing commitments
   const eoaAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const safeBalance = await getBalance(safeAddress, sellAsset)
-  const needsDeposit = BigInt(safeBalance) < BigInt(sellAmountBaseUnit)
+  const needsDeposit = BigInt(safeBalance) < totalNeeded
+  const depositAmount = needsDeposit ? totalNeeded - BigInt(safeBalance) : 0n
 
   let depositTx: TransactionData | undefined
   if (needsDeposit) {
@@ -259,7 +290,7 @@ export async function executeCreateStopLoss(
     const transferData = encodeFunctionData({
       abi: erc20Abi,
       functionName: 'transfer',
-      args: [getAddress(safeAddress), BigInt(sellAmountBaseUnit)],
+      args: [getAddress(safeAddress), depositAmount],
     })
 
     depositTx = createTransaction({
@@ -304,6 +335,12 @@ export async function executeCreateStopLoss(
     conditionalOrderParams,
     needsDeposit,
     depositTx,
+    sellTokenAddress: sellTokenAddress as string,
+    buyTokenAddress: buyTokenAddress as string,
+    sellAmountBaseUnit,
+    sellPrecision: sellAsset.precision,
+    buyPrecision: buyAsset.precision,
+    validTo,
   }
 }
 

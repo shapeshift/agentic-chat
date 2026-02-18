@@ -15,13 +15,16 @@ function getProvider(): SafeProvider {
 
 // ExtensibleFallbackHandler — required for ComposableCoW ERC-1271 verification
 // Same address across Ethereum, Gnosis, Arbitrum (checksummed)
-const EXTENSIBLE_FALLBACK_HANDLER = getAddress('0x2f870a80647BbC554F3a0EBD093f11B4d2a7571c')
+const EXTENSIBLE_FALLBACK_HANDLER = getAddress('0x2f55e8b20D0B9FEFA187AA7d00B6Cbe563605bF5')
 
 // ComposableCoW — the contract that manages conditional orders (stop-loss, TWAP)
 const COMPOSABLE_COW_ADDRESS = getAddress('0xfdaFc9d1902f4e0b84f65f49f244b32b31013b74')
 
 // GPv2Settlement — CoW Protocol's settlement contract, used for EIP-712 domain
 const GPV2_SETTLEMENT_ADDRESS = getAddress('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')
+
+// Safe's fallback handler is stored at a well-known storage slot (EIP-1967 style)
+const FALLBACK_HANDLER_SLOT = '0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5' as const
 
 const SET_FALLBACK_HANDLER_ABI = [
   {
@@ -43,6 +46,19 @@ const SET_DOMAIN_VERIFIER_ABI = [
     ],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+] as const
+
+const GET_DOMAIN_VERIFIER_ABI = [
+  {
+    name: 'domainVerifiers',
+    type: 'function',
+    inputs: [
+      { name: 'safe', type: 'address' },
+      { name: 'domainSeparator', type: 'bytes32' },
+    ],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
   },
 ] as const
 
@@ -68,11 +84,36 @@ export async function enableComposableCowModules(
     safeAddress,
   })
 
-  const ownerAddress = (await protocolKit.getOwners())[0]
-  const chainState = ownerAddress ? getSafeState(ownerAddress)[chainId] : undefined
+  const publicClient = createPublicClient({ transport: custom(getProvider()) })
+  const connectedChainId = await publicClient.getChainId()
+  if (connectedChainId !== chainId) {
+    throw new Error(
+      `Chain mismatch: wallet is on chain ${connectedChainId} but expected ${chainId}. Switch networks first.`
+    )
+  }
 
-  const needsFallbackHandler = !chainState?.modulesEnabled
-  const needsDomainVerifier = !chainState?.domainVerifierSet
+  // On-chain verification: read fallback handler from Safe's storage slot
+  const currentFallbackHandler = await publicClient.getStorageAt({
+    address: safeAddress as `0x${string}`,
+    slot: FALLBACK_HANDLER_SLOT,
+  })
+  const fallbackHandlerAddress = currentFallbackHandler
+    ? getAddress(`0x${currentFallbackHandler.slice(26)}`)
+    : getAddress('0x0000000000000000000000000000000000000000')
+  const needsFallbackHandler = fallbackHandlerAddress !== EXTENSIBLE_FALLBACK_HANDLER
+
+  // On-chain verification: read domain verifier from ExtensibleFallbackHandler
+  let needsDomainVerifier = true
+  if (!needsFallbackHandler) {
+    const gpv2DomainSep = computeGpv2DomainSeparator(chainId)
+    const currentVerifier = await publicClient.readContract({
+      address: EXTENSIBLE_FALLBACK_HANDLER,
+      abi: GET_DOMAIN_VERIFIER_ABI,
+      functionName: 'domainVerifiers',
+      args: [safeAddress as `0x${string}`, gpv2DomainSep],
+    })
+    needsDomainVerifier = getAddress(currentVerifier) !== COMPOSABLE_COW_ADDRESS
+  }
 
   const transactions: Array<{ to: string; value: string; data: string }> = []
 
@@ -104,6 +145,17 @@ export async function enableComposableCowModules(
   }
 
   if (transactions.length === 0) {
+    // Modules already fully configured on-chain — update localStorage to match
+    const ownerAddress = (await protocolKit.getOwners())[0]
+    if (ownerAddress) {
+      const existingChainState = getSafeState(ownerAddress)[chainId]
+      setSafeState(ownerAddress, chainId, {
+        safeAddress: existingChainState?.safeAddress ?? safeAddress,
+        isDeployed: existingChainState?.isDeployed ?? true,
+        modulesEnabled: true,
+        domainVerifierSet: true,
+      })
+    }
     throw new Error('ComposableCoW modules already fully enabled on this Safe')
   }
 
@@ -114,19 +166,17 @@ export async function enableComposableCowModules(
   const txHash = typeof result === 'string' ? result : result.hash
 
   // Wait for module enable tx to be confirmed before updating state
-  const publicClient = createPublicClient({ transport: custom(getProvider()) })
   await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}`, confirmations: 1 })
 
+  const ownerAddress = (await protocolKit.getOwners())[0]
   if (ownerAddress) {
-    const currentState = getSafeState(ownerAddress)
-    const existingChainState = currentState[chainId]
-    if (existingChainState) {
-      setSafeState(ownerAddress, chainId, {
-        ...existingChainState,
-        modulesEnabled: true,
-        domainVerifierSet: true,
-      })
-    }
+    const existingChainState = getSafeState(ownerAddress)[chainId]
+    setSafeState(ownerAddress, chainId, {
+      safeAddress: existingChainState?.safeAddress ?? safeAddress,
+      isDeployed: existingChainState?.isDeployed ?? true,
+      modulesEnabled: true,
+      domainVerifierSet: true,
+    })
   }
 
   return txHash

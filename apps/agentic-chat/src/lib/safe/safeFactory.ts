@@ -1,7 +1,7 @@
 import Safe from '@safe-global/protocol-kit'
 import { keccak256, encodePacked, createPublicClient, createWalletClient, custom } from 'viem'
 
-import { setSafeState } from './safeStorage'
+import { getSafeState, setSafeState } from './safeStorage'
 
 // Matches @safe-global/protocol-kit's internal Eip1193Provider (not publicly exported)
 type SafeProvider = {
@@ -80,11 +80,12 @@ export async function deploySafe(
   // Check if already deployed
   const isAlreadyDeployed = await protocolKit.isSafeDeployed()
   if (isAlreadyDeployed) {
+    const existingState = getSafeState(ownerAddress)[chainId]
     setSafeState(ownerAddress, chainId, {
       safeAddress: predictedAddress,
       isDeployed: true,
-      modulesEnabled: false,
-      domainVerifierSet: false,
+      modulesEnabled: existingState?.modulesEnabled ?? false,
+      domainVerifierSet: existingState?.domainVerifierSet ?? false,
     })
     return { safeAddress: predictedAddress, isDeployed: true }
   }

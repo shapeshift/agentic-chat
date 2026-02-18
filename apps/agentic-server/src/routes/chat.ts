@@ -38,7 +38,7 @@ import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
 import { createTwapTool, getTwapOrdersTool, cancelTwapTool } from '../tools/twap'
 import { vaultBalanceTool, vaultDepositTool, vaultWithdrawTool } from '../tools/vault'
-import type { SafeChainDeployment, WalletContext } from '../utils/walletContextSimple'
+import type { ActiveOrderSummary, SafeChainDeployment, WalletContext } from '../utils/walletContextSimple'
 
 const allEvmChainIds = [
   ethChainId,
@@ -75,7 +75,8 @@ function buildWalletContext(
   hasEmbeddedWallet?: boolean,
   hasExternalWallet?: boolean,
   safeAddress?: string,
-  safeDeploymentState?: Record<number, SafeChainDeployment>
+  safeDeploymentState?: Record<number, SafeChainDeployment>,
+  activeOrders?: ActiveOrderSummary[]
 ): WalletContext {
   const connectedWallets: Record<string, { address: string }> = {}
 
@@ -108,6 +109,7 @@ function buildWalletContext(
     hasExternalWallet,
     safeAddress,
     safeDeploymentState,
+    activeOrders,
   }
 }
 
@@ -410,6 +412,7 @@ export async function handleChatRequest(c: Context) {
       hasExternalWallet,
       safeAddress,
       safeDeploymentState,
+      activeOrders,
     } = body as {
       messages: unknown
       evmAddress?: string
@@ -419,6 +422,7 @@ export async function handleChatRequest(c: Context) {
       hasExternalWallet?: boolean
       safeAddress?: string
       safeDeploymentState?: Record<number, SafeChainDeployment>
+      activeOrders?: ActiveOrderSummary[]
     }
 
     // Build wallet context from addresses (filtered by approved chains if provided)
@@ -429,7 +433,8 @@ export async function handleChatRequest(c: Context) {
       hasEmbeddedWallet,
       hasExternalWallet,
       safeAddress,
-      safeDeploymentState
+      safeDeploymentState,
+      activeOrders
     )
 
     // Convert UIMessages to ModelMessages

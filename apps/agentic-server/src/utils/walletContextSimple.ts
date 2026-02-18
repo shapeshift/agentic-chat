@@ -8,12 +8,30 @@ export interface SafeChainDeployment {
   safeAddress: string
 }
 
+export interface ActiveOrderSummary {
+  orderHash: string
+  chainId: number
+  sellTokenAddress: string
+  sellTokenSymbol: string
+  sellAmountBaseUnit: string
+  sellAmountHuman: string
+  buyTokenAddress: string
+  buyTokenSymbol: string
+  buyAmountHuman: string
+  strikePrice: string
+  validTo: number
+  submitTxHash: string
+  createdAt: number
+  network: string
+}
+
 export interface WalletContext {
   connectedWallets?: Record<string, { address: string }>
   hasEmbeddedWallet?: boolean
   hasExternalWallet?: boolean
   safeAddress?: string
   safeDeploymentState?: Record<number, SafeChainDeployment>
+  activeOrders?: ActiveOrderSummary[]
 }
 
 export function getAddressForNetwork(walletContext: WalletContext | undefined, network: Network): string {
