@@ -3,6 +3,7 @@ import util from 'util'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
+import { refreshOracleCache } from './lib/composableCow'
 import { handleChatRequest } from './routes/chat'
 import { handlePortfolioRequest } from './routes/portfolio'
 
@@ -55,6 +56,9 @@ app.onError((err, c) => {
   console.error('[Server Error]:', err)
   return c.json({ error: 'Internal server error', message: err.message }, 500)
 })
+
+// Pre-populate Chainlink oracle cache (fallback serves requests until this completes)
+refreshOracleCache().catch(err => console.error('[Oracle Cache] Initial fetch failed, using fallback:', err.message))
 
 const port = Number(process.env.PORT) || 4111
 

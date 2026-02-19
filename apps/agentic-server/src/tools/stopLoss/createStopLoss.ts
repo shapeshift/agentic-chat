@@ -8,12 +8,11 @@ import { z } from 'zod'
 import { getSimplePrices } from '../../lib/asset/coingecko'
 import {
   buildCreateConditionalOrderTx,
-  CHAINLINK_ORACLE_DECIMALS,
   computeConditionalOrderHash,
   COW_VAULT_RELAYER_ADDRESS,
   encodeStopLossStaticData,
   generateOrderSalt,
-  getChainlinkOracle,
+  getChainlinkOracleWithRefresh,
   STOP_LOSS_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
@@ -149,17 +148,19 @@ export async function executeCreateStopLoss(
     )
   }
 
-  // Look up Chainlink oracles for both tokens
-  const sellTokenOracle = getChainlinkOracle(evmChainId, sellAsset.symbol)
-  const buyTokenOracle = getChainlinkOracle(evmChainId, buyAsset.symbol)
+  // Look up Chainlink oracles for both tokens (refreshes cache if stale)
+  const [sellOracle, buyOracle] = await Promise.all([
+    getChainlinkOracleWithRefresh(evmChainId, sellAsset.symbol),
+    getChainlinkOracleWithRefresh(evmChainId, buyAsset.symbol),
+  ])
 
-  if (!sellTokenOracle) {
+  if (!sellOracle) {
     throw new Error(
       `No Chainlink price oracle available for ${sellAsset.symbol} on ${input.network}. ` +
         `Stop-loss orders require on-chain price feeds for condition verification.`
     )
   }
-  if (!buyTokenOracle) {
+  if (!buyOracle) {
     throw new Error(
       `No Chainlink price oracle available for ${buyAsset.symbol} on ${input.network}. ` +
         `Stop-loss orders require on-chain price feeds for condition verification.`
@@ -207,12 +208,13 @@ export async function executeCreateStopLoss(
 
   const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
 
-  // Calculate strike price scaled to oracle decimals
-  // Strike = sellTokenPrice / buyTokenPrice at trigger, scaled to 8 decimals (Chainlink standard)
-  // The StopLoss handler checks: sellTokenOraclePrice / buyTokenOraclePrice <= strike
+  // Strike = sellTokenPrice / buyTokenPrice at trigger, scaled to sell oracle's decimals
+  // The StopLoss handler normalizes both oracle prices to 18 decimals via scalePrice(),
+  // then checks: sellPrice * 10^18 / buyPrice <= strike
+  // Strike is scaled by 10^sellOracleDecimals to match the contract's precision expectations
   const strikePrice = new BigNumber(input.triggerPrice)
     .div(currentBuyPrice)
-    .times(new BigNumber(10).pow(CHAINLINK_ORACLE_DECIMALS))
+    .times(new BigNumber(10).pow(sellOracle.decimals))
     .integerValue(BigNumber.ROUND_DOWN)
 
   // Calculate cumulative committed amount from existing active orders for same sell token
@@ -266,8 +268,8 @@ export async function executeCreateStopLoss(
     isSellOrder: true,
     isPartiallyFillable: true,
     validTo,
-    sellTokenPriceOracle: sellTokenOracle as `0x${string}`,
-    buyTokenPriceOracle: buyTokenOracle as `0x${string}`,
+    sellTokenPriceOracle: sellOracle.address as `0x${string}`,
+    buyTokenPriceOracle: buyOracle.address as `0x${string}`,
     strike: BigInt(strikePrice.toString()),
     maxTimeSinceLastOracleUpdate: MAX_ORACLE_STALENESS,
   })

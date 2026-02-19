@@ -41,7 +41,7 @@ export interface StopLossStaticData {
   validTo: number // UNIX timestamp — order expires after this
   sellTokenPriceOracle: `0x${string}`
   buyTokenPriceOracle: `0x${string}`
-  strike: bigint // strike price scaled to oracle decimals (8 decimals for Chainlink)
+  strike: bigint // strike price scaled to sell oracle's decimals (typically 8 for Chainlink crypto/USD feeds)
   maxTimeSinceLastOracleUpdate: bigint
 }
 
@@ -236,4 +236,10 @@ export function computeConditionalOrderHash(params: ConditionalOrderParams): `0x
   return keccak256(encodeAbiParameters(CONDITIONAL_ORDER_PARAMS_ABI, [params]))
 }
 
-export { getChainlinkOracle, getSupportedOracleTokens, CHAINLINK_ORACLE_DECIMALS } from './oracles'
+export {
+  getChainlinkOracle,
+  getChainlinkOracleWithRefresh,
+  getSupportedOracleTokens,
+  refreshOracleCache,
+} from './oracles'
+export type { ChainlinkFeed } from './oracles'
