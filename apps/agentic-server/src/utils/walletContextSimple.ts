@@ -23,6 +23,8 @@ export interface ActiveOrderSummary {
   submitTxHash: string
   createdAt: number
   network: string
+  status: 'open' | 'triggered' | 'fulfilled' | 'cancelled' | 'expired'
+  orderType: 'stopLoss' | 'twap'
 }
 
 export interface WalletContext {
@@ -31,7 +33,7 @@ export interface WalletContext {
   hasExternalWallet?: boolean
   safeAddress?: string
   safeDeploymentState?: Record<number, SafeChainDeployment>
-  activeOrders?: ActiveOrderSummary[]
+  registryOrders?: ActiveOrderSummary[]
 }
 
 export function getAddressForNetwork(walletContext: WalletContext | undefined, network: Network): string {

@@ -54,10 +54,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
         api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/chat`,
         body: () => {
           const wallet = walletRef.current
-          const safeAddresses = Object.values(wallet.safeDeploymentState ?? {})
-            .filter(s => s.safeAddress)
-            .map(s => s.safeAddress)
-          const activeOrders = safeAddresses.length > 0 ? orderRegistry.getActiveOrderSummaries(safeAddresses) : []
+          const safeDeploymentEntries = Object.entries(wallet.safeDeploymentState ?? {})
+          const safeAddresses = safeDeploymentEntries.filter(([, s]) => s.safeAddress).map(([, s]) => s.safeAddress)
+          const registryOrders = safeAddresses.length > 0 ? orderRegistry.getAllOrderSummaries(safeAddresses) : []
 
           return {
             evmAddress: wallet.evmAddress,
@@ -67,7 +66,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
             hasExternalWallet: wallet.hasExternalWallet,
             safeAddress: wallet.safeAddress,
             safeDeploymentState: wallet.safeDeploymentState,
-            activeOrders,
+            registryOrders,
           }
         },
       }),

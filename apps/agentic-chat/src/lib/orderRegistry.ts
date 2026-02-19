@@ -11,7 +11,7 @@ export interface OrderRecord {
   validTo: number
   submitTxHash: string
   createdAt: number
-  status: 'watching' | 'triggered' | 'fulfilled' | 'cancelled' | 'expired'
+  status: 'open' | 'triggered' | 'fulfilled' | 'cancelled' | 'expired'
   conditionalOrderParams: { handler: string; salt: string; staticInput: string }
   orderType: 'stopLoss' | 'twap'
   network: string
@@ -25,7 +25,21 @@ function loadOrders(safeAddress: string): OrderRecord[] {
   try {
     const raw = localStorage.getItem(getStorageKey(safeAddress))
     if (!raw) return []
-    return JSON.parse(raw) as OrderRecord[]
+    const orders = JSON.parse(raw) as OrderRecord[]
+    let dirty = false
+    const nowSeconds = Math.floor(Date.now() / 1000)
+    for (const order of orders) {
+      if ((order.status as string) === 'watching') {
+        order.status = 'open'
+        dirty = true
+      }
+      if (order.status === 'open' && order.validTo > 0 && order.validTo < nowSeconds) {
+        order.status = 'expired'
+        dirty = true
+      }
+    }
+    if (dirty) persistOrders(safeAddress, orders)
+    return orders
   } catch {
     return []
   }
@@ -50,6 +64,8 @@ export interface ActiveOrderSummary {
   submitTxHash: string
   createdAt: number
   network: string
+  status: OrderRecord['status']
+  orderType: OrderRecord['orderType']
 }
 
 function toActiveOrderSummary(record: OrderRecord): ActiveOrderSummary {
@@ -68,6 +84,8 @@ function toActiveOrderSummary(record: OrderRecord): ActiveOrderSummary {
     submitTxHash: record.submitTxHash,
     createdAt: record.createdAt,
     network: record.network,
+    status: record.status,
+    orderType: record.orderType,
   }
 }
 
@@ -90,7 +108,7 @@ export const orderRegistry = {
   },
 
   getActiveOrders(safeAddress: string, chainId?: number): OrderRecord[] {
-    return this.getOrders(safeAddress, chainId).filter(o => o.status === 'watching')
+    return this.getOrders(safeAddress, chainId).filter(o => o.status === 'open')
   },
 
   updateStatus(orderHash: string, safeAddress: string, status: OrderRecord['status']): void {
@@ -109,6 +127,14 @@ export const orderRegistry = {
 
   getActiveOrderSummaries(safeAddresses: string[]): ActiveOrderSummary[] {
     const uniqueAddresses = [...new Set(safeAddresses.map(a => a.toLowerCase()))]
-    return uniqueAddresses.flatMap(addr => this.getActiveOrders(addr).map(toActiveOrderSummary))
+    return uniqueAddresses.flatMap(addr => {
+      const activeOrders = loadOrders(addr).filter(o => o.status === 'open')
+      return activeOrders.map(toActiveOrderSummary)
+    })
+  },
+
+  getAllOrderSummaries(safeAddresses: string[]): ActiveOrderSummary[] {
+    const uniqueAddresses = [...new Set(safeAddresses.map(a => a.toLowerCase()))]
+    return uniqueAddresses.flatMap(addr => loadOrders(addr).map(toActiveOrderSummary))
   },
 }

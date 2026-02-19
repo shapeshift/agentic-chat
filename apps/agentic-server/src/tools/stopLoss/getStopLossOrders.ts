@@ -11,7 +11,7 @@ import type { ActiveOrderSummary, WalletContext } from '../../utils/walletContex
 
 export const getStopLossOrdersSchema = z.object({
   status: z
-    .enum(['open', 'fulfilled', 'cancelled', 'expired', 'watching', 'all'])
+    .enum(['open', 'submitted', 'fulfilled', 'cancelled', 'expired', 'all'])
     .optional()
     .default('all')
     .describe('Filter orders by status. Default is "all".'),
@@ -65,6 +65,11 @@ function resolveTokenMetadata(tokenAddress: string, chainId: number): { symbol: 
   return { symbol: asset.symbol, precision: asset.precision }
 }
 
+function mapStopLossApiStatus(rawStatus: string): CowOrderStatus {
+  if (rawStatus === 'open' || rawStatus === 'presignaturePending') return 'submitted'
+  return rawStatus as CowOrderStatus
+}
+
 function formatCowOrder(order: CowOrder, network: string, chainId: number): StopLossOrderInfo {
   const sellMeta = resolveTokenMetadata(order.sellToken, chainId)
   const buyMeta = resolveTokenMetadata(order.buyToken, chainId)
@@ -73,7 +78,7 @@ function formatCowOrder(order: CowOrder, network: string, chainId: number): Stop
 
   return {
     id: order.uid,
-    status: order.status,
+    status: mapStopLossApiStatus(order.status as string),
     network,
     sellToken: sellMeta?.symbol ?? order.sellToken.slice(0, 10),
     buyToken: buyMeta?.symbol ?? order.buyToken.slice(0, 10),
@@ -89,38 +94,55 @@ function formatCowOrder(order: CowOrder, network: string, chainId: number): Stop
   }
 }
 
-async function getRegistryWatchingOrders(
-  activeOrders: ActiveOrderSummary[],
+function mapRegistryOrderToInfo(order: ActiveOrderSummary, network: string, status: CowOrderStatus): StopLossOrderInfo {
+  return {
+    id: order.orderHash,
+    status,
+    network,
+    sellToken: order.sellTokenSymbol,
+    buyToken: order.buyTokenSymbol,
+    sellAmount: order.sellAmountHuman,
+    buyAmount: order.buyAmountHuman,
+    createdAt: new Date(order.createdAt).toISOString(),
+    validTo: order.validTo,
+    cowTrackingUrl: '',
+    kind: 'sell',
+    partiallyFillable: true,
+    strikePrice: order.strikePrice,
+    orderHash: order.orderHash,
+    submitTxHash: order.submitTxHash,
+  }
+}
+
+async function getRegistryOrders(
+  registryOrders: ActiveOrderSummary[],
   safeAddress: string,
   chainId: number,
   network: string
 ): Promise<StopLossOrderInfo[]> {
-  const chainOrders = activeOrders.filter(o => o.chainId === chainId)
+  const chainOrders = registryOrders.filter(o => o.chainId === chainId && o.orderType === 'stopLoss')
   if (chainOrders.length === 0) return []
 
-  const activeResults = await Promise.all(
-    chainOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, chainId))
-  )
+  const openOrders = chainOrders.filter(o => o.status === 'open')
+  const nonOpenOrders = chainOrders.filter(o => o.status !== 'open')
 
-  return chainOrders
-    .filter((_, i) => activeResults[i])
-    .map(order => ({
-      id: order.orderHash,
-      status: 'watching' as CowOrderStatus,
-      network,
-      sellToken: order.sellTokenSymbol,
-      buyToken: order.buyTokenSymbol,
-      sellAmount: order.sellAmountHuman,
-      buyAmount: order.buyAmountHuman,
-      createdAt: new Date(order.createdAt).toISOString(),
-      validTo: order.validTo,
-      cowTrackingUrl: '',
-      kind: 'sell',
-      partiallyFillable: true,
-      strikePrice: order.strikePrice,
-      orderHash: order.orderHash,
-      submitTxHash: order.submitTxHash,
-    }))
+  // On-chain verification only for open orders
+  const verifiedOpenOrders: StopLossOrderInfo[] = []
+  if (openOrders.length > 0) {
+    const activeResults = await Promise.all(
+      openOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, chainId))
+    )
+    for (let i = 0; i < openOrders.length; i++) {
+      if (activeResults[i]) {
+        verifiedOpenOrders.push(mapRegistryOrderToInfo(openOrders[i]!, network, 'open'))
+      }
+    }
+  }
+
+  // Non-open orders (cancelled/expired) returned as-is, trusting local status
+  const nonOpenResults = nonOpenOrders.map(o => mapRegistryOrderToInfo(o, network, o.status as CowOrderStatus))
+
+  return [...verifiedOpenOrders, ...nonOpenResults]
 }
 
 export async function executeGetStopLossOrders(
@@ -140,46 +162,59 @@ export async function executeGetStopLossOrders(
         { network: 'arbitrum', chainId: 42161 },
       ]
 
-  const registryOrders = walletContext?.activeOrders ?? []
+  const registryOrderSummaries = walletContext?.registryOrders ?? []
+
+  // Query optimization based on status filter
+  const skipCowApi = input.status === 'open' || input.status === 'cancelled' || input.status === 'expired'
+  const skipRegistry = input.status === 'submitted' || input.status === 'fulfilled'
 
   const orderResults = await Promise.allSettled(
     networksToQuery.map(async ({ network, chainId }) => {
       const safeAddress = getSafeAddressForChain(walletContext, chainId)
-      if (!safeAddress) return { apiOrders: [] as StopLossOrderInfo[], watchingOrders: [] as StopLossOrderInfo[] }
+      if (!safeAddress) return { apiOrders: [] as StopLossOrderInfo[], chainRegistryOrders: [] as StopLossOrderInfo[] }
 
-      const [apiOrders, watchingOrders] = await Promise.all([
-        getCowOrders(safeAddress, chainId).then(orders => orders.map(order => formatCowOrder(order, network, chainId))),
-        getRegistryWatchingOrders(registryOrders, safeAddress, chainId, network).catch(() => [] as StopLossOrderInfo[]),
+      const [apiOrders, chainRegistryOrders] = await Promise.all([
+        skipCowApi
+          ? ([] as StopLossOrderInfo[])
+          : getCowOrders(safeAddress, chainId).then(orders =>
+              orders.map(order => formatCowOrder(order, network, chainId))
+            ),
+        skipRegistry
+          ? ([] as StopLossOrderInfo[])
+          : getRegistryOrders(registryOrderSummaries, safeAddress, chainId, network).catch(err => {
+              console.error(`[getStopLossOrders] Registry order verification failed on ${network}:`, err)
+              return [] as StopLossOrderInfo[]
+            }),
       ])
 
-      return { apiOrders, watchingOrders }
+      return { apiOrders, chainRegistryOrders }
     })
   )
 
   const allApiOrders: StopLossOrderInfo[] = []
-  const allWatchingOrders: StopLossOrderInfo[] = []
+  const allRegistryOrders: StopLossOrderInfo[] = []
 
   for (const result of orderResults) {
     if (result.status !== 'fulfilled') continue
     allApiOrders.push(...result.value.apiOrders)
-    allWatchingOrders.push(...result.value.watchingOrders)
+    allRegistryOrders.push(...result.value.chainRegistryOrders)
   }
 
-  // Dedup: remove watching orders that already appear in CoW API (meaning they've been triggered)
+  // Dedup: remove registry orders that already appear in CoW API (meaning they've been triggered)
   const apiOrderKeys = new Set(allApiOrders.map(o => `${o.network}|${o.sellToken}|${o.buyToken}|${o.sellAmount}`))
-  const uniqueWatchingOrders = allWatchingOrders.filter(
+  const uniqueRegistryOrders = allRegistryOrders.filter(
     o => !apiOrderKeys.has(`${o.network}|${o.sellToken}|${o.buyToken}|${o.sellAmount}`)
   )
 
-  const allOrders = [...uniqueWatchingOrders, ...allApiOrders]
+  const allOrders = [...uniqueRegistryOrders, ...allApiOrders]
 
   // Filter by status if specified
   const filteredOrders = input.status === 'all' ? allOrders : allOrders.filter(o => o.status === input.status)
 
-  // Sort: watching first, then by creation date descending
+  // Sort: open (registry) first, then submitted, then by creation date descending
   filteredOrders.sort((a, b) => {
-    if (a.status === 'watching' && b.status !== 'watching') return -1
-    if (a.status !== 'watching' && b.status === 'watching') return 1
+    if (a.status === 'open' && b.status !== 'open') return -1
+    if (a.status !== 'open' && b.status === 'open') return 1
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   })
 
@@ -192,7 +227,7 @@ export async function executeGetStopLossOrders(
 export const getStopLossOrdersTool = {
   description: `Get the user's stop-loss orders from CoW Protocol.
 
-UI CARD DISPLAYS: list of stop-loss orders with status badges (Active/Fulfilled/Cancelled/Expired/Watching), amounts, strike prices, and CoW tracking links.
+UI CARD DISPLAYS: list of stop-loss orders with status badges (Open/Submitted/Fulfilled/Cancelled/Expired), amounts, strike prices, and CoW tracking links.
 
 Your role is to supplement the card, not duplicate it.
 

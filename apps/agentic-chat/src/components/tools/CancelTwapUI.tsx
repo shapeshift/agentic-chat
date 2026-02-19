@@ -4,12 +4,15 @@ import type { CancelTwapOutput } from '@shapeshiftoss/agentic-server'
 import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
+import { ExternalLink } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useToolExecutionEffect } from '@/hooks/useToolExecutionEffect'
 import { useWalletConnection } from '@/hooks/useWalletConnection'
+import { getExplorerUrl } from '@/lib/explorers'
+import { orderRegistry } from '@/lib/orderRegistry'
 import { executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
@@ -21,6 +24,8 @@ import { TruncateText } from '../ui/TruncateText'
 import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
+
+const CHAIN_ID_TO_NETWORK: Record<number, string> = { 1: 'ethereum', 100: 'gnosis', 42161: 'arbitrum' }
 
 enum CancelStep {
   PREPARE = 0,
@@ -164,6 +169,8 @@ function useCancelTwapExecution(
         })
       }
 
+      orderRegistry.updateStatus(data.orderHash, data.safeAddress, 'cancelled')
+
       persistState({
         currentStep: CancelStep.COMPLETE,
         completedSteps: new Set([
@@ -296,13 +303,18 @@ export function CancelTwapUI({ toolPart }: ToolUIComponentProps<'cancelTwapTool'
           Confirming on-chain
         </TxStepCard.Step>
 
-        {cancelTxHash && (
-          <div className="text-sm text-muted-foreground mt-3">
-            Tx:{' '}
+        {cancelTxHash && cancelOutput && (
+          <a
+            href={getExplorerUrl(CHAIN_ID_TO_NETWORK[cancelOutput.safeTransaction.chainId] ?? 'ethereum', cancelTxHash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-3"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
             <span className="font-mono text-xs">
               {cancelTxHash.slice(0, 10)}...{cancelTxHash.slice(-8)}
             </span>
-          </div>
+          </a>
         )}
 
         {footerMessage && (

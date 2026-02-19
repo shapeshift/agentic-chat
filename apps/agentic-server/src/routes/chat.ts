@@ -76,7 +76,7 @@ function buildWalletContext(
   hasExternalWallet?: boolean,
   safeAddress?: string,
   safeDeploymentState?: Record<number, SafeChainDeployment>,
-  activeOrders?: ActiveOrderSummary[]
+  registryOrders?: ActiveOrderSummary[]
 ): WalletContext {
   const connectedWallets: Record<string, { address: string }> = {}
 
@@ -109,7 +109,7 @@ function buildWalletContext(
     hasExternalWallet,
     safeAddress,
     safeDeploymentState,
-    activeOrders,
+    registryOrders,
   }
 }
 
@@ -412,7 +412,7 @@ export async function handleChatRequest(c: Context) {
       hasExternalWallet,
       safeAddress,
       safeDeploymentState,
-      activeOrders,
+      registryOrders,
     } = body as {
       messages: unknown
       evmAddress?: string
@@ -422,7 +422,7 @@ export async function handleChatRequest(c: Context) {
       hasExternalWallet?: boolean
       safeAddress?: string
       safeDeploymentState?: Record<number, SafeChainDeployment>
-      activeOrders?: ActiveOrderSummary[]
+      registryOrders?: ActiveOrderSummary[]
     }
 
     // Build wallet context from addresses (filtered by approved chains if provided)
@@ -434,7 +434,7 @@ export async function handleChatRequest(c: Context) {
       hasExternalWallet,
       safeAddress,
       safeDeploymentState,
-      activeOrders
+      registryOrders
     )
 
     // Convert UIMessages to ModelMessages
