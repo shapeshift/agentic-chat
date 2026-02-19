@@ -9,14 +9,13 @@ import { ToolCard } from '../ui/ToolCard'
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-type TwapOrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired' | 'presignaturePending'
+type TwapOrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired'
 
 const STATUS_CONFIG: Record<TwapOrderStatus, { icon: typeof Clock; label: string; className: string }> = {
   open: { icon: Eye, label: 'Active', className: 'text-blue-500' },
   fulfilled: { icon: CheckCircle, label: 'Filled', className: 'text-green-500' },
   cancelled: { icon: XCircle, label: 'Cancelled', className: 'text-red-500' },
   expired: { icon: AlertCircle, label: 'Expired', className: 'text-muted-foreground' },
-  presignaturePending: { icon: Eye, label: 'Pending', className: 'text-yellow-500' },
 }
 
 function isValidStatus(status: string): status is TwapOrderStatus {
@@ -47,7 +46,7 @@ interface TwapOrderItemProps {
 }
 
 function TwapOrderItem({ status, network, sellToken, buyToken, validTo, cowTrackingUrl }: TwapOrderItemProps) {
-  const isActive = status === 'open' || status === 'presignaturePending'
+  const isActive = status === 'open'
   const expiresDate = new Date(validTo * 1000)
 
   return (
@@ -114,7 +113,7 @@ export function GetTwapOrdersUI({ toolPart }: ToolUIComponentProps<'getTwapOrder
     )
   }
 
-  const activeCount = orders.filter(o => o.status === 'open' || o.status === 'presignaturePending').length
+  const activeCount = orders.filter(o => o.status === 'open').length
 
   return (
     <ToolCard.Root defaultOpen>

@@ -76,6 +76,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const chat = useChat({
     id: urlConversationId,
     transport,
+    experimental_throttle: 50,
     onError: error => {
       console.error('[Chat Error]', {
         message: error.message,

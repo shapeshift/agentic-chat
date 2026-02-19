@@ -42,10 +42,15 @@ export interface GetTwapOrdersOutput {
   totalCount: number
 }
 
+function mapTwapApiStatus(rawStatus: string): CowOrderStatus {
+  if (rawStatus === 'presignaturePending') return 'open'
+  return rawStatus as CowOrderStatus
+}
+
 function formatCowOrder(order: CowOrder, network: string): TwapOrderInfo {
   return {
     id: order.uid,
-    status: order.status,
+    status: mapTwapApiStatus(order.status as string),
     network,
     sellToken: order.sellToken,
     buyToken: order.buyToken,

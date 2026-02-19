@@ -109,7 +109,8 @@ export async function executeGetLimitOrders(
       const chainOrders: OrderInfo[] = []
 
       for (const order of orders) {
-        if (statusFilter && order.status !== statusFilter) continue
+        const mappedStatus: CowOrderStatus = (order.status as string) === 'presignaturePending' ? 'open' : order.status
+        if (statusFilter && mappedStatus !== statusFilter) continue
         if (order.class !== 'limit') continue
 
         const networkName = CHAIN_ID_TO_NETWORK[chainId] || 'unknown'
@@ -120,7 +121,7 @@ export async function executeGetLimitOrders(
 
         chainOrders.push({
           orderId: order.uid,
-          status: order.status,
+          status: mappedStatus,
           network: networkName,
           chainId,
           sellToken: order.sellToken,

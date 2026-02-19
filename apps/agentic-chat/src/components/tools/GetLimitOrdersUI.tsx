@@ -14,14 +14,13 @@ import { ToolCard } from '../ui/ToolCard'
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-type OrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired' | 'presignaturePending'
+type OrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired'
 
 const STATUS_CONFIG: Record<OrderStatus, { icon: typeof Clock; label: string; className: string }> = {
   open: { icon: Clock, label: 'Open', className: 'text-blue-500' },
   fulfilled: { icon: CheckCircle, label: 'Filled', className: 'text-green-500' },
   cancelled: { icon: XCircle, label: 'Cancelled', className: 'text-red-500' },
   expired: { icon: AlertCircle, label: 'Expired', className: 'text-muted-foreground' },
-  presignaturePending: { icon: Clock, label: 'Pending', className: 'text-yellow-500' },
 }
 
 function isValidOrderStatus(status: string): status is OrderStatus {
@@ -66,7 +65,7 @@ function OrderListItem({
   walletAddress,
 }: OrderListItemProps) {
   const isFilled = status === 'fulfilled'
-  const isOpen = status === 'open' || status === 'presignaturePending'
+  const isOpen = status === 'open'
 
   const rate = useMemo(() => {
     const sellBn = new BigNumber(sellAmount)
@@ -211,7 +210,7 @@ export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps<'getLimitOrd
     )
   }
 
-  const openCount = orders.filter(o => o.status === 'open' || o.status === 'presignaturePending').length
+  const openCount = orders.filter(o => o.status === 'open').length
 
   return (
     <ToolCard.Root defaultOpen>

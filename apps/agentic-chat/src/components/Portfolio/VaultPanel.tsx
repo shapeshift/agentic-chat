@@ -13,18 +13,18 @@ import { PortfolioAssetRow } from './PortfolioAssetRow'
 
 const ORDER_STATUS_STYLES: Record<string, string> = {
   open: 'text-blue-500',
+  submitted: 'text-orange-500',
   fulfilled: 'text-green-500',
   cancelled: 'text-red-500',
   expired: 'text-muted-foreground',
-  presignaturePending: 'text-yellow-500',
 }
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   open: 'Active',
+  submitted: 'Submitted',
   fulfilled: 'Filled',
   cancelled: 'Cancelled',
   expired: 'Expired',
-  presignaturePending: 'Pending',
 }
 
 function VaultOrderRow({ order }: { order: VaultOrder }) {

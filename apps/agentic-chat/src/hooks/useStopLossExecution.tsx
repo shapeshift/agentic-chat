@@ -12,7 +12,6 @@ import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
 import { orderRegistry } from '@/lib/orderRegistry'
 import { executeSafeTransaction } from '@/lib/safe'
-import { deploySafe } from '@/lib/safe/safeFactory'
 import { enableComposableCowModules } from '@/lib/safe/safeModules'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
@@ -20,6 +19,7 @@ import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import { sendTransaction } from '@/utils/sendTransaction'
 
+import { useSafeAccount } from './useSafeAccount'
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
@@ -121,6 +121,7 @@ export const useStopLossExecution = (
   orderData: StopLossData | null
 ): UseStopLossExecutionResult => {
   const { evmAddress, evmWallet } = useWalletConnection()
+  const safeAccount = useSafeAccount()
   const store = useChatStore()
   const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
   const { primaryWallet } = useDynamicContext()
@@ -194,9 +195,9 @@ export const useStopLossExecution = (
       })
 
       // Step 2: Safe Check — verify Safe is deployed and modules enabled on target chain
-      // Always verify on-chain via deploySafe (handles already-deployed case gracefully).
-      // Never trust localStorage alone — stale entries from prior bugs can skip deployment.
-      const deployResult = await deploySafe(evmAddress, targetChainId, evmAddress)
+      // Uses the hook wrapper which auto-refreshes React state after deployment,
+      // ensuring ChatProvider.body() sends correct safeDeploymentState on the next request.
+      const deployResult = await safeAccount.deploySafe(targetChainId)
       if (!deployResult.isDeployed) {
         throw new Error('Failed to deploy Safe smart account')
       }
@@ -350,7 +351,7 @@ export const useStopLossExecution = (
         validTo: data.validTo,
         submitTxHash,
         createdAt: Date.now(),
-        status: 'watching',
+        status: 'open',
         conditionalOrderParams: {
           handler: data.conditionalOrderParams.handler,
           salt: data.conditionalOrderParams.salt,

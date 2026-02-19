@@ -90,7 +90,10 @@ export function useVaultOrders() {
   })
 
   const activeOrders = useMemo(
-    () => (query.data ?? []).filter(o => o.status === 'open' || o.status === 'presignaturePending'),
+    () =>
+      (query.data ?? []).filter(
+        o => o.status === 'open' || o.status === 'presignaturePending' || o.status === 'submitted'
+      ),
     [query.data]
   )
 
