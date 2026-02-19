@@ -165,7 +165,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       input,
       handleInputChange,
       handleSubmit: handleSubmitCallback,
-      isLoading: chat.status === 'submitted',
+      isLoading: chat.status === 'submitted' || chat.status === 'streaming',
       sendMessage: chat.sendMessage,
       setInput,
       status: chat.status,
