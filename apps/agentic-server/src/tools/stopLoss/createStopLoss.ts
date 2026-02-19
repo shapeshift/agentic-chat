@@ -219,7 +219,6 @@ export async function executeCreateStopLoss(
   let committedAmount = 0n
   const existingOrders = (walletContext?.registryOrders ?? []).filter(
     o =>
-      o.status === 'open' &&
       o.orderType === 'stopLoss' &&
       o.chainId === evmChainId &&
       o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()

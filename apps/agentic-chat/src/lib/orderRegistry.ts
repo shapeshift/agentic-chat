@@ -26,15 +26,11 @@ function loadOrders(safeAddress: string): OrderRecord[] {
     const raw = localStorage.getItem(getStorageKey(safeAddress))
     if (!raw) return []
     const orders = JSON.parse(raw) as OrderRecord[]
+    // Migrate legacy 'watching' status to 'open'
     let dirty = false
-    const nowSeconds = Math.floor(Date.now() / 1000)
     for (const order of orders) {
       if ((order.status as string) === 'watching') {
         order.status = 'open'
-        dirty = true
-      }
-      if (order.status === 'open' && order.validTo > 0 && order.validTo < nowSeconds) {
-        order.status = 'expired'
         dirty = true
       }
     }

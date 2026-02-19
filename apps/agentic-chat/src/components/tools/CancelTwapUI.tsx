@@ -12,7 +12,6 @@ import { toast } from 'sonner'
 import { useToolExecutionEffect } from '@/hooks/useToolExecutionEffect'
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { getExplorerUrl } from '@/lib/explorers'
-import { orderRegistry } from '@/lib/orderRegistry'
 import { executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
@@ -168,8 +167,6 @@ function useCancelTwapExecution(
           confirmations: 1,
         })
       }
-
-      orderRegistry.updateStatus(data.orderHash, data.safeAddress, 'cancelled')
 
       persistState({
         currentStep: CancelStep.COMPLETE,

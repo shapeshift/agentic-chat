@@ -123,26 +123,24 @@ async function getRegistryOrders(
   const chainOrders = registryOrders.filter(o => o.chainId === chainId && o.orderType === 'stopLoss')
   if (chainOrders.length === 0) return []
 
-  const openOrders = chainOrders.filter(o => o.status === 'open')
-  const nonOpenOrders = chainOrders.filter(o => o.status !== 'open')
+  const nowSeconds = Math.floor(Date.now() / 1000)
 
-  // On-chain verification only for open orders
-  const verifiedOpenOrders: StopLossOrderInfo[] = []
-  if (openOrders.length > 0) {
-    const activeResults = await Promise.all(
-      openOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, chainId))
-    )
-    for (let i = 0; i < openOrders.length; i++) {
-      if (activeResults[i]) {
-        verifiedOpenOrders.push(mapRegistryOrderToInfo(openOrders[i]!, network, 'open'))
-      }
+  // Check all orders on-chain and derive status
+  const activeResults = await Promise.all(
+    chainOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, chainId))
+  )
+
+  return chainOrders.map((order, i) => {
+    let derivedStatus: CowOrderStatus
+    if (activeResults[i]) {
+      derivedStatus = 'open'
+    } else if (order.validTo > 0 && order.validTo < nowSeconds) {
+      derivedStatus = 'expired'
+    } else {
+      derivedStatus = 'cancelled'
     }
-  }
-
-  // Non-open orders (cancelled/expired) returned as-is, trusting local status
-  const nonOpenResults = nonOpenOrders.map(o => mapRegistryOrderToInfo(o, network, o.status as CowOrderStatus))
-
-  return [...verifiedOpenOrders, ...nonOpenResults]
+    return mapRegistryOrderToInfo(order, network, derivedStatus)
+  })
 }
 
 export async function executeGetStopLossOrders(
@@ -164,27 +162,17 @@ export async function executeGetStopLossOrders(
 
   const registryOrderSummaries = walletContext?.registryOrders ?? []
 
-  // Query optimization based on status filter
-  const skipCowApi = input.status === 'open' || input.status === 'cancelled' || input.status === 'expired'
-  const skipRegistry = input.status === 'submitted' || input.status === 'fulfilled'
-
   const orderResults = await Promise.allSettled(
     networksToQuery.map(async ({ network, chainId }) => {
       const safeAddress = getSafeAddressForChain(walletContext, chainId)
       if (!safeAddress) return { apiOrders: [] as StopLossOrderInfo[], chainRegistryOrders: [] as StopLossOrderInfo[] }
 
       const [apiOrders, chainRegistryOrders] = await Promise.all([
-        skipCowApi
-          ? ([] as StopLossOrderInfo[])
-          : getCowOrders(safeAddress, chainId).then(orders =>
-              orders.map(order => formatCowOrder(order, network, chainId))
-            ),
-        skipRegistry
-          ? ([] as StopLossOrderInfo[])
-          : getRegistryOrders(registryOrderSummaries, safeAddress, chainId, network).catch(err => {
-              console.error(`[getStopLossOrders] Registry order verification failed on ${network}:`, err)
-              return [] as StopLossOrderInfo[]
-            }),
+        getCowOrders(safeAddress, chainId).then(orders => orders.map(order => formatCowOrder(order, network, chainId))),
+        getRegistryOrders(registryOrderSummaries, safeAddress, chainId, network).catch(err => {
+          console.error(`[getStopLossOrders] Registry order verification failed on ${network}:`, err)
+          return [] as StopLossOrderInfo[]
+        }),
       ])
 
       return { apiOrders, chainRegistryOrders }
