@@ -1,12 +1,9 @@
-import type { CreateLimitOrderOutput } from '@shapeshiftoss/agentic-server'
 import BigNumber from 'bignumber.js'
 import { Clock, ExternalLink, Timer, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { useMemo } from 'react'
 
 import { stopPropagationHandler } from '@/lib/eventHandlers'
-import { cn, truncateAddress } from '@/lib/utils'
-import type { PersistedToolState } from '@/stores/chatStore'
-import { useChatStore } from '@/stores/chatStore'
+import { cn } from '@/lib/utils'
 
 import { Amount } from '../ui/Amount'
 import { ToolCard } from '../ui/ToolCard'
@@ -49,7 +46,6 @@ interface OrderListItemProps {
   filledPercent: number
   expiresAt: string
   trackingUrl: string
-  walletAddress?: string
 }
 
 function OrderListItem({
@@ -62,7 +58,6 @@ function OrderListItem({
   filledPercent,
   expiresAt,
   trackingUrl,
-  walletAddress,
 }: OrderListItemProps) {
   const isFilled = status === 'fulfilled'
   const isOpen = status === 'open'
@@ -77,8 +72,6 @@ function OrderListItem({
           .replace(/\.?0+$/, '')
       : '0'
   }, [sellAmount, buyAmount])
-
-  const truncatedWallet = walletAddress ? truncateAddress(walletAddress) : undefined
 
   return (
     <div className="flex items-center justify-between py-3 px-1 gap-4">
@@ -98,12 +91,6 @@ function OrderListItem({
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="capitalize">{network}</span>
-          {truncatedWallet && (
-            <>
-              <span>•</span>
-              <span>{truncatedWallet}</span>
-            </>
-          )}
           {isOpen && (
             <>
               <span>•</span>
@@ -134,62 +121,20 @@ function OrderListItem({
   )
 }
 
-interface DisplayOrder {
-  orderId: string
-  status?: OrderStatus
-  network: string
-  sellTokenSymbol: string
-  buyTokenSymbol: string
-  sellAmount: string
-  buyAmount: string
-  filledPercent: number
-  expiresAt: string
-  trackingUrl: string
-  walletAddress?: string
-}
-
-const isLimitOrderTx = (tx: PersistedToolState): boolean => tx.toolType === 'limit_order' && Boolean(tx.meta.orderId)
-
-const toDisplayOrder = (tx: PersistedToolState): DisplayOrder => {
-  const output = tx.toolOutput as CreateLimitOrderOutput | undefined
-  const orderId = tx.meta.orderId as string
-  return {
-    orderId,
-    network: output?.summary?.network ?? 'unknown',
-    sellTokenSymbol: output?.summary?.sellAsset?.symbol ?? 'Unknown',
-    buyTokenSymbol: output?.summary?.buyAsset?.symbol ?? 'Unknown',
-    sellAmount: output?.summary?.sellAsset?.amount ?? '0',
-    buyAmount: output?.summary?.buyAsset?.estimatedAmount ?? '0',
-    filledPercent: 0,
-    expiresAt: output?.summary?.expiresAt ?? new Date().toISOString(),
-    trackingUrl: `https://explorer.cow.fi/orders/${orderId}`,
-    walletAddress: tx.walletAddress,
-  }
-}
-
-const selectHistoricalOrders = (transactions: PersistedToolState[]): DisplayOrder[] =>
-  transactions.filter(isLimitOrderTx).map(toDisplayOrder)
-
 export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps<'getLimitOrdersTool'>) {
   const { state, output } = toolPart
-  const input = toolPart.input as { accountScope?: string } | undefined
-  const isHistoryMode = input?.accountScope === 'history'
-  const persistedTransactions = useChatStore(state => state.persistedTransactions)
-  const historicalOrders = useMemo(() => selectHistoricalOrders(persistedTransactions), [persistedTransactions])
 
   const stateRender = useToolStateRender(state, {
-    loading: isHistoryMode ? 'Loading order history...' : 'Fetching your limit orders...',
+    loading: 'Fetching your limit orders...',
     error: 'Failed to fetch limit orders',
   })
 
   if (stateRender) return stateRender
 
-  const orders: DisplayOrder[] = isHistoryMode
-    ? historicalOrders
-    : (output?.orders ?? []).map(o => ({
-        ...o,
-        status: isValidOrderStatus(o.status) ? o.status : 'open',
-      }))
+  const orders = (output?.orders ?? []).map(o => ({
+    ...o,
+    status: isValidOrderStatus(o.status) ? o.status : ('open' as OrderStatus),
+  }))
 
   if (orders.length === 0) {
     return (
@@ -199,7 +144,6 @@ export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps<'getLimitOrd
             <div className="flex items-center gap-2">
               <Timer className="w-5 h-5 text-primary" />
               <span className="font-medium">Limit Orders</span>
-              {isHistoryMode && <span className="text-xs text-muted-foreground">(History)</span>}
             </div>
           </ToolCard.HeaderRow>
         </ToolCard.Header>
@@ -219,8 +163,7 @@ export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps<'getLimitOrd
           <div className="flex items-center gap-2">
             <Timer className="w-5 h-5 text-primary" />
             <span className="font-medium">Limit Orders</span>
-            {isHistoryMode && <span className="text-xs text-muted-foreground">(History)</span>}
-            {!isHistoryMode && <span className="text-xs text-muted-foreground">({openCount} open)</span>}
+            <span className="text-xs text-muted-foreground">({openCount} open)</span>
           </div>
           <span className="text-sm text-muted-foreground">{orders.length} total</span>
         </ToolCard.HeaderRow>
@@ -240,7 +183,6 @@ export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps<'getLimitOrd
                 filledPercent={order.filledPercent}
                 expiresAt={order.expiresAt}
                 trackingUrl={order.trackingUrl}
-                walletAddress={isHistoryMode ? order.walletAddress : undefined}
               />
             ))}
           </div>

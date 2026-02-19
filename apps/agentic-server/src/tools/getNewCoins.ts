@@ -39,16 +39,7 @@ export async function executeGetNewCoins(input: GetNewCoinsInput): Promise<GetNe
 export const getNewCoinsTool = {
   description: `Get recently listed tokens.
 
-UI CARD DISPLAYS: new token names, symbols, and listing times.
-
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
-
-Default: Respond with one brief, natural sentence like:
-- "Here are the recently listed tokens"
-- "I found the newest listings"
-- "Check out these new tokens"
-
-Only elaborate if the user asks about something not shown in the card.`,
+UI CARD DISPLAYS: new token names, symbols, and listing times.`,
   inputSchema: getNewCoinsSchema,
   execute: executeGetNewCoins,
 }

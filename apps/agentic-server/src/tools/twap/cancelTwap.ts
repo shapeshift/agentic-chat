@@ -42,16 +42,13 @@ export function executeCancelTwap(input: CancelTwapInput, walletContext?: Wallet
 }
 
 export const cancelTwapTool = {
-  description: `Cancel an active TWAP/DCA order by removing it from ComposableCoW on-chain.
+  description: `Cancel an active TWAP/DCA order. Requires an on-chain transaction via the Safe.
 
 UI CARD DISPLAYS: cancellation transaction details with Safe execution steps.
 
-IMPORTANT: Do NOT write any response text alongside this tool call. Wait for the tool result before responding. If the tool succeeds, the UI card will show the result — supplement it with one brief sentence, do not duplicate card data. If the tool fails, tell the user what went wrong and suggest alternatives.
-
 IMPORTANT:
 - Cancellation requires an on-chain transaction via the Safe (gas cost)
-- The order hash is needed to identify which order to remove
-- Once removed, CoW's watchtower will no longer generate sub-orders`,
+- The order hash is needed to identify which order to remove`,
   inputSchema: cancelTwapSchema,
   execute: executeCancelTwap,
 }

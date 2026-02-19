@@ -12,7 +12,7 @@ import {
   COW_VAULT_RELAYER_ADDRESS,
   encodeStopLossStaticData,
   generateOrderSalt,
-  getChainlinkOracleWithRefresh,
+  getChainlinkOracle,
   STOP_LOSS_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
@@ -24,6 +24,8 @@ import { getBalance } from '../../utils/balanceHelpers'
 import { createTransaction } from '../../utils/transactionHelpers'
 import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
+
+const toBigInt = (value: string): bigint => BigInt(new BigNumber(value).toFixed(0))
 
 type TransactionData = {
   chainId: string
@@ -45,7 +47,7 @@ function buildApprovalTransaction(
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: 'approve',
-    args: [getAddress(approvalTarget), BigInt(sellAmountBaseUnit)],
+    args: [getAddress(approvalTarget), toBigInt(sellAmountBaseUnit)],
   })
 
   const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
@@ -65,11 +67,15 @@ export const createStopLossSchema = z.object({
     .string()
     .describe('Token symbol or name to receive (e.g., "USDC", "USDT"). Usually a stablecoin for stop-losses.'),
   network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the stop-loss order'),
-  sellAmount: z.string().describe('Amount to sell in human-readable format (e.g., "1" for 1 WETH)'),
+  sellAmount: z
+    .string()
+    .describe(
+      'Amount to sell as a plain number (e.g., "1" for 1 WETH, "100000" for 100000 PEPE). No commas, dollar signs, or token symbols.'
+    ),
   triggerPrice: z
     .string()
     .describe(
-      'USD price at which to trigger the sell. Must be below current market price. Example: if ETH is $3500 and you want to sell at $3000, triggerPrice is "3000"'
+      'USD price at which to trigger the sell as a plain number. Must be below current market price. Example: if ETH is $3500 and you want to sell at $3000, triggerPrice is "3000"'
     ),
   expirationDays: z
     .number()
@@ -120,6 +126,7 @@ export async function executeCreateStopLoss(
   input: CreateStopLossInput,
   walletContext?: WalletContext
 ): Promise<CreateStopLossOutput> {
+  console.log('[createStopLoss] raw input:', JSON.stringify(input))
   const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
 
   // Validate Safe address is available on the target chain
@@ -148,11 +155,8 @@ export async function executeCreateStopLoss(
     )
   }
 
-  // Look up Chainlink oracles for both tokens (refreshes cache if stale)
-  const [sellOracle, buyOracle] = await Promise.all([
-    getChainlinkOracleWithRefresh(evmChainId, sellAsset.symbol),
-    getChainlinkOracleWithRefresh(evmChainId, buyAsset.symbol),
-  ])
+  const sellOracle = getChainlinkOracle(evmChainId, sellAsset.symbol)
+  const buyOracle = getChainlinkOracle(evmChainId, buyAsset.symbol)
 
   if (!sellOracle) {
     throw new Error(
@@ -183,6 +187,9 @@ export async function executeCreateStopLoss(
   }
 
   const triggerPriceNum = Number(input.triggerPrice)
+  if (Number.isNaN(triggerPriceNum) || triggerPriceNum <= 0) {
+    throw new Error(`Invalid trigger price: "${input.triggerPrice}". Must be a positive number.`)
+  }
   if (triggerPriceNum >= currentSellPrice) {
     throw new Error(
       `Trigger price ($${input.triggerPrice}) must be below current price ($${currentSellPrice.toFixed(2)}). ` +
@@ -207,15 +214,21 @@ export async function executeCreateStopLoss(
     : (fromAssetId(buyAsset.assetId).assetReference as `0x${string}`)
 
   const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
-
-  // Strike = sellTokenPrice / buyTokenPrice at trigger, scaled to sell oracle's decimals
-  // The StopLoss handler normalizes both oracle prices to 18 decimals via scalePrice(),
-  // then checks: sellPrice * 10^18 / buyPrice <= strike
-  // Strike is scaled by 10^sellOracleDecimals to match the contract's precision expectations
-  const strikePrice = new BigNumber(input.triggerPrice)
+  const buyAmountStr = buyAmountBaseUnit
+  const strikePriceStr = new BigNumber(input.triggerPrice)
     .div(currentBuyPrice)
     .times(new BigNumber(10).pow(sellOracle.decimals))
     .integerValue(BigNumber.ROUND_DOWN)
+    .toString()
+
+  console.log('[createStopLoss] BigInt candidates:', {
+    sellAmountBaseUnit,
+    buyAmountBaseUnit: buyAmountStr,
+    strikePrice: strikePriceStr,
+    sellOracleDecimals: sellOracle.decimals,
+  })
+
+  const strikePrice = new BigNumber(strikePriceStr)
 
   // Calculate cumulative committed amount from existing active orders for same sell token
   let committedAmount = 0n
@@ -229,12 +242,16 @@ export async function executeCreateStopLoss(
     const activeResults = await Promise.all(
       existingOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, evmChainId))
     )
+    console.log(
+      '[createStopLoss] existing order amounts:',
+      existingOrders.map(o => o.sellAmountBaseUnit)
+    )
     committedAmount = existingOrders
       .filter((_, i) => activeResults[i])
-      .reduce((sum, o) => sum + BigInt(o.sellAmountBaseUnit), 0n)
+      .reduce((sum, o) => sum + toBigInt(o.sellAmountBaseUnit), 0n)
   }
 
-  const totalNeeded = committedAmount + BigInt(sellAmountBaseUnit)
+  const totalNeeded = committedAmount + toBigInt(sellAmountBaseUnit)
 
   // Check allowance (from Safe → VaultRelayer) against total needed
   const approvalTarget = COW_VAULT_RELAYER_ADDRESS
@@ -261,8 +278,8 @@ export async function executeCreateStopLoss(
   const staticData = encodeStopLossStaticData({
     sellToken: sellTokenAddress,
     buyToken: buyTokenAddress,
-    sellAmount: BigInt(sellAmountBaseUnit),
-    buyAmount: BigInt(buyAmountBaseUnit),
+    sellAmount: toBigInt(sellAmountBaseUnit),
+    buyAmount: toBigInt(buyAmountBaseUnit),
     appData: DEFAULT_APP_DATA,
     receiver: safeAddress as `0x${string}`,
     isSellOrder: true,
@@ -270,7 +287,7 @@ export async function executeCreateStopLoss(
     validTo,
     sellTokenPriceOracle: sellOracle.address as `0x${string}`,
     buyTokenPriceOracle: buyOracle.address as `0x${string}`,
-    strike: BigInt(strikePrice.toString()),
+    strike: toBigInt(strikePrice.toString()),
     maxTimeSinceLastOracleUpdate: MAX_ORACLE_STALENESS,
   })
 
@@ -286,8 +303,9 @@ export async function executeCreateStopLoss(
   // Check if Safe has sufficient balance for this order plus existing commitments
   const eoaAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const safeBalance = await getBalance(safeAddress, sellAsset)
-  const needsDeposit = BigInt(safeBalance) < totalNeeded
-  const depositAmount = needsDeposit ? totalNeeded - BigInt(safeBalance) : 0n
+  console.log('[createStopLoss] safeBalance:', JSON.stringify(safeBalance))
+  const needsDeposit = toBigInt(safeBalance) < totalNeeded
+  const depositAmount = needsDeposit ? totalNeeded - toBigInt(safeBalance) : 0n
 
   let depositTx: TransactionData | undefined
   if (needsDeposit) {
@@ -357,6 +375,7 @@ UI CARD DISPLAYS: order details (sell/buy assets, amounts), trigger price vs cur
 IMPORTANT: Do NOT write any response text alongside this tool call. Wait for the tool result before responding. If the tool succeeds, the UI card will show the result — supplement it with one brief sentence, do not duplicate card data. If the tool fails, tell the user what went wrong and suggest alternatives.
 
 IMPORTANT:
+- The user does NOT need tokens in their Safe wallet beforehand — this tool automatically handles depositing tokens from the user's connected wallet into the Safe as part of the multi-step execution flow
 - Requires a Safe smart account (deployed automatically on first use, works with any connected wallet)
 - Stop-loss is submitted as an on-chain transaction via Safe → ComposableCoW
 - Trigger price must be BELOW current market price

@@ -226,15 +226,6 @@ export const createLimitOrderTool = {
 
 UI CARD DISPLAYS: order details (sell/buy assets, amounts), limit price, expiration time, and signing button.
 
-Your role is to supplement the card, not duplicate it.
-
-Default: Respond with one brief sentence like:
-- "I've prepared your limit order"
-- "Your limit order is ready to sign"
-- "Here's the limit order for your approval"
-
-Only elaborate if the user asks about something not shown in the card.
-
 IMPORTANT:
 - Limit orders require EIP-712 signature (gasless, off-chain)
 - Both assets must be on the same EVM network

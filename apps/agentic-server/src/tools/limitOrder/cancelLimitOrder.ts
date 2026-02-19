@@ -111,14 +111,6 @@ export const cancelLimitOrderTool = {
 
 UI CARD DISPLAYS: order details being cancelled and signing button.
 
-Your role is to supplement the card, not duplicate it.
-
-Default: Respond with one brief sentence like:
-- "I've prepared the cancellation"
-- "Ready to cancel your limit order"
-
-Only elaborate if the user asks about the cancellation process.
-
 IMPORTANT:
 - Can only cancel orders you own
 - Cannot cancel already filled or expired orders

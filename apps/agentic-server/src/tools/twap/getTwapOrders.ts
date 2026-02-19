@@ -105,15 +105,6 @@ export const getTwapOrdersTool = {
 
 UI CARD DISPLAYS: list of TWAP/DCA orders with status badges (Active/Fulfilled/Cancelled/Expired), amounts, and CoW tracking links.
 
-Your role is to supplement the card, not duplicate it.
-
-Default: Respond with one brief sentence like:
-- "Here are your TWAP orders"
-- "I found your DCA orders"
-- "These are your active split orders"
-
-Only elaborate if the user asks about specific order details.
-
 Use this tool when:
 - User asks about their TWAP or DCA orders
 - User wants to check split order status

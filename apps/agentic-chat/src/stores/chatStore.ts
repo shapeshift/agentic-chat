@@ -201,8 +201,8 @@ export const useChatStore = create<ChatState>()(
             const existing = storeState.persistedTransactions[existingIndex]
             if (existing) {
               // Don't overwrite terminal states - they're immutable
-              // A state is terminal if it has a tx hash (swap) or order ID (limit order) - the critical operation completed
-              const hasTxHash = existing.meta.swapTxHash || existing.meta.approvalTxHash
+              // A state is terminal if it has a tx hash (swap/stop-loss/twap) or order ID (limit order) - the critical operation completed
+              const hasTxHash = existing.meta.swapTxHash || existing.meta.approvalTxHash || existing.meta.submitTxHash
               const hasOrderId = existing.meta.orderId
 
               if (hasTxHash || hasOrderId) {

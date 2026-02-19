@@ -23,6 +23,7 @@ import { getAssetPricesTool } from '../tools/getAssetPrices'
 import { getAssetsTool } from '../tools/getAssets'
 import { getCategoriesTool } from '../tools/getCategories'
 import { getNewCoinsTool } from '../tools/getNewCoins'
+import { getPriceFeedTokensTool } from '../tools/getPriceFeedTokens'
 import { getShapeShiftKnowledgeTool } from '../tools/getShapeShiftKnowledge'
 import { getTopGainersLosersTool } from '../tools/getTopGainersLosers'
 import { getTrendingPoolsTool } from '../tools/getTrendingPools'
@@ -123,6 +124,7 @@ function buildTools(walletContext: WalletContext) {
     switchNetworkTool: wrapTool('switchNetworkTool', switchNetworkTool),
     checkWalletCapabilitiesTool: wrapTool('checkWalletCapabilitiesTool', checkWalletCapabilitiesTool, walletContext),
     getShapeShiftKnowledgeTool: wrapTool('getShapeShiftKnowledgeTool', getShapeShiftKnowledgeTool),
+    getPriceFeedTokensTool: wrapTool('getPriceFeedTokensTool', getPriceFeedTokensTool),
     getTrendingTokensTool: wrapTool('getTrendingTokensTool', getTrendingTokensTool),
     getTopGainersLosersTool: wrapTool('getTopGainersLosersTool', getTopGainersLosersTool),
     getTrendingPoolsTool: wrapTool('getTrendingPoolsTool', getTrendingPoolsTool),
@@ -278,6 +280,8 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
 - Preserve exact decimal precision from tool outputs (never round/truncate)
 - Use markdown formatting for all responses - never use HTML tags like <br> (they render as literal text)
 - For mathematical formulas, use LaTeX: wrap block equations with $$...$$
+- NEVER generate, construct, or guess URLs. Only share URLs that are explicitly returned in tool results (e.g., cowTrackingUrl). If no URL was returned by a tool, do not provide one.
+- Never mention internal tool names in responses (e.g., "vaultBalanceTool", "getAssetsTool") - describe capabilities in natural language instead (e.g., "check your vault balance", "look up market data")
 
 **CRITICAL - Math & Calculations:**
 - NEVER attempt mental arithmetic - you WILL make mistakes
@@ -296,10 +300,12 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
   - getTrendingTokens, getTopGainersLosers, getNewCoins, getCategories, getTrendingPools
 - **Portfolio**: portfolio (balances), transactionHistoryTool (history/analytics)
 - **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders), createStopLoss/getStopLossOrders/cancelStopLoss (stop-loss orders), createTwap/getTwapOrders/cancelTwap (TWAP/DCA orders), vaultDeposit/vaultWithdraw/vaultBalance (Safe vault management)
-- **Utilities**: switchNetwork (change chains), mathCalculator (arithmetic), getShapeShiftKnowledge (platform info)
+- **Utilities**: switchNetwork (change chains), mathCalculator (arithmetic), getShapeShiftKnowledge (platform info), getPriceFeedTokens (check which tokens support stop-loss price feeds)
 
 **Tool UI Behavior:**
-Many tools render UI cards. Each tool's description specifies what the card displays. Your role is to supplement cards with brief, natural responses - never repeat or list data already shown in the card.
+Many tools render UI cards. Each tool's description specifies what the card displays.
+AFTER a tool with a UI card executes successfully, respond with one brief, natural sentence (e.g., "Here's what I found" or "Check out the details above"). Never list or repeat data already shown in the card. Only elaborate if the user asks about something not shown in the card.
+For tools marked "No UI card", format and present the data directly in your response.
 
 **Transaction History Tool Optimization:**
 When using transactionHistoryTool, always set the renderTransactions parameter based on user intent:
@@ -346,6 +352,7 @@ Examples:
 - Orders are registered on-chain via ComposableCoW — CoW's watchtower network monitors and executes them
 - Trigger price must be BELOW current market price
 - Only tokens with Chainlink price feed oracles are supported
+- Before creating a stop-loss, if unsure whether a token has oracle support, call getPriceFeedTokens first
 - 2% slippage buffer is applied automatically
 - Supports: Ethereum, Gnosis, Arbitrum (same-chain only)
 - Native tokens (ETH) must be wrapped (WETH) to use as sell asset
@@ -444,7 +451,7 @@ export async function handleChatRequest(c: Context) {
       model: getModel(),
       messages: modelMessages,
       system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeDeploymentState),
-      temperature: 1.0,
+      temperature: 0.6,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),
       // Venice-specific parameters to disable reasoning for faster responses

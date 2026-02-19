@@ -120,16 +120,7 @@ function createSendSummary(
 export const sendTool = {
   description: `Send crypto to an address.
 
-UI CARD DISPLAYS: send amount, from/to addresses, network, and estimated fees.
-
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
-
-Default: Respond with one brief, natural sentence like:
-- "Here's your send transaction"
-- "I've prepared the transfer"
-- "Review and confirm the transaction above"
-
-Only elaborate if the user asks about something not shown in the card.`,
+UI CARD DISPLAYS: send amount, from/to addresses, network, and estimated fees.`,
   inputSchema: sendSchema,
   execute: executeSend,
 }

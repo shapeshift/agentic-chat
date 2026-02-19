@@ -39,16 +39,7 @@ export async function executeGetTrendingTokens(input: GetTrendingTokensInput): P
 export const getTrendingTokensTool = {
   description: `Get trending tokens.
 
-UI CARD DISPLAYS: token rankings, names, symbols, prices, and 24h changes.
-
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
-
-Default: Respond with one brief, natural sentence like:
-- "Here's what's trending right now"
-- "I found the current trending tokens for you"
-- "Check out what's hot in crypto today"
-
-Only elaborate if the user asks about something not shown in the card.`,
+UI CARD DISPLAYS: token rankings, names, symbols, prices, and 24h changes.`,
   inputSchema: getTrendingTokensSchema,
   execute: executeGetTrendingTokens,
 }

@@ -264,21 +264,16 @@ export async function executeCreateTwap(
 }
 
 export const createTwapTool = {
-  description: `Create a TWAP (Time-Weighted Average Price) or DCA (Dollar Cost Averaging) order to split a large trade into smaller parts executed over time. The order is registered on-chain via ComposableCoW through a Safe smart account. CoW's watchtower network creates and executes sub-orders at each interval.
+  description: `Create a TWAP (Time-Weighted Average Price) or DCA (Dollar Cost Averaging) order to split a large trade into smaller parts executed over time.
 
 UI CARD DISPLAYS: order details (sell/buy assets, total and per-trade amounts), duration, intervals, frequency, Safe address, and multi-step transaction flow.
-
-IMPORTANT: Do NOT write any response text alongside this tool call. Wait for the tool result before responding. If the tool succeeds, the UI card will show the result — supplement it with one brief sentence, do not duplicate card data. If the tool fails, tell the user what went wrong and suggest alternatives.
 
 IMPORTANT:
 - TWAP = short duration (hours), DCA = long duration (days/weeks) — same mechanism
 - Requires a Safe smart account (deployed automatically on first use)
-- Orders are submitted on-chain via Safe → ComposableCoW
-- CoW's watchtower generates sub-orders at each interval
-- No price oracle needed — purely time-based execution
+- No price oracle needed — purely time-based execution at market price
 - Supports: Ethereum, Gnosis, Arbitrum (same-chain only)
-- Native tokens (ETH) must be wrapped (WETH) to sell
-- Each sub-order executes at market price with MEV protection via CoW solvers`,
+- Native tokens (ETH) must be wrapped (WETH) to sell`,
   inputSchema: createTwapSchema,
   execute: executeCreateTwap,
 }

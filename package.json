@@ -19,7 +19,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --build",
-    "update-assets": "bun scripts/updateAssetData.ts"
+    "update-assets": "bun scripts/updateAssetData.ts",
+    "update-oracles": "bun scripts/updateChainlinkFeeds.ts"
   },
   "dependencies": {
     "@shapeshiftoss/agentic-server": "workspace:^",

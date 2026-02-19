@@ -62,12 +62,6 @@ Call this tool when the user asks about automated trading features (TWAP, DCA, s
 
 UI CARD DISPLAYS: wallet type, Safe smart account status, capability checklist, and setup prompts if automation features require a Safe smart account.
 
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
-
-Default: Respond with one brief, natural sentence like:
-- "Here's what your wallet supports"
-- "Let me check your wallet's capabilities"
-
 If the user wants automation and doesn't have a Safe yet, explain that a Safe smart account needs to be deployed first (happens automatically on first stop-loss order). Any connected wallet (MetaMask, Rabby, embedded, etc.) can own a Safe.`,
   inputSchema: checkWalletCapabilitiesSchema,
   execute: executeCheckWalletCapabilities,

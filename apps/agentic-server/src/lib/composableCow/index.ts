@@ -236,10 +236,5 @@ export function computeConditionalOrderHash(params: ConditionalOrderParams): `0x
   return keccak256(encodeAbiParameters(CONDITIONAL_ORDER_PARAMS_ABI, [params]))
 }
 
-export {
-  getChainlinkOracle,
-  getChainlinkOracleWithRefresh,
-  getSupportedOracleTokens,
-  refreshOracleCache,
-} from './oracles'
+export { getChainlinkOracle, getSupportedOracleTokens } from './oracles'
 export type { ChainlinkFeed } from './oracles'
