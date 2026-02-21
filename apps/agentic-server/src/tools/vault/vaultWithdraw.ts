@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { validateSufficientBalance } from '../../utils/balanceHelpers'
-import { getAddressForChain, getSafeAddressForChain, isSafeReadyOnChain } from '../../utils/walletContextSimple'
+import { getAddressForChain, getVerifiedSafeAddressForChain, isSafeReadyOnChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 export const vaultWithdrawSchema = z.object({
@@ -32,7 +32,7 @@ export async function executeVaultWithdraw(
   walletContext?: WalletContext
 ): Promise<VaultWithdrawOutput> {
   const chainId = NETWORK_TO_CHAIN_ID[input.network]!
-  const safeAddress = getSafeAddressForChain(walletContext, chainId)
+  const safeAddress = await getVerifiedSafeAddressForChain(walletContext, chainId)
   if (!safeAddress) {
     throw new Error(
       'No Safe vault found. A Safe smart account is deployed automatically when you create your first automated order.'

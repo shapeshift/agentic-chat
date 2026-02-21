@@ -22,7 +22,7 @@ import { getAllowance } from '../../utils'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { getBalance } from '../../utils/balanceHelpers'
 import { createTransaction } from '../../utils/transactionHelpers'
-import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
+import { getAddressForChain, getVerifiedSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 const toBigInt = (value: string): bigint => BigInt(new BigNumber(value).toFixed(0))
@@ -130,7 +130,7 @@ export async function executeCreateStopLoss(
   const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
 
   // Validate Safe address is available on the target chain
-  const safeAddress = getSafeAddressForChain(walletContext, evmChainId)
+  const safeAddress = await getVerifiedSafeAddressForChain(walletContext, evmChainId)
   if (!safeAddress) {
     throw new Error(
       'Stop-loss orders require a Safe smart account. A Safe will be deployed automatically when you submit this order.'

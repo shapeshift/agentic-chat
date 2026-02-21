@@ -12,7 +12,6 @@ import { Amount } from '@/components/ui/Amount'
 import { executeSafeTransaction } from '@/lib/safe'
 import { deploySafe } from '@/lib/safe/safeFactory'
 import { enableComposableCowModules } from '@/lib/safe/safeModules'
-import { getSafeState } from '@/lib/safe/safeStorage'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
@@ -201,11 +200,11 @@ export const useTwapExecution = (
 
       const deployedSafeAddress = deployResult.safeAddress
 
-      const currentSafeState = getSafeState(evmAddress)
-      const chainSafeState = currentSafeState[targetChainId]
-
-      if (!chainSafeState?.modulesEnabled || !chainSafeState?.domainVerifierSet) {
+      try {
         await enableComposableCowModules(deployedSafeAddress, targetChainId, evmAddress)
+      } catch (moduleError) {
+        const isAlreadyEnabled = moduleError instanceof Error && moduleError.message.includes('already fully enabled')
+        if (!isAlreadyEnabled) throw moduleError
       }
 
       setState(draft => {

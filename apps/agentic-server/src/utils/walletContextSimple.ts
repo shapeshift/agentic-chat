@@ -1,6 +1,8 @@
 import type { Network } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
 
+import { verifySafeOwnership } from './safeAddressVerification'
+
 export interface SafeChainDeployment {
   isDeployed: boolean
   modulesEnabled: boolean
@@ -64,4 +66,19 @@ export function isSafeReadyOnChain(walletContext: WalletContext | undefined, cha
 
 export function getSafeAddressForChain(walletContext: WalletContext | undefined, chainId: number): string | undefined {
   return walletContext?.safeDeploymentState?.[chainId]?.safeAddress
+}
+
+export async function getVerifiedSafeAddressForChain(
+  walletContext: WalletContext | undefined,
+  chainId: number
+): Promise<string | undefined> {
+  const safeAddress = getSafeAddressForChain(walletContext, chainId)
+  if (!safeAddress) return undefined
+
+  const caipChainId = `eip155:${chainId}`
+  const ownerAddress = walletContext?.connectedWallets?.[caipChainId]?.address
+  if (!ownerAddress) return safeAddress
+
+  await verifySafeOwnership(safeAddress, ownerAddress, chainId)
+  return safeAddress
 }

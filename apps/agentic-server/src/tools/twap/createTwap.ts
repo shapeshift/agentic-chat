@@ -5,6 +5,7 @@ import BigNumber from 'bignumber.js'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
+import { getSimplePrices } from '../../lib/asset/coingecko'
 import {
   buildCreateConditionalOrderTx,
   computeConditionalOrderHash,
@@ -19,7 +20,7 @@ import { getAllowance } from '../../utils'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { getBalance } from '../../utils/balanceHelpers'
 import { createTransaction } from '../../utils/transactionHelpers'
-import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
+import { getAddressForChain, getVerifiedSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 type TransactionData = {
@@ -121,6 +122,7 @@ export interface CreateTwapOutput {
   depositTx?: TransactionData
 }
 
+const TWAP_SLIPPAGE_BUFFER = 0.95 // 5% buffer (wider than stop-loss 2% since TWAP executes over time)
 const DEFAULT_APP_DATA = '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`
 
 function formatFrequency(intervalSeconds: number): string {
@@ -136,7 +138,7 @@ export async function executeCreateTwap(
 ): Promise<CreateTwapOutput> {
   const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
 
-  const safeAddress = getSafeAddressForChain(walletContext, evmChainId)
+  const safeAddress = await getVerifiedSafeAddressForChain(walletContext, evmChainId)
   if (!safeAddress) {
     throw new Error(
       'TWAP/DCA orders require a Safe smart account. A Safe will be deployed automatically when you submit this order.'
@@ -191,12 +193,26 @@ export async function executeCreateTwap(
 
   const salt = generateOrderSalt(safeAddress, sellTokenAddress, buyTokenAddress)
 
+  const priceResults = await getSimplePrices([sellAsset.assetId, buyAsset.assetId])
+  const sellAssetPrice = Number(priceResults.find(p => p.assetId === sellAsset.assetId)?.price ?? '0')
+  const buyAssetPrice = Number(priceResults.find(p => p.assetId === buyAsset.assetId)?.price ?? '0')
+
+  let minPartLimit = 0n
+  if (sellAssetPrice > 0 && buyAssetPrice > 0) {
+    const partSellHuman = new BigNumber(partSellAmount.toString()).div(new BigNumber(10).pow(sellAsset.precision))
+    const priceRatio = new BigNumber(sellAssetPrice).div(buyAssetPrice)
+    const minPartLimitHuman = partSellHuman.times(priceRatio).times(TWAP_SLIPPAGE_BUFFER)
+    minPartLimit = BigInt(
+      toBaseUnit(minPartLimitHuman.toFixed(buyAsset.precision, BigNumber.ROUND_DOWN), buyAsset.precision)
+    )
+  }
+
   const staticData = encodeTwapStaticData({
     sellToken: sellTokenAddress,
     buyToken: buyTokenAddress,
     receiver: safeAddress as `0x${string}`,
     partSellAmount,
-    minPartLimit: 0n,
+    minPartLimit,
     t0: 0n,
     n: BigInt(numParts),
     t: BigInt(intervalSeconds),
@@ -216,6 +232,7 @@ export async function executeCreateTwap(
   const eoaAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const safeBalance = await getBalance(safeAddress, sellAsset)
   const needsDeposit = BigInt(safeBalance) < BigInt(sellAmountBaseUnit)
+  const depositAmount = needsDeposit ? BigInt(sellAmountBaseUnit) - BigInt(safeBalance) : 0n
 
   let depositTx: TransactionData | undefined
   if (needsDeposit) {
@@ -223,7 +240,7 @@ export async function executeCreateTwap(
     const transferData = encodeFunctionData({
       abi: erc20Abi,
       functionName: 'transfer',
-      args: [getAddress(safeAddress), BigInt(sellAmountBaseUnit)],
+      args: [getAddress(safeAddress), depositAmount],
     })
 
     depositTx = createTransaction({
