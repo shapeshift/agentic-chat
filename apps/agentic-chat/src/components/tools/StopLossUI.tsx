@@ -1,4 +1,6 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Wallet } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { useMemo } from 'react'
 
 import { useStopLossExecution } from '@/hooks/useStopLossExecution'
 import { getExplorerUrl, getSafeAppUrl } from '@/lib/explorers'
@@ -12,6 +14,50 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
+interface PresentationStep {
+  label: string
+  status: StepStatus
+  subtitle?: ReactNode
+}
+
+const walletSigningSubtitle = (
+  <span className="flex items-center gap-1">
+    <Wallet className="h-3 w-3" />
+    Sign in your wallet...
+  </span>
+)
+
+const walletConfirmingSubtitle = (
+  <span className="flex items-center gap-1">
+    <Wallet className="h-3 w-3" />
+    Waiting for confirmation...
+  </span>
+)
+
+function mergeStepStatuses(actionStatus: StepStatus, confirmStatus: StepStatus): StepStatus {
+  if (actionStatus === StepStatus.FAILED) return StepStatus.FAILED
+  if (confirmStatus === StepStatus.FAILED) return StepStatus.FAILED
+  if (actionStatus === StepStatus.IN_PROGRESS) return StepStatus.IN_PROGRESS
+  if (actionStatus === StepStatus.COMPLETE && confirmStatus !== StepStatus.COMPLETE) return StepStatus.IN_PROGRESS
+  if (actionStatus === StepStatus.COMPLETE && confirmStatus === StepStatus.COMPLETE) return StepStatus.COMPLETE
+  if (actionStatus === StepStatus.NOT_STARTED && confirmStatus === StepStatus.NOT_STARTED) return StepStatus.NOT_STARTED
+  return StepStatus.NOT_STARTED
+}
+
+function getMergedSubtitle(actionStatus: StepStatus, confirmStatus: StepStatus): ReactNode | undefined {
+  if (actionStatus === StepStatus.IN_PROGRESS) return walletSigningSubtitle
+  if (actionStatus === StepStatus.COMPLETE && confirmStatus !== StepStatus.COMPLETE) return walletConfirmingSubtitle
+  return undefined
+}
+
+function getUserFriendlyError(rawError: string): string {
+  const lower = rawError.toLowerCase()
+  if (lower.includes('user rejected') || lower.includes('user denied')) return 'Transaction was rejected in your wallet'
+  if (lower.includes('insufficient funds')) return 'Insufficient funds to complete this transaction'
+  if (lower.includes('failed to deploy safe')) return 'Failed to set up your vault. Please try again.'
+  return rawError.length > 120 ? `${rawError.slice(0, 120)}...` : rawError
+}
+
 export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossTool'>) {
   const { state, output, toolCallId } = toolPart
   const orderOutput = output
@@ -19,19 +65,13 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
 
   const orderData = state === 'output-available' && orderOutput ? orderOutput : null
   const { error, steps, networkName, submitTxHash } = useStopLossExecution(toolCallId, state, orderData)
-  const needsApproval = orderOutput?.needsApproval ?? false
-
-  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedTransaction(toolCallId)
-
-  if (isHistoricalSkipped) {
-    return (
-      <TxStepCard.Root>
-        <div className="text-sm text-muted-foreground font-medium p-4">Stop-loss execution skipped (no saved data)</div>
-      </TxStepCard.Root>
-    )
-  }
 
   const needsDeposit = orderOutput?.needsDeposit ?? false
+  const needsApproval = orderOutput?.needsApproval ?? false
+  const summary = orderOutput?.summary
+  const sellSymbol = summary?.sellAsset.symbol.toUpperCase()
+  const sellAmount = summary?.sellAsset.amount
+
   const [
     prepareStep,
     networkStep,
@@ -43,17 +83,99 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
     submitStep,
     confirmStep,
   ] = steps
-  if (
-    !prepareStep ||
-    !safeCheckStep ||
-    !networkStep ||
-    !depositStep ||
-    !depositConfirmStep ||
-    !approvalStep ||
-    !approvalConfirmStep ||
-    !submitStep ||
-    !confirmStep
-  ) {
+
+  const presentationSteps: PresentationStep[] = useMemo(() => {
+    if (
+      !prepareStep ||
+      !safeCheckStep ||
+      !networkStep ||
+      !depositStep ||
+      !depositConfirmStep ||
+      !approvalStep ||
+      !approvalConfirmStep ||
+      !submitStep ||
+      !confirmStep
+    ) {
+      return []
+    }
+
+    const result: PresentationStep[] = [
+      {
+        label: 'Preparing stop-loss order',
+        status: prepareStep.status,
+      },
+      {
+        label: 'Setting up vault',
+        status: safeCheckStep.status,
+        subtitle: safeCheckStep.status === StepStatus.IN_PROGRESS ? walletSigningSubtitle : undefined,
+      },
+      {
+        label: networkName ? `Switching to ${networkName}` : 'Switching network',
+        status: networkStep.status,
+        subtitle: networkStep.status === StepStatus.IN_PROGRESS ? walletSigningSubtitle : undefined,
+      },
+    ]
+
+    if (needsDeposit) {
+      const depositLabel =
+        sellAmount && sellSymbol ? `Depositing ${sellAmount} ${sellSymbol} to vault` : 'Depositing tokens to vault'
+      result.push({
+        label: depositLabel,
+        status: mergeStepStatuses(depositStep.status, depositConfirmStep.status),
+        subtitle: getMergedSubtitle(depositStep.status, depositConfirmStep.status),
+      })
+    }
+
+    if (needsApproval) {
+      const approvalLabel = sellSymbol ? `Approving ${sellSymbol} for trading` : 'Approving token for trading'
+      result.push({
+        label: approvalLabel,
+        status: mergeStepStatuses(approvalStep.status, approvalConfirmStep.status),
+        subtitle: getMergedSubtitle(approvalStep.status, approvalConfirmStep.status),
+      })
+    }
+
+    result.push(
+      {
+        label: 'Submitting stop-loss order',
+        status: submitStep.status,
+        subtitle: submitStep.status === StepStatus.IN_PROGRESS ? walletSigningSubtitle : undefined,
+      },
+      {
+        label: 'Confirming on-chain',
+        status: confirmStep.status,
+      }
+    )
+
+    return result
+  }, [
+    prepareStep,
+    safeCheckStep,
+    networkStep,
+    networkName,
+    needsDeposit,
+    sellAmount,
+    sellSymbol,
+    depositStep,
+    depositConfirmStep,
+    needsApproval,
+    approvalStep,
+    approvalConfirmStep,
+    submitStep,
+    confirmStep,
+  ])
+
+  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedTransaction(toolCallId)
+
+  if (isHistoricalSkipped) {
+    return (
+      <TxStepCard.Root>
+        <div className="text-sm text-muted-foreground font-medium p-4">Stop-loss execution skipped (no saved data)</div>
+      </TxStepCard.Root>
+    )
+  }
+
+  if (presentationSteps.length === 0) {
     return (
       <TxStepCard.Root>
         <div className="text-sm text-muted-foreground font-medium p-4">
@@ -63,25 +185,15 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
     )
   }
 
-  const completedCount = [
-    prepareStep.status,
-    safeCheckStep.status,
-    networkStep.status,
-    depositStep.status,
-    depositConfirmStep.status,
-    approvalStep.status,
-    approvalConfirmStep.status,
-    submitStep.status,
-    confirmStep.status,
-  ].filter(s => s === StepStatus.COMPLETE || s === StepStatus.SKIPPED).length
+  const completedCount = presentationSteps.filter(s => s.status === StepStatus.COMPLETE).length
+  const totalCount = presentationSteps.length
 
   const footerMessage = (() => {
     if (state === 'output-error') return { type: 'error' as const, text: 'Failed to prepare stop-loss order' }
-    if (error) return { type: 'error' as const, text: `Stop-loss failed: ${error}` }
+    if (error) return { type: 'error' as const, text: `Stop-loss failed: ${getUserFriendlyError(error)}` }
     return null
   })()
 
-  const summary = orderOutput?.summary
   const hasError = state === 'output-error'
   const isLoading = !summary && !hasError
 
@@ -155,42 +267,18 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
         </TxStepCard.Content>
       )}
 
-      <TxStepCard.Stepper completedCount={completedCount} totalCount={9}>
-        <TxStepCard.Step status={prepareStep.status} connectorBottom>
-          Preparing stop-loss order
-        </TxStepCard.Step>
-        <TxStepCard.Step status={networkStep.status} connectorTop connectorBottom>
-          {networkName ? `Switch to ${networkName}` : 'Switch network'}
-        </TxStepCard.Step>
-        <TxStepCard.Step status={safeCheckStep.status} connectorTop connectorBottom>
-          Check Safe wallet
-        </TxStepCard.Step>
-        <TxStepCard.Step status={needsDeposit ? depositStep.status : StepStatus.SKIPPED} connectorTop connectorBottom>
-          Deposit tokens to vault
-        </TxStepCard.Step>
-        <TxStepCard.Step
-          status={needsDeposit ? depositConfirmStep.status : StepStatus.SKIPPED}
-          connectorTop
-          connectorBottom
-        >
-          Confirming deposit
-        </TxStepCard.Step>
-        <TxStepCard.Step status={needsApproval ? approvalStep.status : StepStatus.SKIPPED} connectorTop connectorBottom>
-          Approve token via Safe
-        </TxStepCard.Step>
-        <TxStepCard.Step
-          status={needsApproval ? approvalConfirmStep.status : StepStatus.SKIPPED}
-          connectorTop
-          connectorBottom
-        >
-          Confirming approval
-        </TxStepCard.Step>
-        <TxStepCard.Step status={submitStep.status} connectorTop connectorBottom>
-          Submit to ComposableCoW
-        </TxStepCard.Step>
-        <TxStepCard.Step status={confirmStep.status} connectorTop>
-          Confirming on-chain
-        </TxStepCard.Step>
+      <TxStepCard.Stepper completedCount={completedCount} totalCount={totalCount}>
+        {presentationSteps.map((step, index) => (
+          <TxStepCard.Step
+            key={step.label}
+            status={step.status}
+            subtitle={step.subtitle}
+            connectorTop={index > 0}
+            connectorBottom={index < presentationSteps.length - 1}
+          >
+            {step.label}
+          </TxStepCard.Step>
+        ))}
 
         {submitTxHash && networkName && (
           <a
