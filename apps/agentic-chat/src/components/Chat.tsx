@@ -62,12 +62,12 @@ export function Chat() {
     })
   }, [hasMessages])
 
-  // Auto-scroll during streaming and new messages
+  // Auto-scroll during streaming, new messages, and loading indicator appearance
   useEffect(() => {
     if (!shouldAutoScrollRef.current) return
 
     messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' })
-  }, [lastMessage])
+  }, [lastMessage, isPaused])
 
   const handleSuggestionClick = (suggestion: string) => {
     void sendMessage({

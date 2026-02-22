@@ -69,6 +69,10 @@ export async function executeGetLimitOrders(
   input: GetLimitOrdersInput,
   walletContext?: WalletContext
 ): Promise<GetLimitOrdersOutput> {
+  if (!walletContext?.connectedWallets || Object.keys(walletContext.connectedWallets).length === 0) {
+    throw new Error('No wallet connected. Please connect your wallet to view limit orders.')
+  }
+
   const statusFilter = input.status === 'all' ? null : input.status
   let chainsToQuery: number[]
   if (input.network) {

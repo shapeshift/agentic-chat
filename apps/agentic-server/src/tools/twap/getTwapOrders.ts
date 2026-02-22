@@ -70,6 +70,10 @@ export async function executeGetTwapOrders(
   input: GetTwapOrdersInput,
   walletContext?: WalletContext
 ): Promise<GetTwapOrdersOutput> {
+  if (!walletContext?.connectedWallets || Object.keys(walletContext.connectedWallets).length === 0) {
+    throw new Error('No wallet connected. Please connect your wallet to view TWAP orders.')
+  }
+
   const networksToQuery = input.network
     ? [{ network: input.network, chainId: NETWORK_TO_CHAIN_ID[input.network]! }]
     : [

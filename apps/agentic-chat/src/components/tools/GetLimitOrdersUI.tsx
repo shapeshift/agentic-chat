@@ -170,8 +170,9 @@ export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps<'getLimitOrd
       </ToolCard.Header>
       <ToolCard.Content>
         <ToolCard.Details>
-          <div className="divide-y divide-border">
-            {orders.map(order => (
+          <ToolCard.ItemList
+            items={orders}
+            renderItem={order => (
               <OrderListItem
                 key={order.orderId}
                 status={order.status}
@@ -184,8 +185,8 @@ export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps<'getLimitOrd
                 expiresAt={order.expiresAt}
                 trackingUrl={order.trackingUrl}
               />
-            ))}
-          </div>
+            )}
+          />
         </ToolCard.Details>
       </ToolCard.Content>
     </ToolCard.Root>

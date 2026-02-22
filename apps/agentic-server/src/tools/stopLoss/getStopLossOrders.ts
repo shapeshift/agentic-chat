@@ -140,6 +140,10 @@ export async function executeGetStopLossOrders(
   input: GetStopLossOrdersInput,
   walletContext?: WalletContext
 ): Promise<GetStopLossOrdersOutput> {
+  if (!walletContext?.connectedWallets || Object.keys(walletContext.connectedWallets).length === 0) {
+    throw new Error('No wallet connected. Please connect your wallet to view stop-loss orders.')
+  }
+
   const networksToQuery = input.network
     ? [{ network: input.network, chainId: NETWORK_TO_CHAIN_ID[input.network]! }]
     : [

@@ -129,8 +129,9 @@ export function GetTwapOrdersUI({ toolPart }: ToolUIComponentProps<'getTwapOrder
       </ToolCard.Header>
       <ToolCard.Content>
         <ToolCard.Details>
-          <div className="divide-y divide-border">
-            {orders.map(order => (
+          <ToolCard.ItemList
+            items={orders}
+            renderItem={order => (
               <TwapOrderItem
                 key={order.id}
                 id={order.id}
@@ -142,8 +143,8 @@ export function GetTwapOrdersUI({ toolPart }: ToolUIComponentProps<'getTwapOrder
                 validTo={order.validTo}
                 cowTrackingUrl={order.cowTrackingUrl}
               />
-            ))}
-          </div>
+            )}
+          />
         </ToolCard.Details>
       </ToolCard.Content>
     </ToolCard.Root>

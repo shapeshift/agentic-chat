@@ -215,9 +215,13 @@ export async function executeCreateStopLoss(
 
   const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
   const buyAmountStr = buyAmountBaseUnit
+  // CoW StopLoss contract normalizes both oracle prices to 18 decimals before comparing:
+  // basePrice * 1e18 / quotePrice <= strike
+  // so the strike must be scaled to 1e18 regardless of oracle decimals
+  const COW_STOP_LOSS_SCALING_FACTOR = 18
   const strikePriceStr = new BigNumber(input.triggerPrice)
     .div(currentBuyPrice)
-    .times(new BigNumber(10).pow(sellOracle.decimals))
+    .times(new BigNumber(10).pow(COW_STOP_LOSS_SCALING_FACTOR))
     .integerValue(BigNumber.ROUND_DOWN)
     .toString()
 

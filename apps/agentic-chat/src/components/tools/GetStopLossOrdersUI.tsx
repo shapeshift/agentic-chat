@@ -166,8 +166,9 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopL
       </ToolCard.Header>
       <ToolCard.Content>
         <ToolCard.Details>
-          <div className="divide-y divide-border">
-            {orders.map(order => (
+          <ToolCard.ItemList
+            items={orders}
+            renderItem={order => (
               <StopLossOrderItem
                 key={order.id}
                 id={order.id}
@@ -181,8 +182,8 @@ export function GetStopLossOrdersUI({ toolPart }: ToolUIComponentProps<'getStopL
                 strikePrice={order.strikePrice}
                 orderHash={order.orderHash}
               />
-            ))}
-          </div>
+            )}
+          />
         </ToolCard.Details>
       </ToolCard.Content>
     </ToolCard.Root>

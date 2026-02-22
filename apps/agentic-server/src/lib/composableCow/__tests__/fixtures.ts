@@ -25,7 +25,7 @@ export const STOP_LOSS_FIXTURE: StopLossStaticData = {
   validTo: 1735689600, // 2025-01-01 00:00:00 UTC
   sellTokenPriceOracle: ADDRESSES.ETH_USD_ORACLE,
   buyTokenPriceOracle: ADDRESSES.USDC_USD_ORACLE,
-  strike: 300000000000n, // $3000 scaled to 8 decimals (Chainlink ETH/USD)
+  strike: 300000000000n, // arbitrary test value (production uses triggerPrice/buyPrice * 1e18)
   maxTimeSinceLastOracleUpdate: 3600n, // 1 hour
 }
 
