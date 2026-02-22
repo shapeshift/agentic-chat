@@ -9,6 +9,7 @@ import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
+import { orderRegistry } from '@/lib/orderRegistry'
 import { executeSafeTransaction } from '@/lib/safe'
 import { deploySafe } from '@/lib/safe/safeFactory'
 import { enableComposableCowModules } from '@/lib/safe/safeModules'
@@ -317,6 +318,37 @@ export const useTwapExecution = (
           confirmations: 1,
         })
       }
+
+      orderRegistry.saveOrder({
+        orderHash: data.orderHash,
+        safeAddress: deployedSafeAddress,
+        chainId: targetChainId,
+        sellToken: {
+          address: data.sellTokenAddress,
+          symbol: data.summary.sellAsset.symbol,
+          amount: data.summary.sellAsset.totalAmount,
+          precision: data.sellPrecision,
+        },
+        buyToken: {
+          address: data.buyTokenAddress,
+          symbol: data.summary.buyAsset.symbol,
+          amount: '0',
+          precision: data.buyPrecision,
+        },
+        sellAmountBaseUnit: data.sellAmountBaseUnit,
+        strikePrice: '0',
+        validTo: Math.floor(Date.now() / 1000) + data.durationSeconds,
+        submitTxHash,
+        createdAt: Date.now(),
+        status: 'open',
+        conditionalOrderParams: {
+          handler: data.conditionalOrderParams.handler,
+          salt: data.conditionalOrderParams.salt,
+          staticInput: data.conditionalOrderParams.staticInput,
+        },
+        orderType: 'twap',
+        network: data.summary.network,
+      })
 
       persistState({
         currentStep: TwapStep.COMPLETE,

@@ -15,6 +15,7 @@ import {
   TWAP_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
+import { isConditionalOrderActive } from '../../lib/composableCow/events'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getAllowance } from '../../utils'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
@@ -120,6 +121,12 @@ export interface CreateTwapOutput {
   conditionalOrderParams: ConditionalOrderParams
   needsDeposit: boolean
   depositTx?: TransactionData
+  sellTokenAddress: string
+  buyTokenAddress: string
+  sellAmountBaseUnit: string
+  sellPrecision: number
+  buyPrecision: number
+  durationSeconds: number
 }
 
 const TWAP_SLIPPAGE_BUFFER = 0.95 // 5% buffer (wider than stop-loss 2% since TWAP executes over time)
@@ -182,14 +189,36 @@ export async function executeCreateTwap(
     : (fromAssetId(buyAsset.assetId).assetReference as `0x${string}`)
 
   const approvalTarget = COW_VAULT_RELAYER_ADDRESS
+
+  let committedAmount = 0n
+  const existingOrders = (walletContext?.registryOrders ?? []).filter(
+    o => o.chainId === evmChainId && o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
+  )
+  if (existingOrders.length > 0) {
+    const activeResults = await Promise.all(
+      existingOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, evmChainId))
+    )
+    committedAmount = existingOrders
+      .filter((_, i) => activeResults[i])
+      .reduce((sum, o) => sum + BigInt(o.sellAmountBaseUnit), 0n)
+  }
+
+  const totalNeeded = committedAmount + BigInt(sellAmountBaseUnit)
+
   const { isApprovalRequired: needsApproval } = await getAllowance({
-    amount: sellAmountBaseUnit,
+    amount: totalNeeded.toString(),
     asset: sellAsset,
     from: safeAddress,
     spender: approvalTarget,
   })
 
-  const approvalTx = buildApprovalTransaction(needsApproval, sellAsset, approvalTarget, sellAmountBaseUnit, safeAddress)
+  const approvalTx = buildApprovalTransaction(
+    needsApproval,
+    sellAsset,
+    approvalTarget,
+    totalNeeded.toString(),
+    safeAddress
+  )
 
   const salt = generateOrderSalt(safeAddress, sellTokenAddress, buyTokenAddress)
 
@@ -277,6 +306,12 @@ export async function executeCreateTwap(
     conditionalOrderParams,
     needsDeposit,
     depositTx,
+    sellTokenAddress: sellTokenAddress as string,
+    buyTokenAddress: buyTokenAddress as string,
+    sellAmountBaseUnit,
+    sellPrecision: sellAsset.precision,
+    buyPrecision: buyAsset.precision,
+    durationSeconds,
   }
 }
 

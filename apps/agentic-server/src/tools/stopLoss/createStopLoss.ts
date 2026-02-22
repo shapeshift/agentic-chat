@@ -233,10 +233,7 @@ export async function executeCreateStopLoss(
   // Calculate cumulative committed amount from existing active orders for same sell token
   let committedAmount = 0n
   const existingOrders = (walletContext?.registryOrders ?? []).filter(
-    o =>
-      o.orderType === 'stopLoss' &&
-      o.chainId === evmChainId &&
-      o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
+    o => o.chainId === evmChainId && o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
   )
   if (existingOrders.length > 0) {
     const activeResults = await Promise.all(
