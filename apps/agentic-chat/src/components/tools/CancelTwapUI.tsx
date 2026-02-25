@@ -150,7 +150,8 @@ function useCancelTwapExecution(
       const cancelTxHash = await executeSafeTransaction(
         safeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
-        evmAddress
+        evmAddress,
+        safeTransaction.chainId
       )
 
       setState(draft => {

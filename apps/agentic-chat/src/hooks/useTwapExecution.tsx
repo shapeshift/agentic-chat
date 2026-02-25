@@ -257,7 +257,8 @@ export const useTwapExecution = (
         approvalTxHash = await executeSafeTransaction(
           deployedSafeAddress,
           { to: approvalTx.to, data: approvalTx.data, value: approvalTx.value },
-          evmAddress
+          evmAddress,
+          targetChainId
         )
         setState(draft => {
           draft.approvalTxHash = approvalTxHash
@@ -299,7 +300,8 @@ export const useTwapExecution = (
       const submitTxHash = await executeSafeTransaction(
         deployedSafeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
-        evmAddress
+        evmAddress,
+        targetChainId
       )
 
       setState(draft => {

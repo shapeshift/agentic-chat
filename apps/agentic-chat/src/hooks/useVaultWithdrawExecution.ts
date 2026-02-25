@@ -155,7 +155,8 @@ export const useVaultWithdrawExecution = (
       const withdrawTxHash = await executeSafeTransaction(
         summary.safeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
-        evmAddress
+        evmAddress,
+        safeTransaction.chainId
       )
 
       setState(draft => {

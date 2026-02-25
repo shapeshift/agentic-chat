@@ -10,58 +10,80 @@ function getProvider(): SafeProvider {
   return window.ethereum as SafeProvider
 }
 
+// Per-(safeAddress, chainId) sequential queue to prevent nonce race conditions.
+// Each new tx chains onto the previous promise for that key so Safe nonces
+// are consumed one at a time. Different Safes / chains run concurrently.
+const queues = new Map<string, Promise<unknown>>()
+
+function enqueue(safeAddress: string, chainId: number, executor: () => Promise<string>): Promise<string> {
+  const key = `${safeAddress.toLowerCase()}-${chainId}`
+  const prev = queues.get(key) ?? Promise.resolve()
+  const next = prev.catch(() => {}).then(() => executor())
+  queues.set(key, next)
+  void next.finally(() => {
+    if (queues.get(key) === next) queues.delete(key)
+  })
+  return next
+}
+
 // Shared utility for executing transactions through a Safe smart account
 // Used by stop-loss, future TWAP/DCA, and cancel flows
-export async function executeSafeTransaction(
+export function executeSafeTransaction(
   safeAddress: string,
   txData: { to: string; data: string; value: string },
-  signerAddress: string
+  signerAddress: string,
+  chainId: number
 ): Promise<string> {
-  const protocolKit = await Safe.init({
-    provider: getProvider(),
-    signer: signerAddress,
-    safeAddress,
+  return enqueue(safeAddress, chainId, async () => {
+    const protocolKit = await Safe.init({
+      provider: getProvider(),
+      signer: signerAddress,
+      safeAddress,
+    })
+
+    const safeTransaction = await protocolKit.createTransaction({
+      transactions: [
+        {
+          to: txData.to,
+          data: txData.data,
+          value: txData.value,
+        },
+      ],
+    })
+
+    // For 1-of-1 Safe, sign and execute in one step
+    const signedTx = await protocolKit.signTransaction(safeTransaction)
+    const result = await protocolKit.executeTransaction(signedTx)
+
+    return typeof result === 'string' ? result : result.hash
   })
-
-  const safeTransaction = await protocolKit.createTransaction({
-    transactions: [
-      {
-        to: txData.to,
-        data: txData.data,
-        value: txData.value,
-      },
-    ],
-  })
-
-  // For 1-of-1 Safe, sign and execute in one step
-  const signedTx = await protocolKit.signTransaction(safeTransaction)
-  const result = await protocolKit.executeTransaction(signedTx)
-
-  return typeof result === 'string' ? result : result.hash
 }
 
 // Execute multiple transactions as a batch via MultiSend
-export async function executeSafeBatchTransaction(
+export function executeSafeBatchTransaction(
   safeAddress: string,
   transactions: Array<{ to: string; data: string; value: string }>,
-  signerAddress: string
+  signerAddress: string,
+  chainId: number
 ): Promise<string> {
-  const protocolKit = await Safe.init({
-    provider: getProvider(),
-    signer: signerAddress,
-    safeAddress,
+  return enqueue(safeAddress, chainId, async () => {
+    const protocolKit = await Safe.init({
+      provider: getProvider(),
+      signer: signerAddress,
+      safeAddress,
+    })
+
+    const safeTransaction = await protocolKit.createTransaction({
+      transactions: transactions.map(tx => ({
+        to: tx.to,
+        data: tx.data,
+        value: tx.value,
+      })),
+    })
+
+    const signedTx = await protocolKit.signTransaction(safeTransaction)
+    const result = await protocolKit.executeTransaction(signedTx)
+
+    return typeof result === 'string' ? result : result.hash
   })
-
-  const safeTransaction = await protocolKit.createTransaction({
-    transactions: transactions.map(tx => ({
-      to: tx.to,
-      data: tx.data,
-      value: tx.value,
-    })),
-  })
-
-  const signedTx = await protocolKit.signTransaction(safeTransaction)
-  const result = await protocolKit.executeTransaction(signedTx)
-
-  return typeof result === 'string' ? result : result.hash
 }
