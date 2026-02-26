@@ -10,6 +10,7 @@ import {
   buildCreateConditionalOrderTx,
   computeConditionalOrderHash,
   COW_VAULT_RELAYER_ADDRESS,
+  CURRENT_BLOCK_TIMESTAMP_FACTORY,
   encodeTwapStaticData,
   generateOrderSalt,
   TWAP_HANDLER_ADDRESS,
@@ -256,7 +257,9 @@ export async function executeCreateTwap(
   }
 
   const orderHash = computeConditionalOrderHash(conditionalOrderParams)
-  const safeTransaction = buildCreateConditionalOrderTx(conditionalOrderParams)
+  const safeTransaction = buildCreateConditionalOrderTx(conditionalOrderParams, {
+    factory: CURRENT_BLOCK_TIMESTAMP_FACTORY,
+  })
 
   const eoaAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const safeBalance = await getBalance(safeAddress, sellAsset)

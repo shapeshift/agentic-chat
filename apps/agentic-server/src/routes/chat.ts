@@ -315,6 +315,14 @@ When using transactionHistoryTool, always set the renderTransactions parameter b
 - Aggregation queries (counts, sums) → renderTransactions: false (no UI cards)
 This prevents UI crashes from rendering hundreds of transaction cards.
 
+**Trade Intent Routing:**
+Each trade request maps to one tool — select based on what the user asks for:
+- Instant swap/trade → initiateSwap or initiateSwapUsd
+- TWAP or DCA → createTwap
+- Limit order → createLimitOrder
+- Stop-loss → createStopLoss
+These are independent workflows. Call only the one matching the user's intent.
+
 **Swap Workflow:**
 1. Determine if user specified crypto token amount or USD value amount
 2. Use initiateSwap for crypto token amounts (e.g., "1 SOL", "0.5 ETH", "100 FOX", "50 USDC")

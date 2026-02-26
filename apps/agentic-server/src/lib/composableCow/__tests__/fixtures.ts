@@ -53,6 +53,7 @@ export const DETERMINISTIC_SALT = keccak256(
 
 export const FUNCTION_SELECTORS = {
   create: '0x6bfae1ca',
+  createWithContext: '0x0d0d9800',
   remove: '0x95bc2673',
 } as const
 

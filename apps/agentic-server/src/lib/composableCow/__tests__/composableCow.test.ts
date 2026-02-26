@@ -5,6 +5,7 @@ import {
   COMPOSABLE_COW_ADDRESS,
   COW_SETTLEMENT_ADDRESS,
   COW_VAULT_RELAYER_ADDRESS,
+  CURRENT_BLOCK_TIMESTAMP_FACTORY,
   STOP_LOSS_HANDLER_ADDRESS,
   TWAP_HANDLER_ADDRESS,
   buildCreateConditionalOrderTx,
@@ -131,18 +132,19 @@ describe('composableCow', () => {
 
   describe('buildCreateConditionalOrderTx', () => {
     const params = buildTestConditionalOrderParams()
-    const tx = buildCreateConditionalOrderTx(params)
 
-    test('should set to to COMPOSABLE_COW_ADDRESS', () => {
+    test('without factory should use create selector', () => {
+      const tx = buildCreateConditionalOrderTx(params)
       expect(tx.to).toBe(COMPOSABLE_COW_ADDRESS)
-    })
-
-    test('should set value to 0', () => {
       expect(tx.value).toBe('0')
+      expect(tx.data.startsWith(FUNCTION_SELECTORS.create)).toBe(true)
     })
 
-    test('should encode data with the create function selector', () => {
-      expect(tx.data.startsWith(FUNCTION_SELECTORS.create)).toBe(true)
+    test('with factory should use createWithContext selector', () => {
+      const tx = buildCreateConditionalOrderTx(params, { factory: CURRENT_BLOCK_TIMESTAMP_FACTORY })
+      expect(tx.to).toBe(COMPOSABLE_COW_ADDRESS)
+      expect(tx.value).toBe('0')
+      expect(tx.data.startsWith(FUNCTION_SELECTORS.createWithContext)).toBe(true)
     })
   })
 

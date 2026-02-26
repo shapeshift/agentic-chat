@@ -1,4 +1,5 @@
 import Safe from '@safe-global/protocol-kit'
+import { createPublicClient, custom } from 'viem'
 
 // Matches @safe-global/protocol-kit's internal Eip1193Provider (not publicly exported)
 type SafeProvider = {
@@ -8,6 +9,14 @@ type SafeProvider = {
 function getProvider(): SafeProvider {
   if (!window.ethereum) throw new Error('No ethereum provider found. Please connect your wallet.')
   return window.ethereum as SafeProvider
+}
+
+// Wait for a tx to be mined so the Safe nonce increments on-chain before
+// the queue releases the next transaction. Without this, back-to-back txs
+// can read a stale nonce and produce invalid signatures (GS026).
+async function waitForTxConfirmation(txHash: string): Promise<void> {
+  const publicClient = createPublicClient({ transport: custom(getProvider()) })
+  await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}`, confirmations: 1 })
 }
 
 // Per-(safeAddress, chainId) sequential queue to prevent nonce race conditions.
@@ -54,8 +63,11 @@ export function executeSafeTransaction(
     // For 1-of-1 Safe, sign and execute in one step
     const signedTx = await protocolKit.signTransaction(safeTransaction)
     const result = await protocolKit.executeTransaction(signedTx)
+    const txHash = typeof result === 'string' ? result : result.hash
 
-    return typeof result === 'string' ? result : result.hash
+    await waitForTxConfirmation(txHash)
+
+    return txHash
   })
 }
 
@@ -83,7 +95,10 @@ export function executeSafeBatchTransaction(
 
     const signedTx = await protocolKit.signTransaction(safeTransaction)
     const result = await protocolKit.executeTransaction(signedTx)
+    const txHash = typeof result === 'string' ? result : result.hash
 
-    return typeof result === 'string' ? result : result.hash
+    await waitForTxConfirmation(txHash)
+
+    return txHash
   })
 }

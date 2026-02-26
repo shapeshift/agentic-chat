@@ -19,6 +19,10 @@ export const TWAP_HANDLER_ADDRESS = getAddress('0x6cF1e9cA41f7611dEf408122793c35
 // CoW Settlement contract (for VaultRelayer approvals)
 export const COW_SETTLEMENT_ADDRESS = getAddress('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')
 
+// CurrentBlockTimestampFactory: getValue() returns bytes32(block.timestamp)
+// Used with createWithContext() so TWAP orders know when they were created on-chain
+export const CURRENT_BLOCK_TIMESTAMP_FACTORY = getAddress('0x52eD56Da04309Aca4c3FECC595298d80C2f16BAc')
+
 // VaultRelayer address (approvals target, same across all chains)
 export const COW_VAULT_RELAYER_ADDRESS = getAddress('0xc92e8bdf79f0507f65a392b0ab4667716bfe0110')
 
@@ -58,21 +62,31 @@ export interface TwapStaticData {
   appData: `0x${string}`
 }
 
-// ABI fragment for ComposableCoW.create()
+const CONDITIONAL_ORDER_PARAMS_TUPLE = {
+  name: 'params',
+  type: 'tuple',
+  components: [
+    { name: 'handler', type: 'address' },
+    { name: 'salt', type: 'bytes32' },
+    { name: 'staticInput', type: 'bytes' },
+  ],
+} as const
+
 const COMPOSABLE_COW_ABI = [
   {
     name: 'create',
     type: 'function',
+    inputs: [CONDITIONAL_ORDER_PARAMS_TUPLE, { name: 'dispatch', type: 'bool' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    name: 'createWithContext',
+    type: 'function',
     inputs: [
-      {
-        name: 'params',
-        type: 'tuple',
-        components: [
-          { name: 'handler', type: 'address' },
-          { name: 'salt', type: 'bytes32' },
-          { name: 'staticInput', type: 'bytes' },
-        ],
-      },
+      CONDITIONAL_ORDER_PARAMS_TUPLE,
+      { name: 'factory', type: 'address' },
+      { name: 'data', type: 'bytes' },
       { name: 'dispatch', type: 'bool' },
     ],
     outputs: [],
@@ -175,23 +189,31 @@ export function generateOrderSalt(owner: string, sellToken: string, buyToken: st
   )
 }
 
-export function buildCreateConditionalOrderTx(params: ConditionalOrderParams): {
+export function buildCreateConditionalOrderTx(
+  params: ConditionalOrderParams,
+  options?: { factory: `0x${string}` }
+): {
   to: string
   data: string
   value: string
 } {
-  const data = encodeFunctionData({
-    abi: COMPOSABLE_COW_ABI,
-    functionName: 'create',
-    args: [
-      {
-        handler: params.handler,
-        salt: params.salt,
-        staticInput: params.staticInput,
-      },
-      true, // dispatch = true → emit ConditionalOrderCreated event for watchtower
-    ],
-  })
+  const paramsArg = {
+    handler: params.handler,
+    salt: params.salt,
+    staticInput: params.staticInput,
+  }
+
+  const data = options?.factory
+    ? encodeFunctionData({
+        abi: COMPOSABLE_COW_ABI,
+        functionName: 'createWithContext',
+        args: [paramsArg, options.factory, '0x', true],
+      })
+    : encodeFunctionData({
+        abi: COMPOSABLE_COW_ABI,
+        functionName: 'create',
+        args: [paramsArg, true],
+      })
 
   return {
     to: COMPOSABLE_COW_ADDRESS,
