@@ -2,6 +2,7 @@ import type { Clock } from 'lucide-react'
 import { ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
 
 import { stopPropagationHandler } from '@/lib/eventHandlers'
+import { getExplorerUrl } from '@/lib/explorers'
 import { cn } from '@/lib/utils'
 
 import { ToolCard } from '../ui/ToolCard'
@@ -43,9 +44,18 @@ interface TwapOrderItemProps {
   sellAmount: string
   validTo: number
   cowTrackingUrl: string
+  orderHash?: string
 }
 
-function TwapOrderItem({ status, network, sellToken, buyToken, validTo, cowTrackingUrl }: TwapOrderItemProps) {
+function TwapOrderItem({
+  status,
+  network,
+  sellToken,
+  buyToken,
+  sellAmount,
+  validTo,
+  cowTrackingUrl,
+}: TwapOrderItemProps) {
   const isActive = status === 'open'
   const expiresDate = new Date(validTo * 1000)
 
@@ -53,31 +63,43 @@ function TwapOrderItem({ status, network, sellToken, buyToken, validTo, cowTrack
     <div className="flex items-center justify-between py-3 px-1 gap-4">
       <div className="flex flex-col gap-1 min-w-0 flex-1">
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-medium truncate">{sellToken}</span>
-          <span className="text-muted-foreground">→</span>
+          <span className="font-medium truncate">
+            {sellAmount} {sellToken}
+          </span>
+          <span className="text-muted-foreground">&rarr;</span>
           <span className="font-medium">{buyToken}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="capitalize">{network}</span>
           {isActive && (
             <>
-              <span>•</span>
-              <span>Expires {expiresDate.toLocaleDateString()}</span>
+              <span>&bull;</span>
+              <span>
+                Expires{' '}
+                {expiresDate.toLocaleString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </span>
             </>
           )}
         </div>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
         <OrderStatusBadge status={status} />
-        <a
-          href={cowTrackingUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-muted-foreground hover:text-primary transition-colors"
-          onClick={stopPropagationHandler}
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-        </a>
+        {cowTrackingUrl && (
+          <a
+            href={cowTrackingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-primary transition-colors"
+            onClick={stopPropagationHandler}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        )}
       </div>
     </div>
   )
@@ -93,7 +115,16 @@ export function GetTwapOrdersUI({ toolPart }: ToolUIComponentProps<'getTwapOrder
 
   if (stateRender) return stateRender
 
-  const orders = output?.orders ?? []
+  const orders = (output?.orders ?? []).map(o => {
+    const submitTxHash = o.submitTxHash
+    const registryExplorerUrl = submitTxHash ? getExplorerUrl(o.network, submitTxHash) : ''
+
+    return {
+      ...o,
+      status: isValidStatus(o.status) ? o.status : ('open' as TwapOrderStatus),
+      cowTrackingUrl: o.cowTrackingUrl || registryExplorerUrl,
+    }
+  })
 
   if (orders.length === 0) {
     return (
@@ -135,13 +166,14 @@ export function GetTwapOrdersUI({ toolPart }: ToolUIComponentProps<'getTwapOrder
               <TwapOrderItem
                 key={order.id}
                 id={order.id}
-                status={isValidStatus(order.status) ? order.status : 'open'}
+                status={order.status}
                 network={order.network}
                 sellToken={order.sellToken}
                 buyToken={order.buyToken}
                 sellAmount={order.sellAmount}
                 validTo={order.validTo}
                 cowTrackingUrl={order.cowTrackingUrl}
+                orderHash={order.orderHash}
               />
             )}
           />

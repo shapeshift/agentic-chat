@@ -1,10 +1,11 @@
 import { z } from 'zod'
 
+import { isConditionalOrderActive } from '../../lib/composableCow/events'
 import { getCowOrders } from '../../lib/cow'
 import type { CowOrder, CowOrderStatus } from '../../lib/cow/types'
-import { NETWORK_TO_CHAIN_ID, getCowExplorerUrl } from '../../lib/cow/types'
+import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getSafeAddressForChain } from '../../utils/walletContextSimple'
-import type { WalletContext } from '../../utils/walletContextSimple'
+import type { ActiveOrderSummary, WalletContext } from '../../utils/walletContextSimple'
 
 export const getTwapOrdersSchema = z.object({
   status: z
@@ -28,13 +29,11 @@ interface TwapOrderInfo {
   buyToken: string
   sellAmount: string
   buyAmount: string
-  executedSellAmount?: string
-  executedBuyAmount?: string
   createdAt: string
   validTo: number
   cowTrackingUrl: string
-  kind: string
-  partiallyFillable: boolean
+  orderHash?: string
+  submitTxHash?: string
 }
 
 export interface GetTwapOrdersOutput {
@@ -42,28 +41,84 @@ export interface GetTwapOrdersOutput {
   totalCount: number
 }
 
-function mapTwapApiStatus(rawStatus: string): CowOrderStatus {
-  if (rawStatus === 'presignaturePending') return 'open'
-  return rawStatus as CowOrderStatus
+function mapRegistryOrderToInfo(order: ActiveOrderSummary, network: string, status: CowOrderStatus): TwapOrderInfo {
+  return {
+    id: order.orderHash,
+    status,
+    network,
+    sellToken: order.sellTokenSymbol,
+    buyToken: order.buyTokenSymbol,
+    sellAmount: order.sellAmountHuman,
+    buyAmount: order.buyAmountHuman,
+    createdAt: new Date(order.createdAt).toISOString(),
+    validTo: order.validTo,
+    cowTrackingUrl: '',
+    orderHash: order.orderHash,
+    submitTxHash: order.submitTxHash,
+  }
 }
 
-function formatCowOrder(order: CowOrder, network: string): TwapOrderInfo {
-  return {
-    id: order.uid,
-    status: mapTwapApiStatus(order.status as string),
-    network,
-    sellToken: order.sellToken,
-    buyToken: order.buyToken,
-    sellAmount: order.sellAmount,
-    buyAmount: order.buyAmount,
-    executedSellAmount: order.executedSellAmount,
-    executedBuyAmount: order.executedBuyAmount,
-    createdAt: order.creationDate,
-    validTo: order.validTo,
-    cowTrackingUrl: getCowExplorerUrl(order.uid),
-    kind: order.kind,
-    partiallyFillable: order.partiallyFillable,
+function isTwapFulfilled(order: ActiveOrderSummary, cowOrders: CowOrder[]): boolean {
+  const twapStartSeconds = Math.floor(order.createdAt / 1000)
+
+  const matchingFilledOrders = cowOrders.filter(co => {
+    if (co.sellToken.toLowerCase() !== order.sellTokenAddress.toLowerCase()) return false
+    if (co.buyToken.toLowerCase() !== order.buyTokenAddress.toLowerCase()) return false
+    if (!co.executedSellAmount || BigInt(co.executedSellAmount) === 0n) return false
+    const cowCreatedSeconds = Math.floor(new Date(co.creationDate).getTime() / 1000)
+    return cowCreatedSeconds >= twapStartSeconds && cowCreatedSeconds <= order.validTo
+  })
+
+  if (matchingFilledOrders.length === 0) return false
+
+  const totalExecuted = matchingFilledOrders.reduce((sum, co) => sum + BigInt(co.executedSellAmount || '0'), 0n)
+
+  const targetAmount = BigInt(order.sellAmountBaseUnit)
+  return targetAmount > 0n && totalExecuted >= (targetAmount * 90n) / 100n
+}
+
+async function getRegistryOrders(
+  registryOrders: ActiveOrderSummary[],
+  safeAddress: string,
+  chainId: number,
+  network: string
+): Promise<TwapOrderInfo[]> {
+  const chainOrders = registryOrders.filter(o => o.chainId === chainId && o.orderType === 'twap')
+  if (chainOrders.length === 0) return []
+
+  const nowSeconds = Math.floor(Date.now() / 1000)
+
+  const activeResults = await Promise.all(
+    chainOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, chainId))
+  )
+
+  // Fetch CoW API orders to detect fulfillment for completed TWAPs
+  const needsFulfillmentCheck = chainOrders.some(
+    (order, i) => activeResults[i] && order.validTo > 0 && order.validTo < nowSeconds
+  )
+
+  let cowOrders: CowOrder[] = []
+  if (needsFulfillmentCheck) {
+    try {
+      cowOrders = await getCowOrders(safeAddress, chainId)
+    } catch {
+      // CoW API failure - fall back to 'expired' for past-validTo orders
+    }
   }
+
+  return chainOrders.map((order, i) => {
+    let derivedStatus: CowOrderStatus
+    if (!activeResults[i]) {
+      // Only remove() clears singleOrders on-chain → this was explicitly cancelled
+      derivedStatus = 'cancelled'
+    } else if (order.validTo > 0 && order.validTo < nowSeconds) {
+      // On-chain active but TWAP window ended → check CoW API for fills
+      derivedStatus = isTwapFulfilled(order, cowOrders) ? 'fulfilled' : 'expired'
+    } else {
+      derivedStatus = 'open'
+    }
+    return mapRegistryOrderToInfo(order, network, derivedStatus)
+  })
 }
 
 export async function executeGetTwapOrders(
@@ -82,12 +137,15 @@ export async function executeGetTwapOrders(
         { network: 'arbitrum', chainId: 42161 },
       ]
 
+  const registryOrderSummaries = walletContext?.registryOrders ?? []
+
+  // TWAP orders are only sourced from the registry — the CoW API returns individual
+  // "part" orders which are execution details, not user-facing TWAP orders.
   const orderResults = await Promise.allSettled(
     networksToQuery.map(async ({ network, chainId }) => {
       const safeAddress = getSafeAddressForChain(walletContext, chainId)
       if (!safeAddress) return []
-      const orders = await getCowOrders(safeAddress, chainId)
-      return orders.map(order => formatCowOrder(order, network))
+      return getRegistryOrders(registryOrderSummaries, safeAddress, chainId, network)
     })
   )
 
@@ -96,7 +154,13 @@ export async function executeGetTwapOrders(
     .flatMap(r => r.value)
 
   const filteredOrders = input.status === 'all' ? allOrders : allOrders.filter(o => o.status === input.status)
-  filteredOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  // Sort: open first, then by creation date descending
+  filteredOrders.sort((a, b) => {
+    if (a.status === 'open' && b.status !== 'open') return -1
+    if (a.status !== 'open' && b.status === 'open') return 1
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
 
   return {
     orders: filteredOrders,
