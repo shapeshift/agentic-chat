@@ -38,7 +38,7 @@ import { createStopLossTool, getStopLossOrdersTool, cancelStopLossTool } from '.
 import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
 import { createTwapTool, getTwapOrdersTool, cancelTwapTool } from '../tools/twap'
-import { vaultBalanceTool, vaultDepositTool, vaultWithdrawTool } from '../tools/vault'
+import { vaultBalanceTool, vaultDepositTool, vaultWithdrawTool, vaultWithdrawAllTool } from '../tools/vault'
 import type { ActiveOrderSummary, SafeChainDeployment, WalletContext } from '../utils/walletContextSimple'
 
 const allEvmChainIds = [
@@ -73,8 +73,6 @@ function buildWalletContext(
   evmAddress?: string,
   solanaAddress?: string,
   approvedChainIds?: string[],
-  hasEmbeddedWallet?: boolean,
-  hasExternalWallet?: boolean,
   safeAddress?: string,
   safeDeploymentState?: Record<number, SafeChainDeployment>,
   registryOrders?: ActiveOrderSummary[]
@@ -106,8 +104,6 @@ function buildWalletContext(
 
   return {
     connectedWallets,
-    hasEmbeddedWallet,
-    hasExternalWallet,
     safeAddress,
     safeDeploymentState,
     registryOrders,
@@ -150,6 +146,7 @@ function buildTools(walletContext: WalletContext) {
     vaultBalanceTool: wrapTool('vaultBalanceTool', vaultBalanceTool, walletContext),
     vaultDepositTool: wrapTool('vaultDepositTool', vaultDepositTool, walletContext),
     vaultWithdrawTool: wrapTool('vaultWithdrawTool', vaultWithdrawTool, walletContext),
+    vaultWithdrawAllTool: wrapTool('vaultWithdrawAllTool', vaultWithdrawAllTool, walletContext),
 
     // Special case - has custom address resolution logic
     getAllowanceTool: {
@@ -299,7 +296,7 @@ ${buildConnectedWalletsPrompt(evmAddress, solanaAddress, approvedChainIds)}
   - getAssets: Detailed market data with UI card - use when user wants comprehensive info (volume, market cap, sentiment, etc.)
   - getTrendingTokens, getTopGainersLosers, getNewCoins, getCategories, getTrendingPools
 - **Portfolio**: portfolio (balances), transactionHistoryTool (history/analytics)
-- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders), createStopLoss/getStopLossOrders/cancelStopLoss (stop-loss orders), createTwap/getTwapOrders/cancelTwap (TWAP/DCA orders), vaultDeposit/vaultWithdraw/vaultBalance (Safe vault management)
+- **Actions**: initiateSwap/initiateSwapUsd (swaps), sendTool (transfers), receiveTool (addresses/QR), createLimitOrder/getLimitOrders/cancelLimitOrder (limit orders), createStopLoss/getStopLossOrders/cancelStopLoss (stop-loss orders), createTwap/getTwapOrders/cancelTwap (TWAP/DCA orders), vaultDeposit/vaultWithdraw/vaultWithdrawAll/vaultBalance (Safe vault management)
 - **Utilities**: switchNetwork (change chains), mathCalculator (arithmetic), getShapeShiftKnowledge (platform info), getPriceFeedTokens (check which tokens support stop-loss price feeds)
 
 **Tool UI Behavior:**
@@ -322,6 +319,17 @@ Each trade request maps to one tool — select based on what the user asks for:
 - Limit order → createLimitOrder
 - Stop-loss → createStopLoss
 These are independent workflows. Call only the one matching the user's intent.
+
+**USD Dollar-Amount Detection (applies to ALL trade types):**
+When a user mentions a dollar amount ($X, "X dollars", "X USD", "$X worth of TOKEN"), you MUST convert to token units before calling any non-swap trade tool:
+- For **swaps**: use initiateSwapUsd (handles conversion server-side)
+- For **TWAP, stop-loss, and limit orders**: YOU must convert first:
+  1. Call getAssetPricesTool to get the current USD price of the token
+  2. Call mathCalculatorTool: tokenAmount = usdAmount / pricePerToken
+  3. Pass the resulting token amount to the trade tool
+  4. Show both USD and token amounts in your confirmation so the user can verify
+- CRITICAL EXAMPLE: "$2.50 of WBTC" when WBTC = $66,000 → tokenAmount = 2.50 / 66000 = 0.0000379 WBTC. Passing 2.5 as the amount would mean 2.5 WBTC (~$165,000) — a 66,000x error.
+- If unsure whether a number is USD or tokens, ASK the user before proceeding.
 
 **Swap Workflow:**
 1. Determine if user specified crypto token amount or USD value amount
@@ -371,7 +379,8 @@ Examples:
 **TWAP/DCA Orders (ComposableCoW + Safe):**
 - Use createTwap when user wants to split a large trade over time or DCA into a position
 - "TWAP" = Time-Weighted Average Price (hours), "DCA" = Dollar Cost Averaging (days/weeks) — same tool
-- Examples: "buy $1000 of ETH over 24 hours", "DCA $200 into BTC every day for a week"
+- Examples: "buy 0.5 ETH over 24 hours", "sell 1000 USDC into WBTC over a week"
+- If user specifies a USD amount (e.g., "$1000 of ETH"), convert to token amount first using the USD detection rule above
 - Requires a Safe smart account (deployed automatically on first use)
 - Orders are time-based (no price oracle needed) — each sub-order executes at market price
 - CoW's watchtower generates and executes sub-orders at each interval
@@ -387,11 +396,10 @@ ${!isSafeReadyOnAnyChain(safeDeploymentState) ? '- IMPORTANT: Safe-dependent too
 
 **Safe & Automation:**
 - Automation features (stop-loss, TWAP, DCA) require a Safe smart account
-- Safe is a 1-of-1 smart account owned by the connected wallet (any EOA — MetaMask, Rabby, embedded, etc.)
+- Safe is a 1-of-1 smart account owned by the connected wallet (any EOA — MetaMask, Rabby, etc.)
 - Safe is deployed lazily on first automation request
 - When users ask about automated features, call checkWalletCapabilitiesTool to check readiness
 - Wallet routing: regular swaps/sends → EOA wallet, automation → Safe smart account
-- Users can also create embedded wallets (email/social login) — self-custodial MPC wallets with social recovery
 
 **Vault Management (Safe Deposits & Withdrawals):**
 - Tokens must be deposited into the Safe vault before automated orders can execute
@@ -400,6 +408,8 @@ ${!isSafeReadyOnAnyChain(safeDeploymentState) ? '- IMPORTANT: Safe-dependent too
 - Use vaultWithdraw to transfer tokens from Safe vault → EOA (requires Safe transaction signing)
 - Use vaultBalance to check what tokens are currently in the Safe vault
 - Deposits are standard ERC20 transfers (signed by EOA); withdrawals are Safe transactions (signed as Safe owner)
+- Fulfilled automated orders (TWAP, DCA, stop-loss) leave the purchased/received tokens in the Safe vault until the user withdraws them
+- Use vaultWithdrawAll to withdraw all tokens from the vault in one transaction per chain
 
 **Error Handling:**
 - Insufficient balance → Show exact shortage amount
@@ -418,35 +428,22 @@ ${!isSafeReadyOnAnyChain(safeDeploymentState) ? '- IMPORTANT: Safe-dependent too
 export async function handleChatRequest(c: Context) {
   try {
     const body = await c.req.json()
-    const {
-      messages,
-      evmAddress,
-      solanaAddress,
-      approvedChainIds,
-      hasEmbeddedWallet,
-      hasExternalWallet,
-      safeAddress,
-      safeDeploymentState,
-      registryOrders,
-    } = body as {
-      messages: unknown
-      evmAddress?: string
-      solanaAddress?: string
-      approvedChainIds?: string[]
-      hasEmbeddedWallet?: boolean
-      hasExternalWallet?: boolean
-      safeAddress?: string
-      safeDeploymentState?: Record<number, SafeChainDeployment>
-      registryOrders?: ActiveOrderSummary[]
-    }
+    const { messages, evmAddress, solanaAddress, approvedChainIds, safeAddress, safeDeploymentState, registryOrders } =
+      body as {
+        messages: unknown
+        evmAddress?: string
+        solanaAddress?: string
+        approvedChainIds?: string[]
+        safeAddress?: string
+        safeDeploymentState?: Record<number, SafeChainDeployment>
+        registryOrders?: ActiveOrderSummary[]
+      }
 
     // Build wallet context from addresses (filtered by approved chains if provided)
     const walletContext = buildWalletContext(
       evmAddress,
       solanaAddress,
       approvedChainIds,
-      hasEmbeddedWallet,
-      hasExternalWallet,
       safeAddress,
       safeDeploymentState,
       registryOrders

@@ -10,9 +10,7 @@ import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
 const WALLET_TYPE_LABELS: Record<string, string> = {
-  both: 'External + Embedded',
-  embedded: 'Embedded (MPC)',
-  external: 'External (BYO)',
+  connected: 'Wallet Connected',
   none: 'No Wallet Connected',
 }
 

@@ -14,7 +14,7 @@ type CustomConnectButtonProps = {
 }
 
 export const CustomConnectButton = ({ onConnectedClick }: CustomConnectButtonProps) => {
-  const { setShowAuthFlow, primaryWallet, user, handleLogOut, sdkHasLoaded } = useDynamicContext()
+  const { setShowAuthFlow, primaryWallet, handleLogOut, sdkHasLoaded } = useDynamicContext()
   const userWallets = useUserWallets()
   const chainId = useChainId()
   const hasTriggeredResetRef = useRef(false)
@@ -23,7 +23,7 @@ export const CustomConnectButton = ({ onConnectedClick }: CustomConnectButtonPro
   // Corrupted state: userWallets has data but user/primaryWallet are null, SDK stuck loading
   // Wait 2s to allow normal init to complete before resetting
   useEffect(() => {
-    if (!sdkHasLoaded && userWallets.length > 0 && !primaryWallet && !user) {
+    if (!sdkHasLoaded && userWallets.length > 0 && !primaryWallet) {
       if (hasTriggeredResetRef.current) return
 
       const timer = setTimeout(() => {
@@ -32,14 +32,14 @@ export const CustomConnectButton = ({ onConnectedClick }: CustomConnectButtonPro
       }, 2000)
       return () => clearTimeout(timer)
     }
-  }, [sdkHasLoaded, userWallets, primaryWallet, user, handleLogOut])
+  }, [sdkHasLoaded, userWallets, primaryWallet, handleLogOut])
 
   // Reset flag when user successfully authenticates
   useEffect(() => {
-    if (sdkHasLoaded && user && primaryWallet) {
+    if (sdkHasLoaded && primaryWallet) {
       hasTriggeredResetRef.current = false
     }
-  }, [sdkHasLoaded, user, primaryWallet])
+  }, [sdkHasLoaded, primaryWallet])
 
   const handleConnect = useCallback(() => {
     setShowAuthFlow(true)

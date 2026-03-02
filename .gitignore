@@ -64,5 +64,5 @@ Thumbs.db
 .playwright-mcp
 
 
-# bv (beads viewer) local config and caches
-.bv/
+# beads backup (migrated to tk)
+.beads-backup-export.jsonl

@@ -20,8 +20,6 @@ interface WalletConnectionResult {
   approvedChainIds: string[]
   evmWallet: EthereumWallet | undefined
   solanaWallet: SolanaWallet | undefined
-  hasEmbeddedWallet: boolean
-  hasExternalWallet: boolean
   safeAddress: string | undefined
   safeDeploymentState: Record<number, SafeChainDeployment>
 }
@@ -42,8 +40,6 @@ export function useWalletConnection(): WalletConnectionResult {
   const solanaAddress = solanaWallet?.address
 
   const isConnected = !!evmAddress || !!solanaAddress
-  const hasEmbeddedWallet = userWallets.some(w => w.connector?.isEmbeddedWallet === true)
-  const hasExternalWallet = userWallets.some(w => w.connector?.isEmbeddedWallet !== true)
 
   return {
     isConnected,
@@ -53,8 +49,6 @@ export function useWalletConnection(): WalletConnectionResult {
     approvedChainIds,
     evmWallet,
     solanaWallet,
-    hasEmbeddedWallet,
-    hasExternalWallet,
     safeAddress: safeAccount.safeAddress,
     safeDeploymentState: safeAccount.safeDeploymentState,
   }

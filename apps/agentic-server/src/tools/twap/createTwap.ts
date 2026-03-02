@@ -1,6 +1,6 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
-import { toBaseUnit } from '@shapeshiftoss/utils'
+import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
@@ -88,7 +88,11 @@ export const createTwapSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
   buyAsset: z.string().describe('Token symbol or name to buy (e.g., "ETH", "WBTC")'),
   network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the TWAP/DCA order'),
-  totalAmount: z.string().describe('Total amount to sell in human-readable format (e.g., "1000" for 1000 USDC)'),
+  totalAmount: z
+    .string()
+    .describe(
+      'Total amount to sell in TOKEN units, not USD (e.g., "1000" for 1000 USDC, "0.5" for 0.5 WETH). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
+    ),
   duration: z.string().describe('Total duration for the order (e.g., "24 hours", "7 days", "2 weeks", "1 month")'),
   intervals: z
     .number()
@@ -263,8 +267,24 @@ export async function executeCreateTwap(
 
   const eoaAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const safeBalance = await getBalance(safeAddress, sellAsset)
-  const needsDeposit = BigInt(safeBalance) < BigInt(sellAmountBaseUnit)
-  const depositAmount = needsDeposit ? BigInt(sellAmountBaseUnit) - BigInt(safeBalance) : 0n
+  const availableSafeBalance = BigInt(safeBalance) > committedAmount ? BigInt(safeBalance) - committedAmount : 0n
+  const needsDeposit = availableSafeBalance < BigInt(sellAmountBaseUnit)
+  const depositAmount = needsDeposit ? BigInt(sellAmountBaseUnit) - availableSafeBalance : 0n
+
+  if (needsDeposit) {
+    const eoaBalance = await getBalance(eoaAddress, sellAsset)
+    if (BigInt(eoaBalance) < depositAmount) {
+      const requiredHuman = fromBaseUnit(sellAmountBaseUnit, sellAsset.precision)
+      const safeBalanceHuman = fromBaseUnit(safeBalance, sellAsset.precision)
+      const eoaBalanceHuman = fromBaseUnit(eoaBalance, sellAsset.precision)
+      throw new Error(
+        `Insufficient ${sellAsset.symbol} balance to create TWAP order. ` +
+          `Required: ${requiredHuman} ${sellAsset.symbol}, ` +
+          `Safe balance: ${safeBalanceHuman} (${committedAmount > 0n ? `${fromBaseUnit(committedAmount.toString(), sellAsset.precision)} committed to active orders` : 'none committed'}), ` +
+          `Wallet balance: ${eoaBalanceHuman}`
+      )
+    }
+  }
 
   let depositTx: TransactionData | undefined
   if (needsDeposit) {

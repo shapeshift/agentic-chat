@@ -22,3 +22,11 @@ export {
   type VaultWithdrawInput,
   type VaultWithdrawOutput,
 } from './vaultWithdraw'
+
+export {
+  vaultWithdrawAllTool,
+  executeVaultWithdrawAll,
+  vaultWithdrawAllSchema,
+  type VaultWithdrawAllInput,
+  type VaultWithdrawAllOutput,
+} from './vaultWithdrawAll'

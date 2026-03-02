@@ -43,7 +43,7 @@ function App() {
       settings={{
         environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,
         walletConnectors: [EthereumWalletConnectors, SolanaWalletConnectors],
-        initialAuthenticationMode: 'connect-and-sign',
+        initialAuthenticationMode: 'connect-only',
         overrides: {
           evmNetworks: dashboardNetworks => {
             return mergeNetworks(DYNAMIC_EVM_NETWORKS, dashboardNetworks)

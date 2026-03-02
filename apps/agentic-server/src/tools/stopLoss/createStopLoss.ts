@@ -70,7 +70,7 @@ export const createStopLossSchema = z.object({
   sellAmount: z
     .string()
     .describe(
-      'Amount to sell as a plain number (e.g., "1" for 1 WETH, "100000" for 100000 PEPE). No commas, dollar signs, or token symbols.'
+      'Amount to sell in TOKEN units, not USD (e.g., "1" for 1 WETH, "100000" for 100000 PEPE). No commas, dollar signs, or token symbols. If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
     ),
   triggerPrice: z
     .string()

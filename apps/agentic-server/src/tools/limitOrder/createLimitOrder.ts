@@ -52,7 +52,11 @@ export const createLimitOrderSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
   buyAsset: z.string().describe('Token symbol or name to buy (e.g., "USDC", "WETH")'),
   network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the limit order'),
-  sellAmount: z.string().describe('Amount to sell in human-readable format (e.g., "100" for 100 USDC)'),
+  sellAmount: z
+    .string()
+    .describe(
+      'Amount to sell in TOKEN units, not USD (e.g., "100" for 100 USDC, "0.5" for 0.5 WETH). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
+    ),
   limitPrice: z
     .string()
     .describe(

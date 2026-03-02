@@ -62,8 +62,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
             evmAddress: wallet.evmAddress,
             solanaAddress: wallet.solanaAddress,
             approvedChainIds: wallet.approvedChainIds,
-            hasEmbeddedWallet: wallet.hasEmbeddedWallet,
-            hasExternalWallet: wallet.hasExternalWallet,
             safeAddress: wallet.safeAddress,
             safeDeploymentState: wallet.safeDeploymentState,
             registryOrders,

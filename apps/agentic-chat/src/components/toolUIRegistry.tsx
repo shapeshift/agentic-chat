@@ -26,6 +26,7 @@ import { TopGainersLosersUI } from './tools/TopGainersLosersUI'
 import { TrendingTokensUI } from './tools/TrendingTokensUI'
 import { TwapUI } from './tools/TwapUI'
 import { VaultDepositUI } from './tools/VaultDepositUI'
+import { VaultWithdrawAllUI } from './tools/VaultWithdrawAllUI'
 import { VaultWithdrawUI } from './tools/VaultWithdrawUI'
 
 type ToolUIComponentMap = {
@@ -58,6 +59,7 @@ const TOOL_UI_REGISTRY: ToolUIComponentMap = {
   checkWalletCapabilitiesTool: CheckWalletCapabilitiesUI,
   vaultDepositTool: VaultDepositUI,
   vaultWithdrawTool: VaultWithdrawUI,
+  vaultWithdrawAllTool: VaultWithdrawAllUI,
 }
 
 export function getToolUIComponent(toolName: string): ComponentType<ToolRendererProps> | null | undefined {

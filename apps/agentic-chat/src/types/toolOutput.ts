@@ -19,6 +19,7 @@ import type {
   TrimmedNewCoin,
   TrimmedTrendingCoin,
   VaultDepositOutput,
+  VaultWithdrawAllOutput,
   VaultWithdrawOutput,
 } from '@shapeshiftoss/agentic-server'
 import type { ParsedTransaction } from '@shapeshiftoss/types'
@@ -49,6 +50,7 @@ export type ToolOutputMap = {
   checkWalletCapabilitiesTool: CheckWalletCapabilitiesOutput
   vaultDepositTool: VaultDepositOutput
   vaultWithdrawTool: VaultWithdrawOutput
+  vaultWithdrawAllTool: VaultWithdrawAllOutput
 }
 
 export type ToolName = keyof ToolOutputMap

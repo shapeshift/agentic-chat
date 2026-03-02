@@ -31,8 +31,6 @@ export interface ActiveOrderSummary {
 
 export interface WalletContext {
   connectedWallets?: Record<string, { address: string }>
-  hasEmbeddedWallet?: boolean
-  hasExternalWallet?: boolean
   safeAddress?: string
   safeDeploymentState?: Record<number, SafeChainDeployment>
   registryOrders?: ActiveOrderSummary[]

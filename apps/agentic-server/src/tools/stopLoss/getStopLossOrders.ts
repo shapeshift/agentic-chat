@@ -209,6 +209,12 @@ export const getStopLossOrdersTool = {
 
 UI CARD DISPLAYS: list of stop-loss orders with status badges (Open/Submitted/Fulfilled/Cancelled/Expired), amounts, strike prices, and CoW tracking links.
 
+Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
+
+When results include fulfilled orders: mention that the received tokens are in their Safe vault and offer to withdraw them to their wallet. Keep it natural and brief -- one sentence, not a checklist.
+
+When no orders are fulfilled: respond with one brief sentence like "Here are your stop-loss orders" without mentioning the vault.
+
 Use this tool when:
 - User asks about their stop-loss orders
 - User wants to check stop-loss status

@@ -10,6 +10,7 @@ import type {
   SendOutput,
   SwitchNetworkOutput,
   VaultDepositOutput,
+  VaultWithdrawAllOutput,
   VaultWithdrawOutput,
 } from '@shapeshiftoss/agentic-server'
 import { produce, enableMapSet } from 'immer'
@@ -39,6 +40,7 @@ export interface PersistedToolState {
     | 'cancel_twap'
     | 'vault_deposit'
     | 'vault_withdraw'
+    | 'vault_withdraw_all'
   conversationId: string
   timestamp: number
   phases: string[]
@@ -55,6 +57,7 @@ export interface PersistedToolState {
     | CancelTwapOutput
     | VaultDepositOutput
     | VaultWithdrawOutput
+    | VaultWithdrawAllOutput
   walletAddress?: string
 }
 
