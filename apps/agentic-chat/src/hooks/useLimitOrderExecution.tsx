@@ -162,6 +162,15 @@ export const useLimitOrderExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -185,14 +194,14 @@ export const useLimitOrderExecution = (
     let approvalTxHash: string | undefined
 
     const persistState = (finalState: LimitOrderState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = limitOrderStateToPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         data,
         data.summary.network,
-        evmAddress
+        evmAddressRef.current
       )
       store.persistTransaction(persisted)
     }
@@ -204,11 +213,11 @@ export const useLimitOrderExecution = (
       if (!orderParams?.receiver) throw new Error('Invalid limit order output: missing orderParams.receiver')
       if (!signingData) throw new Error('Invalid limit order output: missing signingData')
 
-      if (!evmAddress) {
+      if (!evmAddressRef.current) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
 
-      if (evmAddress.toLowerCase() !== orderParams.receiver.toLowerCase()) {
+      if (evmAddressRef.current.toLowerCase() !== orderParams.receiver.toLowerCase()) {
         throw new Error('Wallet address changed. Please re-initiate the limit order.')
       }
 
@@ -220,15 +229,15 @@ export const useLimitOrderExecution = (
       })
 
       // Step 1: Network Switch
-      if (!evmWallet) {
+      if (!evmWalletRef.current) {
         throw new Error('EVM wallet not connected')
       }
 
-      if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      await evmWallet.connector.switchNetwork({ networkChainId: orderParams.chainId })
+      await evmWalletRef.current.connector.switchNetwork({ networkChainId: orderParams.chainId })
 
       setState(draft => {
         draft.completedSteps.add(draft.currentStep)
@@ -268,7 +277,7 @@ export const useLimitOrderExecution = (
       }
 
       // Step 4: Sign EIP-712 message
-      const signature = await signTypedDataWithWallet(evmWallet, signingData)
+      const signature = await signTypedDataWithWallet(evmWalletRef.current, signingData)
 
       setState(draft => {
         draft.signature = signature

@@ -121,6 +121,19 @@ export const useSwapExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const solanaAddressRef = useRef(solanaAddress)
+  const solanaWalletRef = useRef(solanaWallet)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  solanaAddressRef.current = solanaAddress
+  solanaWalletRef.current = solanaWallet
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -144,11 +157,11 @@ export const useSwapExecution = (
     let swapTxHash: string | undefined
 
     const persistState = (finalState: SwapState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = swapStateToPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         data,
         data.swapData.sellAsset.network,
         evmAddress ?? solanaAddress
@@ -166,7 +179,7 @@ export const useSwapExecution = (
       const sellAssetChainId = data.swapData.sellAsset.chainId
       const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
 
-      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm ? evmAddress : solanaAddress
+      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm ? evmAddressRef.current : solanaAddressRef.current
       if (!currentAddress) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
@@ -176,8 +189,8 @@ export const useSwapExecution = (
 
       // Get Solana signer if needed - SolanaWallet has getSigner() directly on the class
       let solanaSigner: SolanaWalletSigner | undefined
-      if (chainNamespace === CHAIN_NAMESPACE.Solana && solanaWallet) {
-        solanaSigner = await solanaWallet.getSigner()
+      if (chainNamespace === CHAIN_NAMESPACE.Solana && solanaWalletRef.current) {
+        solanaSigner = await solanaWalletRef.current.getSigner()
       }
 
       // Step 0: Quote (completed by this point)
@@ -192,11 +205,11 @@ export const useSwapExecution = (
       if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
         if (
           chainNamespace === CHAIN_NAMESPACE.Solana &&
-          solanaWallet &&
-          primaryWallet &&
-          !isSolanaWallet(primaryWallet)
+          solanaWalletRef.current &&
+          primaryWalletRef.current &&
+          !isSolanaWallet(primaryWalletRef.current)
         ) {
-          await changePrimaryWallet(solanaWallet.id)
+          await changePrimaryWallet(solanaWalletRef.current.id)
         }
 
         setState(draft => {
@@ -208,16 +221,16 @@ export const useSwapExecution = (
         // EVM: always switch to the sell chain to avoid race conditions with WalletConnect
         const sellChainIdNumber = Number(chainReference)
 
-        if (!evmWallet) {
+        if (!evmWalletRef.current) {
           throw new Error('EVM wallet not connected')
         }
 
-        if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-          await changePrimaryWallet(evmWallet.id)
+        if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+          await changePrimaryWallet(evmWalletRef.current.id)
         }
 
         // EthereumWallet.connector has switchNetwork properly typed
-        await evmWallet.connector.switchNetwork({ networkChainId: sellChainIdNumber })
+        await evmWalletRef.current.connector.switchNetwork({ networkChainId: sellChainIdNumber })
 
         setState(draft => {
           draft.completedSteps.add(draft.currentStep)
