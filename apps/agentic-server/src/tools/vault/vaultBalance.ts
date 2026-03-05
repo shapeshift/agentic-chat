@@ -42,7 +42,7 @@ export async function executeVaultBalance(
 
   if (input.network) {
     const numericChainId = Number(networkToChainIdMap[input.network].split(':').pop())
-    const safeAddress = getSafeAddressForChain(walletContext, numericChainId)
+    const safeAddress = await getSafeAddressForChain(walletContext, numericChainId)
     if (!safeAddress) {
       throw new Error(
         `No Safe vault found on ${input.network}. A Safe smart account is deployed automatically when you create your first automated order.`

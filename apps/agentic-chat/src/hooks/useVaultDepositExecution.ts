@@ -99,6 +99,15 @@ export const useVaultDepositExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -119,14 +128,14 @@ export const useVaultDepositExecution = (
 
   const { state } = useToolExecutionEffect(toolCallId, depositData, initialState, async (data, setState) => {
     const persistState = (finalState: VaultDepositState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = toPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         data,
         data.summary.network,
-        evmAddress
+        evmAddressRef.current
       )
       store.persistTransaction(persisted)
     }
@@ -134,7 +143,7 @@ export const useVaultDepositExecution = (
     try {
       const { depositTx } = data
 
-      if (!evmAddress) {
+      if (!evmAddressRef.current) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
 
@@ -145,17 +154,17 @@ export const useVaultDepositExecution = (
       })
 
       // Network Switch
-      if (!evmWallet) {
+      if (!evmWalletRef.current) {
         throw new Error('EVM wallet not connected')
       }
 
-      if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
       const { chainReference } = fromChainId(depositTx.chainId)
       const chainIdNumber = Number(chainReference)
-      await evmWallet.connector.switchNetwork({ networkChainId: chainIdNumber })
+      await evmWalletRef.current.connector.switchNetwork({ networkChainId: chainIdNumber })
 
       setState(draft => {
         draft.completedSteps.add(VaultDepositStep.NETWORK_SWITCH)

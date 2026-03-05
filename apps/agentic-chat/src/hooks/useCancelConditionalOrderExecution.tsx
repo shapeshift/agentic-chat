@@ -107,6 +107,15 @@ export function useCancelConditionalOrderExecution(
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -127,14 +136,14 @@ export function useCancelConditionalOrderExecution(
 
   const { state } = useToolExecutionEffect(toolCallId, cancelData, initialCancelState, async (data, setState) => {
     const persistState = (finalState: CancelState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = cancelStateToPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         toolType,
         data,
-        evmAddress
+        evmAddressRef.current
       )
       store.persistTransaction(persisted)
     }
@@ -142,7 +151,7 @@ export function useCancelConditionalOrderExecution(
     try {
       const { safeTransaction, safeAddress } = data
 
-      if (!evmAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
+      if (!evmAddressRef.current) throw new Error('Wallet disconnected. Please reconnect and try again.')
 
       setState(draft => {
         draft.completedSteps.add(CancelStep.PREPARE)
@@ -150,13 +159,13 @@ export function useCancelConditionalOrderExecution(
         draft.error = undefined
       })
 
-      if (!evmWallet) throw new Error('EVM wallet not connected')
+      if (!evmWalletRef.current) throw new Error('EVM wallet not connected')
 
-      if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      await evmWallet.connector.switchNetwork({ networkChainId: safeTransaction.chainId })
+      await evmWalletRef.current.connector.switchNetwork({ networkChainId: safeTransaction.chainId })
 
       setState(draft => {
         draft.completedSteps.add(CancelStep.NETWORK_SWITCH)
@@ -164,11 +173,11 @@ export function useCancelConditionalOrderExecution(
         draft.error = undefined
       })
 
-      const walletClient = await evmWallet.getWalletClient()
+      const walletClient = await evmWalletRef.current.getWalletClient()
       const cancelTxHash = await executeSafeTransaction(
         safeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
-        evmAddress,
+        evmAddressRef.current,
         safeTransaction.chainId,
         walletClient
       )

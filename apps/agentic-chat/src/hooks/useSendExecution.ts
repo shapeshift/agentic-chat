@@ -213,11 +213,6 @@ export const useSendExecution = (
 
       sendTxHash = await executeSend(tx, { solanaSigner })
 
-      // Build final state with all completed steps
-      const finalCompletedSteps = new Set(state.completedSteps)
-      finalCompletedSteps.add(SendStep.PREPARATION)
-      finalCompletedSteps.add(SendStep.SEND)
-
       setState(draft => {
         draft.sendTxHash = sendTxHash
         draft.completedSteps.add(draft.currentStep)
@@ -235,7 +230,7 @@ export const useSendExecution = (
       // Save terminal state with actual accumulated completedSteps
       const finalState: SendState = {
         currentStep: SendStep.COMPLETE,
-        completedSteps: finalCompletedSteps,
+        completedSteps: new Set([SendStep.PREPARATION, SendStep.SEND]),
         sendTxHash,
       }
       if (activeConversationIdRef.current) {

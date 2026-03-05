@@ -109,6 +109,15 @@ export const useVaultWithdrawAllExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -129,16 +138,16 @@ export const useVaultWithdrawAllExecution = (
 
   const { state } = useToolExecutionEffect(toolCallId, withdrawData, initialState, async (data, setState) => {
     const persistState = (finalState: VaultWithdrawAllState) => {
-      if (!activeConversationId) return
-      const persisted = toPersistedState(toolCallId, finalState, activeConversationId, data, evmAddress)
+      if (!activeConversationIdRef.current) return
+      const persisted = toPersistedState(toolCallId, finalState, activeConversationIdRef.current, data, evmAddressRef.current)
       store.persistTransaction(persisted)
     }
 
     try {
-      if (!evmAddress) {
+      if (!evmAddressRef.current) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
-      if (!evmWallet) {
+      if (!evmWalletRef.current) {
         throw new Error('EVM wallet not connected')
       }
 
@@ -148,8 +157,8 @@ export const useVaultWithdrawAllExecution = (
         draft.error = undefined
       })
 
-      if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
       // Execute each chain's batch sequentially (network switch → sign batch)
@@ -161,13 +170,13 @@ export const useVaultWithdrawAllExecution = (
         })
 
         try {
-          await evmWallet.connector.switchNetwork({ networkChainId: withdrawal.chainId })
+          await evmWalletRef.current.connector.switchNetwork({ networkChainId: withdrawal.chainId })
 
-          const walletClient = await evmWallet.getWalletClient()
+          const walletClient = await evmWalletRef.current.getWalletClient()
           const txHash = await executeSafeBatchTransaction(
             withdrawal.safeAddress,
             withdrawal.safeBatchTransaction,
-            evmAddress,
+            evmAddressRef.current,
             withdrawal.chainId,
             walletClient
           )

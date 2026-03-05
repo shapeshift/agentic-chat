@@ -1,6 +1,8 @@
 import { getViemClient } from '@shapeshiftoss/utils'
 import { getAddress } from 'viem'
 
+import { predictSafeAddress } from './predictSafeAddress'
+
 const SAFE_GET_OWNERS_ABI = [
   {
     name: 'getOwners',
@@ -16,7 +18,16 @@ export async function verifySafeOwnership(safeAddress: string, expectedOwner: st
   const client = getViemClient(caipChainId)
 
   const code = await client.getCode({ address: safeAddress as `0x${string}` })
-  if (!code || code === '0x') return // not deployed yet — trust the prediction
+  if (!code || code === '0x') {
+    const predicted = await predictSafeAddress(expectedOwner, chainId)
+    if (getAddress(predicted) !== getAddress(safeAddress)) {
+      throw new Error(
+        `Safe address ${safeAddress} does not match the predicted address for wallet ${expectedOwner}. ` +
+          'This may indicate a tampered request.'
+      )
+    }
+    return
+  }
 
   const owners = await client.readContract({
     address: safeAddress as `0x${string}`,

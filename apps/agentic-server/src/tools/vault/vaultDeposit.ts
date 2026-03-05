@@ -9,7 +9,7 @@ import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { validateSufficientBalance } from '../../utils/balanceHelpers'
 import { createTransaction } from '../../utils/transactionHelpers'
-import { getAddressForChain, getVerifiedSafeAddressForChain } from '../../utils/walletContextSimple'
+import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 export const vaultDepositSchema = z.object({
@@ -69,7 +69,7 @@ export async function executeVaultDeposit(
   input: VaultDepositInput,
   walletContext?: WalletContext
 ): Promise<VaultDepositOutput> {
-  const safeAddress = await getVerifiedSafeAddressForChain(walletContext, NETWORK_TO_CHAIN_ID[input.network]!)
+  const safeAddress = await getSafeAddressForChain(walletContext, NETWORK_TO_CHAIN_ID[input.network]!)
   if (!safeAddress) {
     throw new Error(
       'No Safe vault found. A Safe smart account is deployed automatically when you create your first automated order.'

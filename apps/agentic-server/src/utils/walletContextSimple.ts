@@ -62,15 +62,11 @@ export function isSafeReadyOnChain(walletContext: WalletContext | undefined, cha
   return chainState.isDeployed && chainState.modulesEnabled && chainState.domainVerifierSet
 }
 
-export function getSafeAddressForChain(walletContext: WalletContext | undefined, chainId: number): string | undefined {
-  return walletContext?.safeDeploymentState?.[chainId]?.safeAddress
-}
-
-export async function getVerifiedSafeAddressForChain(
+export async function getSafeAddressForChain(
   walletContext: WalletContext | undefined,
   chainId: number
 ): Promise<string | undefined> {
-  const safeAddress = getSafeAddressForChain(walletContext, chainId) ?? walletContext?.safeAddress
+  const safeAddress = walletContext?.safeDeploymentState?.[chainId]?.safeAddress ?? walletContext?.safeAddress
   if (!safeAddress) return undefined
 
   const caipChainId = `eip155:${chainId}`

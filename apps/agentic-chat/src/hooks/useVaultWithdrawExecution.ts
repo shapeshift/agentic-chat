@@ -98,6 +98,15 @@ export const useVaultWithdrawExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -118,14 +127,14 @@ export const useVaultWithdrawExecution = (
 
   const { state } = useToolExecutionEffect(toolCallId, withdrawData, initialState, async (data, setState) => {
     const persistState = (finalState: VaultWithdrawState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = toPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         data,
         data.summary.network,
-        evmAddress
+        evmAddressRef.current
       )
       store.persistTransaction(persisted)
     }
@@ -133,7 +142,7 @@ export const useVaultWithdrawExecution = (
     try {
       const { safeTransaction, summary } = data
 
-      if (!evmAddress) {
+      if (!evmAddressRef.current) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
 
@@ -144,15 +153,15 @@ export const useVaultWithdrawExecution = (
       })
 
       // Network Switch
-      if (!evmWallet) {
+      if (!evmWalletRef.current) {
         throw new Error('EVM wallet not connected')
       }
 
-      if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      await evmWallet.connector.switchNetwork({ networkChainId: safeTransaction.chainId })
+      await evmWalletRef.current.connector.switchNetwork({ networkChainId: safeTransaction.chainId })
 
       setState(draft => {
         draft.completedSteps.add(VaultWithdrawStep.NETWORK_SWITCH)
@@ -161,11 +170,11 @@ export const useVaultWithdrawExecution = (
       })
 
       // Withdraw via Safe transaction
-      const walletClient = await evmWallet.getWalletClient()
+      const walletClient = await evmWalletRef.current.getWalletClient()
       const withdrawTxHash = await executeSafeTransaction(
         summary.safeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
-        evmAddress,
+        evmAddressRef.current,
         safeTransaction.chainId,
         walletClient
       )

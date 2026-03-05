@@ -113,6 +113,7 @@
         "@ai-sdk/anthropic": "^2.0.41",
         "@ai-sdk/openai-compatible": "^1.0.28",
         "@ai-sdk/provider": "^2.0.0",
+        "@safe-global/protocol-kit": "^6.1.2",
         "@solana/spl-token": "^0.4.0",
         "@solana/web3.js": "^1.95.2",
         "ai": "^5.0.76",

@@ -122,6 +122,15 @@ export const useTwapExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -144,14 +153,14 @@ export const useTwapExecution = (
     let approvalTxHash: string | undefined
 
     const persistState = (finalState: TwapState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = twapStateToPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         data,
         data.summary.network,
-        evmAddress
+        evmAddressRef.current
       )
       store.persistTransaction(persisted)
     }
@@ -159,7 +168,7 @@ export const useTwapExecution = (
     try {
       const { safeTransaction, needsApproval, approvalTx } = data
 
-      if (!evmAddress) {
+      if (!evmAddressRef.current) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
 
@@ -172,15 +181,15 @@ export const useTwapExecution = (
       const targetChainId = safeTransaction.chainId
 
       // Network Switch — must happen BEFORE Safe check so deploySafe runs on the correct chain
-      if (!evmWallet) {
+      if (!evmWalletRef.current) {
         throw new Error('EVM wallet not connected')
       }
 
-      if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      await evmWallet.connector.switchNetwork({ networkChainId: targetChainId })
+      await evmWalletRef.current.connector.switchNetwork({ networkChainId: targetChainId })
 
       setState(draft => {
         draft.completedSteps.add(TwapStep.NETWORK_SWITCH)
@@ -189,8 +198,8 @@ export const useTwapExecution = (
       })
 
       // Safe Check — deploy Safe + enable ComposableCoW modules on target chain
-      const walletClient = await evmWallet.getWalletClient()
-      const deployedSafeAddress = await ensureSafeReady(evmAddress, targetChainId, evmAddress, walletClient)
+      const walletClient = await evmWalletRef.current.getWalletClient()
+      const deployedSafeAddress = await ensureSafeReady(evmAddressRef.current, targetChainId, evmAddressRef.current, walletClient)
 
       setState(draft => {
         draft.completedSteps.add(TwapStep.SAFE_CHECK)
@@ -235,7 +244,7 @@ export const useTwapExecution = (
         approvalTxHash = await executeSafeTransaction(
           deployedSafeAddress,
           { to: approvalTx.to, data: approvalTx.data, value: approvalTx.value },
-          evmAddress,
+          evmAddressRef.current,
           targetChainId,
           walletClient
         )
@@ -271,7 +280,7 @@ export const useTwapExecution = (
       const submitTxHash = await executeSafeTransaction(
         deployedSafeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
-        evmAddress,
+        evmAddressRef.current,
         targetChainId,
         walletClient
       )

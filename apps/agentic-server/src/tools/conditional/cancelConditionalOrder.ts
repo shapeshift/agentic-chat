@@ -15,13 +15,13 @@ export interface CancelConditionalOrderOutput {
   message: string
 }
 
-export function executeCancelConditionalOrder(
+export async function executeCancelConditionalOrder(
   input: CancelConditionalOrderInput,
   orderType: 'stop-loss' | 'TWAP/DCA',
   walletContext?: WalletContext
-): CancelConditionalOrderOutput {
+): Promise<CancelConditionalOrderOutput> {
   const chainId = NETWORK_TO_CHAIN_ID[input.network]!
-  const safeAddress = getSafeAddressForChain(walletContext, chainId)
+  const safeAddress = await getSafeAddressForChain(walletContext, chainId)
   if (!safeAddress) {
     throw new Error(`No Safe smart account found. Cannot cancel ${orderType} without a Safe wallet.`)
   }

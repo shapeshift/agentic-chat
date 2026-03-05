@@ -26,23 +26,19 @@ export enum StopLossStep {
   PREPARE = 0,
   NETWORK_SWITCH = 1,
   SAFE_CHECK = 2,
-  WRAP_NATIVE = 3,
-  WRAP_NATIVE_CONFIRMATION = 4,
-  VAULT_DEPOSIT = 5,
-  VAULT_DEPOSIT_CONFIRMATION = 6,
-  APPROVAL = 7,
-  APPROVAL_CONFIRMATION = 8,
-  SUBMIT_TO_COMPOSABLE_COW = 9,
-  CONFIRM_TX = 10,
-  COMPLETE = 11,
+  VAULT_DEPOSIT = 3,
+  VAULT_DEPOSIT_CONFIRMATION = 4,
+  APPROVAL = 5,
+  APPROVAL_CONFIRMATION = 6,
+  SUBMIT_TO_COMPOSABLE_COW = 7,
+  CONFIRM_TX = 8,
+  COMPLETE = 9,
 }
 
 const STOP_LOSS_PHASES = createStepPhaseMap<StopLossStep>({
   [StopLossStep.PREPARE]: 'prepare_complete',
   [StopLossStep.NETWORK_SWITCH]: 'network_switched',
   [StopLossStep.SAFE_CHECK]: 'safe_checked',
-  [StopLossStep.WRAP_NATIVE]: 'wrapped',
-  [StopLossStep.WRAP_NATIVE_CONFIRMATION]: 'wrap_confirmed',
   [StopLossStep.VAULT_DEPOSIT]: 'deposited',
   [StopLossStep.VAULT_DEPOSIT_CONFIRMATION]: 'deposit_confirmed',
   [StopLossStep.APPROVAL]: 'approved',
@@ -54,7 +50,6 @@ const STOP_LOSS_PHASES = createStepPhaseMap<StopLossStep>({
 interface StopLossState {
   currentStep: StopLossStep
   completedSteps: Set<StopLossStep>
-  wrapTxHash?: string
   depositTxHash?: string
   approvalTxHash?: string
   submitTxHash?: string
@@ -85,7 +80,6 @@ export function stopLossStateToPersistedState(
       ...(state.submitTxHash && { submitTxHash: state.submitTxHash }),
       ...(state.approvalTxHash && { approvalTxHash: state.approvalTxHash }),
       ...(state.depositTxHash && { depositTxHash: state.depositTxHash }),
-      ...(state.wrapTxHash && { wrapTxHash: state.wrapTxHash }),
       ...(state.error && { error: state.error }),
       ...(networkName && { networkName }),
     },
@@ -102,7 +96,6 @@ export function persistedStateToStopLossState(persisted: PersistedToolState): St
     submitTxHash: persisted.meta.submitTxHash as string | undefined,
     approvalTxHash: persisted.meta.approvalTxHash as string | undefined,
     depositTxHash: persisted.meta.depositTxHash as string | undefined,
-    wrapTxHash: persisted.meta.wrapTxHash as string | undefined,
     error: hasError ? (persisted.meta.error as string) : undefined,
   }
 }
@@ -130,6 +123,15 @@ export const useStopLossExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -152,14 +154,14 @@ export const useStopLossExecution = (
     let approvalTxHash: string | undefined
 
     const persistState = (finalState: StopLossState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = stopLossStateToPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         data,
         data.summary.network,
-        evmAddress
+        evmAddressRef.current
       )
       store.persistTransaction(persisted)
     }
@@ -167,7 +169,7 @@ export const useStopLossExecution = (
     try {
       const { safeTransaction, needsApproval, approvalTx } = data
 
-      if (!evmAddress) {
+      if (!evmAddressRef.current) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
 
@@ -181,15 +183,15 @@ export const useStopLossExecution = (
       const targetChainId = safeTransaction.chainId
 
       // Step 1: Network Switch — must happen BEFORE Safe check so deploySafe runs on the correct chain
-      if (!evmWallet) {
+      if (!evmWalletRef.current) {
         throw new Error('EVM wallet not connected')
       }
 
-      if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      await evmWallet.connector.switchNetwork({ networkChainId: targetChainId })
+      await evmWalletRef.current.connector.switchNetwork({ networkChainId: targetChainId })
 
       setState(draft => {
         draft.completedSteps.add(StopLossStep.NETWORK_SWITCH)
@@ -198,50 +200,16 @@ export const useStopLossExecution = (
       })
 
       // Step 2: Safe Check — deploy Safe + enable ComposableCoW modules on target chain
-      const walletClient = await evmWallet.getWalletClient()
-      const deployedSafeAddress = await ensureSafeReady(evmAddress, targetChainId, evmAddress, walletClient)
+      const walletClient = await evmWalletRef.current.getWalletClient()
+      const deployedSafeAddress = await ensureSafeReady(evmAddressRef.current, targetChainId, evmAddressRef.current, walletClient)
 
       setState(draft => {
         draft.completedSteps.add(StopLossStep.SAFE_CHECK)
-        draft.currentStep = StopLossStep.WRAP_NATIVE
+        draft.currentStep = StopLossStep.VAULT_DEPOSIT
         draft.error = undefined
       })
 
-      // Step 3: Wrap native token (e.g. ETH → WETH) if needed
-      const needsWrap = data.needsWrap
-      if (needsWrap && data.wrapTx) {
-        const wrapHash = await sendTransaction({
-          chainId: data.wrapTx.chainId,
-          data: data.wrapTx.data,
-          from: data.wrapTx.from,
-          to: data.wrapTx.to,
-          value: data.wrapTx.value,
-        })
-
-        setState(draft => {
-          draft.wrapTxHash = wrapHash
-          draft.completedSteps.add(StopLossStep.WRAP_NATIVE)
-          draft.currentStep = StopLossStep.WRAP_NATIVE_CONFIRMATION
-          draft.error = undefined
-        })
-
-        await waitForConfirmedReceipt(targetChainId, wrapHash as `0x${string}`)
-
-        setState(draft => {
-          draft.completedSteps.add(StopLossStep.WRAP_NATIVE_CONFIRMATION)
-          draft.currentStep = StopLossStep.VAULT_DEPOSIT
-          draft.error = undefined
-        })
-      } else {
-        setState(draft => {
-          draft.completedSteps.add(StopLossStep.WRAP_NATIVE)
-          draft.completedSteps.add(StopLossStep.WRAP_NATIVE_CONFIRMATION)
-          draft.currentStep = StopLossStep.VAULT_DEPOSIT
-          draft.error = undefined
-        })
-      }
-
-      // Step 4: Vault Deposit — transfer sell tokens from EOA to Safe (if needed)
+      // Step 3: Vault Deposit — transfer sell tokens from EOA to Safe (if needed)
       const needsDeposit = data.needsDeposit
       if (needsDeposit && data.depositTx) {
         const depositHash = await sendTransaction({
@@ -280,7 +248,7 @@ export const useStopLossExecution = (
         approvalTxHash = await executeSafeTransaction(
           deployedSafeAddress,
           { to: approvalTx.to, data: approvalTx.data, value: approvalTx.value },
-          evmAddress,
+          evmAddressRef.current,
           targetChainId,
           walletClient
         )
@@ -318,7 +286,7 @@ export const useStopLossExecution = (
       const submitTxHash = await executeSafeTransaction(
         deployedSafeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
-        evmAddress,
+        evmAddressRef.current,
         targetChainId,
         walletClient
       )
@@ -372,8 +340,6 @@ export const useStopLossExecution = (
           StopLossStep.PREPARE,
           StopLossStep.SAFE_CHECK,
           StopLossStep.NETWORK_SWITCH,
-          StopLossStep.WRAP_NATIVE,
-          StopLossStep.WRAP_NATIVE_CONFIRMATION,
           StopLossStep.VAULT_DEPOSIT,
           StopLossStep.VAULT_DEPOSIT_CONFIRMATION,
           ...(needsApproval ? [StopLossStep.APPROVAL, StopLossStep.APPROVAL_CONFIRMATION] : []),
@@ -441,11 +407,6 @@ export const useStopLossExecution = (
       { step: StopLossStep.PREPARE, status: prepareStepStatus },
       { step: StopLossStep.NETWORK_SWITCH, status: getStepStatus(StopLossStep.NETWORK_SWITCH, state) },
       { step: StopLossStep.SAFE_CHECK, status: getStepStatus(StopLossStep.SAFE_CHECK, state) },
-      { step: StopLossStep.WRAP_NATIVE, status: getStepStatus(StopLossStep.WRAP_NATIVE, state) },
-      {
-        step: StopLossStep.WRAP_NATIVE_CONFIRMATION,
-        status: getStepStatus(StopLossStep.WRAP_NATIVE_CONFIRMATION, state),
-      },
       { step: StopLossStep.VAULT_DEPOSIT, status: getStepStatus(StopLossStep.VAULT_DEPOSIT, state) },
       {
         step: StopLossStep.VAULT_DEPOSIT_CONFIRMATION,

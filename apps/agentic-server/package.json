@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.41",
+    "@safe-global/protocol-kit": "^6.1.2",
     "@ai-sdk/openai-compatible": "^1.0.28",
     "@ai-sdk/provider": "^2.0.0",
     "@solana/spl-token": "^0.4.0",

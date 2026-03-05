@@ -20,7 +20,7 @@ import { getAllowance } from '../../utils'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
-import { getAddressForChain, getVerifiedSafeAddressForChain } from '../../utils/walletContextSimple'
+import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 function formatPrice(price: number): string {
@@ -30,7 +30,7 @@ function formatPrice(price: number): string {
 }
 
 export const createStopLossSchema = z.object({
-  sellAsset: z.string().describe('Token symbol or name to sell when price drops (e.g., "ETH", "WETH", "LINK"). Native tokens like ETH are automatically wrapped to WETH.'),
+  sellAsset: z.string().describe('Token symbol or name to sell when price drops (e.g., "WETH", "LINK"). Must be an ERC20 token — native tokens like ETH must be wrapped to WETH first.'),
   buyAsset: z
     .string()
     .describe('Token symbol or name to receive (e.g., "USDC", "USDT"). Usually a stablecoin for stop-losses.'),
@@ -78,8 +78,6 @@ export interface CreateStopLossOutput {
   conditionalOrderParams: ConditionalOrderParams
   needsDeposit: boolean
   depositTx?: TransactionData
-  needsWrap: boolean
-  wrapTx?: TransactionData
   sellTokenAddress: string
   buyTokenAddress: string
   sellAmountBaseUnit: string
@@ -100,7 +98,7 @@ export async function executeCreateStopLoss(
   const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
 
   // Validate Safe address is available on the target chain
-  const safeAddress = await getVerifiedSafeAddressForChain(walletContext, evmChainId)
+  const safeAddress = await getSafeAddressForChain(walletContext, evmChainId)
   if (!safeAddress) {
     throw new Error(
       'Stop-loss orders require a Safe smart account. A Safe will be deployed automatically when you submit this order.'
@@ -115,14 +113,15 @@ export async function executeCreateStopLoss(
   // Validate the user has a connected wallet on this chain
   getAddressForChain(walletContext, rawSellAsset.chainId)
 
-  // Auto-resolve native token (ETH) to wrapped version (WETH) since CoW Protocol requires ERC20 tokens
-  const sellAsset = isNativeToken(rawSellAsset)
-    ? await (async () => {
-        const wrappedSymbol = `W${rawSellAsset.symbol}`
-        console.log(`[createStopLoss] Native ${rawSellAsset.symbol} detected, auto-resolving to ${wrappedSymbol}`)
-        return resolveAsset({ symbolOrName: wrappedSymbol, network: input.network }, walletContext)
-      })()
-    : rawSellAsset
+  // Reject native tokens — CoW Protocol requires ERC20 tokens
+  if (isNativeToken(rawSellAsset)) {
+    const nativeSymbol = rawSellAsset.symbol
+    throw new Error(
+      `Native ${nativeSymbol} cannot be used as sell asset for stop-loss orders. ` +
+        `CoW Protocol requires ERC20 tokens. Please wrap your ${nativeSymbol} to W${nativeSymbol} first.`
+    )
+  }
+  const sellAsset = rawSellAsset
 
   const sellOracle = getChainlinkOracle(evmChainId, sellAsset.symbol)
   const buyOracle = getChainlinkOracle(evmChainId, buyAsset.symbol)
@@ -203,7 +202,7 @@ export async function executeCreateStopLoss(
 
   const strikePrice = new BigNumber(strikePriceStr)
 
-  const { totalNeeded, needsDeposit, depositTx, needsWrap, wrapTx } = await calculateSafeVaultDeposit({
+  const { totalNeeded, needsDeposit, depositTx } = await calculateSafeVaultDeposit({
     walletContext,
     safeAddress,
     sellAsset,
@@ -291,8 +290,6 @@ export async function executeCreateStopLoss(
     conditionalOrderParams,
     needsDeposit,
     depositTx,
-    needsWrap,
-    wrapTx,
     sellTokenAddress: sellTokenAddress as string,
     buyTokenAddress: buyTokenAddress as string,
     sellAmountBaseUnit,
@@ -318,7 +315,7 @@ IMPORTANT:
 - Only tokens with Chainlink price feeds are supported
 - CoW's watchtower monitors the order and executes when Chainlink reports price <= trigger
 - 2% slippage buffer applied to buy amount
-- Native tokens (ETH) are automatically wrapped to WETH — no manual wrapping needed
+- Native tokens (ETH) cannot be used directly — wrap to WETH first
 - Use the maths tool if you need to calculate trigger prices from percentages`,
   inputSchema: createStopLossSchema,
   execute: executeCreateStopLoss,

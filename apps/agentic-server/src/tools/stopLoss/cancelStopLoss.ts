@@ -12,7 +12,7 @@ export const cancelStopLossSchema = z.object({
 export type CancelStopLossInput = z.infer<typeof cancelStopLossSchema>
 export type CancelStopLossOutput = CancelConditionalOrderOutput
 
-export function executeCancelStopLoss(input: CancelStopLossInput, walletContext?: WalletContext): CancelStopLossOutput {
+export function executeCancelStopLoss(input: CancelStopLossInput, walletContext?: WalletContext): Promise<CancelStopLossOutput> {
   return executeCancelConditionalOrder(input, 'stop-loss', walletContext)
 }
 

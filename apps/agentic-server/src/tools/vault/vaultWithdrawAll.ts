@@ -3,7 +3,8 @@ import { assetService, getFeeAssetIdByChainId, toBigInt, toBaseUnit } from '@sha
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
-import { getVerifiedSafeAddressForChain } from '../../utils/walletContextSimple'
+import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import { getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 import { executeVaultBalance } from './vaultBalance'
@@ -31,12 +32,6 @@ interface ChainWithdrawal {
 export interface VaultWithdrawAllOutput {
   withdrawals: ChainWithdrawal[]
   totalUsd: string
-}
-
-const NETWORK_TO_CHAIN_ID: Record<string, number> = {
-  ethereum: 1,
-  gnosis: 100,
-  arbitrum: 42161,
 }
 
 function buildTransferTransaction(
@@ -103,7 +98,7 @@ export async function executeVaultWithdrawAll(
     const numericChainId = NETWORK_TO_CHAIN_ID[network]
     if (!numericChainId) continue
 
-    const safeAddress = await getVerifiedSafeAddressForChain(walletContext, numericChainId)
+    const safeAddress = await getSafeAddressForChain(walletContext, numericChainId)
     if (!safeAddress) continue
 
     const caipChainId = `eip155:${numericChainId}`

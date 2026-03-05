@@ -29,7 +29,13 @@ export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdra
   }
 
   const [prepareStep, networkStep, withdrawStep] = steps
-  if (!prepareStep || !networkStep || !withdrawStep) return null
+  if (!prepareStep || !networkStep || !withdrawStep) return (
+    <TxStepCard.Root>
+      <div className="text-sm text-muted-foreground font-medium p-4">
+        Unable to load steps. Please try again.
+      </div>
+    </TxStepCard.Root>
+  )
 
   const completedCount = [prepareStep.status, networkStep.status, withdrawStep.status].filter(
     s => s === StepStatus.COMPLETE || s === StepStatus.SKIPPED

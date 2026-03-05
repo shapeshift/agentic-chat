@@ -144,7 +144,7 @@ export async function executeGetTwapOrders(
   // "part" orders which are execution details, not user-facing TWAP orders.
   const orderResults = await Promise.allSettled(
     networksToQuery.map(async ({ network, chainId }) => {
-      const safeAddress = getSafeAddressForChain(walletContext, chainId)
+      const safeAddress = await getSafeAddressForChain(walletContext, chainId)
       if (!safeAddress) return []
       return getRegistryOrders(registryOrderSummaries, safeAddress, chainId, network)
     })

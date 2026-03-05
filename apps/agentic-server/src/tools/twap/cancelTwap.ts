@@ -12,7 +12,7 @@ export const cancelTwapSchema = z.object({
 export type CancelTwapInput = z.infer<typeof cancelTwapSchema>
 export type CancelTwapOutput = CancelConditionalOrderOutput
 
-export function executeCancelTwap(input: CancelTwapInput, walletContext?: WalletContext): CancelTwapOutput {
+export function executeCancelTwap(input: CancelTwapInput, walletContext?: WalletContext): Promise<CancelTwapOutput> {
   return executeCancelConditionalOrder(input, 'TWAP/DCA', walletContext)
 }
 

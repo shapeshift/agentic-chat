@@ -20,7 +20,7 @@ import { getAllowance } from '../../utils'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
-import { getAddressForChain, getVerifiedSafeAddressForChain } from '../../utils/walletContextSimple'
+import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
 const DURATION_PATTERNS: Array<{ regex: RegExp; toSeconds: (match: RegExpMatchArray) => number }> = [
@@ -42,7 +42,7 @@ function parseDuration(duration: string): number {
 }
 
 function calculateDefaultIntervals(durationSeconds: number): number {
-  if (durationSeconds <= 3600) return Math.max(durationSeconds / 300, 2)
+  if (durationSeconds <= 3600) return Math.round(Math.max(durationSeconds / 300, 2))
   if (durationSeconds <= 86400) return 24
   if (durationSeconds <= 604800) return 7
   return Math.ceil(durationSeconds / 86400)
@@ -114,7 +114,7 @@ export async function executeCreateTwap(
 ): Promise<CreateTwapOutput> {
   const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
 
-  const safeAddress = await getVerifiedSafeAddressForChain(walletContext, evmChainId)
+  const safeAddress = await getSafeAddressForChain(walletContext, evmChainId)
   if (!safeAddress) {
     throw new Error(
       'TWAP/DCA orders require a Safe smart account. A Safe will be deployed automatically when you submit this order.'

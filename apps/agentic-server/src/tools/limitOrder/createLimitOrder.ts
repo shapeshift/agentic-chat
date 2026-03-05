@@ -77,7 +77,7 @@ function calculateBuyAmount(buyAsset: Asset, sellAmount: string, limitPrice: str
   if (buyAmountHuman.isNaN()) {
     throw new Error('Invalid sellAmount or limitPrice')
   }
-  return toBaseUnit(buyAmountHuman.toFixed(0), buyAsset.precision)
+  return toBaseUnit(buyAmountHuman.toFixed(buyAsset.precision), buyAsset.precision)
 }
 
 export async function executeCreateLimitOrder(
