@@ -77,7 +77,7 @@ export function VaultAssetList() {
         <Vault className="w-12 h-12 text-muted-foreground mb-3" />
         <div className="text-sm font-medium text-foreground">No vault yet</div>
         <div className="text-xs text-muted-foreground mt-1 text-center max-w-xs">
-          Your vault activates automatically when you create your first stop-loss, TWAP, or limit order.
+          Your vault activates automatically when you create your first stop-loss or TWAP order.
         </div>
       </div>
     )

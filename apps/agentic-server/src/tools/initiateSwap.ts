@@ -1,6 +1,6 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
-import { toBaseUnit } from '@shapeshiftoss/utils'
+import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
@@ -124,7 +124,7 @@ function buildApprovalTransaction(
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: 'approve',
-    args: [getAddress(approvalTarget), BigInt(toBaseUnit(sellAmount, sellAsset.precision))],
+    args: [getAddress(approvalTarget), toBigInt(toBaseUnit(sellAmount, sellAsset.precision))],
   })
 
   const tokenAddress = fromAssetId(sellAsset.assetId).assetReference

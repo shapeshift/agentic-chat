@@ -1,11 +1,10 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
-import type { Asset } from '@shapeshiftoss/types'
-import { toBaseUnit } from '@shapeshiftoss/utils'
+import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
-import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
 import { getSimplePrices } from '../../lib/asset/coingecko'
+import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import {
   buildCreateConditionalOrderTx,
   computeConditionalOrderHash,
@@ -16,53 +15,22 @@ import {
   STOP_LOSS_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
-import { isConditionalOrderActive } from '../../lib/composableCow/events'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getAllowance } from '../../utils'
+import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
-import { getBalance } from '../../utils/balanceHelpers'
-import { createTransaction } from '../../utils/transactionHelpers'
+import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
 import { getAddressForChain, getVerifiedSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
-const toBigInt = (value: string): bigint => BigInt(new BigNumber(value).toFixed(0))
-
-type TransactionData = {
-  chainId: string
-  data: string
-  from: string
-  to: string
-  value: string
-}
-
-function buildApprovalTransaction(
-  needsApproval: boolean,
-  sellAsset: Asset,
-  approvalTarget: string,
-  sellAmountBaseUnit: string,
-  safeAddress: string
-): TransactionData | undefined {
-  if (!needsApproval) return undefined
-
-  const data = encodeFunctionData({
-    abi: erc20Abi,
-    functionName: 'approve',
-    args: [getAddress(approvalTarget), toBigInt(sellAmountBaseUnit)],
-  })
-
-  const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
-
-  return createTransaction({
-    chainId: sellAsset.chainId,
-    data,
-    from: safeAddress,
-    to: tokenAddress,
-    value: '0',
-  })
+function formatPrice(price: number): string {
+  if (price >= 0.01) return price.toFixed(2)
+  if (price === 0) return '0'
+  return price.toPrecision(4)
 }
 
 export const createStopLossSchema = z.object({
-  sellAsset: z.string().describe('Token symbol or name to sell when price drops (e.g., "WETH", "LINK")'),
+  sellAsset: z.string().describe('Token symbol or name to sell when price drops (e.g., "ETH", "WETH", "LINK"). Native tokens like ETH are automatically wrapped to WETH.'),
   buyAsset: z
     .string()
     .describe('Token symbol or name to receive (e.g., "USDC", "USDT"). Usually a stablecoin for stop-losses.'),
@@ -110,6 +78,8 @@ export interface CreateStopLossOutput {
   conditionalOrderParams: ConditionalOrderParams
   needsDeposit: boolean
   depositTx?: TransactionData
+  needsWrap: boolean
+  wrapTx?: TransactionData
   sellTokenAddress: string
   buyTokenAddress: string
   sellAmountBaseUnit: string
@@ -138,22 +108,21 @@ export async function executeCreateStopLoss(
   }
 
   // Resolve assets on the specified network
-  const [sellAsset, buyAsset] = await Promise.all([
+  const [rawSellAsset, buyAsset] = await Promise.all([
     resolveAsset({ symbolOrName: input.sellAsset, network: input.network }, walletContext),
     resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
   // Validate the user has a connected wallet on this chain
-  getAddressForChain(walletContext, sellAsset.chainId)
+  getAddressForChain(walletContext, rawSellAsset.chainId)
 
-  // Native token validation
-  if (isNativeToken(sellAsset)) {
-    const nativeSymbol = sellAsset.symbol
-    throw new Error(
-      `Native ${nativeSymbol} cannot be used as sell asset for stop-loss orders. ` +
-        `CoW Protocol requires ERC20 tokens. Please wrap your ${nativeSymbol} to W${nativeSymbol} first, ` +
-        `or select W${nativeSymbol} as the sell asset.`
-    )
-  }
+  // Auto-resolve native token (ETH) to wrapped version (WETH) since CoW Protocol requires ERC20 tokens
+  const sellAsset = isNativeToken(rawSellAsset)
+    ? await (async () => {
+        const wrappedSymbol = `W${rawSellAsset.symbol}`
+        console.log(`[createStopLoss] Native ${rawSellAsset.symbol} detected, auto-resolving to ${wrappedSymbol}`)
+        return resolveAsset({ symbolOrName: wrappedSymbol, network: input.network }, walletContext)
+      })()
+    : rawSellAsset
 
   const sellOracle = getChainlinkOracle(evmChainId, sellAsset.symbol)
   const buyOracle = getChainlinkOracle(evmChainId, buyAsset.symbol)
@@ -192,7 +161,7 @@ export async function executeCreateStopLoss(
   }
   if (triggerPriceNum >= currentSellPrice) {
     throw new Error(
-      `Trigger price ($${input.triggerPrice}) must be below current price ($${currentSellPrice.toFixed(2)}). ` +
+      `Trigger price ($${input.triggerPrice}) must be below current price ($${formatPrice(currentSellPrice)}). ` +
         `A stop-loss triggers when price drops to your threshold.`
     )
   }
@@ -234,25 +203,14 @@ export async function executeCreateStopLoss(
 
   const strikePrice = new BigNumber(strikePriceStr)
 
-  // Calculate cumulative committed amount from existing active orders for same sell token
-  let committedAmount = 0n
-  const existingOrders = (walletContext?.registryOrders ?? []).filter(
-    o => o.chainId === evmChainId && o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
-  )
-  if (existingOrders.length > 0) {
-    const activeResults = await Promise.all(
-      existingOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, evmChainId))
-    )
-    console.log(
-      '[createStopLoss] existing order amounts:',
-      existingOrders.map(o => o.sellAmountBaseUnit)
-    )
-    committedAmount = existingOrders
-      .filter((_, i) => activeResults[i])
-      .reduce((sum, o) => sum + toBigInt(o.sellAmountBaseUnit), 0n)
-  }
-
-  const totalNeeded = committedAmount + toBigInt(sellAmountBaseUnit)
+  const { totalNeeded, needsDeposit, depositTx, needsWrap, wrapTx } = await calculateSafeVaultDeposit({
+    walletContext,
+    safeAddress,
+    sellAsset,
+    sellAmountBaseUnit,
+    evmChainId,
+    sellTokenAddress,
+  })
 
   // Check allowance (from Safe → VaultRelayer) against total needed
   const approvalTarget = COW_VAULT_RELAYER_ADDRESS
@@ -301,32 +259,6 @@ export async function executeCreateStopLoss(
   const orderHash = computeConditionalOrderHash(conditionalOrderParams)
   const safeTransaction = buildCreateConditionalOrderTx(conditionalOrderParams)
 
-  // Check if Safe has sufficient balance for this order plus existing commitments
-  const eoaAddress = getAddressForChain(walletContext, sellAsset.chainId)
-  const safeBalance = await getBalance(safeAddress, sellAsset)
-  console.log('[createStopLoss] safeBalance:', JSON.stringify(safeBalance))
-  const needsDeposit = toBigInt(safeBalance) < totalNeeded
-  const depositAmount = needsDeposit ? totalNeeded - toBigInt(safeBalance) : 0n
-
-  let depositTx: TransactionData | undefined
-  if (needsDeposit) {
-    const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
-    const transferData = encodeFunctionData({
-      abi: erc20Abi,
-      functionName: 'transfer',
-      args: [getAddress(safeAddress), depositAmount],
-    })
-
-    depositTx = createTransaction({
-      chainId: sellAsset.chainId,
-      data: transferData,
-      from: getAddress(eoaAddress),
-      to: getAddress(tokenAddress),
-      value: '0',
-      gasLimit: '65000',
-    })
-  }
-
   const priceDistancePercent = new BigNumber(currentSellPrice - triggerPriceNum)
     .div(currentSellPrice)
     .times(100)
@@ -342,7 +274,7 @@ export async function executeCreateStopLoss(
     buyAsset: { symbol: buyAsset.symbol, estimatedAmount: estimatedBuyAmount },
     network: input.network,
     triggerPrice: input.triggerPrice,
-    currentPrice: currentSellPrice.toFixed(2),
+    currentPrice: formatPrice(currentSellPrice),
     priceDistancePercent,
     expiresAt,
     provider: 'cow',
@@ -359,6 +291,8 @@ export async function executeCreateStopLoss(
     conditionalOrderParams,
     needsDeposit,
     depositTx,
+    needsWrap,
+    wrapTx,
     sellTokenAddress: sellTokenAddress as string,
     buyTokenAddress: buyTokenAddress as string,
     sellAmountBaseUnit,
@@ -384,7 +318,7 @@ IMPORTANT:
 - Only tokens with Chainlink price feeds are supported
 - CoW's watchtower monitors the order and executes when Chainlink reports price <= trigger
 - 2% slippage buffer applied to buy amount
-- Native tokens (ETH) must be wrapped (WETH) to sell
+- Native tokens (ETH) are automatically wrapped to WETH — no manual wrapping needed
 - Use the maths tool if you need to calculate trigger prices from percentages`,
   inputSchema: createStopLossSchema,
   execute: executeCreateStopLoss,

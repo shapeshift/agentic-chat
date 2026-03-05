@@ -1,9 +1,12 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
-import { useUserWallets } from '@dynamic-labs/sdk-react-core'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useDynamicContext, useUserWallets } from '@dynamic-labs/sdk-react-core'
+import { useQuery } from '@tanstack/react-query'
+import { useCallback, useMemo, useState } from 'react'
 
-import { deploySafe, enableComposableCowModules, getSafeState } from '@/lib/safe'
+import { deploySafe, enableComposableCowModules, predictSafeAddress } from '@/lib/safe'
 import type { SafeDeploymentResult } from '@/lib/safe'
+import { findEvmWallet } from '@/lib/walletUtils'
+import { useSafeStore } from '@/stores/safeStore'
 
 export interface SafeChainDeployment {
   isDeployed: boolean
@@ -25,25 +28,32 @@ export interface UseSafeAccountResult {
 }
 
 export function useSafeAccount(): UseSafeAccountResult {
-  // Get wallet info directly from Dynamic SDK to avoid circular dependency with useWalletConnection
+  // Use same EVM wallet selection as useWalletConnection: prefer primaryWallet if EVM, else first EVM
+  const { primaryWallet } = useDynamicContext()
   const userWallets = useUserWallets()
-  const evmAddress = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- SDK type variance
-    const evmWallet = userWallets.find(w => isEthereumWallet(w))
-    return evmWallet?.address
-  }, [userWallets])
+  const evmWallet = useMemo(() => {
+    const primaryEvm = primaryWallet && isEthereumWallet(primaryWallet) ? primaryWallet : undefined
+    return primaryEvm ?? findEvmWallet(userWallets)
+  }, [primaryWallet, userWallets])
+  const evmAddress = evmWallet?.address
 
-  const [safeState, setSafeStateLocal] = useState<ReturnType<typeof getSafeState>>({})
+  const deployments = useSafeStore(state => state.deployments)
   const [isDeploying, setIsDeploying] = useState(false)
 
-  // Load Safe state from localStorage when address changes
-  useEffect(() => {
-    if (evmAddress) {
-      setSafeStateLocal(getSafeState(evmAddress))
-    } else {
-      setSafeStateLocal({})
-    }
-  }, [evmAddress])
+  const safeState = useMemo(() => {
+    return evmAddress ? (deployments[evmAddress.toLowerCase()] ?? {}) : {}
+  }, [evmAddress, deployments])
+
+  // Predict Safe address via CREATE2 — deterministic, never changes for a given owner
+  const predictedAddressQuery = useQuery({
+    queryKey: ['safe-predicted-address', evmAddress],
+    queryFn: async () => {
+      const walletClient = await evmWallet!.getWalletClient()
+      return predictSafeAddress(evmAddress!, walletClient)
+    },
+    enabled: !!evmAddress && !!evmWallet,
+    staleTime: Infinity,
+  })
 
   // Check if Safe is deployed + modules enabled on any chain
   const deploymentInfo = useMemo(() => {
@@ -68,40 +78,38 @@ export function useSafeAccount(): UseSafeAccountResult {
     return { deployed, modulesEnabled, deployedChainIds, perChainState }
   }, [safeState])
 
-  // Primary Safe address for display: use the first stored address
+  // Primary Safe address: first deployed address, or predicted address for new users
   const safeAddress = useMemo(() => {
     const storedEntry = Object.values(safeState).find(s => s.safeAddress)
-    return storedEntry?.safeAddress
-  }, [safeState])
+    return storedEntry?.safeAddress ?? predictedAddressQuery.data
+  }, [safeState, predictedAddressQuery.data])
 
   const handleDeploySafe = useCallback(
     async (chainId: number): Promise<SafeDeploymentResult> => {
-      if (!evmAddress) throw new Error('No EVM wallet connected')
+      if (!evmAddress || !evmWallet) throw new Error('No EVM wallet connected')
 
       setIsDeploying(true)
       try {
-        const result = await deploySafe(evmAddress, chainId, evmAddress)
-        setSafeStateLocal(getSafeState(evmAddress))
-        return result
+        const walletClient = await evmWallet.getWalletClient()
+        return await deploySafe(evmAddress, chainId, evmAddress, walletClient)
       } finally {
         setIsDeploying(false)
       }
     },
-    [evmAddress]
+    [evmAddress, evmWallet]
   )
 
   const handleEnableModules = useCallback(
     async (chainId: number): Promise<string> => {
-      if (!evmAddress) throw new Error('No EVM wallet connected')
+      if (!evmAddress || !evmWallet) throw new Error('No EVM wallet connected')
 
       const chainState = safeState[chainId]
       if (!chainState?.safeAddress) throw new Error(`Safe not deployed on chain ${chainId}`)
 
-      const txHash = await enableComposableCowModules(chainState.safeAddress, chainId, evmAddress)
-      setSafeStateLocal(getSafeState(evmAddress))
-      return txHash
+      const walletClient = await evmWallet.getWalletClient()
+      return await enableComposableCowModules(chainState.safeAddress, chainId, evmAddress, walletClient)
     },
-    [evmAddress, safeState]
+    [evmAddress, evmWallet, safeState]
   )
 
   return {

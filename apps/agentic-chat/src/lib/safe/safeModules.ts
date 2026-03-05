@@ -1,17 +1,8 @@
 import Safe from '@safe-global/protocol-kit'
 import { createPublicClient, custom, domainSeparator, encodeFunctionData, getAddress } from 'viem'
 
-import { getSafeState, setSafeState } from './safeStorage'
-
-// Matches @safe-global/protocol-kit's internal Eip1193Provider (not publicly exported)
-type SafeProvider = {
-  request: (args: { readonly method: string; readonly params?: readonly unknown[] | object }) => Promise<unknown>
-}
-
-function getProvider(): SafeProvider {
-  if (!window.ethereum) throw new Error('No ethereum provider found. Please connect your wallet.')
-  return window.ethereum as SafeProvider
-}
+import { useSafeStore } from '@/stores/safeStore'
+import type { SafeProvider } from './types'
 
 // ExtensibleFallbackHandler — required for ComposableCoW ERC-1271 verification
 // Same address across Ethereum, Gnosis, Arbitrum (checksummed)
@@ -76,15 +67,16 @@ function computeGpv2DomainSeparator(chainId: number): `0x${string}` {
 export async function enableComposableCowModules(
   safeAddress: string,
   chainId: number,
-  signerAddress: string
+  signerAddress: string,
+  provider: SafeProvider
 ): Promise<string> {
   const protocolKit = await Safe.init({
-    provider: getProvider(),
+    provider,
     signer: signerAddress,
     safeAddress,
   })
 
-  const publicClient = createPublicClient({ transport: custom(getProvider()) })
+  const publicClient = createPublicClient({ transport: custom(provider) })
   const connectedChainId = await publicClient.getChainId()
   if (connectedChainId !== chainId) {
     throw new Error(
@@ -145,11 +137,11 @@ export async function enableComposableCowModules(
   }
 
   if (transactions.length === 0) {
-    // Modules already fully configured on-chain — update localStorage to match
+    // Modules already fully configured on-chain — update store to match
     const ownerAddress = (await protocolKit.getOwners())[0]
     if (ownerAddress) {
-      const existingChainState = getSafeState(ownerAddress)[chainId]
-      setSafeState(ownerAddress, chainId, {
+      const existingChainState = useSafeStore.getState().getChainState(ownerAddress, chainId)
+      useSafeStore.getState().setChainState(ownerAddress, chainId, {
         safeAddress: existingChainState?.safeAddress ?? safeAddress,
         isDeployed: existingChainState?.isDeployed ?? true,
         modulesEnabled: true,
@@ -166,12 +158,16 @@ export async function enableComposableCowModules(
   const txHash = typeof result === 'string' ? result : result.hash
 
   // Wait for module enable tx to be confirmed before updating state
-  await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}`, confirmations: 1 })
+  const moduleReceipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash as `0x${string}`,
+    confirmations: 1,
+  })
+  if (moduleReceipt.status === 'reverted') throw new Error(`Module enable transaction reverted: ${txHash}`)
 
   const ownerAddress = (await protocolKit.getOwners())[0]
   if (ownerAddress) {
-    const existingChainState = getSafeState(ownerAddress)[chainId]
-    setSafeState(ownerAddress, chainId, {
+    const existingChainState = useSafeStore.getState().getChainState(ownerAddress, chainId)
+    useSafeStore.getState().setChainState(ownerAddress, chainId, {
       safeAddress: existingChainState?.safeAddress ?? safeAddress,
       isDeployed: existingChainState?.isDeployed ?? true,
       modulesEnabled: true,

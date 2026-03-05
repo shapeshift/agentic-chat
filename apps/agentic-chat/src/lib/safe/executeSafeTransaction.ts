@@ -1,22 +1,15 @@
 import Safe from '@safe-global/protocol-kit'
 import { createPublicClient, custom } from 'viem'
 
-// Matches @safe-global/protocol-kit's internal Eip1193Provider (not publicly exported)
-type SafeProvider = {
-  request: (args: { readonly method: string; readonly params?: readonly unknown[] | object }) => Promise<unknown>
-}
-
-function getProvider(): SafeProvider {
-  if (!window.ethereum) throw new Error('No ethereum provider found. Please connect your wallet.')
-  return window.ethereum as SafeProvider
-}
+import type { SafeProvider } from './types'
 
 // Wait for a tx to be mined so the Safe nonce increments on-chain before
 // the queue releases the next transaction. Without this, back-to-back txs
 // can read a stale nonce and produce invalid signatures (GS026).
-async function waitForTxConfirmation(txHash: string): Promise<void> {
-  const publicClient = createPublicClient({ transport: custom(getProvider()) })
-  await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}`, confirmations: 1 })
+async function waitForTxConfirmation(txHash: string, provider: SafeProvider): Promise<void> {
+  const publicClient = createPublicClient({ transport: custom(provider) })
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}`, confirmations: 1 })
+  if (receipt.status === 'reverted') throw new Error(`Transaction reverted: ${txHash}`)
 }
 
 // Per-(safeAddress, chainId) sequential queue to prevent nonce race conditions.
@@ -41,11 +34,12 @@ export function executeSafeTransaction(
   safeAddress: string,
   txData: { to: string; data: string; value: string },
   signerAddress: string,
-  chainId: number
+  chainId: number,
+  provider: SafeProvider
 ): Promise<string> {
   return enqueue(safeAddress, chainId, async () => {
     const protocolKit = await Safe.init({
-      provider: getProvider(),
+      provider,
       signer: signerAddress,
       safeAddress,
     })
@@ -65,7 +59,7 @@ export function executeSafeTransaction(
     const result = await protocolKit.executeTransaction(signedTx)
     const txHash = typeof result === 'string' ? result : result.hash
 
-    await waitForTxConfirmation(txHash)
+    await waitForTxConfirmation(txHash, provider)
 
     return txHash
   })
@@ -76,11 +70,12 @@ export function executeSafeBatchTransaction(
   safeAddress: string,
   transactions: Array<{ to: string; data: string; value: string }>,
   signerAddress: string,
-  chainId: number
+  chainId: number,
+  provider: SafeProvider
 ): Promise<string> {
   return enqueue(safeAddress, chainId, async () => {
     const protocolKit = await Safe.init({
-      provider: getProvider(),
+      provider,
       signer: signerAddress,
       safeAddress,
     })
@@ -97,7 +92,7 @@ export function executeSafeBatchTransaction(
     const result = await protocolKit.executeTransaction(signedTx)
     const txHash = typeof result === 'string' ? result : result.hash
 
-    await waitForTxConfirmation(txHash)
+    await waitForTxConfirmation(txHash, provider)
 
     return txHash
   })

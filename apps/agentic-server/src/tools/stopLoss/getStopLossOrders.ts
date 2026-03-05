@@ -1,11 +1,8 @@
-import type { Network } from '@shapeshiftoss/types'
-import { assetService, fromBaseUnit } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
 import { isConditionalOrderActive } from '../../lib/composableCow/events'
-import { getCowOrders } from '../../lib/cow'
-import type { CowOrder, CowOrderStatus } from '../../lib/cow/types'
-import { NETWORK_TO_CHAIN_ID, CHAIN_ID_TO_NETWORK, getCowExplorerUrl } from '../../lib/cow/types'
+import type { CowOrderStatus } from '../../lib/cow/types'
+import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { ActiveOrderSummary, WalletContext } from '../../utils/walletContextSimple'
 
@@ -46,45 +43,6 @@ interface StopLossOrderInfo {
 export interface GetStopLossOrdersOutput {
   orders: StopLossOrderInfo[]
   totalCount: number
-}
-
-const DEFAULT_DECIMALS = 18
-
-function resolveTokenMetadata(tokenAddress: string, chainId: number): { symbol: string; precision: number } | null {
-  const network = CHAIN_ID_TO_NETWORK[chainId] as Network | undefined
-  if (!network) return null
-  const asset = assetService.searchByContract(tokenAddress, network)[0]
-  if (!asset) return null
-  return { symbol: asset.symbol, precision: asset.precision }
-}
-
-function mapStopLossApiStatus(rawStatus: string): CowOrderStatus {
-  if (rawStatus === 'open' || rawStatus === 'presignaturePending') return 'submitted'
-  return rawStatus as CowOrderStatus
-}
-
-function formatCowOrder(order: CowOrder, network: string, chainId: number): StopLossOrderInfo {
-  const sellMeta = resolveTokenMetadata(order.sellToken, chainId)
-  const buyMeta = resolveTokenMetadata(order.buyToken, chainId)
-  const sellPrecision = sellMeta?.precision ?? DEFAULT_DECIMALS
-  const buyPrecision = buyMeta?.precision ?? DEFAULT_DECIMALS
-
-  return {
-    id: order.uid,
-    status: mapStopLossApiStatus(order.status as string),
-    network,
-    sellToken: sellMeta?.symbol ?? order.sellToken.slice(0, 10),
-    buyToken: buyMeta?.symbol ?? order.buyToken.slice(0, 10),
-    sellAmount: fromBaseUnit(order.sellAmount, sellPrecision),
-    buyAmount: fromBaseUnit(order.buyAmount, buyPrecision),
-    executedSellAmount: order.executedSellAmount ? fromBaseUnit(order.executedSellAmount, sellPrecision) : undefined,
-    executedBuyAmount: order.executedBuyAmount ? fromBaseUnit(order.executedBuyAmount, buyPrecision) : undefined,
-    createdAt: order.creationDate,
-    validTo: order.validTo,
-    cowTrackingUrl: getCowExplorerUrl(order.uid),
-    kind: order.kind,
-    partiallyFillable: order.partiallyFillable,
-  }
 }
 
 function mapRegistryOrderToInfo(order: ActiveOrderSummary, network: string, status: CowOrderStatus): StopLossOrderInfo {
@@ -157,36 +115,20 @@ export async function executeGetStopLossOrders(
   const orderResults = await Promise.allSettled(
     networksToQuery.map(async ({ network, chainId }) => {
       const safeAddress = getSafeAddressForChain(walletContext, chainId)
-      if (!safeAddress) return { apiOrders: [] as StopLossOrderInfo[], chainRegistryOrders: [] as StopLossOrderInfo[] }
+      if (!safeAddress) return [] as StopLossOrderInfo[]
 
-      const [apiOrders, chainRegistryOrders] = await Promise.all([
-        getCowOrders(safeAddress, chainId).then(orders => orders.map(order => formatCowOrder(order, network, chainId))),
-        getRegistryOrders(registryOrderSummaries, safeAddress, chainId, network).catch(err => {
-          console.error(`[getStopLossOrders] Registry order verification failed on ${network}:`, err)
-          return [] as StopLossOrderInfo[]
-        }),
-      ])
-
-      return { apiOrders, chainRegistryOrders }
+      return getRegistryOrders(registryOrderSummaries, safeAddress, chainId, network).catch(err => {
+        console.error(`[getStopLossOrders] Registry order verification failed on ${network}:`, err)
+        return [] as StopLossOrderInfo[]
+      })
     })
   )
 
-  const allApiOrders: StopLossOrderInfo[] = []
-  const allRegistryOrders: StopLossOrderInfo[] = []
-
+  const allOrders: StopLossOrderInfo[] = []
   for (const result of orderResults) {
     if (result.status !== 'fulfilled') continue
-    allApiOrders.push(...result.value.apiOrders)
-    allRegistryOrders.push(...result.value.chainRegistryOrders)
+    allOrders.push(...result.value)
   }
-
-  // Dedup: remove registry orders that already appear in CoW API (meaning they've been triggered)
-  const apiOrderKeys = new Set(allApiOrders.map(o => `${o.network}|${o.sellToken}|${o.buyToken}|${o.sellAmount}`))
-  const uniqueRegistryOrders = allRegistryOrders.filter(
-    o => !apiOrderKeys.has(`${o.network}|${o.sellToken}|${o.buyToken}|${o.sellAmount}`)
-  )
-
-  const allOrders = [...uniqueRegistryOrders, ...allApiOrders]
 
   // Filter by status if specified
   const filteredOrders = input.status === 'all' ? allOrders : allOrders.filter(o => o.status === input.status)

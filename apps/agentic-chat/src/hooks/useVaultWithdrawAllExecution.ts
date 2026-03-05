@@ -161,11 +161,13 @@ export const useVaultWithdrawAllExecution = (
         try {
           await evmWallet.connector.switchNetwork({ networkChainId: withdrawal.chainId })
 
+          const walletClient = await evmWallet.getWalletClient()
           const txHash = await executeSafeBatchTransaction(
             withdrawal.safeAddress,
             withdrawal.safeBatchTransaction,
             evmAddress,
-            withdrawal.chainId
+            withdrawal.chainId,
+            walletClient
           )
 
           chainResults.push({ network: withdrawal.network, chainId: withdrawal.chainId, txHash })

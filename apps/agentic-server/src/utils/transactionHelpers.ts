@@ -1,6 +1,6 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
-import { toBaseUnit } from '@shapeshiftoss/utils'
+import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import {
   createAssociatedTokenAccountInstruction,
   createTransferCheckedInstruction,
@@ -51,7 +51,7 @@ export function buildEvmTokenTransfer(asset: Asset, from: string, to: string, am
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: 'transfer',
-    args: [getAddress(to), BigInt(toBaseUnit(amount, asset.precision))],
+    args: [getAddress(to), toBigInt(toBaseUnit(amount, asset.precision))],
   })
 
   return createTransaction({
@@ -84,7 +84,7 @@ function buildSolanaNativeTransfer(asset: Asset, from: string, to: string, amoun
   const instruction = SystemProgram.transfer({
     fromPubkey: new PublicKey(from),
     toPubkey: new PublicKey(to),
-    lamports: BigInt(toBaseUnit(amount, asset.precision)),
+    lamports: toBigInt(toBaseUnit(amount, asset.precision)),
   })
 
   const data = JSON.stringify({
@@ -175,7 +175,7 @@ async function buildSolanaSplTransfer(
         tokenMint, // Mint required for Token-2022
         recipientATA,
         new PublicKey(from), // Authority
-        BigInt(toBaseUnit(amount, decimals)),
+        toBigInt(toBaseUnit(amount, decimals)),
         decimals, // Decimals required for Token-2022
         [],
         tokenProgramId
@@ -188,7 +188,7 @@ async function buildSolanaSplTransfer(
         senderATA,
         recipientATA,
         new PublicKey(from), // Authority
-        BigInt(toBaseUnit(amount, asset.precision)),
+        toBigInt(toBaseUnit(amount, asset.precision)),
         [],
         tokenProgramId
       )

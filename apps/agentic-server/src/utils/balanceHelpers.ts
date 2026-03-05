@@ -1,6 +1,6 @@
 import type { Asset } from '@shapeshiftoss/types'
 import { chainIdToNetwork } from '@shapeshiftoss/types'
-import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
+import { fromBaseUnit, toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 
 import { executeGetAccount } from '../tools/getAccount'
 
@@ -20,7 +20,7 @@ export async function validateSufficientBalance(address: string, asset: Asset, r
 
   const requiredAmountBaseUnit = toBaseUnit(requiredAmount, asset.precision)
 
-  if (BigInt(balance) < BigInt(requiredAmountBaseUnit)) {
+  if (toBigInt(balance) < toBigInt(requiredAmountBaseUnit)) {
     const available = fromBaseUnit(balance, asset.precision)
     throw new Error(`Insufficient ${asset.symbol} balance. Required: ${requiredAmount}, Available: ${available}`)
   }

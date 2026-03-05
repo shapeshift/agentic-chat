@@ -1,6 +1,6 @@
 import type { EvmSolanaNetwork } from '@shapeshiftoss/types'
 import { chainIdToNetwork, EVM_SOLANA_NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
-import { calculateUsdValue, fromBaseUnit } from '@shapeshiftoss/utils'
+import { calculateUsdValue, fromBaseUnit, toBigInt } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
 import { z } from 'zod'
 
@@ -99,7 +99,7 @@ export async function executeVaultBalance(
           .map(assetId => {
             const baseUnitValue = balances[assetId] || '0'
             const asset = assetMap.get(assetId)
-            if (!asset || BigInt(baseUnitValue) === 0n) return null
+            if (!asset || toBigInt(baseUnitValue) === 0n) return null
 
             const cryptoAmount = fromBaseUnit(baseUnitValue, asset.precision)
             const usdAmount = calculateUsdValue(cryptoAmount, asset.price)

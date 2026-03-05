@@ -1,6 +1,6 @@
 import type { Asset } from '@shapeshiftoss/types'
 import { chainIdToNetwork } from '@shapeshiftoss/types'
-import { assetService, getFeeAssetIdByChainId } from '@shapeshiftoss/utils'
+import { assetService, getFeeAssetIdByChainId, toBigInt } from '@shapeshiftoss/utils'
 
 import { getAssetPrices } from '../lib/asset/prices'
 import type { AssetInput } from '../lib/schemas/swapSchemas'
@@ -31,7 +31,7 @@ export async function resolveAsset(assetInput: AssetInput, walletContext?: Walle
 
         const withOwnershipBonus = scoredAssets.map(({ asset, score }) => {
           const balance = accountData.balances[asset.assetId]
-          const hasBalance = balance && BigInt(balance) > 0n
+          const hasBalance = balance && toBigInt(balance) > 0n
           const finalScore = score + (hasBalance ? OWNERSHIP_BONUS : 0)
 
           return { asset, baseScore: score, finalScore, hasBalance }

@@ -3,7 +3,6 @@ import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core
 import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
-import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
@@ -13,11 +12,11 @@ import { toast } from 'sonner'
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
-import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
+import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
@@ -248,15 +247,7 @@ export const useSwapExecution = (
           draft.currentStep = SwapStep.APPROVAL_CONFIRMATION
         })
 
-        const publicClient = getPublicClient(wagmiConfig, {
-          chainId: Number(chainReference),
-        })
-        if (publicClient) {
-          await publicClient.waitForTransactionReceipt({
-            hash: approvalTxHash as `0x${string}`,
-            confirmations: 1,
-          })
-        }
+        await waitForConfirmedReceipt(Number(chainReference), approvalTxHash as `0x${string}`)
 
         setState(draft => {
           draft.completedSteps.add(draft.currentStep)

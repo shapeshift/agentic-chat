@@ -70,7 +70,7 @@ export async function getVerifiedSafeAddressForChain(
   walletContext: WalletContext | undefined,
   chainId: number
 ): Promise<string | undefined> {
-  const safeAddress = getSafeAddressForChain(walletContext, chainId)
+  const safeAddress = getSafeAddressForChain(walletContext, chainId) ?? walletContext?.safeAddress
   if (!safeAddress) return undefined
 
   const caipChainId = `eip155:${chainId}`

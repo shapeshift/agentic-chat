@@ -2,51 +2,17 @@ import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
 import { toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
-import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
 import { COW_VAULT_RELAYER_ADDRESS, prepareCowLimitOrder } from '../../lib/cow'
+import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import type { CowOrderSigningData } from '../../lib/cow/types'
 import { getCowExplorerUrl, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getAllowance } from '../../utils'
+import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
-import { createTransaction } from '../../utils/transactionHelpers'
 import { getAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
-
-type TransactionData = {
-  chainId: string
-  data: string
-  from: string
-  to: string
-  value: string
-}
-
-function buildApprovalTransaction(
-  needsApproval: boolean,
-  sellAsset: Asset,
-  approvalTarget: string,
-  sellAmountBaseUnit: string,
-  userAddress: string
-): TransactionData | undefined {
-  if (!needsApproval) return undefined
-
-  const data = encodeFunctionData({
-    abi: erc20Abi,
-    functionName: 'approve',
-    args: [getAddress(approvalTarget), BigInt(sellAmountBaseUnit)],
-  })
-
-  const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
-
-  return createTransaction({
-    chainId: sellAsset.chainId,
-    data,
-    from: userAddress,
-    to: tokenAddress,
-    value: '0',
-  })
-}
 
 export const createLimitOrderSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),

@@ -1,5 +1,5 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
-import { assetService, getFeeAssetIdByChainId, toBaseUnit } from '@shapeshiftoss/utils'
+import { assetService, getFeeAssetIdByChainId, toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
@@ -64,7 +64,7 @@ function buildTransferTransaction(
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: 'transfer',
-    args: [getAddress(toAddress), BigInt(amountBaseUnit)],
+    args: [getAddress(toAddress), toBigInt(amountBaseUnit)],
   })
 
   return {

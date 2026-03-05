@@ -1,6 +1,6 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
-import { toBaseUnit } from '@shapeshiftoss/utils'
+import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
@@ -52,7 +52,7 @@ function buildDepositTx(
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: 'transfer',
-    args: [getAddress(safeAddress), BigInt(toBaseUnit(amount, asset.precision))],
+    args: [getAddress(safeAddress), toBigInt(toBaseUnit(amount, asset.precision))],
   })
 
   return createTransaction({

@@ -1,11 +1,10 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
-import type { Asset } from '@shapeshiftoss/types'
-import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
+import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
-import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
 import { getSimplePrices } from '../../lib/asset/coingecko'
+import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import {
   buildCreateConditionalOrderTx,
   computeConditionalOrderHash,
@@ -16,48 +15,13 @@ import {
   TWAP_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
-import { isConditionalOrderActive } from '../../lib/composableCow/events'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getAllowance } from '../../utils'
+import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
-import { getBalance } from '../../utils/balanceHelpers'
-import { createTransaction } from '../../utils/transactionHelpers'
+import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
 import { getAddressForChain, getVerifiedSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
-
-type TransactionData = {
-  chainId: string
-  data: string
-  from: string
-  to: string
-  value: string
-}
-
-function buildApprovalTransaction(
-  needsApproval: boolean,
-  sellAsset: Asset,
-  approvalTarget: string,
-  sellAmountBaseUnit: string,
-  safeAddress: string
-): TransactionData | undefined {
-  if (!needsApproval) return undefined
-
-  const data = encodeFunctionData({
-    abi: erc20Abi,
-    functionName: 'approve',
-    args: [getAddress(approvalTarget), BigInt(sellAmountBaseUnit)],
-  })
-
-  const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
-
-  return createTransaction({
-    chainId: sellAsset.chainId,
-    data,
-    from: safeAddress,
-    to: tokenAddress,
-    value: '0',
-  })
-}
 
 const DURATION_PATTERNS: Array<{ regex: RegExp; toSeconds: (match: RegExpMatchArray) => number }> = [
   { regex: /^(\d+)\s*min(ute)?s?$/i, toSeconds: m => Number(m[1]) * 60 },
@@ -180,7 +144,7 @@ export async function executeCreateTwap(
   }
 
   const sellAmountBaseUnit = toBaseUnit(input.totalAmount, sellAsset.precision)
-  const partSellAmount = BigInt(sellAmountBaseUnit) / BigInt(numParts)
+  const partSellAmount = toBigInt(sellAmountBaseUnit) / BigInt(numParts)
 
   if (partSellAmount === 0n) {
     throw new Error('Total amount is too small to split into the requested number of intervals.')
@@ -195,20 +159,14 @@ export async function executeCreateTwap(
 
   const approvalTarget = COW_VAULT_RELAYER_ADDRESS
 
-  let committedAmount = 0n
-  const existingOrders = (walletContext?.registryOrders ?? []).filter(
-    o => o.chainId === evmChainId && o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
-  )
-  if (existingOrders.length > 0) {
-    const activeResults = await Promise.all(
-      existingOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, evmChainId))
-    )
-    committedAmount = existingOrders
-      .filter((_, i) => activeResults[i])
-      .reduce((sum, o) => sum + BigInt(o.sellAmountBaseUnit), 0n)
-  }
-
-  const totalNeeded = committedAmount + BigInt(sellAmountBaseUnit)
+  const { totalNeeded, needsDeposit, depositTx } = await calculateSafeVaultDeposit({
+    walletContext,
+    safeAddress,
+    sellAsset,
+    sellAmountBaseUnit,
+    evmChainId,
+    sellTokenAddress,
+  })
 
   const { isApprovalRequired: needsApproval } = await getAllowance({
     amount: totalNeeded.toString(),
@@ -236,7 +194,7 @@ export async function executeCreateTwap(
     const partSellHuman = new BigNumber(partSellAmount.toString()).div(new BigNumber(10).pow(sellAsset.precision))
     const priceRatio = new BigNumber(sellAssetPrice).div(buyAssetPrice)
     const minPartLimitHuman = partSellHuman.times(priceRatio).times(TWAP_SLIPPAGE_BUFFER)
-    minPartLimit = BigInt(
+    minPartLimit = toBigInt(
       toBaseUnit(minPartLimitHuman.toFixed(buyAsset.precision, BigNumber.ROUND_DOWN), buyAsset.precision)
     )
   }
@@ -264,46 +222,6 @@ export async function executeCreateTwap(
   const safeTransaction = buildCreateConditionalOrderTx(conditionalOrderParams, {
     factory: CURRENT_BLOCK_TIMESTAMP_FACTORY,
   })
-
-  const eoaAddress = getAddressForChain(walletContext, sellAsset.chainId)
-  const safeBalance = await getBalance(safeAddress, sellAsset)
-  const availableSafeBalance = BigInt(safeBalance) > committedAmount ? BigInt(safeBalance) - committedAmount : 0n
-  const needsDeposit = availableSafeBalance < BigInt(sellAmountBaseUnit)
-  const depositAmount = needsDeposit ? BigInt(sellAmountBaseUnit) - availableSafeBalance : 0n
-
-  if (needsDeposit) {
-    const eoaBalance = await getBalance(eoaAddress, sellAsset)
-    if (BigInt(eoaBalance) < depositAmount) {
-      const requiredHuman = fromBaseUnit(sellAmountBaseUnit, sellAsset.precision)
-      const safeBalanceHuman = fromBaseUnit(safeBalance, sellAsset.precision)
-      const eoaBalanceHuman = fromBaseUnit(eoaBalance, sellAsset.precision)
-      throw new Error(
-        `Insufficient ${sellAsset.symbol} balance to create TWAP order. ` +
-          `Required: ${requiredHuman} ${sellAsset.symbol}, ` +
-          `Safe balance: ${safeBalanceHuman} (${committedAmount > 0n ? `${fromBaseUnit(committedAmount.toString(), sellAsset.precision)} committed to active orders` : 'none committed'}), ` +
-          `Wallet balance: ${eoaBalanceHuman}`
-      )
-    }
-  }
-
-  let depositTx: TransactionData | undefined
-  if (needsDeposit) {
-    const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
-    const transferData = encodeFunctionData({
-      abi: erc20Abi,
-      functionName: 'transfer',
-      args: [getAddress(safeAddress), depositAmount],
-    })
-
-    depositTx = createTransaction({
-      chainId: sellAsset.chainId,
-      data: transferData,
-      from: getAddress(eoaAddress),
-      to: getAddress(tokenAddress),
-      value: '0',
-      gasLimit: '65000',
-    })
-  }
 
   const perTradeAmount = new BigNumber(input.totalAmount).div(numParts).toFixed(sellAsset.precision)
 

@@ -1,3 +1,4 @@
+import { toBigInt } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
 import { isConditionalOrderActive } from '../../lib/composableCow/events'
@@ -64,16 +65,16 @@ function isTwapFulfilled(order: ActiveOrderSummary, cowOrders: CowOrder[]): bool
   const matchingFilledOrders = cowOrders.filter(co => {
     if (co.sellToken.toLowerCase() !== order.sellTokenAddress.toLowerCase()) return false
     if (co.buyToken.toLowerCase() !== order.buyTokenAddress.toLowerCase()) return false
-    if (!co.executedSellAmount || BigInt(co.executedSellAmount) === 0n) return false
+    if (!co.executedSellAmount || toBigInt(co.executedSellAmount) === 0n) return false
     const cowCreatedSeconds = Math.floor(new Date(co.creationDate).getTime() / 1000)
     return cowCreatedSeconds >= twapStartSeconds && cowCreatedSeconds <= order.validTo
   })
 
   if (matchingFilledOrders.length === 0) return false
 
-  const totalExecuted = matchingFilledOrders.reduce((sum, co) => sum + BigInt(co.executedSellAmount || '0'), 0n)
+  const totalExecuted = matchingFilledOrders.reduce((sum, co) => sum + toBigInt(co.executedSellAmount || '0'), 0n)
 
-  const targetAmount = BigInt(order.sellAmountBaseUnit)
+  const targetAmount = toBigInt(order.sellAmountBaseUnit)
   return targetAmount > 0n && totalExecuted >= (targetAmount * 90n) / 100n
 }
 

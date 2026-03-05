@@ -1,17 +1,8 @@
 import Safe from '@safe-global/protocol-kit'
 import { keccak256, encodePacked, createPublicClient, createWalletClient, custom } from 'viem'
 
-import { getSafeState, setSafeState } from './safeStorage'
-
-// Matches @safe-global/protocol-kit's internal Eip1193Provider (not publicly exported)
-type SafeProvider = {
-  request: (args: { readonly method: string; readonly params?: readonly unknown[] | object }) => Promise<unknown>
-}
-
-function getProvider(): SafeProvider {
-  if (!window.ethereum) throw new Error('No ethereum provider found. Please connect your wallet.')
-  return window.ethereum as SafeProvider
-}
+import { useSafeStore } from '@/stores/safeStore'
+import type { SafeProvider } from './types'
 
 // Deterministic salt: same owner → same predicted address across all chains
 function computeSafeSalt(ownerAddress: string): string {
@@ -25,11 +16,11 @@ export interface SafeDeploymentResult {
 }
 
 // Predict the Safe address without deploying
-export async function predictSafeAddress(ownerAddress: string): Promise<string> {
+export async function predictSafeAddress(ownerAddress: string, provider: SafeProvider): Promise<string> {
   const saltNonce = computeSafeSalt(ownerAddress)
 
   const protocolKit = await Safe.init({
-    provider: getProvider(),
+    provider,
     predictedSafe: {
       safeAccountConfig: {
         owners: [ownerAddress],
@@ -48,10 +39,10 @@ export async function predictSafeAddress(ownerAddress: string): Promise<string> 
 export async function deploySafe(
   ownerAddress: string,
   chainId: number,
-  signerAddress: string
+  signerAddress: string,
+  provider: SafeProvider
 ): Promise<SafeDeploymentResult> {
   const saltNonce = computeSafeSalt(ownerAddress)
-  const provider = getProvider()
 
   // Validate provider is on the target chain before deploying
   const providerChainId = Number(await provider.request({ method: 'eth_chainId' }))
@@ -80,8 +71,8 @@ export async function deploySafe(
   // Check if already deployed
   const isAlreadyDeployed = await protocolKit.isSafeDeployed()
   if (isAlreadyDeployed) {
-    const existingState = getSafeState(ownerAddress)[chainId]
-    setSafeState(ownerAddress, chainId, {
+    const existingState = useSafeStore.getState().getChainState(ownerAddress, chainId)
+    useSafeStore.getState().setChainState(ownerAddress, chainId, {
       safeAddress: predictedAddress,
       isDeployed: true,
       modulesEnabled: existingState?.modulesEnabled ?? false,
@@ -111,9 +102,10 @@ export async function deploySafe(
   // Without this, subsequent steps (like token deposits to the Safe) would
   // prompt the wallet before the Safe contract exists, triggering warnings.
   const publicClient = createPublicClient({ transport: custom(provider) })
-  await publicClient.waitForTransactionReceipt({ hash: txHash, confirmations: 1 })
+  const deployReceipt = await publicClient.waitForTransactionReceipt({ hash: txHash, confirmations: 1 })
+  if (deployReceipt.status === 'reverted') throw new Error(`Safe deployment transaction reverted: ${txHash}`)
 
-  setSafeState(ownerAddress, chainId, {
+  useSafeStore.getState().setChainState(ownerAddress, chainId, {
     safeAddress: predictedAddress,
     isDeployed: true,
     modulesEnabled: false,

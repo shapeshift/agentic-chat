@@ -152,11 +152,13 @@ export const useVaultWithdrawExecution = (
       })
 
       // Withdraw via Safe transaction
+      const walletClient = await evmWallet.getWalletClient()
       const withdrawTxHash = await executeSafeTransaction(
         summary.safeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
         evmAddress,
-        safeTransaction.chainId
+        safeTransaction.chainId,
+        walletClient
       )
 
       setState(draft => {

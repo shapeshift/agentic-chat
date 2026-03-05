@@ -1,5 +1,5 @@
 import type { Network } from '@shapeshiftoss/types'
-import { assetService, fromBaseUnit } from '@shapeshiftoss/utils'
+import { assetService, fromBaseUnit, toBigInt } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
 import { getCowOrders } from '../../lib/cow'
@@ -58,8 +58,8 @@ export interface GetLimitOrdersOutput {
 }
 
 function calculateFilledPercent(order: CowOrder): number {
-  const sellAmount = BigInt(order.sellAmount)
-  const executedSellAmount = BigInt(order.executedSellAmount || '0')
+  const sellAmount = toBigInt(order.sellAmount)
+  const executedSellAmount = toBigInt(order.executedSellAmount || '0')
 
   if (sellAmount === 0n) return 0
   return Number((executedSellAmount * 100n) / sellAmount)

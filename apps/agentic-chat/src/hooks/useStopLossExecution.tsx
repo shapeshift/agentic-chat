@@ -1,7 +1,6 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import type { CreateStopLossOutput } from '@shapeshiftoss/agentic-server'
-import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
@@ -14,10 +13,10 @@ import { orderRegistry } from '@/lib/orderRegistry'
 import { executeSafeTransaction } from '@/lib/safe'
 import { enableComposableCowModules } from '@/lib/safe/safeModules'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
-import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import { sendTransaction } from '@/utils/sendTransaction'
+import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
 import { useSafeAccount } from './useSafeAccount'
 import { useToolExecutionEffect } from './useToolExecutionEffect'
@@ -29,19 +28,23 @@ export enum StopLossStep {
   PREPARE = 0,
   NETWORK_SWITCH = 1,
   SAFE_CHECK = 2,
-  VAULT_DEPOSIT = 3,
-  VAULT_DEPOSIT_CONFIRMATION = 4,
-  APPROVAL = 5,
-  APPROVAL_CONFIRMATION = 6,
-  SUBMIT_TO_COMPOSABLE_COW = 7,
-  CONFIRM_TX = 8,
-  COMPLETE = 9,
+  WRAP_NATIVE = 3,
+  WRAP_NATIVE_CONFIRMATION = 4,
+  VAULT_DEPOSIT = 5,
+  VAULT_DEPOSIT_CONFIRMATION = 6,
+  APPROVAL = 7,
+  APPROVAL_CONFIRMATION = 8,
+  SUBMIT_TO_COMPOSABLE_COW = 9,
+  CONFIRM_TX = 10,
+  COMPLETE = 11,
 }
 
 const STOP_LOSS_PHASES = createStepPhaseMap<StopLossStep>({
   [StopLossStep.PREPARE]: 'prepare_complete',
   [StopLossStep.NETWORK_SWITCH]: 'network_switched',
   [StopLossStep.SAFE_CHECK]: 'safe_checked',
+  [StopLossStep.WRAP_NATIVE]: 'wrapped',
+  [StopLossStep.WRAP_NATIVE_CONFIRMATION]: 'wrap_confirmed',
   [StopLossStep.VAULT_DEPOSIT]: 'deposited',
   [StopLossStep.VAULT_DEPOSIT_CONFIRMATION]: 'deposit_confirmed',
   [StopLossStep.APPROVAL]: 'approved',
@@ -53,6 +56,7 @@ const STOP_LOSS_PHASES = createStepPhaseMap<StopLossStep>({
 interface StopLossState {
   currentStep: StopLossStep
   completedSteps: Set<StopLossStep>
+  wrapTxHash?: string
   depositTxHash?: string
   approvalTxHash?: string
   submitTxHash?: string
@@ -83,6 +87,7 @@ export function stopLossStateToPersistedState(
       ...(state.submitTxHash && { submitTxHash: state.submitTxHash }),
       ...(state.approvalTxHash && { approvalTxHash: state.approvalTxHash }),
       ...(state.depositTxHash && { depositTxHash: state.depositTxHash }),
+      ...(state.wrapTxHash && { wrapTxHash: state.wrapTxHash }),
       ...(state.error && { error: state.error }),
       ...(networkName && { networkName }),
     },
@@ -99,6 +104,7 @@ export function persistedStateToStopLossState(persisted: PersistedToolState): St
     submitTxHash: persisted.meta.submitTxHash as string | undefined,
     approvalTxHash: persisted.meta.approvalTxHash as string | undefined,
     depositTxHash: persisted.meta.depositTxHash as string | undefined,
+    wrapTxHash: persisted.meta.wrapTxHash as string | undefined,
     error: hasError ? (persisted.meta.error as string) : undefined,
   }
 }
@@ -197,6 +203,7 @@ export const useStopLossExecution = (
       // Step 2: Safe Check — verify Safe is deployed and modules enabled on target chain
       // Uses the hook wrapper which auto-refreshes React state after deployment,
       // ensuring ChatProvider.body() sends correct safeDeploymentState on the next request.
+      const walletClient = await evmWallet.getWalletClient()
       const deployResult = await safeAccount.deploySafe(targetChainId)
       if (!deployResult.isDeployed) {
         throw new Error('Failed to deploy Safe smart account')
@@ -206,7 +213,7 @@ export const useStopLossExecution = (
 
       // Always verify on-chain — catches "already enabled" gracefully
       try {
-        await enableComposableCowModules(deployedSafeAddress, targetChainId, evmAddress)
+        await enableComposableCowModules(deployedSafeAddress, targetChainId, evmAddress, walletClient)
       } catch (moduleError) {
         const isAlreadyEnabled = moduleError instanceof Error && moduleError.message.includes('already fully enabled')
         if (!isAlreadyEnabled) throw moduleError
@@ -214,11 +221,45 @@ export const useStopLossExecution = (
 
       setState(draft => {
         draft.completedSteps.add(StopLossStep.SAFE_CHECK)
-        draft.currentStep = StopLossStep.VAULT_DEPOSIT
+        draft.currentStep = StopLossStep.WRAP_NATIVE
         draft.error = undefined
       })
 
-      // Step 3: Vault Deposit — transfer sell tokens from EOA to Safe (if needed)
+      // Step 3: Wrap native token (e.g. ETH → WETH) if needed
+      const needsWrap = data.needsWrap
+      if (needsWrap && data.wrapTx) {
+        const wrapHash = await sendTransaction({
+          chainId: data.wrapTx.chainId,
+          data: data.wrapTx.data,
+          from: data.wrapTx.from,
+          to: data.wrapTx.to,
+          value: data.wrapTx.value,
+        })
+
+        setState(draft => {
+          draft.wrapTxHash = wrapHash
+          draft.completedSteps.add(StopLossStep.WRAP_NATIVE)
+          draft.currentStep = StopLossStep.WRAP_NATIVE_CONFIRMATION
+          draft.error = undefined
+        })
+
+        await waitForConfirmedReceipt(targetChainId, wrapHash as `0x${string}`)
+
+        setState(draft => {
+          draft.completedSteps.add(StopLossStep.WRAP_NATIVE_CONFIRMATION)
+          draft.currentStep = StopLossStep.VAULT_DEPOSIT
+          draft.error = undefined
+        })
+      } else {
+        setState(draft => {
+          draft.completedSteps.add(StopLossStep.WRAP_NATIVE)
+          draft.completedSteps.add(StopLossStep.WRAP_NATIVE_CONFIRMATION)
+          draft.currentStep = StopLossStep.VAULT_DEPOSIT
+          draft.error = undefined
+        })
+      }
+
+      // Step 4: Vault Deposit — transfer sell tokens from EOA to Safe (if needed)
       const needsDeposit = data.needsDeposit
       if (needsDeposit && data.depositTx) {
         const depositHash = await sendTransaction({
@@ -236,14 +277,7 @@ export const useStopLossExecution = (
           draft.error = undefined
         })
 
-        // Step 4: Wait for deposit confirmation
-        const depositPublicClient = getPublicClient(wagmiConfig, { chainId: targetChainId })
-        if (depositPublicClient) {
-          await depositPublicClient.waitForTransactionReceipt({
-            hash: depositHash as `0x${string}`,
-            confirmations: 1,
-          })
-        }
+        await waitForConfirmedReceipt(targetChainId, depositHash as `0x${string}`)
 
         setState(draft => {
           draft.completedSteps.add(StopLossStep.VAULT_DEPOSIT_CONFIRMATION)
@@ -265,7 +299,8 @@ export const useStopLossExecution = (
           deployedSafeAddress,
           { to: approvalTx.to, data: approvalTx.data, value: approvalTx.value },
           evmAddress,
-          targetChainId
+          targetChainId,
+          walletClient
         )
         setState(draft => {
           draft.approvalTxHash = approvalTxHash
@@ -283,15 +318,7 @@ export const useStopLossExecution = (
 
       // Step 4: Approval Confirmation
       if (needsApproval && approvalTxHash) {
-        const publicClient = getPublicClient(wagmiConfig, {
-          chainId: targetChainId,
-        })
-        if (publicClient) {
-          await publicClient.waitForTransactionReceipt({
-            hash: approvalTxHash as `0x${string}`,
-            confirmations: 1,
-          })
-        }
+        await waitForConfirmedReceipt(targetChainId, approvalTxHash as `0x${string}`)
         setState(draft => {
           draft.completedSteps.add(StopLossStep.APPROVAL_CONFIRMATION)
           draft.currentStep = StopLossStep.SUBMIT_TO_COMPOSABLE_COW
@@ -310,7 +337,8 @@ export const useStopLossExecution = (
         deployedSafeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
         evmAddress,
-        targetChainId
+        targetChainId,
+        walletClient
       )
 
       setState(draft => {
@@ -321,15 +349,7 @@ export const useStopLossExecution = (
       })
 
       // Step 6: Wait for on-chain confirmation
-      const publicClient = getPublicClient(wagmiConfig, {
-        chainId: targetChainId,
-      })
-      if (publicClient) {
-        await publicClient.waitForTransactionReceipt({
-          hash: submitTxHash as `0x${string}`,
-          confirmations: 1,
-        })
-      }
+      await waitForConfirmedReceipt(targetChainId, submitTxHash as `0x${string}`)
 
       // Save to order registry for sideband discovery
       orderRegistry.saveOrder({
@@ -370,6 +390,8 @@ export const useStopLossExecution = (
           StopLossStep.PREPARE,
           StopLossStep.SAFE_CHECK,
           StopLossStep.NETWORK_SWITCH,
+          StopLossStep.WRAP_NATIVE,
+          StopLossStep.WRAP_NATIVE_CONFIRMATION,
           StopLossStep.VAULT_DEPOSIT,
           StopLossStep.VAULT_DEPOSIT_CONFIRMATION,
           ...(needsApproval ? [StopLossStep.APPROVAL, StopLossStep.APPROVAL_CONFIRMATION] : []),
@@ -437,6 +459,11 @@ export const useStopLossExecution = (
       { step: StopLossStep.PREPARE, status: prepareStepStatus },
       { step: StopLossStep.NETWORK_SWITCH, status: getStepStatus(StopLossStep.NETWORK_SWITCH, state) },
       { step: StopLossStep.SAFE_CHECK, status: getStepStatus(StopLossStep.SAFE_CHECK, state) },
+      { step: StopLossStep.WRAP_NATIVE, status: getStepStatus(StopLossStep.WRAP_NATIVE, state) },
+      {
+        step: StopLossStep.WRAP_NATIVE_CONFIRMATION,
+        status: getStepStatus(StopLossStep.WRAP_NATIVE_CONFIRMATION, state),
+      },
       { step: StopLossStep.VAULT_DEPOSIT, status: getStepStatus(StopLossStep.VAULT_DEPOSIT, state) },
       {
         step: StopLossStep.VAULT_DEPOSIT_CONFIRMATION,

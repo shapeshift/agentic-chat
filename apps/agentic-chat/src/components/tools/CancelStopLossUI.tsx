@@ -1,7 +1,6 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import type { CancelStopLossOutput } from '@shapeshiftoss/agentic-server'
-import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { ExternalLink } from 'lucide-react'
@@ -14,9 +13,9 @@ import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { getExplorerUrl } from '@/lib/explorers'
 import { executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
-import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
+import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
 import { Skeleton } from '../ui/Skeleton'
 import { TruncateText } from '../ui/TruncateText'
@@ -165,13 +164,7 @@ function useCancelStopLossExecution(
       })
 
       // Step 3: Confirm on-chain
-      const publicClient = getPublicClient(wagmiConfig, { chainId: safeTransaction.chainId })
-      if (publicClient) {
-        await publicClient.waitForTransactionReceipt({
-          hash: cancelTxHash as `0x${string}`,
-          confirmations: 1,
-        })
-      }
+      await waitForConfirmedReceipt(safeTransaction.chainId, cancelTxHash as `0x${string}`)
 
       persistState({
         currentStep: CancelStep.COMPLETE,

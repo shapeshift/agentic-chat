@@ -1,6 +1,6 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import { asset as zAsset } from '@shapeshiftoss/types'
-import { fromBaseUnit, getFeeAssetIdByChainId, getViemClient } from '@shapeshiftoss/utils'
+import { fromBaseUnit, getFeeAssetIdByChainId, getViemClient, toBigInt } from '@shapeshiftoss/utils'
 import { erc20Abi, getAddress } from 'viem'
 import z from 'zod'
 
@@ -52,6 +52,6 @@ export const getAllowance = async ({
 
   return {
     allowance: fromBaseUnit(allowance.toString(), asset.precision),
-    isApprovalRequired: !!amount && allowance < BigInt(amount),
+    isApprovalRequired: !!amount && allowance < toBigInt(amount),
   }
 }

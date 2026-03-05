@@ -1,7 +1,6 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import type { CreateLimitOrderOutput } from '@shapeshiftoss/agentic-server'
-import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
@@ -12,10 +11,10 @@ import { Amount } from '@/components/ui/Amount'
 import { getCowApiUrl } from '@/lib/cow-config'
 import { analytics } from '@/lib/mixpanel'
 import { createStepPhaseMap, getStepStatus, signTypedDataWithWallet, StepStatus } from '@/lib/stepUtils'
-import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import { executeApproval } from '@/utils/swapExecutor'
+import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
@@ -255,15 +254,7 @@ export const useLimitOrderExecution = (
 
       // Step 3: Approval Confirmation (if approval was needed)
       if (needsApproval && approvalTxHash) {
-        const publicClient = getPublicClient(wagmiConfig, {
-          chainId: orderParams.chainId,
-        })
-        if (publicClient) {
-          await publicClient.waitForTransactionReceipt({
-            hash: approvalTxHash as `0x${string}`,
-            confirmations: 1,
-          })
-        }
+        await waitForConfirmedReceipt(orderParams.chainId, approvalTxHash as `0x${string}`)
         setState(draft => {
           draft.completedSteps.add(LimitOrderStep.APPROVAL_CONFIRMATION)
           draft.currentStep = LimitOrderStep.SIGN

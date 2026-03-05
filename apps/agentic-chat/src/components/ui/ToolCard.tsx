@@ -90,7 +90,7 @@ function ToolCardItemList<T>({
   }
 
   return (
-    <div style={{ maxHeight }} className={cn('overflow-hidden', className)}>
+    <div style={{ height: maxHeight }} className={cn('overflow-hidden', className)}>
       <Virtuoso
         data={items}
         itemContent={(index, item) => (

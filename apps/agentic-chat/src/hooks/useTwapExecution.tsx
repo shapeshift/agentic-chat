@@ -1,7 +1,6 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import type { CreateTwapOutput } from '@shapeshiftoss/agentic-server'
-import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
@@ -14,10 +13,10 @@ import { executeSafeTransaction } from '@/lib/safe'
 import { deploySafe } from '@/lib/safe/safeFactory'
 import { enableComposableCowModules } from '@/lib/safe/safeModules'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
-import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import { sendTransaction } from '@/utils/sendTransaction'
+import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
@@ -194,7 +193,8 @@ export const useTwapExecution = (
       // Safe Check — verify Safe is deployed and modules enabled on target chain
       // Always verify on-chain via deploySafe (handles already-deployed case gracefully).
       // Never trust localStorage alone — stale entries from prior bugs can skip deployment.
-      const deployResult = await deploySafe(evmAddress, targetChainId, evmAddress)
+      const walletClient = await evmWallet.getWalletClient()
+      const deployResult = await deploySafe(evmAddress, targetChainId, evmAddress, walletClient)
       if (!deployResult.isDeployed) {
         throw new Error('Failed to deploy Safe smart account')
       }
@@ -202,7 +202,7 @@ export const useTwapExecution = (
       const deployedSafeAddress = deployResult.safeAddress
 
       try {
-        await enableComposableCowModules(deployedSafeAddress, targetChainId, evmAddress)
+        await enableComposableCowModules(deployedSafeAddress, targetChainId, evmAddress, walletClient)
       } catch (moduleError) {
         const isAlreadyEnabled = moduleError instanceof Error && moduleError.message.includes('already fully enabled')
         if (!isAlreadyEnabled) throw moduleError
@@ -231,13 +231,7 @@ export const useTwapExecution = (
           draft.error = undefined
         })
 
-        const depositPublicClient = getPublicClient(wagmiConfig, { chainId: targetChainId })
-        if (depositPublicClient) {
-          await depositPublicClient.waitForTransactionReceipt({
-            hash: depositHash as `0x${string}`,
-            confirmations: 1,
-          })
-        }
+        await waitForConfirmedReceipt(targetChainId, depositHash as `0x${string}`)
 
         setState(draft => {
           draft.completedSteps.add(TwapStep.VAULT_DEPOSIT_CONFIRMATION)
@@ -258,7 +252,8 @@ export const useTwapExecution = (
           deployedSafeAddress,
           { to: approvalTx.to, data: approvalTx.data, value: approvalTx.value },
           evmAddress,
-          targetChainId
+          targetChainId,
+          walletClient
         )
         setState(draft => {
           draft.approvalTxHash = approvalTxHash
@@ -275,15 +270,7 @@ export const useTwapExecution = (
       }
 
       if (needsApproval && approvalTxHash) {
-        const publicClient = getPublicClient(wagmiConfig, {
-          chainId: targetChainId,
-        })
-        if (publicClient) {
-          await publicClient.waitForTransactionReceipt({
-            hash: approvalTxHash as `0x${string}`,
-            confirmations: 1,
-          })
-        }
+        await waitForConfirmedReceipt(targetChainId, approvalTxHash as `0x${string}`)
         setState(draft => {
           draft.completedSteps.add(TwapStep.APPROVAL_CONFIRMATION)
           draft.currentStep = TwapStep.SUBMIT_TO_COMPOSABLE_COW
@@ -301,7 +288,8 @@ export const useTwapExecution = (
         deployedSafeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
         evmAddress,
-        targetChainId
+        targetChainId,
+        walletClient
       )
 
       setState(draft => {
@@ -311,15 +299,7 @@ export const useTwapExecution = (
         draft.error = undefined
       })
 
-      const publicClient = getPublicClient(wagmiConfig, {
-        chainId: targetChainId,
-      })
-      if (publicClient) {
-        await publicClient.waitForTransactionReceipt({
-          hash: submitTxHash as `0x${string}`,
-          confirmations: 1,
-        })
-      }
+      await waitForConfirmedReceipt(targetChainId, submitTxHash as `0x${string}`)
 
       orderRegistry.saveOrder({
         orderHash: data.orderHash,

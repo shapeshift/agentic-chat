@@ -59,7 +59,7 @@ function getUserFriendlyError(rawError: string): string {
 }
 
 export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossTool'>) {
-  const { state, output, toolCallId } = toolPart
+  const { state, output, toolCallId, errorText } = toolPart
   const orderOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
@@ -68,6 +68,7 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
 
   const needsDeposit = orderOutput?.needsDeposit ?? false
   const needsApproval = orderOutput?.needsApproval ?? false
+  const needsWrap = orderOutput?.needsWrap ?? false
   const summary = orderOutput?.summary
   const sellSymbol = summary?.sellAsset.symbol.toUpperCase()
   const sellAmount = summary?.sellAsset.amount
@@ -76,6 +77,8 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
     prepareStep,
     networkStep,
     safeCheckStep,
+    wrapStep,
+    wrapConfirmStep,
     depositStep,
     depositConfirmStep,
     approvalStep,
@@ -89,6 +92,8 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
       !prepareStep ||
       !safeCheckStep ||
       !networkStep ||
+      !wrapStep ||
+      !wrapConfirmStep ||
       !depositStep ||
       !depositConfirmStep ||
       !approvalStep ||
@@ -115,6 +120,15 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
         subtitle: networkStep.status === StepStatus.IN_PROGRESS ? walletSigningSubtitle : undefined,
       },
     ]
+
+    if (needsWrap) {
+      const wrapLabel = sellSymbol ? `Wrapping ETH to ${sellSymbol}` : 'Wrapping native token'
+      result.push({
+        label: wrapLabel,
+        status: mergeStepStatuses(wrapStep.status, wrapConfirmStep.status),
+        subtitle: getMergedSubtitle(wrapStep.status, wrapConfirmStep.status),
+      })
+    }
 
     if (needsDeposit) {
       const depositLabel =
@@ -153,6 +167,9 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
     safeCheckStep,
     networkStep,
     networkName,
+    needsWrap,
+    wrapStep,
+    wrapConfirmStep,
     needsDeposit,
     sellAmount,
     sellSymbol,
@@ -189,7 +206,8 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
   const totalCount = presentationSteps.length
 
   const footerMessage = (() => {
-    if (state === 'output-error') return { type: 'error' as const, text: 'Failed to prepare stop-loss order' }
+    if (state === 'output-error')
+      return { type: 'error' as const, text: errorText ? `Stop-loss failed: ${getUserFriendlyError(errorText)}` : 'Failed to prepare stop-loss order' }
     if (error) return { type: 'error' as const, text: `Stop-loss failed: ${getUserFriendlyError(error)}` }
     return null
   })()
