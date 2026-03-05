@@ -12,6 +12,7 @@ import {
 import { convertToModelMessages, stepCountIs, streamText } from 'ai'
 import { format, getUnixTime } from 'date-fns'
 import type { Context } from 'hono'
+import { z } from 'zod'
 
 import { supportedChainsContext } from '../context'
 import { CHAIN_ID_TO_NETWORK } from '../lib/cow/types'
@@ -425,19 +426,66 @@ ${!isSafeReadyOnAnyChain(safeDeploymentState) ? '- IMPORTANT: Safe-dependent too
   )
 }
 
+const chatRequestSchema = z.object({
+  messages: z.array(z.record(z.string(), z.unknown())),
+  evmAddress: z.string().optional(),
+  solanaAddress: z.string().optional(),
+  approvedChainIds: z.array(z.string()).optional(),
+  hasEmbeddedWallet: z.boolean().optional(),
+  safeAddress: z.string().optional(),
+  safeDeploymentState: z
+    .record(
+      z.string(),
+      z.object({
+        isDeployed: z.boolean(),
+        modulesEnabled: z.boolean(),
+        domainVerifierSet: z.boolean(),
+        safeAddress: z.string(),
+      })
+    )
+    .optional(),
+  registryOrders: z
+    .array(
+      z.object({
+        orderHash: z.string(),
+        chainId: z.number(),
+        sellTokenAddress: z.string(),
+        sellTokenSymbol: z.string(),
+        sellAmountBaseUnit: z.string(),
+        sellAmountHuman: z.string(),
+        buyTokenAddress: z.string(),
+        buyTokenSymbol: z.string(),
+        buyAmountHuman: z.string(),
+        strikePrice: z.string(),
+        validTo: z.number(),
+        submitTxHash: z.string(),
+        createdAt: z.number(),
+        network: z.string(),
+        status: z.enum(['open', 'triggered', 'fulfilled', 'cancelled', 'expired']),
+        orderType: z.enum(['stopLoss', 'twap']),
+      })
+    )
+    .optional(),
+})
+
 export async function handleChatRequest(c: Context) {
   try {
     const body = await c.req.json()
-    const { messages, evmAddress, solanaAddress, approvedChainIds, safeAddress, safeDeploymentState, registryOrders } =
-      body as {
-        messages: unknown
-        evmAddress?: string
-        solanaAddress?: string
-        approvedChainIds?: string[]
-        safeAddress?: string
-        safeDeploymentState?: Record<number, SafeChainDeployment>
-        registryOrders?: ActiveOrderSummary[]
-      }
+    const parsed = chatRequestSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return c.json({ error: 'Invalid request body', details: parsed.error.issues }, 400)
+    }
+
+    const {
+      messages,
+      evmAddress,
+      solanaAddress,
+      approvedChainIds,
+      safeAddress,
+      safeDeploymentState,
+      registryOrders,
+    } = parsed.data
 
     // Build wallet context from addresses (filtered by approved chains if provided)
     const walletContext = buildWalletContext(
