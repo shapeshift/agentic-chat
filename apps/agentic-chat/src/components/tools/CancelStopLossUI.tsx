@@ -149,11 +149,13 @@ function useCancelStopLossExecution(
       })
 
       // Step 2: Submit cancel via Safe
+      const walletClient = await evmWallet.getWalletClient()
       const cancelTxHash = await executeSafeTransaction(
         safeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
         evmAddress,
-        safeTransaction.chainId
+        safeTransaction.chainId,
+        walletClient
       )
 
       setState(draft => {

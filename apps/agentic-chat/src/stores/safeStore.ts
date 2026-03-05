@@ -30,10 +30,8 @@ export const useSafeStore = create<SafeStore>()(
             },
           },
         })),
-      getChainState: (ownerAddress, chainId) =>
-        get().deployments[ownerAddress.toLowerCase()]?.[chainId],
-      getOwnerState: (ownerAddress) =>
-        get().deployments[ownerAddress.toLowerCase()] ?? {},
+      getChainState: (ownerAddress, chainId) => get().deployments[ownerAddress.toLowerCase()]?.[chainId],
+      getOwnerState: ownerAddress => get().deployments[ownerAddress.toLowerCase()] ?? {},
     }),
     {
       name: 'safe-deployments',

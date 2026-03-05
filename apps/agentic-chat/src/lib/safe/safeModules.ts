@@ -2,6 +2,7 @@ import Safe from '@safe-global/protocol-kit'
 import { createPublicClient, custom, domainSeparator, encodeFunctionData, getAddress } from 'viem'
 
 import { useSafeStore } from '@/stores/safeStore'
+
 import type { SafeProvider } from './types'
 
 // ExtensibleFallbackHandler — required for ComposableCoW ERC-1271 verification
