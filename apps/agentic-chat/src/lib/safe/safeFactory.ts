@@ -1,8 +1,12 @@
 import Safe from '@safe-global/protocol-kit'
+import { getPublicClient } from '@wagmi/core'
 import { keccak256, encodePacked, createPublicClient, createWalletClient, custom } from 'viem'
 
+import { SUPPORTED_EVM_CHAINS } from '@/lib/chains'
+import { wagmiConfig } from '@/lib/wagmi-config'
 import { useSafeStore } from '@/stores/safeStore'
 
+import { checkDomainVerifier, checkFallbackHandler } from './safeModules'
 import type { SafeProvider } from './types'
 
 // Deterministic salt: same owner → same predicted address across all chains
@@ -117,5 +121,56 @@ export async function deploySafe(
     safeAddress: predictedAddress,
     isDeployed: true,
     txHash,
+  }
+}
+
+// Discover existing Safe deployments on-chain across all supported chains.
+// Writes results directly to the Zustand store so downstream hooks re-render.
+export async function discoverSafeOnChain(ownerAddress: string): Promise<void> {
+  const saltNonce = computeSafeSalt(ownerAddress)
+
+  const results = await Promise.allSettled(
+    SUPPORTED_EVM_CHAINS.map(async ({ chain }) => {
+      const publicClient = getPublicClient(wagmiConfig, { chainId: chain.id })
+      if (!publicClient) return
+
+      const provider: SafeProvider = { request: publicClient.request }
+
+      const protocolKit = await Safe.init({
+        provider,
+        predictedSafe: {
+          safeAccountConfig: {
+            owners: [ownerAddress],
+            threshold: 1,
+          },
+          safeDeploymentConfig: {
+            saltNonce,
+          },
+        },
+      })
+
+      const safeAddress = await protocolKit.getAddress()
+      const isDeployed = await protocolKit.isSafeDeployed()
+      if (!isDeployed) return
+
+      const hasFallbackHandler = await checkFallbackHandler(publicClient, safeAddress)
+      const hasDomainVerifier = hasFallbackHandler
+        ? await checkDomainVerifier(publicClient, safeAddress, chain.id)
+        : false
+
+      useSafeStore.getState().setChainState(ownerAddress, chain.id, {
+        safeAddress,
+        isDeployed: true,
+        modulesEnabled: hasFallbackHandler,
+        domainVerifierSet: hasDomainVerifier,
+      })
+    })
+  )
+
+  // Log any failures for debugging but don't throw — partial discovery is fine
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.warn('[Safe discovery] chain check failed:', result.reason)
+    }
   }
 }

@@ -114,7 +114,10 @@ export async function executeGetStopLossOrders(
 
   const orderResults = await Promise.allSettled(
     networksToQuery.map(async ({ network, chainId }) => {
+      const caipChainId = `eip155:${chainId}`
+      const eoaAddress = walletContext.connectedWallets?.[caipChainId]?.address
       const safeAddress = getSafeAddressForChain(walletContext, chainId)
+      console.log(`[getStopLossOrders] ${network} (chainId=${chainId}) — EOA: ${eoaAddress ?? 'none'}, Safe vault: ${safeAddress ?? 'none'}`)
       if (!safeAddress) return [] as StopLossOrderInfo[]
 
       return getRegistryOrders(registryOrderSummaries, safeAddress, chainId, network).catch(err => {

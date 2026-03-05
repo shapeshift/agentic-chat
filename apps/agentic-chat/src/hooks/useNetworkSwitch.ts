@@ -33,7 +33,8 @@ function networkStateToPersistedState(
   state: NetworkSwitchState,
   conversationId: string,
   network: string,
-  networkOutput: SwitchNetworkOutput | null
+  networkOutput: SwitchNetworkOutput | null,
+  walletAddress?: string
 ): PersistedToolState {
   const phases: string[] = []
 
@@ -55,6 +56,7 @@ function networkStateToPersistedState(
       ...(state.error && { error: state.error }),
     },
     ...(networkOutput && { toolOutput: networkOutput }),
+    ...(walletAddress && { walletAddress }),
   }
 }
 
@@ -78,7 +80,7 @@ export const useNetworkSwitch = (
   const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
-  const { evmWallet, solanaWallet } = useWalletConnection()
+  const { evmAddress, solanaAddress, evmWallet, solanaWallet } = useWalletConnection()
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
@@ -101,7 +103,14 @@ export const useNetworkSwitch = (
   const { state } = useToolExecutionEffect(toolCallId, networkData, initialNetworkState, async (data, setState) => {
     const persistState = (finalState: NetworkSwitchState) => {
       if (!activeConversationId) return
-      const persisted = networkStateToPersistedState(toolCallId, finalState, activeConversationId, data.network, data)
+      const persisted = networkStateToPersistedState(
+        toolCallId,
+        finalState,
+        activeConversationId,
+        data.network,
+        data,
+        evmAddress ?? solanaAddress
+      )
       store.persistTransaction(persisted)
     }
 

@@ -61,7 +61,8 @@ export function swapStateToPersistedState(
   state: SwapState,
   conversationId: string,
   swapOutput: InitiateSwapOutput | null,
-  networkName?: string
+  networkName?: string,
+  walletAddress?: string
 ): PersistedToolState {
   const phases = [
     ...SWAP_PHASES.toPhases(state.completedSteps, state.error),
@@ -81,6 +82,7 @@ export function swapStateToPersistedState(
       ...(networkName && { networkName }),
     },
     ...(swapOutput && { toolOutput: swapOutput }),
+    ...(walletAddress && { walletAddress }),
   }
 }
 
@@ -148,7 +150,8 @@ export const useSwapExecution = (
         finalState,
         activeConversationId,
         data,
-        data.swapData.sellAsset.network
+        data.swapData.sellAsset.network,
+        evmAddress ?? solanaAddress
       )
       store.persistTransaction(persisted)
     }

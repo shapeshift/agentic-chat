@@ -65,6 +65,35 @@ function computeGpv2DomainSeparator(chainId: number): `0x${string}` {
   })
 }
 
+export async function checkFallbackHandler(
+  publicClient: ReturnType<typeof createPublicClient>,
+  safeAddress: string
+): Promise<boolean> {
+  const currentFallbackHandler = await publicClient.getStorageAt({
+    address: safeAddress as `0x${string}`,
+    slot: FALLBACK_HANDLER_SLOT,
+  })
+  const fallbackHandlerAddress = currentFallbackHandler
+    ? getAddress(`0x${currentFallbackHandler.slice(26)}`)
+    : getAddress('0x0000000000000000000000000000000000000000')
+  return fallbackHandlerAddress === EXTENSIBLE_FALLBACK_HANDLER
+}
+
+export async function checkDomainVerifier(
+  publicClient: ReturnType<typeof createPublicClient>,
+  safeAddress: string,
+  chainId: number
+): Promise<boolean> {
+  const gpv2DomainSep = computeGpv2DomainSeparator(chainId)
+  const currentVerifier = await publicClient.readContract({
+    address: EXTENSIBLE_FALLBACK_HANDLER,
+    abi: GET_DOMAIN_VERIFIER_ABI,
+    functionName: 'domainVerifiers',
+    args: [safeAddress as `0x${string}`, gpv2DomainSep],
+  })
+  return getAddress(currentVerifier) === COMPOSABLE_COW_ADDRESS
+}
+
 export async function enableComposableCowModules(
   safeAddress: string,
   chainId: number,
@@ -85,27 +114,12 @@ export async function enableComposableCowModules(
     )
   }
 
-  // On-chain verification: read fallback handler from Safe's storage slot
-  const currentFallbackHandler = await publicClient.getStorageAt({
-    address: safeAddress as `0x${string}`,
-    slot: FALLBACK_HANDLER_SLOT,
-  })
-  const fallbackHandlerAddress = currentFallbackHandler
-    ? getAddress(`0x${currentFallbackHandler.slice(26)}`)
-    : getAddress('0x0000000000000000000000000000000000000000')
-  const needsFallbackHandler = fallbackHandlerAddress !== EXTENSIBLE_FALLBACK_HANDLER
+  const hasFallbackHandler = await checkFallbackHandler(publicClient, safeAddress)
+  const needsFallbackHandler = !hasFallbackHandler
 
-  // On-chain verification: read domain verifier from ExtensibleFallbackHandler
   let needsDomainVerifier = true
-  if (!needsFallbackHandler) {
-    const gpv2DomainSep = computeGpv2DomainSeparator(chainId)
-    const currentVerifier = await publicClient.readContract({
-      address: EXTENSIBLE_FALLBACK_HANDLER,
-      abi: GET_DOMAIN_VERIFIER_ABI,
-      functionName: 'domainVerifiers',
-      args: [safeAddress as `0x${string}`, gpv2DomainSep],
-    })
-    needsDomainVerifier = getAddress(currentVerifier) !== COMPOSABLE_COW_ADDRESS
+  if (hasFallbackHandler) {
+    needsDomainVerifier = !(await checkDomainVerifier(publicClient, safeAddress, chainId))
   }
 
   const transactions: Array<{ to: string; value: string; data: string }> = []

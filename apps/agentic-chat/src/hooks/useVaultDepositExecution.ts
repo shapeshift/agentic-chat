@@ -48,7 +48,8 @@ export function toPersistedState(
   state: VaultDepositState,
   conversationId: string,
   output: VaultDepositOutput | null,
-  networkName?: string
+  networkName?: string,
+  walletAddress?: string
 ): PersistedToolState {
   return {
     toolCallId,
@@ -62,6 +63,7 @@ export function toPersistedState(
       ...(networkName && { networkName }),
     },
     ...(output && { toolOutput: output }),
+    ...(walletAddress && { walletAddress }),
   }
 }
 
@@ -118,7 +120,14 @@ export const useVaultDepositExecution = (
   const { state } = useToolExecutionEffect(toolCallId, depositData, initialState, async (data, setState) => {
     const persistState = (finalState: VaultDepositState) => {
       if (!activeConversationId) return
-      const persisted = toPersistedState(toolCallId, finalState, activeConversationId, data, data.summary.network)
+      const persisted = toPersistedState(
+        toolCallId,
+        finalState,
+        activeConversationId,
+        data,
+        data.summary.network,
+        evmAddress
+      )
       store.persistTransaction(persisted)
     }
 

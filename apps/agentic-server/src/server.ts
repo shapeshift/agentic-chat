@@ -11,8 +11,6 @@ util.inspect.defaultOptions.depth = null
 util.inspect.defaultOptions.maxArrayLength = null
 util.inspect.defaultOptions.maxStringLength = null
 
-console.log('hello from a random place')
-
 const app = new Hono()
 
 // Enable CORS for all routes

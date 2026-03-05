@@ -54,7 +54,8 @@ export function toPersistedState(
   toolCallId: string,
   state: VaultWithdrawAllState,
   conversationId: string,
-  output: VaultWithdrawAllOutput | null
+  output: VaultWithdrawAllOutput | null,
+  walletAddress?: string
 ): PersistedToolState {
   return {
     toolCallId,
@@ -67,6 +68,7 @@ export function toPersistedState(
       ...(state.error && { error: state.error }),
     },
     ...(output && { toolOutput: output }),
+    ...(walletAddress && { walletAddress }),
   }
 }
 
@@ -128,7 +130,7 @@ export const useVaultWithdrawAllExecution = (
   const { state } = useToolExecutionEffect(toolCallId, withdrawData, initialState, async (data, setState) => {
     const persistState = (finalState: VaultWithdrawAllState) => {
       if (!activeConversationId) return
-      const persisted = toPersistedState(toolCallId, finalState, activeConversationId, data)
+      const persisted = toPersistedState(toolCallId, finalState, activeConversationId, data, evmAddress)
       store.persistTransaction(persisted)
     }
 

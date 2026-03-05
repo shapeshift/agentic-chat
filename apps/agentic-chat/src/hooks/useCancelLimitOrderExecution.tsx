@@ -50,7 +50,8 @@ export function cancelOrderStateToPersistedState(
   state: CancelOrderState,
   conversationId: string,
   orderOutput: CancelLimitOrderOutput | null,
-  networkName?: string
+  networkName?: string,
+  walletAddress?: string
 ): PersistedToolState {
   return {
     toolCallId,
@@ -64,6 +65,7 @@ export function cancelOrderStateToPersistedState(
       ...(networkName && { networkName }),
     },
     ...(orderOutput && { toolOutput: orderOutput }),
+    ...(walletAddress && { walletAddress }),
   }
 }
 
@@ -114,7 +116,7 @@ export const useCancelLimitOrderExecution = (
   toolState: DynamicToolUIPart['state'],
   cancelData: CancelOrderData | null
 ): UseCancelLimitOrderExecutionResult => {
-  const { evmWallet } = useWalletConnection()
+  const { evmAddress, evmWallet } = useWalletConnection()
   const store = useChatStore()
   const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
   const { primaryWallet } = useDynamicContext()
@@ -146,7 +148,8 @@ export const useCancelLimitOrderExecution = (
         finalState,
         activeConversationId,
         data,
-        data.network
+        data.network,
+        evmAddress
       )
       store.persistTransaction(persisted)
     }

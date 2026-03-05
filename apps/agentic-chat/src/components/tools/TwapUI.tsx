@@ -154,7 +154,7 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
         </TxStepCard.Content>
       )}
 
-      <TxStepCard.Stepper completedCount={completedCount} totalCount={9}>
+      <TxStepCard.Stepper completedCount={completedCount} totalCount={steps.length}>
         <TxStepCard.Step status={prepareStep.status} connectorBottom>
           Preparing TWAP order
         </TxStepCard.Step>

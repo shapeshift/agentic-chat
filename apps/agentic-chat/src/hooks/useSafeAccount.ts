@@ -1,9 +1,9 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext, useUserWallets } from '@dynamic-labs/sdk-react-core'
 import { useQuery } from '@tanstack/react-query'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 
-import { deploySafe, enableComposableCowModules, predictSafeAddress } from '@/lib/safe'
+import { deploySafe, discoverSafeOnChain, enableComposableCowModules, predictSafeAddress } from '@/lib/safe'
 import type { SafeDeploymentResult } from '@/lib/safe'
 import { findEvmWallet } from '@/lib/walletUtils'
 import { useSafeStore } from '@/stores/safeStore'
@@ -20,7 +20,6 @@ export interface UseSafeAccountResult {
   isDeployed: boolean
   isModulesEnabled: boolean
   isSafeReady: boolean // deployed + modules enabled on any chain
-  isDeploying: boolean
   deployedChainIds: number[]
   safeDeploymentState: Record<number, SafeChainDeployment>
   deploySafe: (chainId: number) => Promise<SafeDeploymentResult>
@@ -38,7 +37,6 @@ export function useSafeAccount(): UseSafeAccountResult {
   const evmAddress = evmWallet?.address
 
   const deployments = useSafeStore(state => state.deployments)
-  const [isDeploying, setIsDeploying] = useState(false)
 
   const safeState = useMemo(() => {
     return evmAddress ? (deployments[evmAddress.toLowerCase()] ?? {}) : {}
@@ -53,6 +51,15 @@ export function useSafeAccount(): UseSafeAccountResult {
     },
     enabled: !!evmAddress && !!evmWallet,
     staleTime: Infinity,
+  })
+
+  // Discover deployed Safes on-chain when the store is empty for this owner
+  useQuery({
+    queryKey: ['safe-discovery', evmAddress],
+    queryFn: () => discoverSafeOnChain(evmAddress!),
+    enabled: !!evmAddress && Object.keys(safeState).length === 0,
+    staleTime: Infinity,
+    retry: 1,
   })
 
   // Check if Safe is deployed + modules enabled on any chain
@@ -88,13 +95,8 @@ export function useSafeAccount(): UseSafeAccountResult {
     async (chainId: number): Promise<SafeDeploymentResult> => {
       if (!evmAddress || !evmWallet) throw new Error('No EVM wallet connected')
 
-      setIsDeploying(true)
-      try {
-        const walletClient = await evmWallet.getWalletClient()
-        return await deploySafe(evmAddress, chainId, evmAddress, walletClient)
-      } finally {
-        setIsDeploying(false)
-      }
+      const walletClient = await evmWallet.getWalletClient()
+      return await deploySafe(evmAddress, chainId, evmAddress, walletClient)
     },
     [evmAddress, evmWallet]
   )
@@ -117,7 +119,6 @@ export function useSafeAccount(): UseSafeAccountResult {
     isDeployed: deploymentInfo.deployed,
     isModulesEnabled: deploymentInfo.modulesEnabled,
     isSafeReady: deploymentInfo.deployed && deploymentInfo.modulesEnabled,
-    isDeploying,
     deployedChainIds: deploymentInfo.deployedChainIds,
     safeDeploymentState: deploymentInfo.perChainState,
     deploySafe: handleDeploySafe,

@@ -10,15 +10,13 @@ import { toast } from 'sonner'
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
 import { orderRegistry } from '@/lib/orderRegistry'
-import { executeSafeTransaction } from '@/lib/safe'
-import { enableComposableCowModules } from '@/lib/safe/safeModules'
+import { ensureSafeReady, executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import { sendTransaction } from '@/utils/sendTransaction'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
-import { useSafeAccount } from './useSafeAccount'
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
@@ -127,7 +125,6 @@ export const useStopLossExecution = (
   orderData: StopLossData | null
 ): UseStopLossExecutionResult => {
   const { evmAddress, evmWallet } = useWalletConnection()
-  const safeAccount = useSafeAccount()
   const store = useChatStore()
   const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
   const { primaryWallet } = useDynamicContext()
@@ -200,24 +197,9 @@ export const useStopLossExecution = (
         draft.error = undefined
       })
 
-      // Step 2: Safe Check — verify Safe is deployed and modules enabled on target chain
-      // Uses the hook wrapper which auto-refreshes React state after deployment,
-      // ensuring ChatProvider.body() sends correct safeDeploymentState on the next request.
+      // Step 2: Safe Check — deploy Safe + enable ComposableCoW modules on target chain
       const walletClient = await evmWallet.getWalletClient()
-      const deployResult = await safeAccount.deploySafe(targetChainId)
-      if (!deployResult.isDeployed) {
-        throw new Error('Failed to deploy Safe smart account')
-      }
-
-      const deployedSafeAddress = deployResult.safeAddress
-
-      // Always verify on-chain — catches "already enabled" gracefully
-      try {
-        await enableComposableCowModules(deployedSafeAddress, targetChainId, evmAddress, walletClient)
-      } catch (moduleError) {
-        const isAlreadyEnabled = moduleError instanceof Error && moduleError.message.includes('already fully enabled')
-        if (!isAlreadyEnabled) throw moduleError
-      }
+      const deployedSafeAddress = await ensureSafeReady(evmAddress, targetChainId, evmAddress, walletClient)
 
       setState(draft => {
         draft.completedSteps.add(StopLossStep.SAFE_CHECK)

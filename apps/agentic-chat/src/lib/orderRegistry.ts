@@ -21,11 +21,25 @@ function getStorageKey(safeAddress: string): string {
   return `${STORAGE_KEY_PREFIX}${safeAddress.toLowerCase()}`
 }
 
+function isValidOrder(obj: unknown): obj is OrderRecord {
+  if (!obj || typeof obj !== 'object') return false
+  const o = obj as Record<string, unknown>
+  return (
+    typeof o.orderHash === 'string' &&
+    typeof o.safeAddress === 'string' &&
+    typeof o.chainId === 'number' &&
+    typeof o.sellAmountBaseUnit === 'string' &&
+    typeof o.status === 'string'
+  )
+}
+
 function loadOrders(safeAddress: string): OrderRecord[] {
   try {
     const raw = localStorage.getItem(getStorageKey(safeAddress))
     if (!raw) return []
-    const orders = JSON.parse(raw) as OrderRecord[]
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    const orders = parsed.filter(isValidOrder)
     // Migrate legacy 'watching' status to 'open'
     let dirty = false
     for (const order of orders) {

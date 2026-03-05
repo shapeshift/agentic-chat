@@ -9,9 +9,7 @@ import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
 import { orderRegistry } from '@/lib/orderRegistry'
-import { executeSafeTransaction } from '@/lib/safe'
-import { deploySafe } from '@/lib/safe/safeFactory'
-import { enableComposableCowModules } from '@/lib/safe/safeModules'
+import { ensureSafeReady, executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
@@ -190,23 +188,9 @@ export const useTwapExecution = (
         draft.error = undefined
       })
 
-      // Safe Check — verify Safe is deployed and modules enabled on target chain
-      // Always verify on-chain via deploySafe (handles already-deployed case gracefully).
-      // Never trust localStorage alone — stale entries from prior bugs can skip deployment.
+      // Safe Check — deploy Safe + enable ComposableCoW modules on target chain
       const walletClient = await evmWallet.getWalletClient()
-      const deployResult = await deploySafe(evmAddress, targetChainId, evmAddress, walletClient)
-      if (!deployResult.isDeployed) {
-        throw new Error('Failed to deploy Safe smart account')
-      }
-
-      const deployedSafeAddress = deployResult.safeAddress
-
-      try {
-        await enableComposableCowModules(deployedSafeAddress, targetChainId, evmAddress, walletClient)
-      } catch (moduleError) {
-        const isAlreadyEnabled = moduleError instanceof Error && moduleError.message.includes('already fully enabled')
-        if (!isAlreadyEnabled) throw moduleError
-      }
+      const deployedSafeAddress = await ensureSafeReady(evmAddress, targetChainId, evmAddress, walletClient)
 
       setState(draft => {
         draft.completedSteps.add(TwapStep.SAFE_CHECK)

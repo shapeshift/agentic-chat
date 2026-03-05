@@ -53,7 +53,8 @@ export function sendStateToPersistedState(
   state: SendState,
   conversationId: string,
   sendOutput: SendOutput | null,
-  networkName?: string
+  networkName?: string,
+  walletAddress?: string
 ): PersistedToolState {
   return {
     toolCallId,
@@ -68,6 +69,7 @@ export function sendStateToPersistedState(
       ...(networkName && { networkName }),
     },
     ...(sendOutput && { toolOutput: sendOutput }),
+    ...(walletAddress && { walletAddress }),
   }
 }
 
@@ -229,7 +231,8 @@ export const useSendExecution = (
           finalState,
           activeConversationId,
           data,
-          data.sendData.asset.network
+          data.sendData.asset.network,
+          evmAddress ?? solanaAddress
         )
         store.persistTransaction(persisted)
       }
@@ -248,7 +251,8 @@ export const useSendExecution = (
           errorState,
           activeConversationId,
           data,
-          data.sendData.asset.network
+          data.sendData.asset.network,
+          evmAddress ?? solanaAddress
         )
         store.persistTransaction(persisted)
       }

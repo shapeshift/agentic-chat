@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 
+import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { normalizeToActivityItem } from '@/lib/activityNormalizer'
 import { useChatStore } from '@/stores/chatStore'
 import type { ActivityItem } from '@/types/activity'
@@ -9,15 +10,25 @@ import { ActivityRow } from './ActivityRow'
 
 export function ActivityList() {
   const transactions = useChatStore(state => state.persistedTransactions)
+  const { evmAddress, solanaAddress, safeAddress } = useWalletConnection()
+
+  const connectedAddresses = useMemo(() => {
+    const set = new Set<string>()
+    if (evmAddress) set.add(evmAddress.toLowerCase())
+    if (solanaAddress) set.add(solanaAddress.toLowerCase())
+    if (safeAddress) set.add(safeAddress.toLowerCase())
+    return set
+  }, [evmAddress, solanaAddress, safeAddress])
 
   const activities = useMemo(() => {
     return transactions
       .filter(tx => tx.toolType === 'swap' || tx.toolType === 'send' || tx.toolType === 'limit_order')
       .filter(tx => !tx.phases.includes('error'))
+      .filter(tx => tx.walletAddress && connectedAddresses.has(tx.walletAddress.toLowerCase()))
       .map(tx => normalizeToActivityItem(tx))
       .filter((item): item is ActivityItem => item !== null)
       .sort((a, b) => b.timestamp - a.timestamp)
-  }, [transactions])
+  }, [transactions, connectedAddresses])
 
   if (activities.length === 0) {
     return (
