@@ -104,6 +104,19 @@ export const useSendExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const solanaAddressRef = useRef(solanaAddress)
+  const solanaWalletRef = useRef(solanaWallet)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  solanaAddressRef.current = solanaAddress
+  solanaWalletRef.current = solanaWallet
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -131,7 +144,7 @@ export const useSendExecution = (
       const assetChainId = data.sendData.chainId
       const { chainNamespace, chainReference } = fromChainId(assetChainId)
 
-      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm ? evmAddress : solanaAddress
+      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm ? evmAddressRef.current : solanaAddressRef.current
       if (!currentAddress) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
@@ -151,11 +164,11 @@ export const useSendExecution = (
       if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
         if (
           chainNamespace === CHAIN_NAMESPACE.Solana &&
-          solanaWallet &&
-          primaryWallet &&
-          !isSolanaWallet(primaryWallet)
+          solanaWalletRef.current &&
+          primaryWalletRef.current &&
+          !isSolanaWallet(primaryWalletRef.current)
         ) {
-          await changePrimaryWallet(solanaWallet.id)
+          await changePrimaryWallet(solanaWalletRef.current.id)
         }
 
         setState(draft => {
@@ -167,16 +180,16 @@ export const useSendExecution = (
         // EVM: always switch to the chain to avoid race conditions
         const chainIdNumber = Number(chainReference)
 
-        if (!evmWallet) {
+        if (!evmWalletRef.current) {
           throw new Error('EVM wallet not connected')
         }
 
-        if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-          await changePrimaryWallet(evmWallet.id)
+        if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+          await changePrimaryWallet(evmWalletRef.current.id)
         }
 
         // EthereumWallet.connector has switchNetwork properly typed
-        await evmWallet.connector.switchNetwork({ networkChainId: chainIdNumber })
+        await evmWalletRef.current.connector.switchNetwork({ networkChainId: chainIdNumber })
 
         setState(draft => {
           draft.completedSteps.add(draft.currentStep)
@@ -188,8 +201,8 @@ export const useSendExecution = (
       // Step 2: Send
       // Get Solana signer if needed - SolanaWallet has getSigner() directly on the class
       let solanaSigner: SolanaWalletSigner | undefined
-      if (chainNamespace === CHAIN_NAMESPACE.Solana && solanaWallet) {
-        solanaSigner = await solanaWallet.getSigner()
+      if (chainNamespace === CHAIN_NAMESPACE.Solana && solanaWalletRef.current) {
+        solanaSigner = await solanaWalletRef.current.getSigner()
       }
 
       sendTxHash = await executeSend(tx, { solanaSigner })
@@ -219,11 +232,11 @@ export const useSendExecution = (
         completedSteps: finalCompletedSteps,
         sendTxHash,
       }
-      if (activeConversationId) {
+      if (activeConversationIdRef.current) {
         const persisted = sendStateToPersistedState(
           toolCallId,
           finalState,
-          activeConversationId,
+          activeConversationIdRef.current,
           data,
           data.sendData.asset.network
         )
@@ -238,11 +251,11 @@ export const useSendExecution = (
         errorState = current(draft)
       })
 
-      if (errorState && activeConversationId) {
+      if (errorState && activeConversationIdRef.current) {
         const persisted = sendStateToPersistedState(
           toolCallId,
           errorState,
-          activeConversationId,
+          activeConversationIdRef.current,
           data,
           data.sendData.asset.network
         )

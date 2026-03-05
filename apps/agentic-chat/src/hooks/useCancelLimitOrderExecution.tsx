@@ -120,6 +120,13 @@ export const useCancelLimitOrderExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -140,11 +147,11 @@ export const useCancelLimitOrderExecution = (
 
   const { state } = useToolExecutionEffect(toolCallId, cancelData, initialCancelOrderState, async (data, setState) => {
     const persistState = (finalState: CancelOrderState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = cancelOrderStateToPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         data,
         data.network
       )
@@ -154,7 +161,7 @@ export const useCancelLimitOrderExecution = (
     try {
       const { signingData, chainId } = data
 
-      if (!evmWallet) {
+      if (!evmWalletRef.current) {
         throw new Error('EVM wallet not connected')
       }
 
@@ -166,11 +173,11 @@ export const useCancelLimitOrderExecution = (
       })
 
       // Step 1: Network Switch
-      if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      await evmWallet.connector.switchNetwork({ networkChainId: chainId })
+      await evmWalletRef.current.connector.switchNetwork({ networkChainId: chainId })
 
       setState(draft => {
         draft.completedSteps.add(draft.currentStep)
@@ -179,7 +186,7 @@ export const useCancelLimitOrderExecution = (
       })
 
       // Step 2: Sign EIP-712 cancellation message
-      const signature = await signTypedDataWithWallet(evmWallet, signingData)
+      const signature = await signTypedDataWithWallet(evmWalletRef.current, signingData)
 
       setState(draft => {
         draft.completedSteps.add(CancelOrderStep.SIGN)

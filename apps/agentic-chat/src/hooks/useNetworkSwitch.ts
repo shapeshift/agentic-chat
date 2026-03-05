@@ -80,6 +80,15 @@ export const useNetworkSwitch = (
   const changePrimaryWallet = useSwitchWallet()
   const { evmWallet, solanaWallet } = useWalletConnection()
 
+  const evmWalletRef = useRef(evmWallet)
+  const solanaWalletRef = useRef(solanaWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmWalletRef.current = evmWallet
+  solanaWalletRef.current = solanaWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -100,8 +109,8 @@ export const useNetworkSwitch = (
 
   const { state } = useToolExecutionEffect(toolCallId, networkData, initialNetworkState, async (data, setState) => {
     const persistState = (finalState: NetworkSwitchState) => {
-      if (!activeConversationId) return
-      const persisted = networkStateToPersistedState(toolCallId, finalState, activeConversationId, data.network, data)
+      if (!activeConversationIdRef.current) return
+      const persisted = networkStateToPersistedState(toolCallId, finalState, activeConversationIdRef.current, data.network, data)
       store.persistTransaction(persisted)
     }
 
@@ -119,8 +128,8 @@ export const useNetworkSwitch = (
 
     // Solana doesn't need network switching in the same way, but we might need to switch primary wallet
     if (data.network === 'solana') {
-      if (solanaWallet && primaryWallet && !isSolanaWallet(primaryWallet)) {
-        await changePrimaryWallet(solanaWallet.id)
+      if (solanaWalletRef.current && primaryWalletRef.current && !isSolanaWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(solanaWalletRef.current.id)
       }
 
       setState(draft => {
@@ -137,15 +146,15 @@ export const useNetworkSwitch = (
 
     try {
       // If primary wallet is Solana, switch to EVM first
-      if (evmWallet && primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (evmWalletRef.current && primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      if (!evmWallet) {
+      if (!evmWalletRef.current) {
         throw new Error('EVM wallet not connected')
       }
 
-      await evmWallet.connector.switchNetwork({ networkChainId: targetChainId })
+      await evmWalletRef.current.connector.switchNetwork({ networkChainId: targetChainId })
       setState(draft => {
         draft.phase = 'success'
       })
