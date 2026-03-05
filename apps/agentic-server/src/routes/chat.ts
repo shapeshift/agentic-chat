@@ -12,6 +12,7 @@ import {
 import { convertToModelMessages, stepCountIs, streamText } from 'ai'
 import { format, getUnixTime } from 'date-fns'
 import type { Context } from 'hono'
+import { z } from 'zod'
 
 import { supportedChainsContext } from '../context'
 import { getModel, getProviderName } from '../models'
@@ -295,16 +296,24 @@ Examples:
   )
 }
 
+const chatRequestSchema = z.object({
+  messages: z.array(z.record(z.string(), z.unknown())),
+  evmAddress: z.string().optional(),
+  solanaAddress: z.string().optional(),
+  approvedChainIds: z.array(z.string()).optional(),
+  hasEmbeddedWallet: z.boolean().optional(),
+})
+
 export async function handleChatRequest(c: Context) {
   try {
     const body = await c.req.json()
-    const { messages, evmAddress, solanaAddress, approvedChainIds, hasEmbeddedWallet } = body as {
-      messages: unknown
-      evmAddress?: string
-      solanaAddress?: string
-      approvedChainIds?: string[]
-      hasEmbeddedWallet?: boolean
+    const parsed = chatRequestSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return c.json({ error: 'Invalid request body', details: parsed.error.issues }, 400)
     }
+
+    const { messages, evmAddress, solanaAddress, approvedChainIds, hasEmbeddedWallet } = parsed.data
 
     // Build wallet context from addresses (filtered by approved chains if provided)
     const walletContext = buildWalletContext(evmAddress, solanaAddress, approvedChainIds, hasEmbeddedWallet)
