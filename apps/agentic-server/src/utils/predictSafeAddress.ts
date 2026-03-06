@@ -5,6 +5,7 @@ import { keccak256, encodePacked } from 'viem'
 
 import { toChecksumAddress } from './addressValidation'
 
+const MAX_CACHE_SIZE = 1000
 const cache = new Map<string, string>()
 
 export async function predictSafeAddress(ownerAddress: string, chainId: number): Promise<string> {
@@ -33,5 +34,9 @@ export async function predictSafeAddress(ownerAddress: string, chainId: number):
 
   const predicted = await protocolKit.getAddress()
   cache.set(key, predicted)
+  if (cache.size > MAX_CACHE_SIZE) {
+    const firstKey = cache.keys().next().value
+    if (firstKey) cache.delete(firstKey)
+  }
   return predicted
 }

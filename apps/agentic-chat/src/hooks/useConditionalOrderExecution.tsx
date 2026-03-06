@@ -308,21 +308,12 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
         })
       }
 
-      // Approval Confirmation
-      if (needsApproval && approvalTxHash) {
-        await waitForConfirmedReceipt(targetChainId, approvalTxHash as `0x${string}`)
-        setState(draft => {
-          draft.completedSteps.add(ConditionalOrderStep.APPROVAL_CONFIRMATION)
-          draft.currentStep = ConditionalOrderStep.SUBMIT_TO_COMPOSABLE_COW
-          draft.error = undefined
-        })
-      } else {
-        setState(draft => {
-          draft.completedSteps.add(ConditionalOrderStep.APPROVAL_CONFIRMATION)
-          draft.currentStep = ConditionalOrderStep.SUBMIT_TO_COMPOSABLE_COW
-          draft.error = undefined
-        })
-      }
+      // Approval Confirmation — executeSafeTransaction already waits for on-chain confirmation
+      setState(draft => {
+        draft.completedSteps.add(ConditionalOrderStep.APPROVAL_CONFIRMATION)
+        draft.currentStep = ConditionalOrderStep.SUBMIT_TO_COMPOSABLE_COW
+        draft.error = undefined
+      })
 
       // Submit to ComposableCoW via Safe
       const submitTxHash = await executeSafeTransaction(
@@ -344,10 +335,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
         draft.error = undefined
       })
 
-      // Wait for on-chain confirmation
-      await waitForConfirmedReceipt(targetChainId, submitTxHash as `0x${string}`)
-
-      // Save to order registry
+      // Save to order registry — executeSafeTransaction already confirmed on-chain
       useOrderStore.getState().saveOrder(
         config.toOrderRecord({
           data,

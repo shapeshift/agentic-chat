@@ -3,6 +3,7 @@ import { createPublicClient, custom, domainSeparator, encodeFunctionData, getAdd
 
 import { useSafeStore } from '@/stores/safeStore'
 
+import { executeSafeBatchTransaction } from './executeSafeTransaction'
 import type { SafeProvider } from './types'
 
 // ExtensibleFallbackHandler — required for ComposableCoW ERC-1271 verification
@@ -53,6 +54,12 @@ const GET_DOMAIN_VERIFIER_ABI = [
     stateMutability: 'view',
   },
 ] as const
+
+export class ModulesAlreadyEnabledError extends Error {
+  constructor() {
+    super('ComposableCoW modules already fully enabled on this Safe')
+  }
+}
 
 function computeGpv2DomainSeparator(chainId: number): `0x${string}` {
   return domainSeparator({
@@ -163,21 +170,10 @@ export async function enableComposableCowModules(
         domainVerifierSet: true,
       })
     }
-    throw new Error('ComposableCoW modules already fully enabled on this Safe')
+    throw new ModulesAlreadyEnabledError()
   }
 
-  // Protocol Kit auto-wraps multiple transactions in MultiSend
-  const safeTx = await protocolKit.createTransaction({ transactions })
-  const signedTx = await protocolKit.signTransaction(safeTx)
-  const result = await protocolKit.executeTransaction(signedTx)
-  const txHash = typeof result === 'string' ? result : result.hash
-
-  // Wait for module enable tx to be confirmed before updating state
-  const moduleReceipt = await publicClient.waitForTransactionReceipt({
-    hash: txHash as `0x${string}`,
-    confirmations: 1,
-  })
-  if (moduleReceipt.status === 'reverted') throw new Error(`Module enable transaction reverted: ${txHash}`)
+  const txHash = await executeSafeBatchTransaction(safeAddress, transactions, signerAddress, chainId, provider)
 
   const ownerAddress = (await protocolKit.getOwners())[0]
   if (ownerAddress) {

@@ -44,6 +44,14 @@ export function executeSafeTransaction(
       safeAddress,
     })
 
+    const publicClient = createPublicClient({ transport: custom(provider) })
+    const connectedChainId = await publicClient.getChainId()
+    if (connectedChainId !== chainId) {
+      throw new Error(
+        `Chain mismatch: wallet is on chain ${connectedChainId} but expected ${chainId}. Switch networks first.`
+      )
+    }
+
     const safeTransaction = await protocolKit.createTransaction({
       transactions: [
         {
@@ -79,6 +87,14 @@ export function executeSafeBatchTransaction(
       signer: signerAddress,
       safeAddress,
     })
+
+    const publicClient = createPublicClient({ transport: custom(provider) })
+    const connectedChainId = await publicClient.getChainId()
+    if (connectedChainId !== chainId) {
+      throw new Error(
+        `Chain mismatch: wallet is on chain ${connectedChainId} but expected ${chainId}. Switch networks first.`
+      )
+    }
 
     const safeTransaction = await protocolKit.createTransaction({
       transactions: transactions.map(tx => ({

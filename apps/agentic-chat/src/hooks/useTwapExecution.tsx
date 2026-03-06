@@ -2,6 +2,7 @@ import type { CreateTwapOutput } from '@shapeshiftoss/agentic-server'
 import type { DynamicToolUIPart } from 'ai'
 
 import { Amount } from '@/components/ui/Amount'
+import { formatFrequency } from '@/lib/formatDuration'
 import { analytics } from '@/lib/mixpanel'
 import type { PersistedToolState } from '@/stores/chatStore'
 
@@ -95,7 +96,7 @@ export const useTwapExecution = (
         sellAmount: data.summary.sellAsset.totalAmount,
         network: data.summary.network,
         intervals: data.summary.intervals,
-        frequency: data.summary.frequency,
+        frequency: formatFrequency(Math.floor(data.summary.durationSeconds / data.summary.intervals)),
       })
     },
   })

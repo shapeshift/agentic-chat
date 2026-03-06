@@ -1,5 +1,5 @@
 import { deploySafe } from './safeFactory'
-import { enableComposableCowModules } from './safeModules'
+import { enableComposableCowModules, ModulesAlreadyEnabledError } from './safeModules'
 import type { SafeProvider } from './types'
 
 export async function ensureSafeReady(
@@ -14,7 +14,7 @@ export async function ensureSafeReady(
   try {
     await enableComposableCowModules(deployResult.safeAddress, chainId, signerAddress, provider)
   } catch (error) {
-    if (!(error instanceof Error && error.message.includes('already fully enabled'))) throw error
+    if (!(error instanceof ModulesAlreadyEnabledError)) throw error
   }
 
   return deployResult.safeAddress

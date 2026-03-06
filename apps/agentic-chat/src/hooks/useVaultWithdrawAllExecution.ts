@@ -75,9 +75,12 @@ export function toPersistedState(
 }
 
 export function fromPersistedState(persisted: PersistedToolState): VaultWithdrawAllState {
-  const chainResults: ChainResult[] = persisted.meta.chainResults
-    ? (JSON.parse(persisted.meta.chainResults as string) as ChainResult[])
-    : []
+  let chainResults: ChainResult[] = []
+  try {
+    chainResults = persisted.meta.chainResults
+      ? (JSON.parse(persisted.meta.chainResults as string) as ChainResult[])
+      : []
+  } catch { /* corrupted localStorage — treat as empty */ }
   return {
     currentStep: VaultWithdrawAllStep.COMPLETE,
     completedSteps: VAULT_WITHDRAW_ALL_PHASES.fromPhases(persisted.phases),

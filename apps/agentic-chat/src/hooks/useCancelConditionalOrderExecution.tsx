@@ -11,8 +11,6 @@ import { executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
-import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
-
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
@@ -190,8 +188,7 @@ export function useCancelConditionalOrderExecution(
         draft.error = undefined
       })
 
-      await waitForConfirmedReceipt(safeTransaction.chainId, cancelTxHash as `0x${string}`)
-
+      // executeSafeTransaction already waits for on-chain confirmation
       persistState({
         currentStep: CancelStep.COMPLETE,
         completedSteps: new Set([

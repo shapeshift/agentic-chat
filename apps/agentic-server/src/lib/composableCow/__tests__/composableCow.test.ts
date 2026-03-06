@@ -112,10 +112,10 @@ describe('composableCow', () => {
       expect(salt.length).toBe(66)
     })
 
-    test('should be deterministic with explicit nonce', () => {
+    test('should produce unique salts even with same nonce due to randomness', () => {
       const first = generateOrderSalt(ADDRESSES.SAFE, ADDRESSES.WETH, ADDRESSES.USDC, 42)
       const second = generateOrderSalt(ADDRESSES.SAFE, ADDRESSES.WETH, ADDRESSES.USDC, 42)
-      expect(first).toBe(second)
+      expect(first).not.toBe(second)
     })
 
     test('should produce different output for different nonce', () => {

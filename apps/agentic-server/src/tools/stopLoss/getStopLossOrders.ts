@@ -8,7 +8,7 @@ import type { ActiveOrderSummary, WalletContext } from '../../utils/walletContex
 
 export const getStopLossOrdersSchema = z.object({
   status: z
-    .enum(['open', 'submitted', 'fulfilled', 'cancelled', 'expired', 'all'])
+    .enum(['open', 'cancelled', 'expired', 'all'])
     .optional()
     .default('all')
     .describe('Filter orders by status. Default is "all".'),
@@ -154,7 +154,7 @@ export async function executeGetStopLossOrders(
 export const getStopLossOrdersTool = {
   description: `Get the user's stop-loss orders from CoW Protocol.
 
-UI CARD DISPLAYS: list of stop-loss orders with status badges (Open/Submitted/Fulfilled/Cancelled/Expired), amounts, strike prices, and CoW tracking links.
+UI CARD DISPLAYS: list of stop-loss orders with status badges (Open/Cancelled/Expired), amounts, strike prices, and CoW tracking links.
 
 Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
 

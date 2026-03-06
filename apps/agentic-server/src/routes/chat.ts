@@ -435,7 +435,6 @@ const chatRequestSchema = z.object({
   evmAddress: z.string().optional(),
   solanaAddress: z.string().optional(),
   approvedChainIds: z.array(z.string()).optional(),
-  hasEmbeddedWallet: z.boolean().optional(),
   safeAddress: z.string().optional(),
   safeDeploymentState: z
     .record(

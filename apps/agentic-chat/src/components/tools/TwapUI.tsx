@@ -1,8 +1,11 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Wallet } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { useMemo } from 'react'
 
 import { useTwapExecution } from '@/hooks/useTwapExecution'
 import { getExplorerUrl, getSafeAppUrl } from '@/lib/explorers'
-import { StepStatus } from '@/lib/stepUtils'
+import { formatDuration, formatFrequency } from '@/lib/formatDuration'
+import { mergeStepStatuses, getUserFriendlyError, StepStatus } from '@/lib/stepUtils'
 import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
@@ -12,6 +15,32 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
+interface PresentationStep {
+  label: string
+  status: StepStatus
+  subtitle?: ReactNode
+}
+
+const walletSigningSubtitle = (
+  <span className="flex items-center gap-1">
+    <Wallet className="h-3 w-3" />
+    Sign in your wallet...
+  </span>
+)
+
+const walletConfirmingSubtitle = (
+  <span className="flex items-center gap-1">
+    <Wallet className="h-3 w-3" />
+    Waiting for confirmation...
+  </span>
+)
+
+function getMergedSubtitle(actionStatus: StepStatus, confirmStatus: StepStatus): ReactNode | undefined {
+  if (actionStatus === StepStatus.IN_PROGRESS) return walletSigningSubtitle
+  if (actionStatus === StepStatus.COMPLETE && confirmStatus !== StepStatus.COMPLETE) return walletConfirmingSubtitle
+  return undefined
+}
+
 export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
   const { state, output, toolCallId } = toolPart
   const orderOutput = output
@@ -19,19 +48,15 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
 
   const orderData = state === 'output-available' && orderOutput ? orderOutput : null
   const { error, steps, networkName, submitTxHash } = useTwapExecution(toolCallId, state, orderData)
-  const needsApproval = orderOutput?.needsApproval ?? false
-
-  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedTransaction(toolCallId)
-
-  if (isHistoricalSkipped) {
-    return (
-      <TxStepCard.Root>
-        <div className="text-sm text-muted-foreground font-medium p-4">TWAP execution skipped (no saved data)</div>
-      </TxStepCard.Root>
-    )
-  }
 
   const needsDeposit = orderOutput?.needsDeposit ?? false
+  const needsApproval = orderOutput?.needsApproval ?? false
+  const summary = orderOutput?.summary
+  const duration = summary ? formatDuration(summary.durationSeconds) : undefined
+  const frequency = summary ? formatFrequency(Math.floor(summary.durationSeconds / summary.intervals)) : undefined
+  const sellSymbol = summary?.sellAsset.symbol.toUpperCase()
+  const sellAmount = summary?.sellAsset.totalAmount
+
   const [
     prepareStep,
     networkStep,
@@ -43,17 +68,99 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
     submitStep,
     confirmStep,
   ] = steps
-  if (
-    !prepareStep ||
-    !safeCheckStep ||
-    !networkStep ||
-    !depositStep ||
-    !depositConfirmStep ||
-    !approvalStep ||
-    !approvalConfirmStep ||
-    !submitStep ||
-    !confirmStep
-  ) {
+
+  const presentationSteps: PresentationStep[] = useMemo(() => {
+    if (
+      !prepareStep ||
+      !safeCheckStep ||
+      !networkStep ||
+      !depositStep ||
+      !depositConfirmStep ||
+      !approvalStep ||
+      !approvalConfirmStep ||
+      !submitStep ||
+      !confirmStep
+    ) {
+      return []
+    }
+
+    const result: PresentationStep[] = [
+      {
+        label: 'Preparing TWAP order',
+        status: prepareStep.status,
+      },
+      {
+        label: networkName ? `Switch to ${networkName}` : 'Switch network',
+        status: networkStep.status,
+        subtitle: networkStep.status === StepStatus.IN_PROGRESS ? walletSigningSubtitle : undefined,
+      },
+      {
+        label: 'Check Safe wallet',
+        status: safeCheckStep.status,
+        subtitle: safeCheckStep.status === StepStatus.IN_PROGRESS ? walletSigningSubtitle : undefined,
+      },
+    ]
+
+    if (needsDeposit) {
+      const depositLabel =
+        sellAmount && sellSymbol ? `Deposit ${sellAmount} ${sellSymbol} to vault` : 'Deposit tokens to vault'
+      result.push({
+        label: depositLabel,
+        status: mergeStepStatuses(depositStep.status, depositConfirmStep.status),
+        subtitle: getMergedSubtitle(depositStep.status, depositConfirmStep.status),
+      })
+    }
+
+    if (needsApproval) {
+      const approvalLabel = sellSymbol ? `Approve ${sellSymbol} via Safe` : 'Approve token via Safe'
+      result.push({
+        label: approvalLabel,
+        status: mergeStepStatuses(approvalStep.status, approvalConfirmStep.status),
+        subtitle: getMergedSubtitle(approvalStep.status, approvalConfirmStep.status),
+      })
+    }
+
+    result.push(
+      {
+        label: 'Submit to ComposableCoW',
+        status: submitStep.status,
+        subtitle: submitStep.status === StepStatus.IN_PROGRESS ? walletSigningSubtitle : undefined,
+      },
+      {
+        label: 'Confirming on-chain',
+        status: confirmStep.status,
+      }
+    )
+
+    return result
+  }, [
+    prepareStep,
+    safeCheckStep,
+    networkStep,
+    networkName,
+    needsDeposit,
+    sellAmount,
+    sellSymbol,
+    depositStep,
+    depositConfirmStep,
+    needsApproval,
+    approvalStep,
+    approvalConfirmStep,
+    submitStep,
+    confirmStep,
+  ])
+
+  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedTransaction(toolCallId)
+
+  if (isHistoricalSkipped) {
+    return (
+      <TxStepCard.Root>
+        <div className="text-sm text-muted-foreground font-medium p-4">TWAP execution skipped (no saved data)</div>
+      </TxStepCard.Root>
+    )
+  }
+
+  if (presentationSteps.length === 0) {
     return (
       <TxStepCard.Root>
         <div className="text-sm text-muted-foreground font-medium p-4">
@@ -63,25 +170,15 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
     )
   }
 
-  const completedCount = [
-    prepareStep.status,
-    safeCheckStep.status,
-    networkStep.status,
-    depositStep.status,
-    depositConfirmStep.status,
-    approvalStep.status,
-    approvalConfirmStep.status,
-    submitStep.status,
-    confirmStep.status,
-  ].filter(s => s === StepStatus.COMPLETE || s === StepStatus.SKIPPED).length
+  const completedCount = presentationSteps.filter(s => s.status === StepStatus.COMPLETE).length
+  const totalCount = presentationSteps.length
 
   const footerMessage = (() => {
     if (state === 'output-error') return { type: 'error' as const, text: 'Failed to prepare TWAP order' }
-    if (error) return { type: 'error' as const, text: `TWAP order failed: ${error}` }
+    if (error) return { type: 'error' as const, text: `TWAP order failed: ${getUserFriendlyError(error)}` }
     return null
   })()
 
-  const summary = orderOutput?.summary
   const hasError = state === 'output-error'
   const isLoading = !summary && !hasError
 
@@ -91,7 +188,7 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
         <TxStepCard.HeaderRow>
           <div className="text-xs text-muted-foreground font-normal">TWAP Order</div>
           <div className="text-sm text-muted-foreground font-normal">
-            {summary ? summary.duration : isLoading && <Skeleton className="h-4 w-20" />}
+            {summary ? duration : isLoading && <Skeleton className="h-4 w-20" />}
           </div>
         </TxStepCard.HeaderRow>
         <TxStepCard.HeaderRow>
@@ -131,8 +228,8 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
               }
             />
             <TxStepCard.DetailItem label="Intervals" value={String(summary.intervals)} />
-            <TxStepCard.DetailItem label="Frequency" value={summary.frequency} />
-            <TxStepCard.DetailItem label="Duration" value={summary.duration} />
+            <TxStepCard.DetailItem label="Frequency" value={frequency} />
+            <TxStepCard.DetailItem label="Duration" value={duration} />
             {orderOutput?.safeAddress && summary && (
               <TxStepCard.DetailItem
                 label="Safe Vault"
@@ -154,42 +251,18 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
         </TxStepCard.Content>
       )}
 
-      <TxStepCard.Stepper completedCount={completedCount} totalCount={steps.length}>
-        <TxStepCard.Step status={prepareStep.status} connectorBottom>
-          Preparing TWAP order
-        </TxStepCard.Step>
-        <TxStepCard.Step status={networkStep.status} connectorTop connectorBottom>
-          {networkName ? `Switch to ${networkName}` : 'Switch network'}
-        </TxStepCard.Step>
-        <TxStepCard.Step status={safeCheckStep.status} connectorTop connectorBottom>
-          Check Safe wallet
-        </TxStepCard.Step>
-        <TxStepCard.Step status={needsDeposit ? depositStep.status : StepStatus.SKIPPED} connectorTop connectorBottom>
-          Deposit tokens to vault
-        </TxStepCard.Step>
-        <TxStepCard.Step
-          status={needsDeposit ? depositConfirmStep.status : StepStatus.SKIPPED}
-          connectorTop
-          connectorBottom
-        >
-          Confirming deposit
-        </TxStepCard.Step>
-        <TxStepCard.Step status={needsApproval ? approvalStep.status : StepStatus.SKIPPED} connectorTop connectorBottom>
-          Approve token via Safe
-        </TxStepCard.Step>
-        <TxStepCard.Step
-          status={needsApproval ? approvalConfirmStep.status : StepStatus.SKIPPED}
-          connectorTop
-          connectorBottom
-        >
-          Confirming approval
-        </TxStepCard.Step>
-        <TxStepCard.Step status={submitStep.status} connectorTop connectorBottom>
-          Submit to ComposableCoW
-        </TxStepCard.Step>
-        <TxStepCard.Step status={confirmStep.status} connectorTop>
-          Confirming on-chain
-        </TxStepCard.Step>
+      <TxStepCard.Stepper completedCount={completedCount} totalCount={totalCount}>
+        {presentationSteps.map((step, index) => (
+          <TxStepCard.Step
+            key={step.label}
+            status={step.status}
+            subtitle={step.subtitle}
+            connectorTop={index > 0}
+            connectorBottom={index < presentationSteps.length - 1}
+          >
+            {step.label}
+          </TxStepCard.Step>
+        ))}
 
         {submitTxHash && networkName && (
           <a

@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 
 import { useStopLossExecution } from '@/hooks/useStopLossExecution'
 import { getExplorerUrl, getSafeAppUrl } from '@/lib/explorers'
-import { StepStatus } from '@/lib/stepUtils'
+import { mergeStepStatuses, getUserFriendlyError, StepStatus } from '@/lib/stepUtils'
 import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
@@ -34,28 +34,10 @@ const walletConfirmingSubtitle = (
   </span>
 )
 
-function mergeStepStatuses(actionStatus: StepStatus, confirmStatus: StepStatus): StepStatus {
-  if (actionStatus === StepStatus.FAILED) return StepStatus.FAILED
-  if (confirmStatus === StepStatus.FAILED) return StepStatus.FAILED
-  if (actionStatus === StepStatus.IN_PROGRESS) return StepStatus.IN_PROGRESS
-  if (actionStatus === StepStatus.COMPLETE && confirmStatus !== StepStatus.COMPLETE) return StepStatus.IN_PROGRESS
-  if (actionStatus === StepStatus.COMPLETE && confirmStatus === StepStatus.COMPLETE) return StepStatus.COMPLETE
-  if (actionStatus === StepStatus.NOT_STARTED && confirmStatus === StepStatus.NOT_STARTED) return StepStatus.NOT_STARTED
-  return StepStatus.NOT_STARTED
-}
-
 function getMergedSubtitle(actionStatus: StepStatus, confirmStatus: StepStatus): ReactNode | undefined {
   if (actionStatus === StepStatus.IN_PROGRESS) return walletSigningSubtitle
   if (actionStatus === StepStatus.COMPLETE && confirmStatus !== StepStatus.COMPLETE) return walletConfirmingSubtitle
   return undefined
-}
-
-function getUserFriendlyError(rawError: string): string {
-  const lower = rawError.toLowerCase()
-  if (lower.includes('user rejected') || lower.includes('user denied')) return 'Transaction was rejected in your wallet'
-  if (lower.includes('insufficient funds')) return 'Insufficient funds to complete this transaction'
-  if (lower.includes('failed to deploy safe')) return 'Failed to set up your vault. Please try again.'
-  return rawError.length > 120 ? `${rawError.slice(0, 120)}...` : rawError
 }
 
 export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossTool'>) {
