@@ -1,6 +1,6 @@
 import { getViemClient } from '@shapeshiftoss/utils'
-import { getAddress } from 'viem'
 
+import { toChecksumAddress } from './addressValidation'
 import { predictSafeAddress } from './predictSafeAddress'
 
 const SAFE_GET_OWNERS_ABI = [
@@ -17,10 +17,10 @@ export async function verifySafeOwnership(safeAddress: string, expectedOwner: st
   const caipChainId = `eip155:${chainId}`
   const client = getViemClient(caipChainId)
 
-  const code = await client.getCode({ address: safeAddress as `0x${string}` })
+  const code = await client.getCode({ address: toChecksumAddress(safeAddress) })
   if (!code || code === '0x') {
     const predicted = await predictSafeAddress(expectedOwner, chainId)
-    if (getAddress(predicted) !== getAddress(safeAddress)) {
+    if (toChecksumAddress(predicted) !== toChecksumAddress(safeAddress)) {
       throw new Error(
         `Safe address ${safeAddress} does not match the predicted address for wallet ${expectedOwner}. ` +
           'This may indicate a tampered request.'
@@ -30,13 +30,13 @@ export async function verifySafeOwnership(safeAddress: string, expectedOwner: st
   }
 
   const owners = await client.readContract({
-    address: safeAddress as `0x${string}`,
+    address: toChecksumAddress(safeAddress),
     abi: SAFE_GET_OWNERS_ABI,
     functionName: 'getOwners',
   })
 
-  const normalizedExpected = getAddress(expectedOwner)
-  const isOwner = (owners as string[]).some(owner => getAddress(owner) === normalizedExpected)
+  const normalizedExpected = toChecksumAddress(expectedOwner)
+  const isOwner = (owners as string[]).some(owner => toChecksumAddress(owner) === normalizedExpected)
 
   if (!isOwner) {
     throw new Error(

@@ -27,3 +27,10 @@ export function validateSolanaAddress(address: string): void {
     throw new Error(`Invalid Solana address: ${address}`)
   }
 }
+
+export type Hex = `0x${string}`
+
+// Typed wrapper for viem's getAddress — validates and checksums, returning `0x${string}`
+export function toChecksumAddress(address: string): Hex {
+  return getAddress(address) as Hex
+}

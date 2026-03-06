@@ -1,4 +1,3 @@
-import { fromAssetId } from '@shapeshiftoss/caip'
 import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
 import { z } from 'zod'
@@ -11,12 +10,14 @@ import {
   encodeStopLossStaticData,
   generateOrderSalt,
   getChainlinkOracle,
+  resolveCowTokenAddress,
   STOP_LOSS_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
+import { toChecksumAddress } from '../../utils/addressValidation'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
@@ -110,22 +111,21 @@ export async function executeCreateStopLoss(
   }
 
   // Resolve assets on the specified network
-  const [rawSellAsset, buyAsset] = await Promise.all([
+  const [sellAsset, buyAsset] = await Promise.all([
     resolveAsset({ symbolOrName: input.sellAsset, network: input.network }, walletContext),
     resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
   // Validate the user has a connected wallet on this chain
-  getAddressForChain(walletContext, rawSellAsset.chainId)
+  getAddressForChain(walletContext, sellAsset.chainId)
 
   // Reject native tokens — CoW Protocol requires ERC20 tokens
-  if (isNativeToken(rawSellAsset)) {
-    const nativeSymbol = rawSellAsset.symbol
+  if (isNativeToken(sellAsset)) {
+    const nativeSymbol = sellAsset.symbol
     throw new Error(
       `Native ${nativeSymbol} cannot be used as sell asset for stop-loss orders. ` +
         `CoW Protocol requires ERC20 tokens. Please wrap your ${nativeSymbol} to W${nativeSymbol} first.`
     )
   }
-  const sellAsset = rawSellAsset
 
   const sellOracle = getChainlinkOracle(evmChainId, sellAsset.symbol)
   const buyOracle = getChainlinkOracle(evmChainId, buyAsset.symbol)
@@ -178,12 +178,8 @@ export async function executeCreateStopLoss(
   )
 
   // Get token addresses
-  const sellTokenAddress = fromAssetId(sellAsset.assetId).assetReference as `0x${string}`
-  const isNativeBuyToken = isNativeToken(buyAsset)
-  const COW_NATIVE_ASSET_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as `0x${string}`
-  const buyTokenAddress = isNativeBuyToken
-    ? COW_NATIVE_ASSET_MARKER
-    : (fromAssetId(buyAsset.assetId).assetReference as `0x${string}`)
+  const sellTokenAddress = resolveCowTokenAddress(sellAsset, false)
+  const buyTokenAddress = resolveCowTokenAddress(buyAsset, isNativeToken(buyAsset))
 
   const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
   const buyAmountStr = buyAmountBaseUnit
@@ -243,12 +239,12 @@ export async function executeCreateStopLoss(
     sellAmount: toBigInt(sellAmountBaseUnit),
     buyAmount: toBigInt(buyAmountBaseUnit),
     appData: DEFAULT_APP_DATA,
-    receiver: safeAddress as `0x${string}`,
+    receiver: toChecksumAddress(safeAddress),
     isSellOrder: true,
     isPartiallyFillable: true,
     validTo,
-    sellTokenPriceOracle: sellOracle.address as `0x${string}`,
-    buyTokenPriceOracle: buyOracle.address as `0x${string}`,
+    sellTokenPriceOracle: toChecksumAddress(sellOracle.address),
+    buyTokenPriceOracle: toChecksumAddress(buyOracle.address),
     strike: toBigInt(strikePrice.toString()),
     maxTimeSinceLastOracleUpdate: MAX_ORACLE_STALENESS,
   })
@@ -294,8 +290,8 @@ export async function executeCreateStopLoss(
     conditionalOrderParams,
     needsDeposit,
     depositTx,
-    sellTokenAddress: sellTokenAddress as string,
-    buyTokenAddress: buyTokenAddress as string,
+    sellTokenAddress,
+    buyTokenAddress,
     sellAmountBaseUnit,
     sellPrecision: sellAsset.precision,
     buyPrecision: buyAsset.precision,

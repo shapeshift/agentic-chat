@@ -4,6 +4,7 @@ import { toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
 import { z } from 'zod'
 
+import { resolveCowTokenAddress } from '../../lib/composableCow'
 import { COW_VAULT_RELAYER_ADDRESS, prepareCowLimitOrder } from '../../lib/cow'
 import type { CowOrderSigningData } from '../../lib/cow/types'
 import { getCowExplorerUrl, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
@@ -113,16 +114,8 @@ export async function executeCreateLimitOrder(
   }
 
   // Get token addresses after validation
-  const sellTokenAddress = fromAssetId(sellAsset.assetId).assetReference
-  const buyTokenAddress = fromAssetId(buyAsset.assetId).assetReference
-
-  // CoW Protocol uses this marker address to indicate native asset as buy token
-  const COW_NATIVE_ASSET_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
-
-  const sellToken = sellTokenAddress
-
-  // Allow native token as buy asset using CoW's native asset marker
-  const buyToken = isNativeBuyToken ? COW_NATIVE_ASSET_MARKER : buyTokenAddress
+  const sellToken = fromAssetId(sellAsset.assetId).assetReference
+  const buyToken = resolveCowTokenAddress(buyAsset, isNativeBuyToken)
 
   // Calculate amounts in base units
   const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)

@@ -1,4 +1,3 @@
-import { fromAssetId } from '@shapeshiftoss/caip'
 import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
 import { z } from 'zod'
@@ -11,12 +10,14 @@ import {
   CURRENT_BLOCK_TIMESTAMP_FACTORY,
   encodeTwapStaticData,
   generateOrderSalt,
+  resolveCowTokenAddress,
   TWAP_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
+import { toChecksumAddress } from '../../utils/addressValidation'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
@@ -153,12 +154,8 @@ export async function executeCreateTwap(
     throw new Error('Total amount is too small to split into the requested number of intervals.')
   }
 
-  const sellTokenAddress = fromAssetId(sellAsset.assetId).assetReference as `0x${string}`
-  const isNativeBuyToken = isNativeToken(buyAsset)
-  const COW_NATIVE_ASSET_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as `0x${string}`
-  const buyTokenAddress = isNativeBuyToken
-    ? COW_NATIVE_ASSET_MARKER
-    : (fromAssetId(buyAsset.assetId).assetReference as `0x${string}`)
+  const sellTokenAddress = resolveCowTokenAddress(sellAsset, false)
+  const buyTokenAddress = resolveCowTokenAddress(buyAsset, isNativeToken(buyAsset))
 
   const approvalTarget = COW_VAULT_RELAYER_ADDRESS
 
@@ -205,7 +202,7 @@ export async function executeCreateTwap(
   const staticData = encodeTwapStaticData({
     sellToken: sellTokenAddress,
     buyToken: buyTokenAddress,
-    receiver: safeAddress as `0x${string}`,
+    receiver: toChecksumAddress(safeAddress),
     partSellAmount,
     minPartLimit,
     t0: 0n,
@@ -254,8 +251,8 @@ export async function executeCreateTwap(
     conditionalOrderParams,
     needsDeposit,
     depositTx,
-    sellTokenAddress: sellTokenAddress as string,
-    buyTokenAddress: buyTokenAddress as string,
+    sellTokenAddress,
+    buyTokenAddress,
     sellAmountBaseUnit,
     sellPrecision: sellAsset.precision,
     buyPrecision: buyAsset.precision,

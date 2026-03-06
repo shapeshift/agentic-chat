@@ -7,13 +7,14 @@
  * contract's hash() function, and checks on-chain singleOrders state.
  */
 
-import { createPublicClient, decodeEventLog, getAddress, http, parseAbiItem } from 'viem'
+import { createPublicClient, decodeEventLog, http, parseAbiItem } from 'viem'
 import { mainnet } from 'viem/chains'
 
+import { toChecksumAddress } from '../../../utils/addressValidation'
 import { COMPOSABLE_COW_ADDRESS, computeConditionalOrderHash } from '../index'
 
 // Known test data from parent investigation (shapeshift-agentic-9ke)
-const SAFE_ADDRESS = getAddress('0xcFD4f9b00935A660283987d8Ec1011c27d8F8fDe')
+const SAFE_ADDRESS = toChecksumAddress('0xcFD4f9b00935A660283987d8Ec1011c27d8F8fDe')
 const CREATION_TX = '0x932518081b82084cfb1de6b55ceda33931ed40a1f9fbf8aa13f26ff2482500b7'
 const CLAIMED_HASH = '0x6747c6831e5c693eaf2ed4e16f2a25d951c0db7bf69ae650a0eb4e378fcf8ec3'
 
@@ -92,7 +93,7 @@ async function main() {
         console.log(`  Salt:        ${args.params.salt}`)
         console.log(`  StaticInput: ${args.params.staticInput.slice(0, 66)}...`)
         eventParams = {
-          handler: getAddress(args.params.handler),
+          handler: toChecksumAddress(args.params.handler),
           salt: args.params.salt,
           staticInput: args.params.staticInput,
         }

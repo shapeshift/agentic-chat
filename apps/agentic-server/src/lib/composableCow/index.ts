@@ -1,30 +1,34 @@
-import {
-  decodeAbiParameters,
-  encodeAbiParameters,
-  encodeFunctionData,
-  getAddress,
-  keccak256,
-  parseAbiParameters,
-} from 'viem'
+import { fromAssetId } from '@shapeshiftoss/caip'
+import { decodeAbiParameters, encodeAbiParameters, encodeFunctionData, keccak256, parseAbiParameters } from 'viem'
+
+import { toChecksumAddress } from '../../utils/addressValidation'
 
 // ComposableCoW contract address (same across all supported chains)
-export const COMPOSABLE_COW_ADDRESS = getAddress('0xfdaFc9d1902f4e0b84f65f49f244b32b31013b74')
+export const COMPOSABLE_COW_ADDRESS = toChecksumAddress('0xfdaFc9d1902f4e0b84f65f49f244b32b31013b74')
 
 // StopLoss handler address from cowprotocol/composable-cow deployments
-export const STOP_LOSS_HANDLER_ADDRESS = getAddress('0x412c36e5011cd2517016d243a2dfb37f73a242e7')
+export const STOP_LOSS_HANDLER_ADDRESS = toChecksumAddress('0x412c36e5011cd2517016d243a2dfb37f73a242e7')
 
 // TWAP handler address from cowprotocol/composable-cow deployments (same across all chains)
-export const TWAP_HANDLER_ADDRESS = getAddress('0x6cF1e9cA41f7611dEf408122793c358a3d11E5a5')
+export const TWAP_HANDLER_ADDRESS = toChecksumAddress('0x6cF1e9cA41f7611dEf408122793c358a3d11E5a5')
 
 // CoW Settlement contract (for VaultRelayer approvals)
-export const COW_SETTLEMENT_ADDRESS = getAddress('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')
+export const COW_SETTLEMENT_ADDRESS = toChecksumAddress('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')
 
 // CurrentBlockTimestampFactory: getValue() returns bytes32(block.timestamp)
 // Used with createWithContext() so TWAP orders know when they were created on-chain
-export const CURRENT_BLOCK_TIMESTAMP_FACTORY = getAddress('0x52eD56Da04309Aca4c3FECC595298d80C2f16BAc')
+export const CURRENT_BLOCK_TIMESTAMP_FACTORY = toChecksumAddress('0x52eD56Da04309Aca4c3FECC595298d80C2f16BAc')
 
 // VaultRelayer address (approvals target, same across all chains)
-export const COW_VAULT_RELAYER_ADDRESS = getAddress('0xc92e8bdf79f0507f65a392b0ab4667716bfe0110')
+export const COW_VAULT_RELAYER_ADDRESS = toChecksumAddress('0xc92e8bdf79f0507f65a392b0ab4667716bfe0110')
+
+// CoW Protocol's canonical native asset marker (used in place of native ETH/xDAI address)
+export const COW_NATIVE_ASSET_MARKER = toChecksumAddress('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
+
+export function resolveCowTokenAddress(asset: { assetId: string }, isNative: boolean): `0x${string}` {
+  if (isNative) return COW_NATIVE_ASSET_MARKER
+  return toChecksumAddress(fromAssetId(asset.assetId).assetReference)
+}
 
 export interface ConditionalOrderParams {
   handler: `0x${string}`
@@ -141,17 +145,17 @@ export function decodeStopLossStaticData(staticInput: `0x${string}`): StopLossSt
   ] = decodeAbiParameters(STOP_LOSS_STATIC_DATA_PARAMS, staticInput)
 
   return {
-    sellToken,
-    buyToken,
+    sellToken: toChecksumAddress(sellToken),
+    buyToken: toChecksumAddress(buyToken),
     sellAmount,
     buyAmount,
-    appData,
-    receiver,
+    appData: appData,
+    receiver: toChecksumAddress(receiver),
     isSellOrder,
     isPartiallyFillable,
     validTo,
-    sellTokenPriceOracle,
-    buyTokenPriceOracle,
+    sellTokenPriceOracle: toChecksumAddress(sellTokenPriceOracle),
+    buyTokenPriceOracle: toChecksumAddress(buyTokenPriceOracle),
     strike,
     maxTimeSinceLastOracleUpdate,
   }

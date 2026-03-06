@@ -1,5 +1,7 @@
 import { getViemClient } from '@shapeshiftoss/utils'
 
+import { toChecksumAddress } from '../../utils/addressValidation'
+
 import { COMPOSABLE_COW_ADDRESS } from './index'
 
 const SINGLE_ORDERS_ABI = [
@@ -27,7 +29,7 @@ export async function isConditionalOrderActive(
     address: COMPOSABLE_COW_ADDRESS,
     abi: SINGLE_ORDERS_ABI,
     functionName: 'singleOrders',
-    args: [ownerAddress as `0x${string}`, orderHash],
+    args: [toChecksumAddress(ownerAddress), orderHash],
   })
 
   return result

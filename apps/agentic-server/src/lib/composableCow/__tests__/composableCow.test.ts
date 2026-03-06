@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { encodeAbiParameters, getAddress, keccak256, parseAbiParameters } from 'viem'
+import { encodeAbiParameters, keccak256, parseAbiParameters } from 'viem'
 
+import { toChecksumAddress } from '../../../utils/addressValidation'
 import {
   COMPOSABLE_COW_ADDRESS,
   COW_SETTLEMENT_ADDRESS,
@@ -83,11 +84,11 @@ describe('composableCow', () => {
       const encoded = encodeStopLossStaticData(STOP_LOSS_FIXTURE)
       const decoded = decodeStopLossStaticData(encoded)
 
-      expect(decoded.sellToken).toBe(getAddress(decoded.sellToken))
-      expect(decoded.buyToken).toBe(getAddress(decoded.buyToken))
-      expect(decoded.receiver).toBe(getAddress(decoded.receiver))
-      expect(decoded.sellTokenPriceOracle).toBe(getAddress(decoded.sellTokenPriceOracle))
-      expect(decoded.buyTokenPriceOracle).toBe(getAddress(decoded.buyTokenPriceOracle))
+      expect(decoded.sellToken).toBe(toChecksumAddress(decoded.sellToken))
+      expect(decoded.buyToken).toBe(toChecksumAddress(decoded.buyToken))
+      expect(decoded.receiver).toBe(toChecksumAddress(decoded.receiver))
+      expect(decoded.sellTokenPriceOracle).toBe(toChecksumAddress(decoded.sellTokenPriceOracle))
+      expect(decoded.buyTokenPriceOracle).toBe(toChecksumAddress(decoded.buyTokenPriceOracle))
     })
   })
 
@@ -209,7 +210,7 @@ describe('composableCow', () => {
       ]
 
       for (const address of addresses) {
-        expect(address).toBe(getAddress(address))
+        expect(address).toBe(toChecksumAddress(address))
       }
     })
   })

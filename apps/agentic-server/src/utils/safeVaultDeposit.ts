@@ -1,11 +1,12 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
 import { fromBaseUnit, toBigInt } from '@shapeshiftoss/utils'
-import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
+import { encodeFunctionData, erc20Abi } from 'viem'
 
 import { isConditionalOrderActive } from '../lib/composableCow/events'
 import type { TransactionData } from '../lib/schemas/swapSchemas'
 
+import { toChecksumAddress } from './addressValidation'
 import { getBalance } from './balanceHelpers'
 import { createTransaction } from './transactionHelpers'
 import { getAddressForChain } from './walletContextSimple'
@@ -77,14 +78,14 @@ export async function calculateSafeVaultDeposit(params: SafeVaultDepositParams):
     const transferData = encodeFunctionData({
       abi: erc20Abi,
       functionName: 'transfer',
-      args: [getAddress(safeAddress), depositAmount],
+      args: [toChecksumAddress(safeAddress), depositAmount],
     })
 
     depositTx = createTransaction({
       chainId: sellAsset.chainId,
       data: transferData,
-      from: getAddress(eoaAddress),
-      to: getAddress(tokenAddress),
+      from: toChecksumAddress(eoaAddress),
+      to: toChecksumAddress(tokenAddress),
       value: '0',
       gasLimit: '65000',
     })

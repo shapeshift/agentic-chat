@@ -1,14 +1,15 @@
-import { getAddress, keccak256, encodeAbiParameters, parseAbiParameters } from 'viem'
+import { keccak256, encodeAbiParameters, parseAbiParameters } from 'viem'
 
+import { toChecksumAddress } from '../../../utils/addressValidation'
 import type { StopLossStaticData, TwapStaticData } from '../index'
 
 export const ADDRESSES = {
-  WETH: getAddress('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-  USDC: getAddress('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
-  DAI: getAddress('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
-  SAFE: getAddress('0xcFD4f9b00935A660283987d8Ec1011c27d8F8fDe'),
-  ETH_USD_ORACLE: getAddress('0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419'),
-  USDC_USD_ORACLE: getAddress('0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6'),
+  WETH: toChecksumAddress('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+  USDC: toChecksumAddress('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+  DAI: toChecksumAddress('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+  SAFE: toChecksumAddress('0xcFD4f9b00935A660283987d8Ec1011c27d8F8fDe'),
+  ETH_USD_ORACLE: toChecksumAddress('0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419'),
+  USDC_USD_ORACLE: toChecksumAddress('0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6'),
 } as const
 
 export const APP_DATA = '0x0000000000000000000000000000000000000000000000000000000000000000' as const
