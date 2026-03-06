@@ -190,7 +190,10 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
 
   const footerMessage = (() => {
     if (state === 'output-error')
-      return { type: 'error' as const, text: errorText ? `Stop-loss failed: ${getUserFriendlyError(errorText)}` : 'Failed to prepare stop-loss order' }
+      return {
+        type: 'error' as const,
+        text: errorText ? `Stop-loss failed: ${getUserFriendlyError(errorText)}` : 'Failed to prepare stop-loss order',
+      }
     if (error) return { type: 'error' as const, text: `Stop-loss failed: ${getUserFriendlyError(error)}` }
     return null
   })()

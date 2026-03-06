@@ -29,13 +29,12 @@ export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositT
   }
 
   const [prepareStep, networkStep, depositStep] = steps
-  if (!prepareStep || !networkStep || !depositStep) return (
-    <TxStepCard.Root>
-      <div className="text-sm text-muted-foreground font-medium p-4">
-        Unable to load steps. Please try again.
-      </div>
-    </TxStepCard.Root>
-  )
+  if (!prepareStep || !networkStep || !depositStep)
+    return (
+      <TxStepCard.Root>
+        <div className="text-sm text-muted-foreground font-medium p-4">Unable to load steps. Please try again.</div>
+      </TxStepCard.Root>
+    )
 
   const completedCount = [prepareStep.status, networkStep.status, depositStep.status].filter(
     s => s === StepStatus.COMPLETE || s === StepStatus.SKIPPED

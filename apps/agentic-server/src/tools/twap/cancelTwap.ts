@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
+import type { WalletContext } from '../../utils/walletContextSimple'
 import { executeCancelConditionalOrder } from '../conditional/cancelConditionalOrder'
 import type { CancelConditionalOrderOutput } from '../conditional/cancelConditionalOrder'
-import type { WalletContext } from '../../utils/walletContextSimple'
 
 export const cancelTwapSchema = z.object({
   orderHash: z.string().describe('The order hash of the TWAP/DCA order to cancel. Get this from the order details.'),

@@ -119,7 +119,9 @@ export const useStopLossExecution = (
 ): UseStopLossExecutionResult => {
   const { evmAddress, evmWallet } = useWalletConnection()
   const store = useChatStore()
-  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
+  const { conversationId: activeConversationId } = useParams<{
+    conversationId?: string
+  }>()
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
@@ -191,7 +193,9 @@ export const useStopLossExecution = (
         await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      await evmWalletRef.current.connector.switchNetwork({ networkChainId: targetChainId })
+      await evmWalletRef.current.connector.switchNetwork({
+        networkChainId: targetChainId,
+      })
 
       setState(draft => {
         draft.completedSteps.add(StopLossStep.NETWORK_SWITCH)
@@ -201,7 +205,12 @@ export const useStopLossExecution = (
 
       // Step 2: Safe Check — deploy Safe + enable ComposableCoW modules on target chain
       const walletClient = await evmWalletRef.current.getWalletClient()
-      const deployedSafeAddress = await ensureSafeReady(evmAddressRef.current, targetChainId, evmAddressRef.current, walletClient)
+      const deployedSafeAddress = await ensureSafeReady(
+        evmAddressRef.current,
+        targetChainId,
+        evmAddressRef.current,
+        walletClient
+      )
 
       setState(draft => {
         draft.completedSteps.add(StopLossStep.SAFE_CHECK)
@@ -247,7 +256,11 @@ export const useStopLossExecution = (
       if (needsApproval && approvalTx) {
         approvalTxHash = await executeSafeTransaction(
           deployedSafeAddress,
-          { to: approvalTx.to, data: approvalTx.data, value: approvalTx.value },
+          {
+            to: approvalTx.to,
+            data: approvalTx.data,
+            value: approvalTx.value,
+          },
           evmAddressRef.current,
           targetChainId,
           walletClient
@@ -285,7 +298,11 @@ export const useStopLossExecution = (
       // Step 5: Submit to ComposableCoW via Safe
       const submitTxHash = await executeSafeTransaction(
         deployedSafeAddress,
-        { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
+        {
+          to: safeTransaction.to,
+          data: safeTransaction.data,
+          value: safeTransaction.value,
+        },
         evmAddressRef.current,
         targetChainId,
         walletClient
@@ -405,14 +422,26 @@ export const useStopLossExecution = (
   return {
     steps: [
       { step: StopLossStep.PREPARE, status: prepareStepStatus },
-      { step: StopLossStep.NETWORK_SWITCH, status: getStepStatus(StopLossStep.NETWORK_SWITCH, state) },
-      { step: StopLossStep.SAFE_CHECK, status: getStepStatus(StopLossStep.SAFE_CHECK, state) },
-      { step: StopLossStep.VAULT_DEPOSIT, status: getStepStatus(StopLossStep.VAULT_DEPOSIT, state) },
+      {
+        step: StopLossStep.NETWORK_SWITCH,
+        status: getStepStatus(StopLossStep.NETWORK_SWITCH, state),
+      },
+      {
+        step: StopLossStep.SAFE_CHECK,
+        status: getStepStatus(StopLossStep.SAFE_CHECK, state),
+      },
+      {
+        step: StopLossStep.VAULT_DEPOSIT,
+        status: getStepStatus(StopLossStep.VAULT_DEPOSIT, state),
+      },
       {
         step: StopLossStep.VAULT_DEPOSIT_CONFIRMATION,
         status: getStepStatus(StopLossStep.VAULT_DEPOSIT_CONFIRMATION, state),
       },
-      { step: StopLossStep.APPROVAL, status: getStepStatus(StopLossStep.APPROVAL, state) },
+      {
+        step: StopLossStep.APPROVAL,
+        status: getStepStatus(StopLossStep.APPROVAL, state),
+      },
       {
         step: StopLossStep.APPROVAL_CONFIRMATION,
         status: getStepStatus(StopLossStep.APPROVAL_CONFIRMATION, state),
@@ -421,7 +450,10 @@ export const useStopLossExecution = (
         step: StopLossStep.SUBMIT_TO_COMPOSABLE_COW,
         status: getStepStatus(StopLossStep.SUBMIT_TO_COMPOSABLE_COW, state),
       },
-      { step: StopLossStep.CONFIRM_TX, status: getStepStatus(StopLossStep.CONFIRM_TX, state) },
+      {
+        step: StopLossStep.CONFIRM_TX,
+        status: getStepStatus(StopLossStep.CONFIRM_TX, state),
+      },
     ],
     networkName: orderData?.summary?.network,
     error: state.error,

@@ -477,15 +477,8 @@ export async function handleChatRequest(c: Context) {
       return c.json({ error: 'Invalid request body', details: parsed.error.issues }, 400)
     }
 
-    const {
-      messages,
-      evmAddress,
-      solanaAddress,
-      approvedChainIds,
-      safeAddress,
-      safeDeploymentState,
-      registryOrders,
-    } = parsed.data
+    const { messages, evmAddress, solanaAddress, approvedChainIds, safeAddress, safeDeploymentState, registryOrders } =
+      parsed.data
 
     // Build wallet context from addresses (filtered by approved chains if provided)
     const walletContext = buildWalletContext(

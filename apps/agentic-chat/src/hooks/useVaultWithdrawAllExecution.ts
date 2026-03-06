@@ -64,7 +64,9 @@ export function toPersistedState(
     timestamp: Date.now(),
     phases: VAULT_WITHDRAW_ALL_PHASES.toPhases(state.completedSteps, state.error),
     meta: {
-      ...(state.chainResults.length > 0 && { chainResults: JSON.stringify(state.chainResults) }),
+      ...(state.chainResults.length > 0 && {
+        chainResults: JSON.stringify(state.chainResults),
+      }),
       ...(state.error && { error: state.error }),
     },
     ...(output && { toolOutput: output }),
@@ -105,7 +107,9 @@ export const useVaultWithdrawAllExecution = (
 ): UseVaultWithdrawAllExecutionResult => {
   const { evmAddress, evmWallet } = useWalletConnection()
   const store = useChatStore()
-  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
+  const { conversationId: activeConversationId } = useParams<{
+    conversationId?: string
+  }>()
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
@@ -139,7 +143,13 @@ export const useVaultWithdrawAllExecution = (
   const { state } = useToolExecutionEffect(toolCallId, withdrawData, initialState, async (data, setState) => {
     const persistState = (finalState: VaultWithdrawAllState) => {
       if (!activeConversationIdRef.current) return
-      const persisted = toPersistedState(toolCallId, finalState, activeConversationIdRef.current, data, evmAddressRef.current)
+      const persisted = toPersistedState(
+        toolCallId,
+        finalState,
+        activeConversationIdRef.current,
+        data,
+        evmAddressRef.current
+      )
       store.persistTransaction(persisted)
     }
 
@@ -170,7 +180,9 @@ export const useVaultWithdrawAllExecution = (
         })
 
         try {
-          await evmWalletRef.current.connector.switchNetwork({ networkChainId: withdrawal.chainId })
+          await evmWalletRef.current.connector.switchNetwork({
+            networkChainId: withdrawal.chainId,
+          })
 
           const walletClient = await evmWalletRef.current.getWalletClient()
           const txHash = await executeSafeBatchTransaction(
@@ -181,14 +193,22 @@ export const useVaultWithdrawAllExecution = (
             walletClient
           )
 
-          chainResults.push({ network: withdrawal.network, chainId: withdrawal.chainId, txHash })
+          chainResults.push({
+            network: withdrawal.network,
+            chainId: withdrawal.chainId,
+            txHash,
+          })
 
           setState(draft => {
             draft.chainResults = [...chainResults]
           })
         } catch (chainError) {
           const errorMessage = chainError instanceof Error ? chainError.message : String(chainError)
-          chainResults.push({ network: withdrawal.network, chainId: withdrawal.chainId, error: errorMessage })
+          chainResults.push({
+            network: withdrawal.network,
+            chainId: withdrawal.chainId,
+            error: errorMessage,
+          })
 
           setState(draft => {
             draft.chainResults = [...chainResults]

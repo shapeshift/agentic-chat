@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js'
 import { z } from 'zod'
 
 import { getSimplePrices } from '../../lib/asset/coingecko'
-import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import {
   buildCreateConditionalOrderTx,
   computeConditionalOrderHash,
@@ -16,6 +15,7 @@ import {
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
@@ -30,7 +30,11 @@ function formatPrice(price: number): string {
 }
 
 export const createStopLossSchema = z.object({
-  sellAsset: z.string().describe('Token symbol or name to sell when price drops (e.g., "WETH", "LINK"). Must be an ERC20 token — native tokens like ETH must be wrapped to WETH first.'),
+  sellAsset: z
+    .string()
+    .describe(
+      'Token symbol or name to sell when price drops (e.g., "WETH", "LINK"). Must be an ERC20 token — native tokens like ETH must be wrapped to WETH first.'
+    ),
   buyAsset: z
     .string()
     .describe('Token symbol or name to receive (e.g., "USDC", "USDT"). Usually a stablecoin for stop-losses.'),

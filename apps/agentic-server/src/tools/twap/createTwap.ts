@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js'
 import { z } from 'zod'
 
 import { getSimplePrices } from '../../lib/asset/coingecko'
-import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import {
   buildCreateConditionalOrderTx,
   computeConditionalOrderHash,
@@ -16,6 +15,7 @@ import {
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
@@ -23,7 +23,10 @@ import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
 import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
-const DURATION_PATTERNS: Array<{ regex: RegExp; toSeconds: (match: RegExpMatchArray) => number }> = [
+const DURATION_PATTERNS: Array<{
+  regex: RegExp
+  toSeconds: (match: RegExpMatchArray) => number
+}> = [
   { regex: /^(\d+)\s*min(ute)?s?$/i, toSeconds: m => Number(m[1]) * 60 },
   { regex: /^(\d+)\s*h(ou)?rs?$/i, toSeconds: m => Number(m[1]) * 3600 },
   { regex: /^(\d+)\s*d(ay)?s?$/i, toSeconds: m => Number(m[1]) * 86400 },
@@ -226,7 +229,11 @@ export async function executeCreateTwap(
   const perTradeAmount = new BigNumber(input.totalAmount).div(numParts).toFixed(sellAsset.precision)
 
   const summary: TwapSummary = {
-    sellAsset: { symbol: sellAsset.symbol, totalAmount: input.totalAmount, perTradeAmount },
+    sellAsset: {
+      symbol: sellAsset.symbol,
+      totalAmount: input.totalAmount,
+      perTradeAmount,
+    },
     buyAsset: { symbol: buyAsset.symbol },
     network: input.network,
     duration: input.duration,

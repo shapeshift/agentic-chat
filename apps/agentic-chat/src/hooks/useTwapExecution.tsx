@@ -118,7 +118,9 @@ export const useTwapExecution = (
 ): UseTwapExecutionResult => {
   const { evmAddress, evmWallet } = useWalletConnection()
   const store = useChatStore()
-  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
+  const { conversationId: activeConversationId } = useParams<{
+    conversationId?: string
+  }>()
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
@@ -189,7 +191,9 @@ export const useTwapExecution = (
         await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      await evmWalletRef.current.connector.switchNetwork({ networkChainId: targetChainId })
+      await evmWalletRef.current.connector.switchNetwork({
+        networkChainId: targetChainId,
+      })
 
       setState(draft => {
         draft.completedSteps.add(TwapStep.NETWORK_SWITCH)
@@ -199,7 +203,12 @@ export const useTwapExecution = (
 
       // Safe Check — deploy Safe + enable ComposableCoW modules on target chain
       const walletClient = await evmWalletRef.current.getWalletClient()
-      const deployedSafeAddress = await ensureSafeReady(evmAddressRef.current, targetChainId, evmAddressRef.current, walletClient)
+      const deployedSafeAddress = await ensureSafeReady(
+        evmAddressRef.current,
+        targetChainId,
+        evmAddressRef.current,
+        walletClient
+      )
 
       setState(draft => {
         draft.completedSteps.add(TwapStep.SAFE_CHECK)
@@ -243,7 +252,11 @@ export const useTwapExecution = (
       if (needsApproval && approvalTx) {
         approvalTxHash = await executeSafeTransaction(
           deployedSafeAddress,
-          { to: approvalTx.to, data: approvalTx.data, value: approvalTx.value },
+          {
+            to: approvalTx.to,
+            data: approvalTx.data,
+            value: approvalTx.value,
+          },
           evmAddressRef.current,
           targetChainId,
           walletClient
@@ -279,7 +292,11 @@ export const useTwapExecution = (
 
       const submitTxHash = await executeSafeTransaction(
         deployedSafeAddress,
-        { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
+        {
+          to: safeTransaction.to,
+          data: safeTransaction.data,
+          value: safeTransaction.value,
+        },
         evmAddressRef.current,
         targetChainId,
         walletClient
@@ -387,14 +404,26 @@ export const useTwapExecution = (
   return {
     steps: [
       { step: TwapStep.PREPARE, status: prepareStepStatus },
-      { step: TwapStep.NETWORK_SWITCH, status: getStepStatus(TwapStep.NETWORK_SWITCH, state) },
-      { step: TwapStep.SAFE_CHECK, status: getStepStatus(TwapStep.SAFE_CHECK, state) },
-      { step: TwapStep.VAULT_DEPOSIT, status: getStepStatus(TwapStep.VAULT_DEPOSIT, state) },
+      {
+        step: TwapStep.NETWORK_SWITCH,
+        status: getStepStatus(TwapStep.NETWORK_SWITCH, state),
+      },
+      {
+        step: TwapStep.SAFE_CHECK,
+        status: getStepStatus(TwapStep.SAFE_CHECK, state),
+      },
+      {
+        step: TwapStep.VAULT_DEPOSIT,
+        status: getStepStatus(TwapStep.VAULT_DEPOSIT, state),
+      },
       {
         step: TwapStep.VAULT_DEPOSIT_CONFIRMATION,
         status: getStepStatus(TwapStep.VAULT_DEPOSIT_CONFIRMATION, state),
       },
-      { step: TwapStep.APPROVAL, status: getStepStatus(TwapStep.APPROVAL, state) },
+      {
+        step: TwapStep.APPROVAL,
+        status: getStepStatus(TwapStep.APPROVAL, state),
+      },
       {
         step: TwapStep.APPROVAL_CONFIRMATION,
         status: getStepStatus(TwapStep.APPROVAL_CONFIRMATION, state),
@@ -403,7 +432,10 @@ export const useTwapExecution = (
         step: TwapStep.SUBMIT_TO_COMPOSABLE_COW,
         status: getStepStatus(TwapStep.SUBMIT_TO_COMPOSABLE_COW, state),
       },
-      { step: TwapStep.CONFIRM_TX, status: getStepStatus(TwapStep.CONFIRM_TX, state) },
+      {
+        step: TwapStep.CONFIRM_TX,
+        status: getStepStatus(TwapStep.CONFIRM_TX, state),
+      },
     ],
     networkName: orderData?.summary?.network,
     error: state.error,

@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
+import type { WalletContext } from '../../utils/walletContextSimple'
 import { executeCancelConditionalOrder } from '../conditional/cancelConditionalOrder'
 import type { CancelConditionalOrderOutput } from '../conditional/cancelConditionalOrder'
-import type { WalletContext } from '../../utils/walletContextSimple'
 
 export const cancelStopLossSchema = z.object({
   orderHash: z.string().describe('The order hash of the conditional order to cancel. Get this from the order details.'),
@@ -12,7 +12,10 @@ export const cancelStopLossSchema = z.object({
 export type CancelStopLossInput = z.infer<typeof cancelStopLossSchema>
 export type CancelStopLossOutput = CancelConditionalOrderOutput
 
-export function executeCancelStopLoss(input: CancelStopLossInput, walletContext?: WalletContext): Promise<CancelStopLossOutput> {
+export function executeCancelStopLoss(
+  input: CancelStopLossInput,
+  walletContext?: WalletContext
+): Promise<CancelStopLossOutput> {
   return executeCancelConditionalOrder(input, 'stop-loss', walletContext)
 }
 

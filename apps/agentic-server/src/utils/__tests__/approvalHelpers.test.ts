@@ -36,12 +36,24 @@ const FROM_ADDRESS = '0xcFD4f9b00935A660283987d8Ec1011c27d8F8fDe'
 
 describe('buildApprovalTransaction', () => {
   test('returns undefined when approval not needed', () => {
-    const result = buildApprovalTransaction(false, MOCK_ASSET as any, APPROVAL_TARGET, '1000000000000000000', FROM_ADDRESS)
+    const result = buildApprovalTransaction(
+      false,
+      MOCK_ASSET as any,
+      APPROVAL_TARGET,
+      '1000000000000000000',
+      FROM_ADDRESS
+    )
     expect(result).toBeUndefined()
   })
 
   test('returns transaction data when approval is needed', () => {
-    const result = buildApprovalTransaction(true, MOCK_ASSET as any, APPROVAL_TARGET, '1000000000000000000', FROM_ADDRESS)
+    const result = buildApprovalTransaction(
+      true,
+      MOCK_ASSET as any,
+      APPROVAL_TARGET,
+      '1000000000000000000',
+      FROM_ADDRESS
+    )
     expect(result).toBeDefined()
     expect(result!.from).toBe(FROM_ADDRESS)
     expect(result!.to.toLowerCase()).toBe('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')

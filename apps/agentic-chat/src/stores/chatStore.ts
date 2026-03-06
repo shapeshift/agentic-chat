@@ -2,7 +2,6 @@ import type { useChat } from '@ai-sdk/react'
 import type {
   CancelLimitOrderOutput,
   CancelStopLossOutput,
-  CancelTwapOutput,
   CreateLimitOrderOutput,
   CreateStopLossOutput,
   CreateTwapOutput,
@@ -54,7 +53,6 @@ export interface PersistedToolState {
     | CreateStopLossOutput
     | CancelStopLossOutput
     | CreateTwapOutput
-    | CancelTwapOutput
     | VaultDepositOutput
     | VaultWithdrawOutput
     | VaultWithdrawAllOutput
@@ -205,7 +203,14 @@ export const useChatStore = create<ChatState>()(
             if (existing) {
               // Don't overwrite terminal states - they're immutable
               // A state is terminal if it has a tx hash (swap/stop-loss/twap) or order ID (limit order) - the critical operation completed
-              const hasTxHash = existing.meta.swapTxHash || existing.meta.approvalTxHash || existing.meta.submitTxHash || existing.meta.sendTxHash || existing.meta.cancelTxHash || existing.meta.depositTxHash || existing.meta.withdrawTxHash
+              const hasTxHash =
+                existing.meta.swapTxHash ||
+                existing.meta.approvalTxHash ||
+                existing.meta.submitTxHash ||
+                existing.meta.sendTxHash ||
+                existing.meta.cancelTxHash ||
+                existing.meta.depositTxHash ||
+                existing.meta.withdrawTxHash
               const hasOrderId = existing.meta.orderId
 
               if (hasTxHash || hasOrderId) {
