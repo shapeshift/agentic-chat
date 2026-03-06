@@ -1,7 +1,7 @@
 import { toBigInt } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
-import { isConditionalOrderActive } from '../../lib/composableCow/events'
+import { isConditionalOrderActive } from '../../lib/composableCow/queries'
 import { getCowOrders } from '../../lib/cow'
 import type { CowOrder, CowOrderStatus } from '../../lib/cow/types'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
@@ -60,22 +60,27 @@ function mapRegistryOrderToInfo(order: ActiveOrderSummary, network: string, stat
 }
 
 function isTwapFulfilled(order: ActiveOrderSummary, cowOrders: CowOrder[]): boolean {
+  const numParts = order.numParts
+  if (!numParts || numParts <= 0) return false
+
+  const totalSell = toBigInt(order.sellAmountBaseUnit)
+  if (totalSell === 0n) return false
+
+  const expectedPartAmount = totalSell / BigInt(numParts)
   const twapStartSeconds = Math.floor(order.createdAt / 1000)
 
-  const matchingFilledOrders = cowOrders.filter(co => {
+  // Match CoW part orders: eip1271 (ComposableCoW), same token pair, matching per-part amount, within time window
+  const matchingFilledParts = cowOrders.filter(co => {
+    if (co.signingScheme !== 'eip1271') return false
     if (co.sellToken.toLowerCase() !== order.sellTokenAddress.toLowerCase()) return false
     if (co.buyToken.toLowerCase() !== order.buyTokenAddress.toLowerCase()) return false
     if (!co.executedSellAmount || toBigInt(co.executedSellAmount) === 0n) return false
+    if (toBigInt(co.sellAmount) !== expectedPartAmount) return false
     const cowCreatedSeconds = Math.floor(new Date(co.creationDate).getTime() / 1000)
     return cowCreatedSeconds >= twapStartSeconds && cowCreatedSeconds <= order.validTo
   })
 
-  if (matchingFilledOrders.length === 0) return false
-
-  const totalExecuted = matchingFilledOrders.reduce((sum, co) => sum + toBigInt(co.executedSellAmount || '0'), 0n)
-
-  const targetAmount = toBigInt(order.sellAmountBaseUnit)
-  return targetAmount > 0n && totalExecuted >= (targetAmount * 90n) / 100n
+  return matchingFilledParts.length >= numParts
 }
 
 async function getRegistryOrders(
@@ -132,11 +137,7 @@ export async function executeGetTwapOrders(
 
   const networksToQuery = input.network
     ? [{ network: input.network, chainId: NETWORK_TO_CHAIN_ID[input.network]! }]
-    : [
-        { network: 'ethereum', chainId: 1 },
-        { network: 'gnosis', chainId: 100 },
-        { network: 'arbitrum', chainId: 42161 },
-      ]
+    : Object.entries(NETWORK_TO_CHAIN_ID).map(([network, chainId]) => ({ network, chainId }))
 
   const registryOrderSummaries = walletContext?.registryOrders ?? []
 

@@ -9,6 +9,9 @@ import { useSafeStore } from '@/stores/safeStore'
 import { checkDomainVerifier, checkFallbackHandler } from './safeModules'
 import type { SafeProvider } from './types'
 
+// Pinned so SDK default changes can't silently break existing Safe addresses
+const SAFE_VERSION = '1.3.0'
+
 // Deterministic salt: same owner → same predicted address across all chains
 function computeSafeSalt(ownerAddress: string): string {
   return keccak256(encodePacked(['address'], [ownerAddress as `0x${string}`]))
@@ -23,6 +26,7 @@ export interface SafeDeploymentResult {
 // Predict the Safe address without deploying
 export async function predictSafeAddress(ownerAddress: string, provider: SafeProvider): Promise<string> {
   const saltNonce = computeSafeSalt(ownerAddress)
+  console.log('[Safe predict] computeSafeSalt input:', ownerAddress, '→ saltNonce:', saltNonce)
 
   const protocolKit = await Safe.init({
     provider,
@@ -33,6 +37,7 @@ export async function predictSafeAddress(ownerAddress: string, provider: SafePro
       },
       safeDeploymentConfig: {
         saltNonce,
+        safeVersion: SAFE_VERSION,
       },
     },
   })
@@ -67,6 +72,7 @@ export async function deploySafe(
       },
       safeDeploymentConfig: {
         saltNonce,
+        safeVersion: SAFE_VERSION,
       },
     },
   })
@@ -129,6 +135,8 @@ export async function deploySafe(
 export async function discoverSafeOnChain(ownerAddress: string): Promise<void> {
   const saltNonce = computeSafeSalt(ownerAddress)
 
+  console.log('[Safe discover] ownerAddress:', ownerAddress, '→ saltNonce:', saltNonce)
+
   const results = await Promise.allSettled(
     SUPPORTED_EVM_CHAINS.map(async ({ chain }) => {
       const publicClient = getPublicClient(wagmiConfig, { chainId: chain.id })
@@ -145,12 +153,14 @@ export async function discoverSafeOnChain(ownerAddress: string): Promise<void> {
           },
           safeDeploymentConfig: {
             saltNonce,
+            safeVersion: SAFE_VERSION,
           },
         },
       })
 
       const safeAddress = await protocolKit.getAddress()
       const isDeployed = await protocolKit.isSafeDeployed()
+      console.log(`[Safe discover] chain ${chain.id}: predicted=${safeAddress}, deployed=${isDeployed}`)
       if (!isDeployed) return
 
       const hasFallbackHandler = await checkFallbackHandler(publicClient, safeAddress)

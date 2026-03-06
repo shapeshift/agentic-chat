@@ -44,7 +44,6 @@ function buildDepositTx(
       from: getAddress(fromAddress),
       to: getAddress(safeAddress),
       value: toBaseUnit(amount, asset.precision),
-      gasLimit: '21000',
     })
   }
 
@@ -61,7 +60,6 @@ function buildDepositTx(
     from: getAddress(fromAddress),
     to: getAddress(tokenAddress),
     value: '0',
-    gasLimit: '65000',
   })
 }
 

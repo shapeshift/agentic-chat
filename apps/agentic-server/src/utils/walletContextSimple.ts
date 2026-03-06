@@ -27,6 +27,7 @@ export interface ActiveOrderSummary {
   network: string
   status: 'open' | 'triggered' | 'fulfilled' | 'cancelled' | 'expired'
   orderType: 'stopLoss' | 'twap'
+  numParts?: number
 }
 
 export interface WalletContext {

@@ -37,40 +37,7 @@ export function executeSafeTransaction(
   chainId: number,
   provider: SafeProvider
 ): Promise<string> {
-  return enqueue(safeAddress, chainId, async () => {
-    const protocolKit = await Safe.init({
-      provider,
-      signer: signerAddress,
-      safeAddress,
-    })
-
-    const publicClient = createPublicClient({ transport: custom(provider) })
-    const connectedChainId = await publicClient.getChainId()
-    if (connectedChainId !== chainId) {
-      throw new Error(
-        `Chain mismatch: wallet is on chain ${connectedChainId} but expected ${chainId}. Switch networks first.`
-      )
-    }
-
-    const safeTransaction = await protocolKit.createTransaction({
-      transactions: [
-        {
-          to: txData.to,
-          data: txData.data,
-          value: txData.value,
-        },
-      ],
-    })
-
-    // For 1-of-1 Safe, sign and execute in one step
-    const signedTx = await protocolKit.signTransaction(safeTransaction)
-    const result = await protocolKit.executeTransaction(signedTx)
-    const txHash = typeof result === 'string' ? result : result.hash
-
-    await waitForTxConfirmation(txHash, provider)
-
-    return txHash
-  })
+  return executeSafeBatchTransaction(safeAddress, [txData], signerAddress, chainId, provider)
 }
 
 // Execute multiple transactions as a batch via MultiSend

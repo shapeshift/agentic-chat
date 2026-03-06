@@ -11,6 +11,7 @@ import { executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
+import { useOrderStore } from '@/stores/orderStore'
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
 
@@ -199,6 +200,8 @@ export function useCancelConditionalOrderExecution(
         ]),
         cancelTxHash,
       })
+
+      useOrderStore.getState().updateStatus(data.orderHash, safeAddress, 'cancelled')
 
       setState(draft => {
         draft.completedSteps.add(CancelStep.CONFIRM_TX)

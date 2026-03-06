@@ -46,8 +46,13 @@ export function useSafeAccount(): UseSafeAccountResult {
   const predictedAddressQuery = useQuery({
     queryKey: ['safe-predicted-address', evmAddress],
     queryFn: async () => {
+      console.log('[Safe predict] ownerAddress passed to predictSafeAddress:', evmAddress)
+      console.log('[Safe predict] evmWallet.address:', evmWallet?.address)
+      console.log('[Safe predict] primaryWallet?.address:', primaryWallet?.address)
       const walletClient = await evmWallet!.getWalletClient()
-      return predictSafeAddress(evmAddress!, walletClient)
+      const result = await predictSafeAddress(evmAddress!, walletClient)
+      console.log('[Safe predict] predicted address:', result)
+      return result
     },
     enabled: !!evmAddress && !!evmWallet,
     staleTime: Infinity,

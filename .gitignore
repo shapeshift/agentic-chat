@@ -62,6 +62,3 @@ Thumbs.db
 
 # Playwright MCP
 .playwright-mcp
-
-# tk tickets
-.tickets

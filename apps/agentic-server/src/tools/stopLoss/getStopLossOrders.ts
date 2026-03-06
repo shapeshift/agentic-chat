@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { isConditionalOrderActive } from '../../lib/composableCow/events'
+import { isConditionalOrderActive } from '../../lib/composableCow/queries'
 import type { CowOrderStatus } from '../../lib/cow/types'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getSafeAddressForChain } from '../../utils/walletContextSimple'
@@ -104,11 +104,7 @@ export async function executeGetStopLossOrders(
 
   const networksToQuery = input.network
     ? [{ network: input.network, chainId: NETWORK_TO_CHAIN_ID[input.network]! }]
-    : [
-        { network: 'ethereum', chainId: 1 },
-        { network: 'gnosis', chainId: 100 },
-        { network: 'arbitrum', chainId: 42161 },
-      ]
+    : Object.entries(NETWORK_TO_CHAIN_ID).map(([network, chainId]) => ({ network, chainId }))
 
   const registryOrderSummaries = walletContext?.registryOrders ?? []
 

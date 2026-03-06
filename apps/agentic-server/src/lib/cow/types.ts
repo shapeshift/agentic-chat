@@ -19,6 +19,7 @@ export interface CowOrder {
   kind: 'sell' | 'buy'
   partiallyFillable: boolean
   class: 'limit' | 'market' | 'liquidity'
+  signingScheme?: string
 }
 
 export interface CowOrderQuote {

@@ -25,6 +25,8 @@ export const COW_VAULT_RELAYER_ADDRESS = toChecksumAddress('0xc92e8bdf79f0507f65
 // CoW Protocol's canonical native asset marker (used in place of native ETH/xDAI address)
 export const COW_NATIVE_ASSET_MARKER = toChecksumAddress('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
 
+export const DEFAULT_APP_DATA = '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`
+
 export function resolveCowTokenAddress(asset: { assetId: string }, isNative: boolean): `0x${string}` {
   if (isNative) return COW_NATIVE_ASSET_MARKER
   return toChecksumAddress(fromAssetId(asset.assetId).assetReference)
@@ -49,7 +51,7 @@ export interface StopLossStaticData {
   validTo: number // UNIX timestamp — order expires after this
   sellTokenPriceOracle: `0x${string}`
   buyTokenPriceOracle: `0x${string}`
-  strike: bigint // strike price scaled to sell oracle's decimals (typically 8 for Chainlink crypto/USD feeds)
+  strike: bigint // scaled to 18 decimals (CoW StopLoss contract normalizes oracle prices to 18 decimals before comparing)
   maxTimeSinceLastOracleUpdate: bigint
 }
 

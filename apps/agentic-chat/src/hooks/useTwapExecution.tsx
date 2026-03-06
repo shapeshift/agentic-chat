@@ -77,6 +77,7 @@ export const useTwapExecution = (
       },
       orderType: 'twap',
       network: data.summary.network,
+      numParts: data.summary.intervals,
     }),
     renderSuccessToast: data => (
       <span>

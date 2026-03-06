@@ -7,6 +7,7 @@ import {
   buildCreateConditionalOrderTx,
   computeConditionalOrderHash,
   COW_VAULT_RELAYER_ADDRESS,
+  DEFAULT_APP_DATA,
   encodeStopLossStaticData,
   generateOrderSalt,
   getChainlinkOracle,
@@ -92,7 +93,6 @@ export interface CreateStopLossOutput {
 }
 
 const SLIPPAGE_BUFFER = 0.98 // 2% slippage buffer
-const DEFAULT_APP_DATA = '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`
 const MAX_ORACLE_STALENESS = BigInt(24 * 60 * 60) // 24 hours — must exceed Chainlink's longest heartbeat (USDC/USD = 24h)
 
 export async function executeCreateStopLoss(

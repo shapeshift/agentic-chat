@@ -3,7 +3,7 @@ import type { Asset } from '@shapeshiftoss/types'
 import { fromBaseUnit, toBigInt } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi } from 'viem'
 
-import { isConditionalOrderActive } from '../lib/composableCow/events'
+import { isConditionalOrderActive } from '../lib/composableCow/queries'
 import type { TransactionData } from '../lib/schemas/swapSchemas'
 
 import { toChecksumAddress } from './addressValidation'
@@ -33,9 +33,18 @@ export async function calculateSafeVaultDeposit(params: SafeVaultDepositParams):
   const { walletContext, safeAddress, sellAsset, sellAmountBaseUnit, evmChainId, sellTokenAddress } = params
 
   let committedAmount = 0n
-  const existingOrders = (walletContext?.registryOrders ?? []).filter(
-    o => o.chainId === evmChainId && o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
+  const allOrders = (walletContext?.registryOrders ?? []).filter(
+    o =>
+      o.chainId === evmChainId &&
+      o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
   )
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  const existingOrders = allOrders.filter(o => {
+    if (o.status !== 'open') return false
+    if (o.validTo > 0 && o.validTo < nowSeconds) return false
+    return true
+  })
+
   if (existingOrders.length > 0) {
     const activeResults = await Promise.all(
       existingOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, evmChainId))

@@ -5,6 +5,9 @@ import { keccak256, encodePacked } from 'viem'
 
 import { toChecksumAddress } from './addressValidation'
 
+// Pinned so SDK default changes can't silently break existing Safe addresses
+const SAFE_VERSION = '1.3.0'
+
 const MAX_CACHE_SIZE = 1000
 const cache = new Map<string, string>()
 
@@ -28,6 +31,7 @@ export async function predictSafeAddress(ownerAddress: string, chainId: number):
       },
       safeDeploymentConfig: {
         saltNonce,
+        safeVersion: SAFE_VERSION,
       },
     },
   })

@@ -16,6 +16,7 @@ export interface OrderRecord {
   conditionalOrderParams: { handler: string; salt: string; staticInput: string }
   orderType: 'stopLoss' | 'twap'
   network: string
+  numParts?: number
 }
 
 export interface ActiveOrderSummary {
@@ -35,6 +36,7 @@ export interface ActiveOrderSummary {
   network: string
   status: OrderRecord['status']
   orderType: OrderRecord['orderType']
+  numParts?: number
 }
 
 function toActiveOrderSummary(record: OrderRecord): ActiveOrderSummary {
@@ -55,6 +57,7 @@ function toActiveOrderSummary(record: OrderRecord): ActiveOrderSummary {
     network: record.network,
     status: record.status,
     orderType: record.orderType,
+    numParts: record.numParts,
   }
 }
 

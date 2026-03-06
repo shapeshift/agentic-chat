@@ -8,6 +8,7 @@ import {
   computeConditionalOrderHash,
   COW_VAULT_RELAYER_ADDRESS,
   CURRENT_BLOCK_TIMESTAMP_FACTORY,
+  DEFAULT_APP_DATA,
   encodeTwapStaticData,
   generateOrderSalt,
   resolveCowTokenAddress,
@@ -85,7 +86,6 @@ export interface CreateTwapOutput {
 }
 
 const TWAP_SLIPPAGE_BUFFER = 0.95 // 5% buffer (wider than stop-loss 2% since TWAP executes over time)
-const DEFAULT_APP_DATA = '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`
 
 export async function executeCreateTwap(
   input: CreateTwapInput,
@@ -171,6 +171,12 @@ export async function executeCreateTwap(
     const minPartLimitHuman = partSellHuman.times(priceRatio).times(TWAP_SLIPPAGE_BUFFER)
     minPartLimit = toBigInt(
       toBaseUnit(minPartLimitHuman.toFixed(buyAsset.precision, BigNumber.ROUND_DOWN), buyAsset.precision)
+    )
+  }
+
+  if (minPartLimit === 0n) {
+    throw new Error(
+      'Unable to calculate minimum buy amount — price data is unavailable for one or both assets. The order would have no slippage protection.'
     )
   }
 
