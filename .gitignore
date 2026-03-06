@@ -63,9 +63,5 @@ Thumbs.db
 # Playwright MCP
 .playwright-mcp
 
-
-# beads backup (migrated to tk)
-.beads-backup-export.jsonl
-
 # tk tickets
 .tickets

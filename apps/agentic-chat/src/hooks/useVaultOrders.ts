@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import { useSafeAccount } from '@/hooks/useSafeAccount'
+import { COW_API_URLS } from '@/lib/cow-config'
 
 const REFETCH_INTERVAL = 30_000
 
@@ -18,12 +19,6 @@ interface VaultOrder {
   validTo: number
   kind: string
   partiallyFillable: boolean
-}
-
-const COW_API_URLS: Record<number, string> = {
-  1: 'https://api.cow.fi/mainnet',
-  100: 'https://api.cow.fi/gnosis',
-  42161: 'https://api.cow.fi/arbitrum_one',
 }
 
 async function fetchOrdersForChain(safeAddress: string, apiUrl: string): Promise<VaultOrder[]> {

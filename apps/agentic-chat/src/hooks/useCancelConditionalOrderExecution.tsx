@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { analytics } from '@/lib/mixpanel'
 import { executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import type { PersistedToolState } from '@/stores/chatStore'
@@ -207,6 +208,14 @@ export function useCancelConditionalOrderExecution(
         draft.currentStep = CancelStep.COMPLETE
         draft.error = undefined
       })
+
+      const CHAIN_ID_TO_NETWORK: Record<number, string> = { 1: 'ethereum', 100: 'gnosis', 42161: 'arbitrum' }
+      const network = CHAIN_ID_TO_NETWORK[safeTransaction.chainId] ?? 'unknown'
+      if (toolType === 'cancel_stop_loss') {
+        analytics.trackCancelStopLoss({ orderId: data.orderHash, network })
+      } else {
+        analytics.trackCancelTwap({ orderId: data.orderHash, network })
+      }
 
       toast.success(`${orderLabel} cancelled successfully`)
     } catch (error) {

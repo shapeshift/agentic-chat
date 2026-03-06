@@ -80,6 +80,23 @@ export const analytics = {
     mixpanel.track('Cancel Stop Loss', props)
   },
 
+  trackTwap: (props: {
+    sellAsset: string
+    buyAsset: string
+    sellAmount: string
+    network: string
+    intervals: number
+    frequency: string
+  }) => {
+    if (!analyticsEnabled) return
+    mixpanel.track('TWAP', props)
+  },
+
+  trackCancelTwap: (props: { orderId: string; network: string }) => {
+    if (!analyticsEnabled) return
+    mixpanel.track('Cancel TWAP', props)
+  },
+
   // Track chat message sent
   trackChatMessage: () => {
     if (!analyticsEnabled) return

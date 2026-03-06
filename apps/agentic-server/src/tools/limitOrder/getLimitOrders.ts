@@ -82,9 +82,7 @@ export async function executeGetLimitOrders(
     }
     chainsToQuery = [networkChainId]
   } else {
-    chainsToQuery = Object.keys(COW_SUPPORTED_CHAINS)
-      .map(Number)
-      .filter(id => id !== 11155111) // Exclude testnet
+    chainsToQuery = Object.keys(COW_SUPPORTED_CHAINS).map(Number)
   }
 
   const chainResults = await Promise.allSettled(

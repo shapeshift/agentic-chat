@@ -6,7 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { analytics } from '@/lib/mixpanel'
-import { orderRegistry } from '@/lib/orderRegistry'
+import { useOrderStore } from '@/stores/orderStore'
 import { useChatStore } from '@/stores/chatStore'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
@@ -56,7 +56,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
           const wallet = walletRef.current
           const safeDeploymentEntries = Object.entries(wallet.safeDeploymentState ?? {})
           const safeAddresses = safeDeploymentEntries.filter(([, s]) => s.safeAddress).map(([, s]) => s.safeAddress)
-          const registryOrders = safeAddresses.length > 0 ? orderRegistry.getAllOrderSummaries(safeAddresses) : []
+          const registryOrders =
+            safeAddresses.length > 0 ? useOrderStore.getState().getAllOrderSummaries(safeAddresses) : []
 
           return {
             evmAddress: wallet.evmAddress,

@@ -105,6 +105,10 @@ const COMPOSABLE_COW_ABI = [
   },
 ] as const
 
+const STOP_LOSS_STATIC_DATA_PARAMS = parseAbiParameters(
+  'address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmount, bytes32 appData, address receiver, bool isSellOrder, bool isPartiallyFillable, uint32 validTo, address sellTokenPriceOracle, address buyTokenPriceOracle, int256 strike, uint256 maxTimeSinceLastOracleUpdate'
+)
+
 export function encodeStopLossStaticData(data: StopLossStaticData): `0x${string}` {
   return encodeAbiParameters(STOP_LOSS_STATIC_DATA_PARAMS, [
     data.sellToken,
@@ -122,10 +126,6 @@ export function encodeStopLossStaticData(data: StopLossStaticData): `0x${string}
     data.maxTimeSinceLastOracleUpdate,
   ])
 }
-
-const STOP_LOSS_STATIC_DATA_PARAMS = parseAbiParameters(
-  'address sellToken, address buyToken, uint256 sellAmount, uint256 buyAmount, bytes32 appData, address receiver, bool isSellOrder, bool isPartiallyFillable, uint32 validTo, address sellTokenPriceOracle, address buyTokenPriceOracle, int256 strike, uint256 maxTimeSinceLastOracleUpdate'
-)
 
 export function decodeStopLossStaticData(staticInput: `0x${string}`): StopLossStaticData {
   const [
@@ -161,11 +161,13 @@ export function decodeStopLossStaticData(staticInput: `0x${string}`): StopLossSt
   }
 }
 
+const TWAP_STATIC_DATA_PARAMS = parseAbiParameters(
+  'address sellToken, address buyToken, address receiver, uint256 partSellAmount, uint256 minPartLimit, uint256 t0, uint256 n, uint256 t, uint256 span, bytes32 appData'
+)
+
 export function encodeTwapStaticData(data: TwapStaticData): `0x${string}` {
   return encodeAbiParameters(
-    parseAbiParameters(
-      'address sellToken, address buyToken, address receiver, uint256 partSellAmount, uint256 minPartLimit, uint256 t0, uint256 n, uint256 t, uint256 span, bytes32 appData'
-    ),
+    TWAP_STATIC_DATA_PARAMS,
     [
       data.sellToken,
       data.buyToken,
@@ -246,16 +248,7 @@ export function buildRemoveConditionalOrderTx(orderHash: `0x${string}`): {
 
 // Encode as a tuple to match Solidity's abi.encode(struct) — struct encoding includes
 // an extra 32-byte offset for the dynamic `bytes` field that flat parameter encoding omits
-const CONDITIONAL_ORDER_PARAMS_ABI = [
-  {
-    type: 'tuple',
-    components: [
-      { name: 'handler', type: 'address' },
-      { name: 'salt', type: 'bytes32' },
-      { name: 'staticInput', type: 'bytes' },
-    ],
-  },
-] as const
+const CONDITIONAL_ORDER_PARAMS_ABI = [CONDITIONAL_ORDER_PARAMS_TUPLE] as const
 
 // Compute the order hash that identifies this conditional order on-chain
 export function computeConditionalOrderHash(params: ConditionalOrderParams): `0x${string}` {

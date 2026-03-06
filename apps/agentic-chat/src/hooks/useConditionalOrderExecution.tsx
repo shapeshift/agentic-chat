@@ -7,8 +7,8 @@ import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import type { OrderRecord } from '@/lib/orderRegistry'
-import { orderRegistry } from '@/lib/orderRegistry'
+import type { OrderRecord } from '@/stores/orderStore'
+import { useOrderStore } from '@/stores/orderStore'
 import { ensureSafeReady, executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import type { PersistedToolState } from '@/stores/chatStore'
@@ -348,7 +348,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
       await waitForConfirmedReceipt(targetChainId, submitTxHash as `0x${string}`)
 
       // Save to order registry
-      orderRegistry.saveOrder(
+      useOrderStore.getState().saveOrder(
         config.toOrderRecord({
           data,
           safeAddress: deployedSafeAddress,

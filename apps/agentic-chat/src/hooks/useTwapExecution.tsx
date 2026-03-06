@@ -2,6 +2,7 @@ import type { CreateTwapOutput } from '@shapeshiftoss/agentic-server'
 import type { DynamicToolUIPart } from 'ai'
 
 import { Amount } from '@/components/ui/Amount'
+import { analytics } from '@/lib/mixpanel'
 import type { PersistedToolState } from '@/stores/chatStore'
 
 import {
@@ -87,4 +88,14 @@ export const useTwapExecution = (
         is now active on-chain
       </span>
     ),
+    onSuccess: data => {
+      analytics.trackTwap({
+        sellAsset: data.summary.sellAsset.symbol,
+        buyAsset: data.summary.buyAsset.symbol,
+        sellAmount: data.summary.sellAsset.totalAmount,
+        network: data.summary.network,
+        intervals: data.summary.intervals,
+        frequency: data.summary.frequency,
+      })
+    },
   })
