@@ -24,27 +24,6 @@ import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
 import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
-const DURATION_PATTERNS: Array<{
-  regex: RegExp
-  toSeconds: (match: RegExpMatchArray) => number
-}> = [
-  { regex: /^(\d+)\s*min(ute)?s?$/i, toSeconds: m => Number(m[1]) * 60 },
-  { regex: /^(\d+)\s*h(ou)?rs?$/i, toSeconds: m => Number(m[1]) * 3600 },
-  { regex: /^(\d+)\s*d(ay)?s?$/i, toSeconds: m => Number(m[1]) * 86400 },
-  { regex: /^(\d+)\s*w(ee)?ks?$/i, toSeconds: m => Number(m[1]) * 604800 },
-  { regex: /^(\d+)\s*months?$/i, toSeconds: m => Number(m[1]) * 2592000 },
-]
-
-function parseDuration(duration: string): number {
-  for (const { regex, toSeconds } of DURATION_PATTERNS) {
-    const match = duration.match(regex)
-    if (match) return toSeconds(match)
-  }
-  throw new Error(
-    `Could not parse duration "${duration}". Use formats like "24 hours", "7 days", "2 weeks", or "1 month".`
-  )
-}
-
 function calculateDefaultIntervals(durationSeconds: number): number {
   if (durationSeconds <= 3600) return Math.round(Math.max(durationSeconds / 300, 2))
   if (durationSeconds <= 86400) return 24
@@ -61,7 +40,12 @@ export const createTwapSchema = z.object({
     .describe(
       'Total amount to sell in TOKEN units, not USD (e.g., "1000" for 1000 USDC, "0.5" for 0.5 WETH). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
     ),
-  duration: z.string().describe('Total duration for the order (e.g., "24 hours", "7 days", "2 weeks", "1 month")'),
+  durationSeconds: z
+    .number()
+    .min(120)
+    .describe(
+      'Total duration for the order in seconds. Convert the user\'s natural language duration (e.g., "24 hours" = 86400, "7 days" = 604800, "2 weeks" = 1209600, "1 month" = 2592000).'
+    ),
   intervals: z
     .number()
     .min(2)
@@ -76,10 +60,8 @@ export interface TwapSummary {
   sellAsset: { symbol: string; totalAmount: string; perTradeAmount: string }
   buyAsset: { symbol: string }
   network: string
-  duration: string
   durationSeconds: number
   intervals: number
-  frequency: string
   provider: 'cow'
 }
 
@@ -104,13 +86,6 @@ export interface CreateTwapOutput {
 
 const TWAP_SLIPPAGE_BUFFER = 0.95 // 5% buffer (wider than stop-loss 2% since TWAP executes over time)
 const DEFAULT_APP_DATA = '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`
-
-function formatFrequency(intervalSeconds: number): string {
-  if (intervalSeconds < 3600) return `Every ${Math.round(intervalSeconds / 60)} minutes`
-  if (intervalSeconds < 86400) return `Every ${Math.round(intervalSeconds / 3600)} hours`
-  if (intervalSeconds === 86400) return 'Daily'
-  return `Every ${Math.round(intervalSeconds / 86400)} days`
-}
 
 export async function executeCreateTwap(
   input: CreateTwapInput,
@@ -139,7 +114,7 @@ export async function executeCreateTwap(
     )
   }
 
-  const durationSeconds = parseDuration(input.duration)
+  const durationSeconds = input.durationSeconds
   const numParts = input.intervals ?? calculateDefaultIntervals(durationSeconds)
   const intervalSeconds = Math.floor(durationSeconds / numParts)
 
@@ -233,10 +208,8 @@ export async function executeCreateTwap(
     },
     buyAsset: { symbol: buyAsset.symbol },
     network: input.network,
-    duration: input.duration,
     durationSeconds,
     intervals: numParts,
-    frequency: formatFrequency(intervalSeconds),
     provider: 'cow',
   }
 
