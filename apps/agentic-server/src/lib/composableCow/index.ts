@@ -168,26 +168,24 @@ const TWAP_STATIC_DATA_PARAMS = parseAbiParameters(
 )
 
 export function encodeTwapStaticData(data: TwapStaticData): `0x${string}` {
-  return encodeAbiParameters(
-    TWAP_STATIC_DATA_PARAMS,
-    [
-      data.sellToken,
-      data.buyToken,
-      data.receiver,
-      data.partSellAmount,
-      data.minPartLimit,
-      data.t0,
-      data.n,
-      data.t,
-      data.span,
-      data.appData,
-    ]
-  )
+  return encodeAbiParameters(TWAP_STATIC_DATA_PARAMS, [
+    data.sellToken,
+    data.buyToken,
+    data.receiver,
+    data.partSellAmount,
+    data.minPartLimit,
+    data.t0,
+    data.n,
+    data.t,
+    data.span,
+    data.appData,
+  ])
 }
 
 export function generateOrderSalt(owner: string, sellToken: string, buyToken: string, nonce?: number): `0x${string}` {
   const nonceValue = nonce ?? Date.now()
   const randomSuffix = crypto.getRandomValues(new Uint8Array(16))
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   const randomHex = `0x${Array.from(randomSuffix, b => b.toString(16).padStart(2, '0')).join('')}` as `0x${string}`
   return keccak256(
     encodeAbiParameters(parseAbiParameters('address, address, address, uint256, bytes'), [

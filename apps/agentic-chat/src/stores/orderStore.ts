@@ -134,7 +134,7 @@ export const useOrderStore = create<OrderStore>()(
       name: 'order-registry',
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      migrate: (persisted, _version) => persisted as unknown as OrderStore,
+      migrate: persisted => persisted as OrderStore,
     }
   )
 )

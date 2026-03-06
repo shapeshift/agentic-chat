@@ -6,8 +6,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { analytics } from '@/lib/mixpanel'
-import { useOrderStore } from '@/stores/orderStore'
 import { useChatStore } from '@/stores/chatStore'
+import { useOrderStore } from '@/stores/orderStore'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
 interface ChatContextValue {

@@ -1,8 +1,8 @@
 // @ts-nocheck — test assertions use non-null `!` on results we know exist
 import { describe, expect, test } from 'bun:test'
 
-import type { EvmTx } from '../schemas'
 import { parseEvmTransaction } from '../evmParser'
+import type { EvmTx } from '../schemas'
 
 const USER = '0xUser1234567890abcdef1234567890abcdef123456'
 const OTHER = '0xOther234567890abcdef1234567890abcdef123456'
@@ -80,7 +80,14 @@ describe('parseEvmTransaction', () => {
         to: ROUTER,
         tokenTransfers: [
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '1000000' }),
-          makeTokenTransfer({ contract: DAI_CONTRACT, symbol: 'DAI', decimals: 18, from: ROUTER, to: USER, value: '1000000000000000000' }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: ROUTER,
+            to: USER,
+            value: '1000000000000000000',
+          }),
         ],
       })
       const result = parseEvmTransaction(tx, USER, 'ethereum')
@@ -143,8 +150,22 @@ describe('parseEvmTransaction', () => {
         to: ROUTER,
         tokenTransfers: [
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '1000000' }),
-          makeTokenTransfer({ contract: WETH_CONTRACT, symbol: 'WETH', decimals: 18, from: ROUTER, to: '0xPool', value: '500000000000000000' }),
-          makeTokenTransfer({ contract: DAI_CONTRACT, symbol: 'DAI', decimals: 18, from: '0xPool', to: USER, value: '999000000000000000' }),
+          makeTokenTransfer({
+            contract: WETH_CONTRACT,
+            symbol: 'WETH',
+            decimals: 18,
+            from: ROUTER,
+            to: '0xPool',
+            value: '500000000000000000',
+          }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: '0xPool',
+            to: USER,
+            value: '999000000000000000',
+          }),
         ],
       })
       const result = parseEvmTransaction(tx, USER, 'ethereum')
@@ -163,7 +184,14 @@ describe('parseEvmTransaction', () => {
         tokenTransfers: [
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '100000000' }),
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: ROUTER, to: USER, value: '100000000' }),
-          makeTokenTransfer({ contract: DAI_CONTRACT, symbol: 'DAI', decimals: 18, from: ROUTER, to: USER, value: '100000000000000000000' }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: ROUTER,
+            to: USER,
+            value: '100000000000000000000',
+          }),
         ],
       })
       const result = parseEvmTransaction(tx, USER, 'ethereum')
@@ -181,7 +209,14 @@ describe('parseEvmTransaction', () => {
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '200000000' }),
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: '0xPool', value: '100000000' }),
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: '0xPool', to: USER, value: '100000000' }),
-          makeTokenTransfer({ contract: DAI_CONTRACT, symbol: 'DAI', decimals: 18, from: ROUTER, to: USER, value: '200000000000000000000' }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: ROUTER,
+            to: USER,
+            value: '200000000000000000000',
+          }),
         ],
       })
       const result = parseEvmTransaction(tx, USER, 'ethereum')
@@ -199,7 +234,14 @@ describe('parseEvmTransaction', () => {
         from: USER,
         to: ROUTER,
         tokenTransfers: [
-          makeTokenTransfer({ contract: DAI_CONTRACT, symbol: 'DAI', decimals: 18, from: ROUTER, to: USER, value: '1000000000000000000' }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: ROUTER,
+            to: USER,
+            value: '1000000000000000000',
+          }),
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '1000000' }),
         ],
       })
@@ -215,7 +257,14 @@ describe('parseEvmTransaction', () => {
         to: ROUTER,
         tokenTransfers: [
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '1000000' }),
-          makeTokenTransfer({ contract: DAI_CONTRACT, symbol: 'DAI', decimals: 18, from: ROUTER, to: USER, value: '1000000000000000000' }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: ROUTER,
+            to: USER,
+            value: '1000000000000000000',
+          }),
         ],
       })
       const result = parseEvmTransaction(tx, USER, 'ethereum')
@@ -254,7 +303,14 @@ describe('parseEvmTransaction', () => {
         value: '100000000000000000',
         tokenTransfers: [
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '1000000' }),
-          makeTokenTransfer({ contract: DAI_CONTRACT, symbol: 'DAI', decimals: 18, from: ROUTER, to: USER, value: '1000000000000000000' }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: ROUTER,
+            to: USER,
+            value: '1000000000000000000',
+          }),
         ],
       })
       const result = parseEvmTransaction(tx, USER, 'ethereum')
@@ -336,9 +392,7 @@ describe('parseEvmTransaction', () => {
       const tx = makeTx({
         from: OTHER,
         to: USER,
-        tokenTransfers: [
-          makeTokenTransfer({ from: ROUTER, to: '0xPool', value: '1000000' }),
-        ],
+        tokenTransfers: [makeTokenTransfer({ from: ROUTER, to: '0xPool', value: '1000000' })],
       })
       const result = parseEvmTransaction(tx, USER, 'ethereum')
       expect(result.tokenTransfers).toBeUndefined()
@@ -358,7 +412,14 @@ describe('parseEvmTransaction', () => {
         to: ROUTER,
         tokenTransfers: [
           makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '1000000' }),
-          makeTokenTransfer({ contract: DAI_CONTRACT, symbol: 'DAI', decimals: 18, from: ROUTER, to: USER, value: '1000000000000000000' }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: ROUTER,
+            to: USER,
+            value: '1000000000000000000',
+          }),
         ],
       })
 
@@ -376,8 +437,22 @@ describe('parseEvmTransaction', () => {
         from: USER,
         to: ROUTER,
         tokenTransfers: [
-          makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', decimals: undefined, from: USER, to: ROUTER, value: '1000000000000000000' }),
-          makeTokenTransfer({ contract: DAI_CONTRACT, symbol: 'DAI', decimals: undefined, from: ROUTER, to: USER, value: '2000000000000000000' }),
+          makeTokenTransfer({
+            contract: USDC_CONTRACT,
+            symbol: 'USDC',
+            decimals: undefined,
+            from: USER,
+            to: ROUTER,
+            value: '1000000000000000000',
+          }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: undefined,
+            from: ROUTER,
+            to: USER,
+            value: '2000000000000000000',
+          }),
         ],
       })
       const result = parseEvmTransaction(tx, USER, 'ethereum')

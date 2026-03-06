@@ -34,9 +34,7 @@ export async function calculateSafeVaultDeposit(params: SafeVaultDepositParams):
 
   let committedAmount = 0n
   const allOrders = (walletContext?.registryOrders ?? []).filter(
-    o =>
-      o.chainId === evmChainId &&
-      o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
+    o => o.chainId === evmChainId && o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
   )
   const nowSeconds = Math.floor(Date.now() / 1000)
   const existingOrders = allOrders.filter(o => {

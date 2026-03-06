@@ -7,12 +7,12 @@ import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import type { OrderRecord } from '@/stores/orderStore'
-import { useOrderStore } from '@/stores/orderStore'
 import { ensureSafeReady, executeSafeTransaction } from '@/lib/safe'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
+import { useOrderStore } from '@/stores/orderStore'
+import type { OrderRecord } from '@/stores/orderStore'
 import { sendTransaction } from '@/utils/sendTransaction'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
@@ -84,12 +84,7 @@ interface ConditionalOrderConfig<TData extends ConditionalOrderData> {
   toolType: PersistedToolState['toolType']
   orderType: OrderRecord['orderType']
   errorLabel: string
-  toOrderRecord: (ctx: {
-    data: TData
-    safeAddress: string
-    submitTxHash: string
-    chainId: number
-  }) => OrderRecord
+  toOrderRecord: (ctx: { data: TData; safeAddress: string; submitTxHash: string; chainId: number }) => OrderRecord
   renderSuccessToast: (data: TData) => ReactNode
   onSuccess?: (data: TData) => void
 }
@@ -354,9 +349,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
           ConditionalOrderStep.NETWORK_SWITCH,
           ConditionalOrderStep.VAULT_DEPOSIT,
           ConditionalOrderStep.VAULT_DEPOSIT_CONFIRMATION,
-          ...(needsApproval
-            ? [ConditionalOrderStep.APPROVAL, ConditionalOrderStep.APPROVAL_CONFIRMATION]
-            : []),
+          ...(needsApproval ? [ConditionalOrderStep.APPROVAL, ConditionalOrderStep.APPROVAL_CONFIRMATION] : []),
           ConditionalOrderStep.SUBMIT_TO_COMPOSABLE_COW,
           ConditionalOrderStep.CONFIRM_TX,
         ]),

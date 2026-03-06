@@ -37,7 +37,7 @@ export const useSafeStore = create<SafeStore>()(
       name: 'safe-deployments',
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      migrate: (persisted, _version) => persisted as unknown as SafeStore,
+      migrate: persisted => persisted as SafeStore,
     }
   )
 )

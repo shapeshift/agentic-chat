@@ -122,7 +122,12 @@ export default [
             'import/no-unresolved': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-unsafe-argument': 'off',
+            '@typescript-eslint/no-unsafe-return': 'off',
+            '@typescript-eslint/ban-ts-comment': 'off',
             '@typescript-eslint/require-await': 'off',
         },
+    },
+    {
+        ignores: ['packages/utils/src/__tests__/**'],
     },
 ];

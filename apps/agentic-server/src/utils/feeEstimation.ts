@@ -7,13 +7,13 @@ import { Connection, PublicKey } from '@solana/web3.js'
 import { isNativeToken } from './assetHelpers'
 import { supportsTxOperations } from './chains/helpers'
 
-const SOLANA_RPC_URL = (() => {
+function getSolanaRpcUrl(): string {
   const url = process.env.VITE_SOLANA_RPC_URL
   if (!url) {
     throw new Error('VITE_SOLANA_RPC_URL environment variable is required')
   }
   return url
-})()
+}
 
 // Solana constants (in lamports)
 const SOLANA_RENT_EXEMPT_MINIMUM = 890880n // Minimum rent-exempt balance
@@ -93,7 +93,7 @@ async function calculateMaxSolanaSend(asset: Asset, balance: string, from: strin
   }
 
   // SPL Token: Check if need to create recipient ATA
-  const connection = new Connection(SOLANA_RPC_URL, 'confirmed')
+  const connection = new Connection(getSolanaRpcUrl(), 'confirmed')
   const tokenAddress = fromAssetId(asset.assetId).assetReference
   const tokenMint = new PublicKey(tokenAddress)
 
