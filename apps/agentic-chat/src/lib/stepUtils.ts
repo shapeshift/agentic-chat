@@ -52,6 +52,24 @@ export function getStepStatus<TStep extends number>(step: TStep, state: StepStat
   return StepStatus.SKIPPED
 }
 
+export function mergeStepStatuses(actionStatus: StepStatus, confirmStatus: StepStatus): StepStatus {
+  if (actionStatus === StepStatus.FAILED) return StepStatus.FAILED
+  if (confirmStatus === StepStatus.FAILED) return StepStatus.FAILED
+  if (actionStatus === StepStatus.IN_PROGRESS) return StepStatus.IN_PROGRESS
+  if (actionStatus === StepStatus.COMPLETE && confirmStatus !== StepStatus.COMPLETE) return StepStatus.IN_PROGRESS
+  if (actionStatus === StepStatus.COMPLETE && confirmStatus === StepStatus.COMPLETE) return StepStatus.COMPLETE
+  if (actionStatus === StepStatus.NOT_STARTED && confirmStatus === StepStatus.NOT_STARTED) return StepStatus.NOT_STARTED
+  return StepStatus.NOT_STARTED
+}
+
+export function getUserFriendlyError(rawError: string): string {
+  const lower = rawError.toLowerCase()
+  if (lower.includes('user rejected') || lower.includes('user denied')) return 'Transaction was rejected in your wallet'
+  if (lower.includes('insufficient funds')) return 'Insufficient funds to complete this transaction'
+  if (lower.includes('failed to deploy safe')) return 'Failed to set up your vault. Please try again.'
+  return rawError.length > 120 ? `${rawError.slice(0, 120)}...` : rawError
+}
+
 // EIP-712 signing data interface (compatible with CoW Protocol)
 // Using generic types to accommodate various EIP-712 structured data formats
 interface Eip712SigningData {

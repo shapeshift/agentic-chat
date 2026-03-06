@@ -1,7 +1,7 @@
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function GetAccountUI({ toolPart }: ToolUIComponentProps) {
+export function GetAccountUI({ toolPart }: ToolUIComponentProps<'lookupExternalAddress'>) {
   const input = toolPart.input as Partial<Record<string, unknown>> | undefined
   const { state } = toolPart
 

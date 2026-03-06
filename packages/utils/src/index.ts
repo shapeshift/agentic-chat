@@ -42,8 +42,10 @@ export const fromBaseUnit = (value: string | number | BigNumber, precision: numb
 
 export const toBaseUnit = (value: string | number | BigNumber, precision: number): string => {
   const bn = new BigNumber(value)
-  return bn.multipliedBy(new BigNumber(10).pow(precision)).dp(0).toString()
+  return bn.multipliedBy(new BigNumber(10).pow(precision)).toFixed(0)
 }
+
+export const toBigInt = (value: string | number | BigNumber): bigint => BigInt(new BigNumber(value).toFixed(0))
 
 export const calculateUsdValue = (humanReadableAmount: string, price: string): string => {
   try {

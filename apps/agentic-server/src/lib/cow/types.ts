@@ -2,7 +2,7 @@
  * CoW Protocol types for limit orders
  */
 
-export type CowOrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired' | 'presignaturePending'
+export type CowOrderStatus = 'open' | 'submitted' | 'fulfilled' | 'cancelled' | 'expired'
 
 export interface CowOrder {
   uid: string
@@ -19,6 +19,7 @@ export interface CowOrder {
   kind: 'sell' | 'buy'
   partiallyFillable: boolean
   class: 'limit' | 'market' | 'liquidity'
+  signingScheme?: string
 }
 
 export interface CowOrderQuote {
@@ -75,7 +76,6 @@ export interface CreateCowOrderResult {
 export const COW_SUPPORTED_CHAINS: Record<number, string> = {
   1: 'mainnet',
   100: 'gnosis',
-  11155111: 'sepolia',
   42161: 'arbitrum_one',
 }
 
@@ -102,16 +102,6 @@ export function getCowExplorerUrl(orderId: string): string {
 }
 
 export function getCowApiUrl(chainId: number): string {
-  switch (chainId) {
-    case 1:
-      return 'https://api.cow.fi/mainnet'
-    case 100:
-      return 'https://api.cow.fi/gnosis'
-    case 11155111:
-      return 'https://api.cow.fi/sepolia'
-    case 42161:
-      return 'https://api.cow.fi/arbitrum_one'
-    default:
-      return 'https://api.cow.fi/mainnet'
-  }
+  const network = COW_SUPPORTED_CHAINS[chainId] ?? 'mainnet'
+  return `https://api.cow.fi/${network}`
 }

@@ -22,11 +22,7 @@ export const analytics = {
   },
 
   // Track wallet connection
-  trackWalletConnect: (props: {
-    address: string
-    walletType: 'evm' | 'solana'
-    walletCategory?: 'embedded' | 'external'
-  }) => {
+  trackWalletConnect: (props: { address: string; walletType: 'evm' | 'solana' }) => {
     if (!analyticsEnabled) return
     mixpanel.track('Wallet Connect', props)
   },
@@ -66,6 +62,39 @@ export const analytics = {
   trackCancelLimitOrder: (props: { orderId: string; network: string }) => {
     if (!analyticsEnabled) return
     mixpanel.track('Cancel Limit Order', props)
+  },
+
+  trackStopLoss: (props: {
+    sellAsset: string
+    buyAsset: string
+    sellAmount: string
+    triggerPrice: string
+    network: string
+  }) => {
+    if (!analyticsEnabled) return
+    mixpanel.track('Stop Loss', props)
+  },
+
+  trackCancelStopLoss: (props: { orderId: string; network: string }) => {
+    if (!analyticsEnabled) return
+    mixpanel.track('Cancel Stop Loss', props)
+  },
+
+  trackTwap: (props: {
+    sellAsset: string
+    buyAsset: string
+    sellAmount: string
+    network: string
+    intervals: number
+    frequency: string
+  }) => {
+    if (!analyticsEnabled) return
+    mixpanel.track('TWAP', props)
+  },
+
+  trackCancelTwap: (props: { orderId: string; network: string }) => {
+    if (!analyticsEnabled) return
+    mixpanel.track('Cancel TWAP', props)
   },
 
   // Track chat message sent

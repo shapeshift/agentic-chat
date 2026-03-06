@@ -51,25 +51,15 @@ export function Composer() {
         data-1p-ignore="true"
       />
 
-      {isLoading ? (
-        <IconButton
-          type="button"
-          onClick={stop}
-          size="xl"
-          variant="default"
-          icon={<Square className="h-5 w-5" />}
-          label="Stop"
-        />
-      ) : (
-        <IconButton
-          type="submit"
-          disabled={!input.trim()}
-          size="xl"
-          variant="default"
-          icon={<SendHorizontal className="h-5 w-5" />}
-          label="Send"
-        />
-      )}
+      <IconButton
+        type={isLoading ? 'button' : 'submit'}
+        onClick={isLoading ? stop : undefined}
+        disabled={!isLoading && !input.trim()}
+        size="xl"
+        variant="default"
+        icon={isLoading ? <Square className="h-5 w-5" /> : <SendHorizontal className="h-5 w-5" />}
+        label={isLoading ? 'Stop' : 'Send'}
+      />
     </form>
   )
 }

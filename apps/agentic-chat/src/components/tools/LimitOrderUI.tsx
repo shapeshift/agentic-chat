@@ -1,4 +1,3 @@
-import type { CreateLimitOrderOutput } from '@shapeshiftoss/agentic-server'
 import { ExternalLink } from 'lucide-react'
 
 import { useLimitOrderExecution } from '@/hooks/useLimitOrderExecution'
@@ -12,9 +11,9 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function LimitOrderUI({ toolPart }: ToolUIComponentProps) {
+export function LimitOrderUI({ toolPart }: ToolUIComponentProps<'createLimitOrderTool'>) {
   const { state, output, toolCallId } = toolPart
-  const orderOutput = output as CreateLimitOrderOutput | undefined
+  const orderOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const orderData = state === 'output-available' && orderOutput ? orderOutput : null

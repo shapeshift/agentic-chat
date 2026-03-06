@@ -1,5 +1,6 @@
 import * as CollapsiblePrimitive from '@radix-ui/react-collapsible'
 import type { ReactNode } from 'react'
+import { Virtuoso } from 'react-virtuoso'
 
 import { cn } from '@/lib/utils'
 
@@ -68,6 +69,38 @@ const ToolCardDetailItem = ({
   )
 }
 
+const DEFAULT_VIRTUALIZATION_THRESHOLD = 10
+const DEFAULT_MAX_HEIGHT = 400
+
+function ToolCardItemList<T>({
+  items,
+  renderItem,
+  virtualizationThreshold = DEFAULT_VIRTUALIZATION_THRESHOLD,
+  maxHeight = DEFAULT_MAX_HEIGHT,
+  className,
+}: {
+  items: T[]
+  renderItem: (item: T, index: number) => ReactNode
+  virtualizationThreshold?: number
+  maxHeight?: number
+  className?: string
+}) {
+  if (items.length <= virtualizationThreshold) {
+    return <div className={cn('divide-y divide-border', className)}>{items.map(renderItem)}</div>
+  }
+
+  return (
+    <div style={{ height: maxHeight }} className={cn('overflow-hidden', className)}>
+      <Virtuoso
+        data={items}
+        itemContent={(index, item) => (
+          <div className={index > 0 ? 'border-t border-border' : undefined}>{renderItem(item, index)}</div>
+        )}
+      />
+    </div>
+  )
+}
+
 export const ToolCard = {
   Root: ToolCardRoot,
   Header: ToolCardHeader,
@@ -75,4 +108,5 @@ export const ToolCard = {
   Content: ToolCardContent,
   Details: ToolCardDetails,
   DetailItem: ToolCardDetailItem,
+  ItemList: ToolCardItemList,
 }

@@ -1,15 +1,36 @@
-export function getExplorerUrl(network: string, txid: string): string {
-  const explorerMap: Record<string, string> = {
-    ethereum: `https://etherscan.io/tx/${txid}`,
-    polygon: `https://polygonscan.com/tx/${txid}`,
-    arbitrum: `https://arbiscan.io/tx/${txid}`,
-    base: `https://basescan.org/tx/${txid}`,
-    avalanche: `https://snowtrace.io/tx/${txid}`,
-    optimism: `https://optimistic.etherscan.io/tx/${txid}`,
-    bsc: `https://bscscan.com/tx/${txid}`,
-    gnosis: `https://gnosisscan.io/tx/${txid}`,
-    solana: `https://solscan.io/tx/${txid}`,
-  }
+const EXPLORER_BASE: Record<string, string> = {
+  ethereum: 'https://etherscan.io',
+  polygon: 'https://polygonscan.com',
+  arbitrum: 'https://arbiscan.io',
+  base: 'https://basescan.org',
+  avalanche: 'https://snowtrace.io',
+  optimism: 'https://optimistic.etherscan.io',
+  bsc: 'https://bscscan.com',
+  gnosis: 'https://gnosisscan.io',
+  solana: 'https://solscan.io',
+}
 
-  return explorerMap[network] || `https://etherscan.io/tx/${txid}`
+export function getExplorerUrl(network: string, txid: string): string {
+  const base = EXPLORER_BASE[network] ?? EXPLORER_BASE.ethereum
+  return `${base}/tx/${txid}`
+}
+
+export function getExplorerAddressUrl(network: string, address: string): string {
+  const base = EXPLORER_BASE[network] ?? EXPLORER_BASE.ethereum
+  return `${base}/address/${address}`
+}
+
+const SAFE_APP_PREFIX: Record<string, string> = {
+  ethereum: 'eth',
+  arbitrum: 'arb1',
+  gnosis: 'gno',
+  polygon: 'matic',
+  base: 'base',
+  optimism: 'oeth',
+  avalanche: 'avax',
+}
+
+export function getSafeAppUrl(network: string, safeAddress: string): string {
+  const prefix = SAFE_APP_PREFIX[network] ?? 'eth'
+  return `https://app.safe.global/home?safe=${prefix}:${safeAddress}`
 }

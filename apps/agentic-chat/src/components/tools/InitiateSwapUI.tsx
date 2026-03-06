@@ -1,5 +1,3 @@
-import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
-
 import { StepStatus, useSwapExecution } from '@/hooks/useSwapExecution'
 import { bnOrZero } from '@/lib/bignumber'
 import { firstFourLastFour } from '@/lib/utils'
@@ -12,9 +10,9 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-export function InitiateSwapUI({ toolPart }: ToolUIComponentProps) {
+export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapTool' | 'initiateSwapUsdTool'>) {
   const { state, output, toolCallId } = toolPart
-  const swapOutput = output as InitiateSwapOutput | undefined
+  const swapOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
   const address = swapOutput?.swapData.sellAccount
 

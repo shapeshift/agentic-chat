@@ -1,10 +1,16 @@
 import type { useChat } from '@ai-sdk/react'
 import type {
   CancelLimitOrderOutput,
+  CancelStopLossOutput,
   CreateLimitOrderOutput,
+  CreateStopLossOutput,
+  CreateTwapOutput,
   InitiateSwapOutput,
   SendOutput,
   SwitchNetworkOutput,
+  VaultDepositOutput,
+  VaultWithdrawAllOutput,
+  VaultWithdrawOutput,
 } from '@shapeshiftoss/agentic-server'
 import { produce, enableMapSet } from 'immer'
 import { create } from 'zustand'
@@ -14,25 +20,51 @@ import type { Conversation } from '@/types'
 
 enableMapSet()
 
-const STORE_VERSION = 1
-const MESSAGES_KEY_PREFIX = 'ai-chat-messages-'
+const STORE_VERSION = 2
+const MAX_MESSAGES_PER_CONVERSATION = 500
 
 type ChatMessage = ReturnType<typeof useChat>['messages'][number]
 
 export interface PersistedToolState {
   toolCallId: string
-  toolType: 'swap' | 'send' | 'network_switch' | 'limit_order' | 'cancel_limit_order'
+  toolType:
+    | 'swap'
+    | 'send'
+    | 'network_switch'
+    | 'limit_order'
+    | 'cancel_limit_order'
+    | 'stop_loss'
+    | 'cancel_stop_loss'
+    | 'twap'
+    | 'cancel_twap'
+    | 'vault_deposit'
+    | 'vault_withdraw'
+    | 'vault_withdraw_all'
   conversationId: string
   timestamp: number
   phases: string[]
   meta: Record<string, unknown>
-  toolOutput?: InitiateSwapOutput | SendOutput | SwitchNetworkOutput | CreateLimitOrderOutput | CancelLimitOrderOutput
+  toolOutput?:
+    | InitiateSwapOutput
+    | SendOutput
+    | SwitchNetworkOutput
+    | CreateLimitOrderOutput
+    | CancelLimitOrderOutput
+    | CreateStopLossOutput
+    | CancelStopLossOutput
+    | CreateTwapOutput
+    | VaultDepositOutput
+    | VaultWithdrawOutput
+    | VaultWithdrawAllOutput
   walletAddress?: string
 }
 
 interface ChatState {
   // Conversation metadata (persisted)
   conversations: Conversation[]
+
+  // Messages (persisted)
+  messagesByConversation: Record<string, ChatMessage[]>
 
   // Tool execution state
   historicalToolIds: Set<string>
@@ -42,6 +74,10 @@ interface ChatState {
   // Conversation methods
   saveConversation: (id: string, title: string) => void
   deleteConversation: (id: string) => void
+
+  // Message methods
+  setMessages: (conversationId: string, messages: ChatMessage[]) => void
+  getMessages: (conversationId: string) => ChatMessage[]
 
   // Tool execution methods
   markAsHistorical: (toolCallIds: string[]) => void
@@ -55,28 +91,11 @@ interface ChatState {
   getPersistedTransaction: (toolCallId: string) => PersistedToolState | undefined
 }
 
-// Message helpers (non-reactive, direct localStorage access to avoid size issues in zustand)
-export const saveMessages = (conversationId: string, messages: ChatMessage[]): void => {
-  localStorage.setItem(`${MESSAGES_KEY_PREFIX}${conversationId}`, JSON.stringify(messages))
-}
-
-export const loadMessages = (conversationId: string): ChatMessage[] => {
-  try {
-    const stored = localStorage.getItem(`${MESSAGES_KEY_PREFIX}${conversationId}`)
-    return stored ? (JSON.parse(stored) as ChatMessage[]) : []
-  } catch {
-    return []
-  }
-}
-
-const deleteMessages = (conversationId: string): void => {
-  localStorage.removeItem(`${MESSAGES_KEY_PREFIX}${conversationId}`)
-}
-
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
       conversations: [],
+      messagesByConversation: {},
       historicalToolIds: new Set(),
       runtimeToolStates: new Map(),
       persistedTransactions: [],
@@ -106,8 +125,23 @@ export const useChatStore = create<ChatState>()(
         set(state => ({
           conversations: state.conversations.filter(c => c.id !== id),
           persistedTransactions: state.persistedTransactions.filter(tx => tx.conversationId !== id),
+          messagesByConversation: Object.fromEntries(
+            Object.entries(state.messagesByConversation).filter(([key]) => key !== id)
+          ),
         }))
-        deleteMessages(id)
+      },
+
+      setMessages: (conversationId: string, messages: ChatMessage[]) => {
+        set(state => ({
+          messagesByConversation: {
+            ...state.messagesByConversation,
+            [conversationId]: messages.slice(-MAX_MESSAGES_PER_CONVERSATION),
+          },
+        }))
+      },
+
+      getMessages: (conversationId: string) => {
+        return get().messagesByConversation[conversationId] ?? []
       },
 
       markAsHistorical: (toolCallIds: string[]) => {
@@ -168,8 +202,15 @@ export const useChatStore = create<ChatState>()(
             const existing = storeState.persistedTransactions[existingIndex]
             if (existing) {
               // Don't overwrite terminal states - they're immutable
-              // A state is terminal if it has a tx hash (swap) or order ID (limit order) - the critical operation completed
-              const hasTxHash = existing.meta.swapTxHash || existing.meta.approvalTxHash
+              // A state is terminal if it has a tx hash (swap/stop-loss/twap) or order ID (limit order) - the critical operation completed
+              const hasTxHash =
+                existing.meta.swapTxHash ||
+                existing.meta.approvalTxHash ||
+                existing.meta.submitTxHash ||
+                existing.meta.sendTxHash ||
+                existing.meta.cancelTxHash ||
+                existing.meta.depositTxHash ||
+                existing.meta.withdrawTxHash
               const hasOrderId = existing.meta.orderId
 
               if (hasTxHash || hasOrderId) {
@@ -202,7 +243,15 @@ export const useChatStore = create<ChatState>()(
       partialize: state => ({
         conversations: state.conversations,
         persistedTransactions: state.persistedTransactions,
+        messagesByConversation: state.messagesByConversation,
       }),
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>
+        if (version < 2) {
+          state.messagesByConversation = {}
+        }
+        return state as unknown as ChatState
+      },
     }
   )
 )

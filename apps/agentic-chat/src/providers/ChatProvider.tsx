@@ -6,7 +6,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { analytics } from '@/lib/mixpanel'
-import { useChatStore, saveMessages, loadMessages } from '@/stores/chatStore'
+import { useChatStore } from '@/stores/chatStore'
+import { useOrderStore } from '@/stores/orderStore'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
 interface ChatContextValue {
@@ -51,12 +52,22 @@ export function ChatProvider({ children }: ChatProviderProps) {
     () =>
       new DefaultChatTransport({
         api: `${import.meta.env.VITE_AGENTIC_SERVER_BASE_URL}/api/chat`,
-        body: () => ({
-          evmAddress: walletRef.current.evmAddress,
-          solanaAddress: walletRef.current.solanaAddress,
-          approvedChainIds: walletRef.current.approvedChainIds,
-          hasEmbeddedWallet: walletRef.current.hasEmbeddedWallet,
-        }),
+        body: () => {
+          const wallet = walletRef.current
+          const safeDeploymentEntries = Object.entries(wallet.safeDeploymentState ?? {})
+          const safeAddresses = safeDeploymentEntries.filter(([, s]) => s.safeAddress).map(([, s]) => s.safeAddress)
+          const registryOrders =
+            safeAddresses.length > 0 ? useOrderStore.getState().getAllOrderSummaries(safeAddresses) : []
+
+          return {
+            evmAddress: wallet.evmAddress,
+            solanaAddress: wallet.solanaAddress,
+            approvedChainIds: wallet.approvedChainIds,
+            safeAddress: wallet.safeAddress,
+            safeDeploymentState: wallet.safeDeploymentState,
+            registryOrders,
+          }
+        },
       }),
     []
   )
@@ -64,6 +75,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const chat = useChat({
     id: urlConversationId,
     transport,
+    experimental_throttle: 50,
     onError: error => {
       console.error('[Chat Error]', {
         message: error.message,
@@ -77,7 +89,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
       const title = extractTitleFromMessages(messages, useChatStore.getState().conversations, urlConversationId)
       storeConversation(urlConversationId, title)
-      saveMessages(urlConversationId, messages)
+      useChatStore.getState().setMessages(urlConversationId, messages)
     },
   })
 
@@ -93,7 +105,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   useEffect(() => {
     if (urlConversationId && urlConversationId !== lastLoadedIdRef.current) {
-      const messages = loadMessages(urlConversationId)
+      const messages = useChatStore.getState().getMessages(urlConversationId)
       setMessages(messages)
 
       const toolCallIds = messages.flatMap(message =>
@@ -152,7 +164,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       input,
       handleInputChange,
       handleSubmit: handleSubmitCallback,
-      isLoading: chat.status === 'submitted',
+      isLoading: chat.status === 'submitted' || chat.status === 'streaming',
       sendMessage: chat.sendMessage,
       setInput,
       status: chat.status,

@@ -58,7 +58,7 @@ app.onError((err, c) => {
 
 const port = Number(process.env.PORT) || 4111
 
-console.log(`🚀 Server starting on port ${port}`)
+console.log(`Server starting on port ${port}`)
 console.log(`   API: /api/chat`)
 console.log(`   API: /api/portfolio`)
 console.log(`   Health: /health`)

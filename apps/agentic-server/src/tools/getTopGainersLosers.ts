@@ -53,16 +53,7 @@ export async function executeGetTopGainersLosers(input: GetTopGainersLosersInput
 export const getTopGainersLosersTool = {
   description: `Get top gainers and losers by price change.
 
-UI CARD DISPLAYS: Two lists showing top gainers and top losers - each with token name, symbol, price, and percentage change. The user can see ALL the tokens and their performance data in the card.
-
-Your role is to supplement the card, not duplicate it. Do not list any tokens, prices, or percentages - they're all visible in the card.
-
-Default: Respond with one brief, natural sentence like:
-- "Here are the top movers right now"
-- "I found today's biggest gainers and losers"
-- "Here's what's moving in the market"
-
-Only elaborate if the user asks about something not shown in the card.`,
+UI CARD DISPLAYS: Two lists showing top gainers and top losers - each with token name, symbol, price, and percentage change.`,
   inputSchema: getTopGainersLosersSchema,
   execute: executeGetTopGainersLosers,
 }

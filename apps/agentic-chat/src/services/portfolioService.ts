@@ -28,7 +28,11 @@ type PortfolioNetworkResult = {
 
 const API_BASE_URL = import.meta.env.VITE_AGENTIC_SERVER_BASE_URL
 
-export async function fetchFullPortfolio(evmAddress?: string, solanaAddress?: string): Promise<PortfolioData> {
+export async function fetchFullPortfolio(
+  evmAddress?: string,
+  solanaAddress?: string,
+  networks?: string[]
+): Promise<PortfolioData> {
   if (!evmAddress && !solanaAddress) {
     console.log('[Portfolio] No wallet connected')
     return {
@@ -43,7 +47,7 @@ export async function fetchFullPortfolio(evmAddress?: string, solanaAddress?: st
     const response = await fetch(`${API_BASE_URL}/api/portfolio`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ evmAddress, solanaAddress }),
+      body: JSON.stringify({ evmAddress, solanaAddress, ...(networks && { networks }) }),
     })
 
     if (!response.ok) {

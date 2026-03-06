@@ -1,5 +1,5 @@
 import type { Network } from '@shapeshiftoss/types'
-import { assetService, fromBaseUnit } from '@shapeshiftoss/utils'
+import { assetService, fromBaseUnit, toBigInt } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
 import { getCowOrders } from '../../lib/cow'
@@ -18,13 +18,6 @@ export const getLimitOrdersSchema = z.object({
     .enum(['ethereum', 'gnosis', 'arbitrum'])
     .optional()
     .describe('Filter by network. If not specified, fetches from all supported networks.'),
-  accountScope: z
-    .enum(['connected', 'history'])
-    .optional()
-    .default('connected')
-    .describe(
-      'Which orders to show. "connected" (default) fetches live orders for the currently connected wallet from CoW Protocol API. "history" shows orders created through this app across all wallets (rendered client-side from activity history).'
-    ),
 })
 
 export type GetLimitOrdersInput = z.infer<typeof getLimitOrdersSchema>
@@ -65,8 +58,8 @@ export interface GetLimitOrdersOutput {
 }
 
 function calculateFilledPercent(order: CowOrder): number {
-  const sellAmount = BigInt(order.sellAmount)
-  const executedSellAmount = BigInt(order.executedSellAmount || '0')
+  const sellAmount = toBigInt(order.sellAmount)
+  const executedSellAmount = toBigInt(order.executedSellAmount || '0')
 
   if (sellAmount === 0n) return 0
   return Number((executedSellAmount * 100n) / sellAmount)
@@ -76,9 +69,8 @@ export async function executeGetLimitOrders(
   input: GetLimitOrdersInput,
   walletContext?: WalletContext
 ): Promise<GetLimitOrdersOutput> {
-  // History mode is handled client-side from local storage
-  if (input.accountScope === 'history') {
-    return { orders: [], totalCount: 0 }
+  if (!walletContext?.connectedWallets || Object.keys(walletContext.connectedWallets).length === 0) {
+    throw new Error('No wallet connected. Please connect your wallet to view limit orders.')
   }
 
   const statusFilter = input.status === 'all' ? null : input.status
@@ -90,9 +82,7 @@ export async function executeGetLimitOrders(
     }
     chainsToQuery = [networkChainId]
   } else {
-    chainsToQuery = Object.keys(COW_SUPPORTED_CHAINS)
-      .map(Number)
-      .filter(id => id !== 11155111) // Exclude testnet
+    chainsToQuery = Object.keys(COW_SUPPORTED_CHAINS).map(Number)
   }
 
   const chainResults = await Promise.allSettled(
@@ -109,7 +99,8 @@ export async function executeGetLimitOrders(
       const chainOrders: OrderInfo[] = []
 
       for (const order of orders) {
-        if (statusFilter && order.status !== statusFilter) continue
+        const mappedStatus: CowOrderStatus = (order.status as string) === 'presignaturePending' ? 'open' : order.status
+        if (statusFilter && mappedStatus !== statusFilter) continue
         if (order.class !== 'limit') continue
 
         const networkName = CHAIN_ID_TO_NETWORK[chainId] || 'unknown'
@@ -120,7 +111,7 @@ export async function executeGetLimitOrders(
 
         chainOrders.push({
           orderId: order.uid,
-          status: order.status,
+          status: mappedStatus,
           network: networkName,
           chainId,
           sellToken: order.sellToken,
@@ -161,20 +152,7 @@ export const getLimitOrdersTool = {
 
 UI CARD DISPLAYS: list of orders with status, amounts, fill percentage, and tracking links.
 
-Your role is to supplement the card, not duplicate it.
-
-IMPORTANT: This tool only shows limit orders that were placed through this chat assistant. The user may have other limit orders created elsewhere that won't appear here. Always make this clear in your response so the user isn't misled into thinking this is a complete view of all their limit orders.
-
-Default: Respond with one brief sentence that conveys the scope, like:
-- "Here are the limit orders I've placed for you"
-- "I found X open orders from our conversations"
-- "These are the limit orders created through this assistant — you may have others placed elsewhere"
-
-Only elaborate if the user asks about specific order details or wants analysis.
-
-ACCOUNT SCOPE:
-- Use accountScope="connected" (default) to fetch live order status from CoW Protocol for the connected wallet
-- Use accountScope="history" when user asks about "all my orders" or "orders from all wallets" to show orders placed through this assistant across all wallets, stored locally in the browser
+IMPORTANT: This tool only shows limit orders placed through this chat assistant. The user may have other limit orders created elsewhere.
 
 Use this tool when:
 - User asks about their limit orders

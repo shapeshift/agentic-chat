@@ -1,7 +1,6 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import type { CreateLimitOrderOutput } from '@shapeshiftoss/agentic-server'
-import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
@@ -12,10 +11,10 @@ import { Amount } from '@/components/ui/Amount'
 import { getCowApiUrl } from '@/lib/cow-config'
 import { analytics } from '@/lib/mixpanel'
 import { createStepPhaseMap, getStepStatus, signTypedDataWithWallet, StepStatus } from '@/lib/stepUtils'
-import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import { executeApproval } from '@/utils/swapExecutor'
+import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
@@ -56,7 +55,7 @@ const initialLimitOrderState: LimitOrderState = {
   completedSteps: new Set(),
 }
 
-function limitOrderStateToPersistedState(
+export function limitOrderStateToPersistedState(
   toolCallId: string,
   state: LimitOrderState,
   conversationId: string,
@@ -81,7 +80,7 @@ function limitOrderStateToPersistedState(
   }
 }
 
-function persistedStateToLimitOrderState(persisted: PersistedToolState): LimitOrderState {
+export function persistedStateToLimitOrderState(persisted: PersistedToolState): LimitOrderState {
   const hasError = persisted.phases.includes('error')
   return {
     currentStep: LimitOrderStep.COMPLETE,
@@ -105,7 +104,7 @@ interface UseLimitOrderExecutionResult {
   trackingUrl?: string
 }
 
-async function submitSignedOrder(
+export async function submitSignedOrder(
   chainId: number,
   orderParams: CreateLimitOrderOutput['orderParams'],
   signingData: CreateLimitOrderOutput['signingData'],
@@ -145,7 +144,11 @@ async function submitSignedOrder(
   }
 
   const orderId = await response.text()
-  return orderId.replace(/"/g, '')
+  const cleanOrderId = orderId.replace(/"/g, '')
+  if (!cleanOrderId || cleanOrderId.length < 10) {
+    throw new Error(`Invalid order ID received from CoW: ${cleanOrderId}`)
+  }
+  return cleanOrderId
 }
 
 export const useLimitOrderExecution = (
@@ -158,6 +161,15 @@ export const useLimitOrderExecution = (
   const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
+
+  const evmAddressRef = useRef(evmAddress)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
 
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
@@ -182,14 +194,14 @@ export const useLimitOrderExecution = (
     let approvalTxHash: string | undefined
 
     const persistState = (finalState: LimitOrderState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = limitOrderStateToPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         data,
         data.summary.network,
-        evmAddress
+        evmAddressRef.current
       )
       store.persistTransaction(persisted)
     }
@@ -197,11 +209,15 @@ export const useLimitOrderExecution = (
     try {
       const { signingData, orderParams, needsApproval, approvalTx } = data
 
-      if (!evmAddress) {
+      if (!orderParams?.chainId) throw new Error('Invalid limit order output: missing orderParams.chainId')
+      if (!orderParams?.receiver) throw new Error('Invalid limit order output: missing orderParams.receiver')
+      if (!signingData) throw new Error('Invalid limit order output: missing signingData')
+
+      if (!evmAddressRef.current) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
 
-      if (evmAddress.toLowerCase() !== orderParams.receiver.toLowerCase()) {
+      if (evmAddressRef.current.toLowerCase() !== orderParams.receiver.toLowerCase()) {
         throw new Error('Wallet address changed. Please re-initiate the limit order.')
       }
 
@@ -213,15 +229,15 @@ export const useLimitOrderExecution = (
       })
 
       // Step 1: Network Switch
-      if (!evmWallet) {
+      if (!evmWalletRef.current) {
         throw new Error('EVM wallet not connected')
       }
 
-      if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-        await changePrimaryWallet(evmWallet.id)
+      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+        await changePrimaryWallet(evmWalletRef.current.id)
       }
 
-      await evmWallet.connector.switchNetwork({ networkChainId: orderParams.chainId })
+      await evmWalletRef.current.connector.switchNetwork({ networkChainId: orderParams.chainId })
 
       setState(draft => {
         draft.completedSteps.add(draft.currentStep)
@@ -247,15 +263,7 @@ export const useLimitOrderExecution = (
 
       // Step 3: Approval Confirmation (if approval was needed)
       if (needsApproval && approvalTxHash) {
-        const publicClient = getPublicClient(wagmiConfig, {
-          chainId: orderParams.chainId,
-        })
-        if (publicClient) {
-          await publicClient.waitForTransactionReceipt({
-            hash: approvalTxHash as `0x${string}`,
-            confirmations: 1,
-          })
-        }
+        await waitForConfirmedReceipt(orderParams.chainId, approvalTxHash as `0x${string}`)
         setState(draft => {
           draft.completedSteps.add(LimitOrderStep.APPROVAL_CONFIRMATION)
           draft.currentStep = LimitOrderStep.SIGN
@@ -269,7 +277,7 @@ export const useLimitOrderExecution = (
       }
 
       // Step 4: Sign EIP-712 message
-      const signature = await signTypedDataWithWallet(evmWallet, signingData)
+      const signature = await signTypedDataWithWallet(evmWalletRef.current, signingData)
 
       setState(draft => {
         draft.signature = signature

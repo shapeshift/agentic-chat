@@ -1,8 +1,8 @@
 import { Check, ChevronRight, Circle, List, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { StepStatus } from '@/hooks/useSwapExecution'
 import { formatCryptoAmount } from '@/lib/number'
+import { StepStatus } from '@/lib/stepUtils'
 import { cn } from '@/lib/utils'
 
 import { Skeleton } from './Skeleton'
@@ -37,12 +37,14 @@ const TxStepCardStepper = ({
 const TxStepCardStep = ({
   status,
   children,
+  subtitle,
   className,
   connectorTop = false,
   connectorBottom = false,
 }: {
   status: StepStatus
   children: ReactNode
+  subtitle?: ReactNode
   className?: string
   connectorTop?: boolean
   connectorBottom?: boolean
@@ -93,10 +95,13 @@ const TxStepCardStep = ({
     }
   })()
 
+  const hasActiveSubtitle = subtitle && status === StepStatus.IN_PROGRESS
+
   return (
     <div
       className={cn(
-        'relative h-10 flex items-center rounded-md px-2 -mx-2',
+        'relative flex items-center rounded-md px-2 -mx-2',
+        hasActiveSubtitle ? 'min-h-[2.5rem] py-1.5' : 'h-10',
         status === StepStatus.IN_PROGRESS && 'bg-whiteAlpha-200'
       )}
     >
@@ -118,7 +123,10 @@ const TxStepCardStep = ({
             />
           </div>
         </div>
-        <span className="text-sm font-normal">{children}</span>
+        <div className="flex flex-col">
+          <span className="text-sm font-normal">{children}</span>
+          {hasActiveSubtitle && <span className="text-xs text-muted-foreground">{subtitle}</span>}
+        </div>
       </div>
     </div>
   )

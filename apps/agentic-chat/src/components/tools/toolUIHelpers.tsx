@@ -1,9 +1,19 @@
 import type { DynamicToolUIPart } from 'ai'
 import type { ReactNode } from 'react'
 
+import type { ToolName, ToolOutputMap } from '@/types/toolOutput'
+
 import { StatusText } from '../ui/StatusText'
 
-export type ToolUIComponentProps = {
+type TypedToolPart<T extends ToolName> = Omit<DynamicToolUIPart, 'output'> & {
+  output?: ToolOutputMap[T] | undefined
+}
+
+export type ToolUIComponentProps<T extends ToolName = ToolName> = {
+  toolPart: TypedToolPart<T>
+}
+
+export type ToolRendererProps = {
   toolPart: DynamicToolUIPart
 }
 

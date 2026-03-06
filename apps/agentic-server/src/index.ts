@@ -119,6 +119,77 @@ export {
   type CancelLimitOrderInput,
   type CancelLimitOrderOutput,
 } from './tools/limitOrder'
+export {
+  createStopLossTool,
+  executeCreateStopLoss,
+  type CreateStopLossInput,
+  type CreateStopLossOutput,
+  type StopLossSummary,
+} from './tools/stopLoss'
+export {
+  getStopLossOrdersTool,
+  executeGetStopLossOrders,
+  type GetStopLossOrdersInput,
+  type GetStopLossOrdersOutput,
+} from './tools/stopLoss'
+export {
+  cancelStopLossTool,
+  executeCancelStopLoss,
+  type CancelStopLossInput,
+  type CancelStopLossOutput,
+} from './tools/stopLoss'
+export {
+  createTwapTool,
+  executeCreateTwap,
+  createTwapSchema,
+  type CreateTwapInput,
+  type CreateTwapOutput,
+  type TwapSummary,
+} from './tools/twap'
+export {
+  getTwapOrdersTool,
+  executeGetTwapOrders,
+  getTwapOrdersSchema,
+  type GetTwapOrdersInput,
+  type GetTwapOrdersOutput,
+} from './tools/twap'
+export {
+  cancelTwapTool,
+  executeCancelTwap,
+  cancelTwapSchema,
+  type CancelTwapInput,
+  type CancelTwapOutput,
+} from './tools/twap'
+export {
+  vaultBalanceTool,
+  executeVaultBalance,
+  vaultBalanceSchema,
+  type VaultBalanceInput,
+  type VaultBalanceOutput,
+  type VaultBalanceEntry,
+} from './tools/vault'
+export {
+  vaultDepositTool,
+  executeVaultDeposit,
+  vaultDepositSchema,
+  type VaultDepositInput,
+  type VaultDepositOutput,
+} from './tools/vault'
+export {
+  vaultWithdrawTool,
+  executeVaultWithdraw,
+  vaultWithdrawSchema,
+  type VaultWithdrawInput,
+  type VaultWithdrawOutput,
+} from './tools/vault'
+export {
+  vaultWithdrawAllTool,
+  executeVaultWithdrawAll,
+  vaultWithdrawAllSchema,
+  type VaultWithdrawAllInput,
+  type VaultWithdrawAllOutput,
+} from './tools/vault'
+export type { ActiveOrderSummary } from './utils/walletContextSimple'
 export type { CowOrderSigningData, CowEIP712Domain, CowEIP712Types } from './lib/cow/types'
 export type {
   TrimmedTrendingCoin,

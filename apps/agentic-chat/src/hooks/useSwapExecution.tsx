@@ -3,7 +3,6 @@ import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core
 import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
-import { getPublicClient } from '@wagmi/core'
 import type { DynamicToolUIPart } from 'ai'
 import { current } from 'immer'
 import { useEffect, useRef } from 'react'
@@ -13,11 +12,11 @@ import { toast } from 'sonner'
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
 import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
-import { wagmiConfig } from '@/lib/wagmi-config'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
+import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
 import { useToolExecutionEffect } from './useToolExecutionEffect'
 import { useWalletConnection } from './useWalletConnection'
@@ -57,12 +56,13 @@ const initialSwapState: SwapState = {
   completedSteps: new Set(),
 }
 
-function swapStateToPersistedState(
+export function swapStateToPersistedState(
   toolCallId: string,
   state: SwapState,
   conversationId: string,
   swapOutput: InitiateSwapOutput | null,
-  networkName?: string
+  networkName?: string,
+  walletAddress?: string
 ): PersistedToolState {
   const phases = [
     ...SWAP_PHASES.toPhases(state.completedSteps, state.error),
@@ -82,10 +82,11 @@ function swapStateToPersistedState(
       ...(networkName && { networkName }),
     },
     ...(swapOutput && { toolOutput: swapOutput }),
+    ...(walletAddress && { walletAddress }),
   }
 }
 
-function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
+export function persistedStateToSwapState(persisted: PersistedToolState): SwapState {
   const hasError = persisted.phases.includes('error')
   return {
     currentStep: SwapStep.COMPLETE,
@@ -120,6 +121,19 @@ export const useSwapExecution = (
   const { primaryWallet } = useDynamicContext()
   const changePrimaryWallet = useSwitchWallet()
 
+  const evmAddressRef = useRef(evmAddress)
+  const solanaAddressRef = useRef(solanaAddress)
+  const solanaWalletRef = useRef(solanaWallet)
+  const evmWalletRef = useRef(evmWallet)
+  const activeConversationIdRef = useRef(activeConversationId)
+  const primaryWalletRef = useRef(primaryWallet)
+  evmAddressRef.current = evmAddress
+  solanaAddressRef.current = solanaAddress
+  solanaWalletRef.current = solanaWallet
+  evmWalletRef.current = evmWallet
+  activeConversationIdRef.current = activeConversationId
+  primaryWalletRef.current = primaryWallet
+
   const hasHydratedRef = useRef(false)
   const lastToolCallIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -143,13 +157,14 @@ export const useSwapExecution = (
     let swapTxHash: string | undefined
 
     const persistState = (finalState: SwapState) => {
-      if (!activeConversationId) return
+      if (!activeConversationIdRef.current) return
       const persisted = swapStateToPersistedState(
         toolCallId,
         finalState,
-        activeConversationId,
+        activeConversationIdRef.current,
         data,
-        data.swapData.sellAsset.network
+        data.swapData.sellAsset.network,
+        evmAddress ?? solanaAddress
       )
       store.persistTransaction(persisted)
     }
@@ -157,10 +172,14 @@ export const useSwapExecution = (
     try {
       const { needsApproval, approvalTx, swapTx } = data
 
+      if (!swapTx?.from) throw new Error('Invalid swap output: missing swapTx.from')
+      if (!swapTx?.chainId) throw new Error('Invalid swap output: missing swapTx.chainId')
+      if (!data.swapData?.sellAsset?.chainId) throw new Error('Invalid swap output: missing swapData.sellAsset.chainId')
+
       const sellAssetChainId = data.swapData.sellAsset.chainId
       const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
 
-      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm ? evmAddress : solanaAddress
+      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm ? evmAddressRef.current : solanaAddressRef.current
       if (!currentAddress) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
       }
@@ -170,8 +189,8 @@ export const useSwapExecution = (
 
       // Get Solana signer if needed - SolanaWallet has getSigner() directly on the class
       let solanaSigner: SolanaWalletSigner | undefined
-      if (chainNamespace === CHAIN_NAMESPACE.Solana && solanaWallet) {
-        solanaSigner = await solanaWallet.getSigner()
+      if (chainNamespace === CHAIN_NAMESPACE.Solana && solanaWalletRef.current) {
+        solanaSigner = await solanaWalletRef.current.getSigner()
       }
 
       // Step 0: Quote (completed by this point)
@@ -186,11 +205,11 @@ export const useSwapExecution = (
       if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
         if (
           chainNamespace === CHAIN_NAMESPACE.Solana &&
-          solanaWallet &&
-          primaryWallet &&
-          !isSolanaWallet(primaryWallet)
+          solanaWalletRef.current &&
+          primaryWalletRef.current &&
+          !isSolanaWallet(primaryWalletRef.current)
         ) {
-          await changePrimaryWallet(solanaWallet.id)
+          await changePrimaryWallet(solanaWalletRef.current.id)
         }
 
         setState(draft => {
@@ -202,16 +221,16 @@ export const useSwapExecution = (
         // EVM: always switch to the sell chain to avoid race conditions with WalletConnect
         const sellChainIdNumber = Number(chainReference)
 
-        if (!evmWallet) {
+        if (!evmWalletRef.current) {
           throw new Error('EVM wallet not connected')
         }
 
-        if (primaryWallet && !isEthereumWallet(primaryWallet)) {
-          await changePrimaryWallet(evmWallet.id)
+        if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
+          await changePrimaryWallet(evmWalletRef.current.id)
         }
 
         // EthereumWallet.connector has switchNetwork properly typed
-        await evmWallet.connector.switchNetwork({ networkChainId: sellChainIdNumber })
+        await evmWalletRef.current.connector.switchNetwork({ networkChainId: sellChainIdNumber })
 
         setState(draft => {
           draft.completedSteps.add(draft.currentStep)
@@ -244,15 +263,7 @@ export const useSwapExecution = (
           draft.currentStep = SwapStep.APPROVAL_CONFIRMATION
         })
 
-        const publicClient = getPublicClient(wagmiConfig, {
-          chainId: Number(chainReference),
-        })
-        if (publicClient) {
-          await publicClient.waitForTransactionReceipt({
-            hash: approvalTxHash as `0x${string}`,
-            confirmations: 1,
-          })
-        }
+        await waitForConfirmedReceipt(Number(chainReference), approvalTxHash as `0x${string}`)
 
         setState(draft => {
           draft.completedSteps.add(draft.currentStep)

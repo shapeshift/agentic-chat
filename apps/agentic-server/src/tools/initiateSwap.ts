@@ -1,6 +1,6 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
-import { toBaseUnit } from '@shapeshiftoss/utils'
+import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
@@ -124,7 +124,7 @@ function buildApprovalTransaction(
   const data = encodeFunctionData({
     abi: erc20Abi,
     functionName: 'approve',
-    args: [getAddress(approvalTarget), BigInt(toBaseUnit(sellAmount, sellAsset.precision))],
+    args: [getAddress(approvalTarget), toBigInt(toBaseUnit(sellAmount, sellAsset.precision))],
   })
 
   const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
@@ -295,16 +295,7 @@ export async function executeInitiateSwap(
 export const initiateSwapTool = {
   description: `Execute a swap between tokens (crypto amounts). EVM and Solana only.
 
-UI CARD DISPLAYS: sell/buy amounts, tokens, exchange rate, network fees, and price impact.
-
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
-
-Default: Respond with one brief, natural sentence like:
-- "Here's your swap"
-- "I've prepared the swap for you"
-- "Review and confirm the swap above"
-
-Only elaborate if the user asks about something not shown in the card.`,
+UI CARD DISPLAYS: sell/buy amounts, tokens, exchange rate, network fees, and price impact.`,
   inputSchema: initiateSwapSchema,
   execute: executeInitiateSwap,
 }
@@ -348,16 +339,7 @@ export async function executeInitiateSwapUsd(
 export const initiateSwapUsdTool = {
   description: `Execute a swap between tokens (USD amounts). EVM and Solana only.
 
-UI CARD DISPLAYS: sell/buy amounts, tokens, exchange rate, network fees, and price impact.
-
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
-
-Default: Respond with one brief, natural sentence like:
-- "Here's your swap"
-- "I've prepared the swap for you"
-- "Review and confirm the swap above"
-
-Only elaborate if the user asks about something not shown in the card.`,
+UI CARD DISPLAYS: sell/buy amounts, tokens, exchange rate, network fees, and price impact.`,
   inputSchema: initiateSwapUsdSchema,
   execute: executeInitiateSwapUsd,
 }

@@ -38,7 +38,7 @@ export function calculate24hDelta(assets: PortfolioAsset[]): PortfolioDelta | nu
   }
 }
 
-function calculateTotals(assets: PortfolioAsset[]) {
+export function calculateTotals(assets: PortfolioAsset[]) {
   const totalFiat = assets.reduce((sum, a) => sum.plus(bnOrZero(a.fiatAmount)), bn(0))
   const totalCrypto = assets.reduce((sum, a) => sum.plus(bnOrZero(a.cryptoBalancePrecision)), bn(0))
   const totalAllocation = assets.reduce((sum, a) => sum + a.allocation, 0)

@@ -1,4 +1,3 @@
-import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import { ArrowRightLeft } from 'lucide-react'
 
 import { useNetworkSwitch } from '@/hooks/useNetworkSwitch'
@@ -18,9 +17,9 @@ const ErrorDetails: React.FC<{ title: string; message: string }> = ({ title, mes
   </CollapsableDetails>
 )
 
-export function SwitchNetworkUI({ toolPart }: ToolUIComponentProps) {
+export function SwitchNetworkUI({ toolPart }: ToolUIComponentProps<'switchNetworkTool'>) {
   const { state, output, toolCallId, errorText } = toolPart
-  const networkOutput = output as SwitchNetworkOutput | undefined
+  const networkOutput = output
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const networkData = state === 'output-available' && networkOutput ? networkOutput : null

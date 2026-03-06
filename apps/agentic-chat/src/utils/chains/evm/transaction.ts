@@ -9,6 +9,10 @@ import { wagmiConfig } from '@/lib/wagmi-config'
 import type { TransactionParams } from '../types'
 
 export async function sendEvmTransaction(params: TransactionParams): Promise<string> {
+  if (!params.chainId) throw new Error('Invalid EVM transaction: missing chainId')
+  if (!params.from) throw new Error('Invalid EVM transaction: missing from address')
+  if (!params.to) throw new Error('Invalid EVM transaction: missing to address')
+
   const { chainNamespace, chainReference } = fromChainId(params.chainId)
 
   if (chainNamespace !== CHAIN_NAMESPACE.Evm) {

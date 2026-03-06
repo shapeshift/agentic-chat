@@ -132,16 +132,7 @@ Native assets are prioritized when symbol matches both native and token.
 Use assetType: "token" for wrapped versions (e.g., "wrapped xDAI on gnosis").
 Use pools: "only" for LP pool queries.
 
-UI CARD DISPLAYS: name, symbol, price, 24h change, market cap, volume, supply, sentiment, description.
-
-Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
-
-Default: Respond with one brief, natural sentence like:
-- "Here's the market data for X"
-- "I found the details for X"
-- "Check out X's current stats"
-
-Only elaborate if the user asks about something not shown in the card.`,
+UI CARD DISPLAYS: name, symbol, price, 24h change, market cap, volume, supply, sentiment, description.`,
   inputSchema: getAssetsSchema,
   execute: executeGetAssets,
 }

@@ -32,19 +32,19 @@ export interface CancelLimitOrderOutput {
 }
 
 async function detectChainIdFromOrderId(orderId: string): Promise<number | null> {
-  // Try each chain to find the order
-  const chainsToTry = [1, 42161, 100] // Most likely chains first
+  const chainsToTry = [1, 42161, 100]
 
-  for (const chainId of chainsToTry) {
-    try {
-      const order = await getCowOrder(orderId, chainId)
-      if (order) return chainId
-    } catch {
-      // Order not found on this chain, try next
-    }
+  try {
+    return await Promise.any(
+      chainsToTry.map(async chainId => {
+        const order = await getCowOrder(orderId, chainId)
+        if (!order) throw new Error('not found')
+        return chainId
+      })
+    )
+  } catch {
+    return null
   }
-
-  return null
 }
 
 export async function executeCancelLimitOrder(
@@ -110,14 +110,6 @@ export const cancelLimitOrderTool = {
   description: `Cancel a pending limit order on CoW Protocol.
 
 UI CARD DISPLAYS: order details being cancelled and signing button.
-
-Your role is to supplement the card, not duplicate it.
-
-Default: Respond with one brief sentence like:
-- "I've prepared the cancellation"
-- "Ready to cancel your limit order"
-
-Only elaborate if the user asks about the cancellation process.
 
 IMPORTANT:
 - Can only cancel orders you own

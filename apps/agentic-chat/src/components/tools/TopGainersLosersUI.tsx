@@ -50,7 +50,7 @@ function GainerLoserCard({ items, title, icon, variant }: GainerLoserCardProps) 
   )
 }
 
-export function TopGainersLosersUI({ toolPart }: ToolUIComponentProps) {
+export function TopGainersLosersUI({ toolPart }: ToolUIComponentProps<'getTopGainersLosersTool'>) {
   const { state, output } = toolPart
 
   const stateRender = useToolStateRender(state, {
@@ -60,15 +60,11 @@ export function TopGainersLosersUI({ toolPart }: ToolUIComponentProps) {
 
   if (stateRender) return stateRender
 
-  const data = output as
-    | { gainers: TrimmedGainerLoserCoin[]; losers: TrimmedGainerLoserCoin[]; duration: string }
-    | undefined
-
-  if (!data || (data.gainers.length === 0 && data.losers.length === 0)) {
+  if (!output || (output.gainers.length === 0 && output.losers.length === 0)) {
     return null
   }
 
-  const { gainers, losers, duration } = data
+  const { gainers, losers, duration } = output
 
   return (
     <div className="space-y-3">

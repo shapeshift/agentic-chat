@@ -7,6 +7,8 @@ import type { SolanaWallet } from '@dynamic-labs/solana-core'
 import { findEvmWallet, findSolanaWallet } from '@/lib/walletUtils'
 
 import { useApprovedChains } from './useApprovedChains'
+import type { SafeChainDeployment } from './useSafeAccount'
+import { useSafeAccount } from './useSafeAccount'
 
 export { filterEvmWallets, filterSolanaWallets, findEvmWallet, findSolanaWallet } from '@/lib/walletUtils'
 
@@ -18,13 +20,15 @@ interface WalletConnectionResult {
   approvedChainIds: string[]
   evmWallet: EthereumWallet | undefined
   solanaWallet: SolanaWallet | undefined
-  hasEmbeddedWallet: boolean
+  safeAddress: string | undefined
+  safeDeploymentState: Record<number, SafeChainDeployment>
 }
 
 export function useWalletConnection(): WalletConnectionResult {
   const { primaryWallet } = useDynamicContext()
   const userWallets = useUserWallets()
   const approvedChainIds = useApprovedChains()
+  const safeAccount = useSafeAccount()
 
   const primaryEvmWallet = primaryWallet && isEthereumWallet(primaryWallet) ? primaryWallet : undefined
   const primarySolanaWallet = primaryWallet && isSolanaWallet(primaryWallet) ? primaryWallet : undefined
@@ -36,7 +40,6 @@ export function useWalletConnection(): WalletConnectionResult {
   const solanaAddress = solanaWallet?.address
 
   const isConnected = !!evmAddress || !!solanaAddress
-  const hasEmbeddedWallet = userWallets.some(w => w.connector?.isEmbeddedWallet === true)
 
   return {
     isConnected,
@@ -46,6 +49,7 @@ export function useWalletConnection(): WalletConnectionResult {
     approvedChainIds,
     evmWallet,
     solanaWallet,
-    hasEmbeddedWallet,
+    safeAddress: safeAccount.safeAddress,
+    safeDeploymentState: safeAccount.safeDeploymentState,
   }
 }

@@ -2,57 +2,28 @@ import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
 import { toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
-import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
+import { resolveCowTokenAddress } from '../../lib/composableCow'
 import { COW_VAULT_RELAYER_ADDRESS, prepareCowLimitOrder } from '../../lib/cow'
 import type { CowOrderSigningData } from '../../lib/cow/types'
 import { getCowExplorerUrl, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
+import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
-import { createTransaction } from '../../utils/transactionHelpers'
 import { getAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
-
-type TransactionData = {
-  chainId: string
-  data: string
-  from: string
-  to: string
-  value: string
-}
-
-function buildApprovalTransaction(
-  needsApproval: boolean,
-  sellAsset: Asset,
-  approvalTarget: string,
-  sellAmountBaseUnit: string,
-  userAddress: string
-): TransactionData | undefined {
-  if (!needsApproval) return undefined
-
-  const data = encodeFunctionData({
-    abi: erc20Abi,
-    functionName: 'approve',
-    args: [getAddress(approvalTarget), BigInt(sellAmountBaseUnit)],
-  })
-
-  const tokenAddress = fromAssetId(sellAsset.assetId).assetReference
-
-  return createTransaction({
-    chainId: sellAsset.chainId,
-    data,
-    from: userAddress,
-    to: tokenAddress,
-    value: '0',
-  })
-}
 
 export const createLimitOrderSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
   buyAsset: z.string().describe('Token symbol or name to buy (e.g., "USDC", "WETH")'),
   network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the limit order'),
-  sellAmount: z.string().describe('Amount to sell in human-readable format (e.g., "100" for 100 USDC)'),
+  sellAmount: z
+    .string()
+    .describe(
+      'Amount to sell in TOKEN units, not USD (e.g., "100" for 100 USDC, "0.5" for 0.5 WETH). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
+    ),
   limitPrice: z
     .string()
     .describe(
@@ -107,7 +78,7 @@ function calculateBuyAmount(buyAsset: Asset, sellAmount: string, limitPrice: str
   if (buyAmountHuman.isNaN()) {
     throw new Error('Invalid sellAmount or limitPrice')
   }
-  return toBaseUnit(buyAmountHuman.toFixed(0), buyAsset.precision)
+  return toBaseUnit(buyAmountHuman.toFixed(buyAsset.precision), buyAsset.precision)
 }
 
 export async function executeCreateLimitOrder(
@@ -143,16 +114,8 @@ export async function executeCreateLimitOrder(
   }
 
   // Get token addresses after validation
-  const sellTokenAddress = fromAssetId(sellAsset.assetId).assetReference
-  const buyTokenAddress = fromAssetId(buyAsset.assetId).assetReference
-
-  // CoW Protocol uses this marker address to indicate native asset as buy token
-  const COW_NATIVE_ASSET_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
-
-  const sellToken = sellTokenAddress
-
-  // Allow native token as buy asset using CoW's native asset marker
-  const buyToken = isNativeBuyToken ? COW_NATIVE_ASSET_MARKER : buyTokenAddress
+  const sellToken = fromAssetId(sellAsset.assetId).assetReference
+  const buyToken = resolveCowTokenAddress(buyAsset, isNativeBuyToken)
 
   // Calculate amounts in base units
   const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
@@ -225,15 +188,6 @@ export const createLimitOrderTool = {
   description: `Create a limit order to trade at a specific price. Limit orders execute when the market reaches your target price.
 
 UI CARD DISPLAYS: order details (sell/buy assets, amounts), limit price, expiration time, and signing button.
-
-Your role is to supplement the card, not duplicate it.
-
-Default: Respond with one brief sentence like:
-- "I've prepared your limit order"
-- "Your limit order is ready to sign"
-- "Here's the limit order for your approval"
-
-Only elaborate if the user asks about something not shown in the card.
 
 IMPORTANT:
 - Limit orders require EIP-712 signature (gasless, off-chain)

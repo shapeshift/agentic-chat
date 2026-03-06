@@ -1,5 +1,4 @@
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
-import type { CheckWalletCapabilitiesOutput } from '@shapeshiftoss/agentic-server'
 import { Check, Lock, Shield } from 'lucide-react'
 import { useCallback } from 'react'
 
@@ -11,17 +10,16 @@ import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
 const WALLET_TYPE_LABELS: Record<string, string> = {
-  embedded: 'Embedded (MPC)',
-  external: 'External (BYO)',
+  connected: 'Wallet Connected',
   none: 'No Wallet Connected',
 }
 
-export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
+export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps<'checkWalletCapabilitiesTool'>) {
   const { state, output, errorText } = toolPart
-  const capabilitiesOutput = output as CheckWalletCapabilitiesOutput | undefined
+  const capabilitiesOutput = output
   const { setShowAuthFlow } = useDynamicContext()
 
-  const handleCreateEmbeddedWallet = useCallback(() => {
+  const handleConnect = useCallback(() => {
     setShowAuthFlow(true)
   }, [setShowAuthFlow])
 
@@ -39,8 +37,9 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
 
   if (!capabilitiesOutput) return null
 
-  const { walletType, capabilities, automationReady } = capabilitiesOutput
+  const { walletType, capabilities, isSafeReady } = capabilitiesOutput
   const walletTypeLabel = WALLET_TYPE_LABELS[walletType] ?? walletType
+  const needsSafeSetup = walletType !== 'none' && !isSafeReady
 
   return (
     <ToolCard.Root>
@@ -64,18 +63,15 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
             ))}
           </div>
 
-          {!automationReady && walletType !== 'none' && (
+          {needsSafeSetup && (
             <div className="mt-3 rounded-md border border-blue-500/30 bg-blue-500/10 p-3 space-y-2">
               <div className="flex items-start gap-2">
                 <Lock className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-blue-200">
-                  Automated trading features (TWAP, DCA, stop-loss) require an embedded wallet. Create one with email or
-                  social login — it's self-custodial with no seed phrase.
+                  A Safe smart account will be deployed automatically when you create your first stop-loss or automated
+                  order. Works with any connected wallet.
                 </div>
               </div>
-              <Button variant="default" size="sm" onClick={handleCreateEmbeddedWallet} className="w-full">
-                Create Embedded Wallet
-              </Button>
             </div>
           )}
 
@@ -84,7 +80,7 @@ export function CheckWalletCapabilitiesUI({ toolPart }: ToolUIComponentProps) {
               <div className="text-xs text-blue-200">
                 Connect a wallet to get started with trading and portfolio management.
               </div>
-              <Button variant="default" size="sm" onClick={handleCreateEmbeddedWallet} className="w-full">
+              <Button variant="default" size="sm" onClick={handleConnect} className="w-full">
                 Connect Wallet
               </Button>
             </div>
