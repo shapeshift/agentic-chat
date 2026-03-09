@@ -471,6 +471,7 @@ const chatRequestSchema = z.object({
         network: z.string(),
         status: z.enum(['open', 'triggered', 'fulfilled', 'cancelled', 'expired', 'failed', 'partiallyFilled']),
         orderType: z.enum(['stopLoss', 'twap']),
+        numParts: z.number().optional(),
       })
     )
     .optional(),
