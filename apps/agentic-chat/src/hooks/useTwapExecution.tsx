@@ -4,45 +4,15 @@ import type { DynamicToolUIPart } from 'ai'
 import { Amount } from '@/components/ui/Amount'
 import { formatFrequency } from '@/lib/formatDuration'
 import { analytics } from '@/lib/mixpanel'
-import type { PersistedToolState } from '@/stores/chatStore'
 
-import {
-  conditionalOrderStateToPersistedState,
-  ConditionalOrderStep,
-  persistedStateToConditionalOrderState,
-  useConditionalOrderExecution,
-} from './useConditionalOrderExecution'
-import type { ConditionalOrderState, ConditionalOrderStepInfo } from './useConditionalOrderExecution'
+import { CONDITIONAL_ORDER_STEPS, useConditionalOrderExecution } from './useConditionalOrderExecution'
 
-// Re-export for backwards compat with UI + tests
-export { ConditionalOrderStep as TwapStep }
-export type { ConditionalOrderStepInfo as TwapStepInfo }
-
-export function twapStateToPersistedState(
-  toolCallId: string,
-  state: ConditionalOrderState,
-  conversationId: string,
-  orderOutput: CreateTwapOutput | null,
-  networkName?: string,
-  walletAddress?: string
-): PersistedToolState {
-  return conditionalOrderStateToPersistedState(
-    toolCallId,
-    state,
-    conversationId,
-    'twap',
-    orderOutput,
-    networkName,
-    walletAddress
-  )
-}
-
-export const persistedStateToTwapState = persistedStateToConditionalOrderState
+export { CONDITIONAL_ORDER_STEPS }
 
 export const useTwapExecution = (
   toolCallId: string,
   toolState: DynamicToolUIPart['state'],
-  orderData: CreateTwapOutput | null
+  orderData: CreateTwapOutput | null,
 ) =>
   useConditionalOrderExecution(toolCallId, toolState, orderData, {
     toolType: 'twap',

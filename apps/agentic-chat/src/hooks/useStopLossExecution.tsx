@@ -3,45 +3,15 @@ import type { DynamicToolUIPart } from 'ai'
 
 import { Amount } from '@/components/ui/Amount'
 import { analytics } from '@/lib/mixpanel'
-import type { PersistedToolState } from '@/stores/chatStore'
 
-import {
-  conditionalOrderStateToPersistedState,
-  ConditionalOrderStep,
-  persistedStateToConditionalOrderState,
-  useConditionalOrderExecution,
-} from './useConditionalOrderExecution'
-import type { ConditionalOrderState, ConditionalOrderStepInfo } from './useConditionalOrderExecution'
+import { CONDITIONAL_ORDER_STEPS, useConditionalOrderExecution } from './useConditionalOrderExecution'
 
-// Re-export for backwards compat with UI + tests
-export { ConditionalOrderStep as StopLossStep }
-export type { ConditionalOrderStepInfo as StopLossStepInfo }
-
-export function stopLossStateToPersistedState(
-  toolCallId: string,
-  state: ConditionalOrderState,
-  conversationId: string,
-  orderOutput: CreateStopLossOutput | null,
-  networkName?: string,
-  walletAddress?: string
-): PersistedToolState {
-  return conditionalOrderStateToPersistedState(
-    toolCallId,
-    state,
-    conversationId,
-    'stop_loss',
-    orderOutput,
-    networkName,
-    walletAddress
-  )
-}
-
-export const persistedStateToStopLossState = persistedStateToConditionalOrderState
+export { CONDITIONAL_ORDER_STEPS }
 
 export const useStopLossExecution = (
   toolCallId: string,
   toolState: DynamicToolUIPart['state'],
-  orderData: CreateStopLossOutput | null
+  orderData: CreateStopLossOutput | null,
 ) =>
   useConditionalOrderExecution(toolCallId, toolState, orderData, {
     toolType: 'stop_loss',
