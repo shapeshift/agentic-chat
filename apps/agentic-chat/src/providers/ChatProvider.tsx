@@ -156,6 +156,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
     [handleSubmit]
   )
 
+  const guardedSendMessage = useCallback(
+    async (params: Parameters<typeof chat.sendMessage>[0]) => {
+      if (chat.messages.length >= MAX_MESSAGES_PER_CONVERSATION) return
+      await chat.sendMessage(params)
+    },
+    [chat]
+  )
+
   const stopCallback = useCallback(() => {
     void chat.stop()
   }, [chat])
@@ -170,7 +178,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       handleSubmit: handleSubmitCallback,
       isLoading: chat.status === 'submitted' || chat.status === 'streaming',
       isAtMessageLimit,
-      sendMessage: chat.sendMessage,
+      sendMessage: guardedSendMessage,
       setInput,
       status: chat.status,
       stop: stopCallback,
@@ -178,7 +186,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }),
     [
       chat.messages,
-      chat.sendMessage,
+      guardedSendMessage,
       chat.status,
       chat.error,
       input,
