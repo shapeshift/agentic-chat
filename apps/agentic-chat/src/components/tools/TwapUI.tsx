@@ -251,6 +251,12 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
         </TxStepCard.Content>
       )}
 
+      {orderData?.warnings?.map((warning, i) => (
+        <p key={i} className="text-sm text-amber-500 font-medium px-4 py-2">
+          {warning}
+        </p>
+      ))}
+
       <TxStepCard.Stepper completedCount={completedCount} totalCount={totalCount}>
         {presentationSteps.map((step, index) => (
           <TxStepCard.Step

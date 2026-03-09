@@ -399,6 +399,8 @@ Limit orders, stop-loss, and TWAP/DCA all use CoW Protocol.
 **TWAP/DCA orders:**
 - TWAP = split over hours; DCA = split over days/weeks. Same tool (createTwap).
 - Time-based execution (no price oracle needed) — each sub-order executes at market price.
+- If the tool output includes warnings, always surface them to the user and suggest increasing the total amount or reducing intervals.
+- Per-part amounts below ~$2 (L2s) or ~$10 (Ethereum) may not be filled by solvers.
 </cow-protocol>
 
 <safe-account>
