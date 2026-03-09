@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 
 import { getCowApiUrl } from '@/lib/cow-config'
 import type { CancelLimitOrderMeta, ToolExecutionState } from '@/lib/executionState'
-import { getStepStatus } from '@/lib/executionState'
+import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
 import { StepStatus } from '@/lib/stepUtils'
 
@@ -111,12 +111,7 @@ export const useCancelLimitOrderExecution = (
     }
   })
 
-  const prepareStepStatus = (() => {
-    if (toolState === 'output-error') return StepStatus.FAILED
-    if (toolState === 'input-streaming' || toolState === 'input-available') return StepStatus.IN_PROGRESS
-    if (toolState === 'output-available') return StepStatus.COMPLETE
-    return StepStatus.NOT_STARTED
-  })()
+  const prepareStepStatus = toolStateToStepStatus(toolState)
 
   return {
     state: ctx.state,

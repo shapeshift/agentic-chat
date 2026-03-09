@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
 import type { ToolExecutionState } from '../executionState'
-import { advanceStep, failStep, getStepStatus, markTerminal, skipStep } from '../executionState'
+import { advanceStep, failStep, getStepStatus, markTerminal, skipStep, toolStateToStepStatus } from '../executionState'
 import { StepStatus } from '../stepUtils'
 
 function makeState(overrides: Partial<ToolExecutionState> = {}): ToolExecutionState {
@@ -117,5 +117,27 @@ describe('getStepStatus edge cases', () => {
     expect(getStepStatus(1, state)).toBe(StepStatus.COMPLETE)
     expect(getStepStatus(2, state)).toBe(StepStatus.FAILED)
     expect(getStepStatus(3, state)).toBe(StepStatus.NOT_STARTED)
+  })
+})
+
+describe('toolStateToStepStatus', () => {
+  it('returns FAILED for output-error', () => {
+    expect(toolStateToStepStatus('output-error')).toBe(StepStatus.FAILED)
+  })
+
+  it('returns IN_PROGRESS for input-streaming', () => {
+    expect(toolStateToStepStatus('input-streaming')).toBe(StepStatus.IN_PROGRESS)
+  })
+
+  it('returns IN_PROGRESS for input-available', () => {
+    expect(toolStateToStepStatus('input-available')).toBe(StepStatus.IN_PROGRESS)
+  })
+
+  it('returns COMPLETE for output-available', () => {
+    expect(toolStateToStepStatus('output-available')).toBe(StepStatus.COMPLETE)
+  })
+
+  it('returns NOT_STARTED for unknown states', () => {
+    expect(toolStateToStepStatus('something-else')).toBe(StepStatus.NOT_STARTED)
   })
 })

@@ -138,6 +138,13 @@ export function markTerminal<TMeta>(state: ToolExecutionState<TMeta>): ToolExecu
   return { ...state, terminal: true }
 }
 
+export function toolStateToStepStatus(toolState: string): StepStatus {
+  if (toolState === 'output-error') return StepStatus.FAILED
+  if (toolState === 'input-streaming' || toolState === 'input-available') return StepStatus.IN_PROGRESS
+  if (toolState === 'output-available') return StepStatus.COMPLETE
+  return StepStatus.NOT_STARTED
+}
+
 export function getStepStatus(step: number, state: ToolExecutionState<unknown>): StepStatus {
   if (state.failedStep === step) return StepStatus.FAILED
   if (state.currentStep < step) return StepStatus.NOT_STARTED

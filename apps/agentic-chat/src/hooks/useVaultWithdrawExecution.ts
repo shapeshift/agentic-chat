@@ -3,7 +3,7 @@ import type { DynamicToolUIPart } from 'ai'
 import { toast } from 'sonner'
 
 import type { ToolExecutionState, VaultWithdrawMeta } from '@/lib/executionState'
-import { getStepStatus } from '@/lib/executionState'
+import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { StepStatus } from '@/lib/stepUtils'
 
 import { submitSafeTxStep } from './steps/submitSafeTxStep'
@@ -77,12 +77,7 @@ export const useVaultWithdrawExecution = (
     }
   })
 
-  const prepareStepStatus = (() => {
-    if (toolState === 'output-error') return StepStatus.FAILED
-    if (toolState === 'input-streaming' || toolState === 'input-available') return StepStatus.IN_PROGRESS
-    if (toolState === 'output-available') return StepStatus.COMPLETE
-    return StepStatus.NOT_STARTED
-  })()
+  const prepareStepStatus = toolStateToStepStatus(toolState)
 
   return {
     state: ctx.state,
