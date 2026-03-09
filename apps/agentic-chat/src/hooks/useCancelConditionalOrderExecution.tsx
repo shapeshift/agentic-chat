@@ -1,20 +1,19 @@
-import { isEthereumWallet } from '@dynamic-labs/ethereum'
-import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import type { DynamicToolUIPart } from 'ai'
-import { current } from 'immer'
-import { useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import type { ReactNode } from 'react'
 import { toast } from 'sonner'
 
+import type { CancelConditionalOrderMeta, ToolExecutionState } from '@/lib/executionState'
+import { getStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
-import { executeSafeTransaction } from '@/lib/safe'
-import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
-import type { PersistedToolState } from '@/stores/chatStore'
-import { useChatStore } from '@/stores/chatStore'
+import { StepStatus } from '@/lib/stepUtils'
 import { useOrderStore } from '@/stores/orderStore'
 
-import { useToolExecutionEffect } from './useToolExecutionEffect'
-import { useWalletConnection } from './useWalletConnection'
+import { switchNetworkStepByChainIdNumber } from './steps/switchNetworkStep'
+import { submitSafeTxStep } from './steps/submitSafeTxStep'
+import { useExecuteOnce } from './useExecuteOnce'
+import { useToolExecution } from './useToolExecution'
+
+export const CANCEL_CONDITIONAL_STEPS = { PREPARE: 0, NETWORK: 1, SUBMIT_CANCEL: 2, CONFIRM_TX: 3 } as const
 
 export interface CancelConditionalOrderData {
   safeTransaction: { to: string; data: string; value: string; chainId: number }
@@ -23,213 +22,85 @@ export interface CancelConditionalOrderData {
   message: string
 }
 
-enum CancelStep {
-  PREPARE = 0,
-  NETWORK_SWITCH = 1,
-  SUBMIT_CANCEL = 2,
-  CONFIRM_TX = 3,
-  COMPLETE = 4,
+export interface CancelConditionalOrderConfig {
+  toolType: 'cancel_stop_loss' | 'cancel_twap'
+  orderLabel: string
+  renderSuccessToast: (data: CancelConditionalOrderData) => ReactNode
+  onSuccess?: (data: CancelConditionalOrderData) => void
 }
 
-const CANCEL_PHASES = createStepPhaseMap<CancelStep>({
-  [CancelStep.PREPARE]: 'prepare_complete',
-  [CancelStep.NETWORK_SWITCH]: 'network_switched',
-  [CancelStep.SUBMIT_CANCEL]: 'submitted',
-  [CancelStep.CONFIRM_TX]: 'confirmed',
-})
-
-interface CancelState {
-  currentStep: CancelStep
-  completedSteps: Set<CancelStep>
-  cancelTxHash?: string
-  error?: string
-  failedStep?: CancelStep
-}
-
-const initialCancelState: CancelState = {
-  currentStep: CancelStep.PREPARE,
-  completedSteps: new Set(),
-}
-
-function cancelStateToPersistedState(
-  toolCallId: string,
-  state: CancelState,
-  conversationId: string,
-  toolType: 'cancel_stop_loss' | 'cancel_twap',
-  cancelOutput: CancelConditionalOrderData | null,
-  walletAddress?: string
-): PersistedToolState {
-  return {
-    toolCallId,
-    toolType,
-    conversationId,
-    timestamp: Date.now(),
-    phases: CANCEL_PHASES.toPhases(state.completedSteps, state.error),
-    meta: {
-      ...(state.cancelTxHash && { cancelTxHash: state.cancelTxHash }),
-      ...(state.error && { error: state.error }),
-    },
-    ...(cancelOutput && { toolOutput: cancelOutput }),
-    ...(walletAddress && { walletAddress }),
-  }
-}
-
-function persistedStateToCancelState(persisted: PersistedToolState): CancelState {
-  const hasError = persisted.phases.includes('error')
-  return {
-    currentStep: CancelStep.COMPLETE,
-    completedSteps: CANCEL_PHASES.fromPhases(persisted.phases),
-    cancelTxHash: persisted.meta.cancelTxHash as string | undefined,
-    error: hasError ? (persisted.meta.error as string) : undefined,
-  }
-}
-
-export interface CancelStepInfo {
+interface CancelStepInfo {
   step: number
   status: StepStatus
 }
 
-interface UseCancelConditionalOrderResult {
+export interface UseCancelConditionalOrderResult {
+  state: ToolExecutionState<CancelConditionalOrderMeta>
   steps: CancelStepInfo[]
   error?: string
   cancelTxHash?: string
 }
 
+const CHAIN_ID_TO_NETWORK: Record<number, string> = { 1: 'ethereum', 100: 'gnosis', 42161: 'arbitrum' }
+
 export function useCancelConditionalOrderExecution(
   toolCallId: string,
   toolState: DynamicToolUIPart['state'],
   cancelData: CancelConditionalOrderData | null,
-  toolType: 'cancel_stop_loss' | 'cancel_twap',
-  orderLabel: string
+  config: CancelConditionalOrderConfig,
 ): UseCancelConditionalOrderResult {
-  const { evmAddress, evmWallet } = useWalletConnection()
-  const store = useChatStore()
-  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
-  const { primaryWallet } = useDynamicContext()
-  const changePrimaryWallet = useSwitchWallet()
+  const ctx = useToolExecution<CancelConditionalOrderMeta>(toolCallId, config.toolType, {})
 
-  const evmAddressRef = useRef(evmAddress)
-  const evmWalletRef = useRef(evmWallet)
-  const activeConversationIdRef = useRef(activeConversationId)
-  const primaryWalletRef = useRef(primaryWallet)
-  evmAddressRef.current = evmAddress
-  evmWalletRef.current = evmWallet
-  activeConversationIdRef.current = activeConversationId
-  primaryWalletRef.current = primaryWallet
-
-  const hasHydratedRef = useRef(false)
-  const lastToolCallIdRef = useRef<string | undefined>(undefined)
-  useEffect(() => {
-    if (lastToolCallIdRef.current !== toolCallId) {
-      hasHydratedRef.current = false
-      lastToolCallIdRef.current = toolCallId
-    }
-
-    if (!hasHydratedRef.current && !store.runtimeToolStates.has(toolCallId)) {
-      const persisted = store.getPersistedTransaction(toolCallId)
-      if (persisted) {
-        const hydratedState = persistedStateToCancelState(persisted)
-        store.initializeRuntimeState(toolCallId, hydratedState)
-        hasHydratedRef.current = true
-      }
-    }
-  }, [toolCallId]) // eslint-disable-line react-hooks/exhaustive-deps -- store is stable Zustand ref
-
-  const { state } = useToolExecutionEffect(toolCallId, cancelData, initialCancelState, async (data, setState) => {
-    const persistState = (finalState: CancelState) => {
-      if (!activeConversationIdRef.current) return
-      const persisted = cancelStateToPersistedState(
-        toolCallId,
-        finalState,
-        activeConversationIdRef.current,
-        toolType,
-        data,
-        evmAddressRef.current
-      )
-      store.persistTransaction(persisted)
-    }
-
+  useExecuteOnce(ctx, cancelData, async (data, ctx) => {
     try {
       const { safeTransaction, safeAddress } = data
 
-      if (!evmAddressRef.current) throw new Error('Wallet disconnected. Please reconnect and try again.')
+      if (!ctx.refs.evmAddress.current) throw new Error('Wallet disconnected. Please reconnect and try again.')
 
-      setState(draft => {
-        draft.completedSteps.add(CancelStep.PREPARE)
-        draft.currentStep = CancelStep.NETWORK_SWITCH
-        draft.error = undefined
+      // Step 0: Prepare
+      ctx.setState(draft => {
+        draft.toolOutput = data as unknown as typeof draft.toolOutput
       })
+      ctx.advanceStep()
 
-      if (!evmWalletRef.current) throw new Error('EVM wallet not connected')
+      // Step 1: Network switch
+      await switchNetworkStepByChainIdNumber(ctx, safeTransaction.chainId)
 
-      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
-        await changePrimaryWallet(evmWalletRef.current.id)
-      }
-
-      await evmWalletRef.current.connector.switchNetwork({ networkChainId: safeTransaction.chainId })
-
-      setState(draft => {
-        draft.completedSteps.add(CancelStep.NETWORK_SWITCH)
-        draft.currentStep = CancelStep.SUBMIT_CANCEL
-        draft.error = undefined
-      })
-
-      const walletClient = await evmWalletRef.current.getWalletClient()
-      const cancelTxHash = await executeSafeTransaction(
+      // Step 2+3: Submit cancel via Safe (executeSafeTransaction already waits for on-chain confirmation)
+      const cancelTxHash = await submitSafeTxStep(ctx, {
         safeAddress,
-        { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
-        evmAddressRef.current,
-        safeTransaction.chainId,
-        walletClient
-      )
-
-      setState(draft => {
-        draft.cancelTxHash = cancelTxHash
-        draft.completedSteps.add(CancelStep.SUBMIT_CANCEL)
-        draft.currentStep = CancelStep.CONFIRM_TX
-        draft.error = undefined
+        to: safeTransaction.to,
+        data: safeTransaction.data,
+        value: safeTransaction.value,
+        chainId: safeTransaction.chainId,
       })
-
-      // executeSafeTransaction already waits for on-chain confirmation
-      persistState({
-        currentStep: CancelStep.COMPLETE,
-        completedSteps: new Set([
-          CancelStep.PREPARE,
-          CancelStep.NETWORK_SWITCH,
-          CancelStep.SUBMIT_CANCEL,
-          CancelStep.CONFIRM_TX,
-        ]),
-        cancelTxHash,
-      })
+      ctx.setMeta({ cancelTxHash } as Partial<CancelConditionalOrderMeta>)
+      ctx.advanceStep()
+      ctx.markTerminal()
+      ctx.persist()
 
       useOrderStore.getState().updateStatus(data.orderHash, safeAddress, 'cancelled')
 
-      setState(draft => {
-        draft.completedSteps.add(CancelStep.CONFIRM_TX)
-        draft.currentStep = CancelStep.COMPLETE
-        draft.error = undefined
-      })
-
-      const CHAIN_ID_TO_NETWORK: Record<number, string> = { 1: 'ethereum', 100: 'gnosis', 42161: 'arbitrum' }
       const network = CHAIN_ID_TO_NETWORK[safeTransaction.chainId] ?? 'unknown'
-      if (toolType === 'cancel_stop_loss') {
+      if (config.toolType === 'cancel_stop_loss') {
         analytics.trackCancelStopLoss({ orderId: data.orderHash, network })
       } else {
         analytics.trackCancelTwap({ orderId: data.orderHash, network })
       }
 
-      toast.success(`${orderLabel} cancelled successfully`)
+      toast.success(config.renderSuccessToast(data))
+      config.onSuccess?.(data)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      let errorState: CancelState | undefined
-      setState(draft => {
+      ctx.setState(draft => {
         draft.error = errorMessage
         draft.failedStep = draft.currentStep
-        errorState = current(draft)
+        draft.terminal = true
       })
-      if (errorState) persistState(errorState)
+      ctx.persist()
+
       toast.error(
-        <span>Failed to cancel: {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}</span>
+        <span>Failed to cancel: {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}</span>,
       )
     }
   })
@@ -242,13 +113,14 @@ export function useCancelConditionalOrderExecution(
   })()
 
   return {
+    state: ctx.state,
     steps: [
-      { step: CancelStep.PREPARE, status: prepareStepStatus },
-      { step: CancelStep.NETWORK_SWITCH, status: getStepStatus(CancelStep.NETWORK_SWITCH, state) },
-      { step: CancelStep.SUBMIT_CANCEL, status: getStepStatus(CancelStep.SUBMIT_CANCEL, state) },
-      { step: CancelStep.CONFIRM_TX, status: getStepStatus(CancelStep.CONFIRM_TX, state) },
+      { step: CANCEL_CONDITIONAL_STEPS.PREPARE, status: prepareStepStatus },
+      { step: CANCEL_CONDITIONAL_STEPS.NETWORK, status: getStepStatus(CANCEL_CONDITIONAL_STEPS.NETWORK, ctx.state) },
+      { step: CANCEL_CONDITIONAL_STEPS.SUBMIT_CANCEL, status: getStepStatus(CANCEL_CONDITIONAL_STEPS.SUBMIT_CANCEL, ctx.state) },
+      { step: CANCEL_CONDITIONAL_STEPS.CONFIRM_TX, status: getStepStatus(CANCEL_CONDITIONAL_STEPS.CONFIRM_TX, ctx.state) },
     ],
-    error: state.error,
-    cancelTxHash: state.cancelTxHash,
+    error: ctx.state.error,
+    cancelTxHash: ctx.state.meta.cancelTxHash,
   }
 }
