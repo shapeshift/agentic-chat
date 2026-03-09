@@ -68,13 +68,15 @@ describe('withRetry', () => {
 
   it('logs retry attempts', async () => {
     const logs: string[] = []
-    const originalLog = console.log
-    console.log = (...args: unknown[]) => logs.push(args.join(' '))
+    const originalWarn = console.warn
+    console.warn = (...args: unknown[]) => logs.push(args.join(' '))
 
-    const fn = mock(() => Promise.reject(new Error('ECONNRESET')))
-    await withRetry(fn, { maxRetries: 2, initialDelayMs: 1 }).catch(() => {})
-
-    console.log = originalLog
+    try {
+      const fn = mock(() => Promise.reject(new Error('ECONNRESET')))
+      await withRetry(fn, { maxRetries: 2, initialDelayMs: 1 }).catch(() => {})
+    } finally {
+      console.warn = originalWarn
+    }
 
     expect(logs.some(l => l.includes('Retrying'))).toBe(true)
     expect(logs.some(l => l.includes('1/2'))).toBe(true)
