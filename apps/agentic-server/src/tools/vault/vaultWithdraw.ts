@@ -5,7 +5,7 @@ import { z } from 'zod'
 
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
-import { getBalance, validateSufficientBalance } from '../../utils/balanceHelpers'
+import { getBalance } from '../../utils/balanceHelpers'
 import { getCommittedAmountForToken } from '../../utils/committedBalances'
 import { getAddressForChain, getSafeAddressForChain, isSafeReadyOnChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
@@ -54,20 +54,24 @@ export async function executeVaultWithdraw(
   const asset = await resolveAsset({ symbolOrName: input.asset, network: input.network }, walletContext)
   const toAddress = getAddressForChain(walletContext, asset.chainId)
 
-  await validateSufficientBalance(safeAddress, asset, input.amount)
-
   const isNative = isNativeToken(asset)
   const amountBaseUnit = toBaseUnit(input.amount, asset.precision)
+  const requestedBigInt = toBigInt(amountBaseUnit)
   const warnings: string[] = []
+
+  const balance = await getBalance(safeAddress, asset)
+  const balanceBigInt = toBigInt(balance)
+
+  if (balanceBigInt < requestedBigInt) {
+    const available = fromBaseUnit(balance, asset.precision)
+    throw new Error(`Insufficient ${asset.symbol} balance. Required: ${input.amount}, Available: ${available}`)
+  }
 
   if (!isNative) {
     const tokenAddress = fromAssetId(asset.assetId).assetReference
     const committedAmount = await getCommittedAmountForToken(walletContext, safeAddress, chainId, tokenAddress)
 
     if (committedAmount > 0n) {
-      const balance = await getBalance(safeAddress, asset)
-      const balanceBigInt = toBigInt(balance)
-      const requestedBigInt = toBigInt(amountBaseUnit)
       const available = balanceBigInt > committedAmount ? balanceBigInt - committedAmount : 0n
       const committedHuman = fromBaseUnit(committedAmount.toString(), asset.precision)
 
