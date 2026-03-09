@@ -83,6 +83,7 @@ export interface CreateTwapOutput {
   sellPrecision: number
   buyPrecision: number
   durationSeconds: number
+  warnings?: string[]
 }
 
 const TWAP_SLIPPAGE_BUFFER = 0.95 // 5% buffer (wider than stop-loss 2% since TWAP executes over time)
@@ -174,6 +175,23 @@ export async function executeCreateTwap(
     )
   }
 
+  const MIN_USD_PER_PART: Record<number, number> = {
+    1: 10, // Ethereum mainnet
+    100: 2, // Gnosis
+    42161: 2, // Arbitrum
+  }
+  const minUsd = MIN_USD_PER_PART[evmChainId] ?? 2
+
+  const partSellHuman = new BigNumber(partSellAmount.toString()).div(new BigNumber(10).pow(sellAsset.precision))
+  const partUsdValue = partSellHuman.times(sellAssetPrice).toNumber()
+
+  const warnings: string[] = []
+  if (partUsdValue > 0 && partUsdValue < minUsd) {
+    warnings.push(
+      `Each part is worth ~$${partUsdValue.toFixed(2)} USD, below the recommended minimum of $${minUsd}. CoW solvers may not fill orders this small. Consider increasing the total amount or reducing the number of intervals.`
+    )
+  }
+
   if (minPartLimit === 0n) {
     throw new Error(
       'Unable to calculate minimum buy amount — price data is unavailable for one or both assets. The order would have no slippage protection.'
@@ -220,6 +238,7 @@ export async function executeCreateTwap(
   }
 
   return {
+    warnings: warnings.length > 0 ? warnings : undefined,
     summary,
     safeTransaction: { ...safeTransaction, chainId: evmChainId },
     needsApproval,
