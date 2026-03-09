@@ -7,25 +7,25 @@ import type {
   SwapActivityDetails,
 } from '@/types/activity'
 
-import type { PersistedToolState } from '../stores/chatStore'
+import type { LimitOrderMeta, SendMeta, SwapMeta, ToolExecutionState } from './executionState'
 
-export function normalizeToActivityItem(tx: PersistedToolState): ActivityItem | null {
+export function normalizeToActivityItem(tx: ToolExecutionState): ActivityItem | null {
   switch (tx.toolType) {
     case 'swap':
-      return normalizeSwapActivity(tx)
+      return normalizeSwapActivity(tx as ToolExecutionState<SwapMeta>)
     case 'send':
-      return normalizeSendActivity(tx)
+      return normalizeSendActivity(tx as ToolExecutionState<SendMeta>)
     case 'limit_order':
-      return normalizeLimitOrderActivity(tx)
+      return normalizeLimitOrderActivity(tx as ToolExecutionState<LimitOrderMeta>)
     default:
       return null
   }
 }
 
-function normalizeSwapActivity(tx: PersistedToolState): ActivityItem | null {
+function normalizeSwapActivity(tx: ToolExecutionState<SwapMeta>): ActivityItem | null {
   const output = tx.toolOutput as InitiateSwapOutput | undefined
-  const swapTxHash = tx.meta.swapTxHash as string | undefined
-  const approvalTxHash = tx.meta.approvalTxHash as string | undefined
+  const swapTxHash = tx.meta.swapTxHash
+  const approvalTxHash = tx.meta.approvalTxHash
 
   if (!output?.summary?.sellAsset || !output?.summary?.buyAsset || !swapTxHash) return null
 
@@ -61,9 +61,9 @@ function normalizeSwapActivity(tx: PersistedToolState): ActivityItem | null {
   }
 }
 
-function normalizeSendActivity(tx: PersistedToolState): ActivityItem | null {
+function normalizeSendActivity(tx: ToolExecutionState<SendMeta>): ActivityItem | null {
   const output = tx.toolOutput as SendOutput | undefined
-  const sendTxHash = tx.meta.sendTxHash as string | undefined
+  const sendTxHash = tx.meta.sendTxHash
 
   if (!output?.summary || !sendTxHash) return null
 
@@ -89,9 +89,9 @@ function normalizeSendActivity(tx: PersistedToolState): ActivityItem | null {
   }
 }
 
-function normalizeLimitOrderActivity(tx: PersistedToolState): ActivityItem | null {
+function normalizeLimitOrderActivity(tx: ToolExecutionState<LimitOrderMeta>): ActivityItem | null {
   const output = tx.toolOutput as CreateLimitOrderOutput | undefined
-  const orderId = tx.meta.orderId as string | undefined
+  const orderId = tx.meta.orderId
 
   if (!output?.summary || !orderId) return null
 
