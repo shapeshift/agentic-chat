@@ -5,6 +5,7 @@ import axios from 'axios'
 
 import { DEFAULT_FEE_BPS, DAO_TREASURY_BASE } from '../../lib/fees/constants'
 import { getChainAdapter } from '../chains/relayAdapterRegistry'
+import { withRetry } from '../retry'
 
 import type { RelayFetchQuoteParams, RelayQuote } from './types'
 
@@ -26,26 +27,28 @@ export const getRelayRate = async ({
   const buyAddress = recipientAddress || address
 
   try {
-    const { data } = await axios.post<RelayQuote>('https://api.relay.link/quote', {
-      user: sellAddress,
-      recipient: buyAddress,
-      refundTo: sellAddress,
-      refundOnOrigin: true,
-      originChainId,
-      originCurrency: sellAdapter.getRelayAssetAddress(sellAsset),
-      destinationCurrency: buyAdapter.getRelayAssetAddress(buyAsset),
-      destinationChainId,
-      tradeType: 'EXACT_INPUT',
-      amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
-      slippageTolerance: undefined,
-      referrer: 'shapeshift',
-      appFees: [
-        {
-          recipient: DAO_TREASURY_BASE,
-          fee: DEFAULT_FEE_BPS,
-        },
-      ],
-    } as RelayFetchQuoteParams)
+    const { data } = await withRetry(() =>
+      axios.post<RelayQuote>('https://api.relay.link/quote', {
+        user: sellAddress,
+        recipient: buyAddress,
+        refundTo: sellAddress,
+        refundOnOrigin: true,
+        originChainId,
+        originCurrency: sellAdapter.getRelayAssetAddress(sellAsset),
+        destinationCurrency: buyAdapter.getRelayAssetAddress(buyAsset),
+        destinationChainId,
+        tradeType: 'EXACT_INPUT',
+        amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
+        slippageTolerance: undefined,
+        referrer: 'shapeshift',
+        appFees: [
+          {
+            recipient: DAO_TREASURY_BASE,
+            fee: DEFAULT_FEE_BPS,
+          },
+        ],
+      } as RelayFetchQuoteParams)
+    )
 
     const buyAmountCryptoBaseUnit = data.details.currencyOut.amount
     const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, buyAsset.precision)

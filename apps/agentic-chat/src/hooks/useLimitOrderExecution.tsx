@@ -13,6 +13,7 @@ import { analytics } from '@/lib/mixpanel'
 import { createStepPhaseMap, getStepStatus, signTypedDataWithWallet, StepStatus } from '@/lib/stepUtils'
 import type { PersistedToolState } from '@/stores/chatStore'
 import { useChatStore } from '@/stores/chatStore'
+import { withRetry } from '@/utils/retry'
 import { executeApproval } from '@/utils/swapExecutor'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
@@ -130,25 +131,27 @@ export async function submitSignedOrder(
     from: orderParams.receiver,
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/orders`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(orderPayload),
+  return withRetry(async () => {
+    const response = await fetch(`${apiUrl}/api/v1/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderPayload),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Failed to submit order to CoW: ${errorText}`)
+    }
+
+    const orderId = await response.text()
+    const cleanOrderId = orderId.replace(/"/g, '')
+    if (!cleanOrderId || cleanOrderId.length < 10) {
+      throw new Error(`Invalid order ID received from CoW: ${cleanOrderId}`)
+    }
+    return cleanOrderId
   })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Failed to submit order to CoW: ${errorText}`)
-  }
-
-  const orderId = await response.text()
-  const cleanOrderId = orderId.replace(/"/g, '')
-  if (!cleanOrderId || cleanOrderId.length < 10) {
-    throw new Error(`Invalid order ID received from CoW: ${cleanOrderId}`)
-  }
-  return cleanOrderId
 }
 
 export const useLimitOrderExecution = (

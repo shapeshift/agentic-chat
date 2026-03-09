@@ -160,4 +160,18 @@ describe('submitSignedOrder', () => {
       expect((error as Error).message).toContain('Invalid order ID')
     }
   })
+
+  it('retries on transient network failures', async () => {
+    let attempts = 0
+
+    mockFetch(async () => {
+      attempts++
+      if (attempts < 2) throw new Error('fetch failed')
+      return new Response('"0xretryOrderId"', { status: 200 })
+    })
+
+    const result = await submitSignedOrder(1, {} as any, { message: { appData: '' } } as any, '0xsig')
+    expect(result).toBe('0xretryOrderId')
+    expect(attempts).toBe(2)
+  })
 })
