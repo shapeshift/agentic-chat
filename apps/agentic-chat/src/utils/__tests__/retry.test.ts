@@ -60,9 +60,9 @@ describe('withRetry', () => {
     // First retry delay ~50ms, second ~100ms
     const delay1 = timestamps[1] - timestamps[0]
     const delay2 = timestamps[2] - timestamps[1]
-    expect(delay1).toBeGreaterThanOrEqual(40)
+    expect(delay1).toBeGreaterThanOrEqual(30)
     expect(delay1).toBeLessThan(150)
-    expect(delay2).toBeGreaterThanOrEqual(80)
+    expect(delay2).toBeGreaterThanOrEqual(60)
     expect(delay2).toBeLessThan(300)
   })
 

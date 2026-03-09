@@ -14,6 +14,7 @@ function isRetryableError(error: unknown): boolean {
   if (axios.isAxiosError(error)) {
     if (error.response && RETRYABLE_STATUS_CODES.has(error.response.status)) return true
     if (error.code && RETRYABLE_ERROR_CODES.has(error.code)) return true
+    return false
   }
 
   if (error instanceof Error) {
@@ -46,7 +47,8 @@ export async function withRetry<T>(
 
       if (!isRetryableError(error) || attempt === maxRetries) throw lastError
 
-      const delayMs = initialDelayMs * Math.pow(2, attempt)
+      const jitter = 0.75 + Math.random() * 0.5
+      const delayMs = initialDelayMs * Math.pow(2, attempt) * jitter
       console.warn(`[retry] Attempt ${attempt + 1}/${maxRetries} after ${delayMs}ms: ${lastError.message}`)
       await new Promise(resolve => setTimeout(resolve, delayMs))
     }

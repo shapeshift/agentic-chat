@@ -22,7 +22,8 @@ export async function withRetry<T>(
 
       if (!isRetryableError(error) || attempt === maxRetries) throw lastError
 
-      const delayMs = initialDelayMs * Math.pow(2, attempt)
+      const jitter = 0.75 + Math.random() * 0.5
+      const delayMs = initialDelayMs * Math.pow(2, attempt) * jitter
       console.warn(`Retrying (${attempt + 1}/${maxRetries}) after error: ${lastError.message}`)
       await new Promise(resolve => setTimeout(resolve, delayMs))
     }
