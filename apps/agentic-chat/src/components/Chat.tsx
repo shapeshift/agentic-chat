@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
+import { Virtuoso } from 'react-virtuoso'
 
 import { useStreamPauseDetector } from '../hooks/useStreamPauseDetector'
 import { useChatContext } from '../providers/ChatProvider'
@@ -18,12 +19,7 @@ const WELCOME_SUGGESTIONS = [
 
 export function Chat() {
   const { messages, sendMessage, status, error } = useChatContext()
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const viewportRef = useRef<HTMLDivElement>(null)
   const shouldAutoScrollRef = useRef(true)
-
-  const lastMessage = messages[messages.length - 1]
-  const hasMessages = messages.length > 0
 
   const lastMessageContent = useMemo(() => {
     const assistantMessages = messages.filter(m => m.role === 'assistant')
@@ -38,83 +34,83 @@ export function Chat() {
   const isStreaming = status === 'submitted' || status === 'streaming'
   const isPaused = useStreamPauseDetector(isStreaming, lastMessageContent)
 
-  // Scroll event listener to continuously track user position
-  useEffect(() => {
-    const viewport = viewportRef.current
-    if (!viewport) return
-
-    const handleScroll = () => {
-      const isNearBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 100
-      shouldAutoScrollRef.current = isNearBottom
-    }
-
-    viewport.addEventListener('scroll', handleScroll, { passive: true })
-    return () => viewport.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // Initial scroll when messages first load (e.g., opening a conversation)
-  useEffect(() => {
-    if (!hasMessages) return
-
-    requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-      shouldAutoScrollRef.current = true
-    })
-  }, [hasMessages])
-
-  // Auto-scroll during streaming, new messages, and loading indicator appearance
-  useEffect(() => {
-    if (!shouldAutoScrollRef.current) return
-
-    messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' })
-  }, [lastMessage, isPaused])
-
   const handleSuggestionClick = (suggestion: string) => {
-    void sendMessage({
-      text: suggestion,
-    })
+    void sendMessage({ text: suggestion })
   }
 
   const isEmpty = messages.length === 0
 
+  const items = useMemo(() => {
+    const result: Array<{ type: 'message'; index: number } | { type: 'loading' } | { type: 'error' }> = messages.map(
+      (_, index) => ({ type: 'message' as const, index })
+    )
+    if (isPaused) result.push({ type: 'loading' as const })
+    if (error && status === 'error') result.push({ type: 'error' as const })
+    return result
+  }, [messages, isPaused, error, status])
+
+  const itemContent = useCallback(
+    (_index: number, item: (typeof items)[number]) => {
+      if (item.type === 'loading') {
+        return (
+          <div className="mx-auto max-w-2xl px-4 py-2">
+            <LoadingIndicator />
+          </div>
+        )
+      }
+
+      if (item.type === 'error') {
+        return (
+          <div className="mx-auto max-w-2xl px-4 py-2">
+            <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
+              <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
+              <div className="flex flex-col gap-1">
+                <div className="font-medium text-red-800 dark:text-red-200">Something went wrong</div>
+                <div className="text-sm text-red-600 dark:text-red-400">
+                  The service is temporarily unavailable. Please try again.
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      const message = messages[item.index]
+      if (!message) return null
+
+      return (
+        <div className="mx-auto max-w-2xl px-4 py-2">
+          {message.role === 'user' && <UserMessage message={message} />}
+          {message.role === 'assistant' && <AssistantMessage message={message} />}
+        </div>
+      )
+    },
+    [messages]
+  )
+
   return (
     <div className="flex h-full flex-col">
       {/* Messages viewport */}
-      <div ref={viewportRef} className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-hidden">
         {isEmpty ? (
           <div className="flex h-full items-center justify-center">
             <div className="text-lg text-foreground">How can I help you today?</div>
           </div>
         ) : (
-          <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
-            {messages.map(message => {
-              if (message.role === 'user') {
-                return <UserMessage key={message.id} message={message} />
-              }
-
-              if (message.role === 'assistant') {
-                return <AssistantMessage key={message.id} message={message} />
-              }
-
-              return null
-            })}
-
-            {isPaused && <LoadingIndicator />}
-
-            {error && status === 'error' && (
-              <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-                <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
-                <div className="flex flex-col gap-1">
-                  <div className="font-medium text-red-800 dark:text-red-200">Something went wrong</div>
-                  <div className="text-sm text-red-600 dark:text-red-400">
-                    The service is temporarily unavailable. Please try again.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
+          <Virtuoso
+            data={items}
+            itemContent={itemContent}
+            initialTopMostItemIndex={items.length - 1}
+            followOutput={isActive => {
+              if (!shouldAutoScrollRef.current) return false
+              return isActive ? 'auto' : false
+            }}
+            atBottomStateChange={atBottom => {
+              shouldAutoScrollRef.current = atBottom
+            }}
+            atBottomThreshold={100}
+            style={{ height: '100%' }}
+          />
         )}
       </div>
 

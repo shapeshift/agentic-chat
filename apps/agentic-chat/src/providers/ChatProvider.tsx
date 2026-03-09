@@ -6,7 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { analytics } from '@/lib/mixpanel'
-import { useChatStore } from '@/stores/chatStore'
+import { useChatStore, MAX_MESSAGES_PER_CONVERSATION } from '@/stores/chatStore'
 import { useOrderStore } from '@/stores/orderStore'
 import { generateConversationId, extractTitleFromMessages } from '@/utils/conversationStorage'
 
@@ -16,6 +16,7 @@ interface ChatContextValue {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   isLoading: boolean
+  isAtMessageLimit: boolean
   sendMessage: ReturnType<typeof useChat>['sendMessage']
   setInput: (input: string) => void
   status: ReturnType<typeof useChat>['status']
@@ -134,6 +135,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
       if (!input.trim()) return
+      if (chat.messages.length >= MAX_MESSAGES_PER_CONVERSATION) return
 
       const messageToSend = input
       setInput('')
@@ -154,9 +156,19 @@ export function ChatProvider({ children }: ChatProviderProps) {
     [handleSubmit]
   )
 
+  const guardedSendMessage = useCallback(
+    async (params: Parameters<typeof chat.sendMessage>[0]) => {
+      if (chat.messages.length >= MAX_MESSAGES_PER_CONVERSATION) return
+      await chat.sendMessage(params)
+    },
+    [chat]
+  )
+
   const stopCallback = useCallback(() => {
     void chat.stop()
   }, [chat])
+
+  const isAtMessageLimit = chat.messages.length >= MAX_MESSAGES_PER_CONVERSATION
 
   const value = useMemo<ChatContextValue>(
     () => ({
@@ -165,7 +177,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
       handleInputChange,
       handleSubmit: handleSubmitCallback,
       isLoading: chat.status === 'submitted' || chat.status === 'streaming',
-      sendMessage: chat.sendMessage,
+      isAtMessageLimit,
+      sendMessage: guardedSendMessage,
       setInput,
       status: chat.status,
       stop: stopCallback,
@@ -173,10 +186,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }),
     [
       chat.messages,
-      chat.sendMessage,
+      guardedSendMessage,
       chat.status,
       chat.error,
       input,
+      isAtMessageLimit,
       handleInputChange,
       handleSubmitCallback,
       stopCallback,
