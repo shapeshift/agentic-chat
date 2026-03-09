@@ -10,7 +10,7 @@ import type { ActiveOrderSummary, WalletContext } from '../../utils/walletContex
 
 export const getTwapOrdersSchema = z.object({
   status: z
-    .enum(['open', 'fulfilled', 'cancelled', 'expired', 'all'])
+    .enum(['open', 'fulfilled', 'cancelled', 'expired', 'failed', 'partiallyFilled', 'all'])
     .optional()
     .default('all')
     .describe('Filter orders by status. Default is "all".'),
@@ -59,12 +59,31 @@ function mapRegistryOrderToInfo(order: ActiveOrderSummary, network: string, stat
   }
 }
 
-function isTwapFulfilled(order: ActiveOrderSummary, cowOrders: CowOrder[]): boolean {
+export function deriveTwapStatus(
+  order: ActiveOrderSummary,
+  cowOrders: CowOrder[],
+  isActive: boolean,
+  nowSeconds: number,
+  cowApiFailed: boolean,
+): CowOrderStatus {
+  if (!isActive) return 'cancelled'
+  if (order.validTo > 0 && order.validTo < nowSeconds) {
+    const numParts = order.numParts
+    if (cowApiFailed || !numParts || numParts <= 0) return 'expired'
+    const filledCount = getTwapFilledPartCount(order, cowOrders)
+    if (filledCount >= numParts) return 'fulfilled'
+    if (filledCount === 0) return 'failed'
+    return 'partiallyFilled'
+  }
+  return 'open'
+}
+
+export function getTwapFilledPartCount(order: ActiveOrderSummary, cowOrders: CowOrder[]): number {
   const numParts = order.numParts
-  if (!numParts || numParts <= 0) return false
+  if (!numParts || numParts <= 0) return 0
 
   const totalSell = toBigInt(order.sellAmountBaseUnit)
-  if (totalSell === 0n) return false
+  if (totalSell === 0n) return 0
 
   const expectedPartAmount = totalSell / BigInt(numParts)
   const twapStartSeconds = Math.floor(order.createdAt / 1000)
@@ -80,7 +99,7 @@ function isTwapFulfilled(order: ActiveOrderSummary, cowOrders: CowOrder[]): bool
     return cowCreatedSeconds >= twapStartSeconds && cowCreatedSeconds <= order.validTo
   })
 
-  return matchingFilledParts.length >= numParts
+  return matchingFilledParts.length
 }
 
 async function getRegistryOrders(
@@ -104,26 +123,18 @@ async function getRegistryOrders(
   )
 
   let cowOrders: CowOrder[] = []
+  let cowApiFailed = false
   if (needsFulfillmentCheck) {
     try {
       cowOrders = await getCowOrders(safeAddress, chainId)
     } catch {
-      // CoW API failure - fall back to 'expired' for past-validTo orders
+      cowApiFailed = true
     }
   }
 
   return chainOrders.map((order, i) => {
-    let derivedStatus: CowOrderStatus
-    if (!activeResults[i]) {
-      // Only remove() clears singleOrders on-chain → this was explicitly cancelled
-      derivedStatus = 'cancelled'
-    } else if (order.validTo > 0 && order.validTo < nowSeconds) {
-      // On-chain active but TWAP window ended → check CoW API for fills
-      derivedStatus = isTwapFulfilled(order, cowOrders) ? 'fulfilled' : 'expired'
-    } else {
-      derivedStatus = 'open'
-    }
-    return mapRegistryOrderToInfo(order, network, derivedStatus)
+    const status = deriveTwapStatus(order, cowOrders, !!activeResults[i], nowSeconds, cowApiFailed)
+    return mapRegistryOrderToInfo(order, network, status)
   })
 }
 
@@ -173,7 +184,7 @@ export async function executeGetTwapOrders(
 export const getTwapOrdersTool = {
   description: `Get the user's TWAP/DCA orders from CoW Protocol.
 
-UI CARD DISPLAYS: list of TWAP/DCA orders with status badges (Active/Fulfilled/Cancelled/Expired), amounts, and CoW tracking links.
+UI CARD DISPLAYS: list of TWAP/DCA orders with status badges (Active/Fulfilled/Cancelled/Expired/Failed/Partially Filled), amounts, and CoW tracking links.
 
 Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
 

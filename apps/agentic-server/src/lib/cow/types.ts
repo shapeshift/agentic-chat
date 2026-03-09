@@ -2,7 +2,7 @@
  * CoW Protocol types for limit orders
  */
 
-export type CowOrderStatus = 'open' | 'submitted' | 'fulfilled' | 'cancelled' | 'expired'
+export type CowOrderStatus = 'open' | 'submitted' | 'fulfilled' | 'cancelled' | 'expired' | 'failed' | 'partiallyFilled'
 
 export interface CowOrder {
   uid: string
