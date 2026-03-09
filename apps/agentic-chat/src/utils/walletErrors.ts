@@ -40,14 +40,17 @@ const RETRYABLE_PATTERNS = [
   'status 429',
   'status 502',
   'status 503',
+  'status 504',
 ]
 
 const NON_RETRYABLE_PATTERNS = [
   'insufficient funds',
   'exceeds balance',
   'execution reverted',
-  'revert',
-  'invalid',
+  'transaction reverted',
+  'invalid parameter',
+  'invalid argument',
+  'invalid address',
   'bad request',
   'status 400',
   'status 401',
