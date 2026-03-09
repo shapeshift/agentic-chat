@@ -16,6 +16,7 @@ import type { Address } from 'viem'
 import { getAddress } from 'viem'
 
 import { DEFAULT_FEE_BPS } from '../../lib/fees/constants'
+import { withRetry } from '../retry'
 
 import type { BebopResponse } from './types'
 
@@ -66,10 +67,12 @@ export const getBebopRate = async ({
   }
 
   try {
-    const { data } = await axios.get<BebopResponse>(`https://api.bebop.xyz/router/${bebopNetwork}/v1/quote`, {
-      headers: { 'source-auth': BEBOP_API_KEY },
-      params: requestParams,
-    })
+    const { data } = await withRetry(() =>
+      axios.get<BebopResponse>(`https://api.bebop.xyz/router/${bebopNetwork}/v1/quote`, {
+        headers: { 'source-auth': BEBOP_API_KEY },
+        params: requestParams,
+      })
+    )
 
     if (!data.routes?.[0]?.quote) throw new Error('No routes found in Bebop response')
 
