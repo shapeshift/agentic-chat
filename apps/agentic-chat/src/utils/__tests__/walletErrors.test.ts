@@ -4,19 +4,14 @@ import { isRetryableError } from '../walletErrors'
 
 describe('isRetryableError', () => {
   describe('retryable errors', () => {
-    it.each([
-      'ETIMEDOUT',
-      'ECONNRESET',
-      'ECONNREFUSED',
-      'fetch failed',
-      'network error',
-      'EHOSTUNREACH',
-      'timeout',
-    ])('returns true for network error: %s', (msg) => {
-      expect(isRetryableError(new Error(msg))).toBe(true)
-    })
+    it.each(['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'fetch failed', 'network error', 'EHOSTUNREACH', 'timeout'])(
+      'returns true for network error: %s',
+      msg => {
+        expect(isRetryableError(new Error(msg))).toBe(true)
+      }
+    )
 
-    it.each([502, 503, 504, 429])('returns true for HTTP status %d', (status) => {
+    it.each([502, 503, 504, 429])('returns true for HTTP status %d', status => {
       expect(isRetryableError(new Error(`Request failed with status ${status}`))).toBe(true)
     })
 
@@ -35,28 +30,20 @@ describe('isRetryableError', () => {
       expect(isRetryableError(err)).toBe(false)
     })
 
-    it.each([
-      'insufficient funds for gas',
-      'exceeds balance',
-    ])('returns false for balance error: %s', (msg) => {
+    it.each(['insufficient funds for gas', 'exceeds balance'])('returns false for balance error: %s', msg => {
       expect(isRetryableError(new Error(msg))).toBe(false)
     })
 
-    it.each([
-      'execution reverted',
-      'transaction reverted',
-    ])('returns false for contract revert: %s', (msg) => {
+    it.each(['execution reverted', 'transaction reverted'])('returns false for contract revert: %s', msg => {
       expect(isRetryableError(new Error(msg))).toBe(false)
     })
 
-    it.each([
-      'invalid parameter',
-      'invalid argument',
-      'invalid address',
-      'bad request',
-    ])('returns false for bad request: %s', (msg) => {
-      expect(isRetryableError(new Error(msg))).toBe(false)
-    })
+    it.each(['invalid parameter', 'invalid argument', 'invalid address', 'bad request'])(
+      'returns false for bad request: %s',
+      msg => {
+        expect(isRetryableError(new Error(msg))).toBe(false)
+      }
+    )
 
     it('does not false-positive on transient errors containing "invalid"', () => {
       expect(isRetryableError(new Error('invalid JSON in response'))).toBe(false)

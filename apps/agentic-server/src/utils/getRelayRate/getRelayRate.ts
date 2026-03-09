@@ -4,8 +4,8 @@ import { fromBaseUnit, toBaseUnit } from '@shapeshiftoss/utils'
 import axios from 'axios'
 
 import { DEFAULT_FEE_BPS, DAO_TREASURY_BASE } from '../../lib/fees/constants'
-import { withRetry } from '../retry'
 import { getChainAdapter } from '../chains/relayAdapterRegistry'
+import { withRetry } from '../retry'
 
 import type { RelayFetchQuoteParams, RelayQuote } from './types'
 
