@@ -1,94 +1,30 @@
-import { isEthereumWallet } from '@dynamic-labs/ethereum'
-import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
-import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { SendOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import type { DynamicToolUIPart } from 'ai'
-import { current } from 'immer'
-import { useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
+import type { ToolExecutionState, SendMeta } from '@/lib/executionState'
+import { getStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
-import { createStepPhaseMap, getStepStatus, StepStatus } from '@/lib/stepUtils'
-import type { PersistedToolState } from '@/stores/chatStore'
-import { useChatStore } from '@/stores/chatStore'
+import { StepStatus } from '@/lib/stepUtils'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeSend } from '@/utils/sendExecutor'
 
-import { useToolExecutionEffect } from './useToolExecutionEffect'
-import { useWalletConnection } from './useWalletConnection'
+import { switchNetworkStep } from './steps/switchNetworkStep'
+import { useExecuteOnce } from './useExecuteOnce'
+import { useToolExecution } from './useToolExecution'
+
+export const SEND_STEPS = { PREPARE: 0, NETWORK: 1, SEND: 2 } as const
 
 type SendData = SendOutput
 
-export enum SendStep {
-  PREPARATION = 0,
-  NETWORK_SWITCH = 1,
-  SEND = 2,
-  COMPLETE = 3,
-}
-
-export { StepStatus }
-
-const SEND_PHASES = createStepPhaseMap<SendStep>({
-  [SendStep.PREPARATION]: 'preparation_complete',
-  [SendStep.NETWORK_SWITCH]: 'network_switched',
-  [SendStep.SEND]: 'send_complete',
-})
-
-interface SendState {
-  currentStep: SendStep
-  completedSteps: Set<SendStep>
-  sendTxHash?: string
-  error?: string
-  failedStep?: SendStep
-}
-
-const initialSendState: SendState = {
-  currentStep: SendStep.PREPARATION,
-  completedSteps: new Set(),
-}
-
-export function sendStateToPersistedState(
-  toolCallId: string,
-  state: SendState,
-  conversationId: string,
-  sendOutput: SendOutput | null,
-  networkName?: string,
-  walletAddress?: string
-): PersistedToolState {
-  return {
-    toolCallId,
-    toolType: 'send',
-    conversationId,
-    timestamp: Date.now(),
-    phases: SEND_PHASES.toPhases(state.completedSteps, state.error),
-    meta: {
-      ...(state.sendTxHash && { sendTxHash: state.sendTxHash }),
-      ...(state.error && { error: state.error }),
-      ...(state.failedStep !== undefined && { failedStep: state.failedStep }),
-      ...(networkName && { networkName }),
-    },
-    ...(sendOutput && { toolOutput: sendOutput }),
-    ...(walletAddress && { walletAddress }),
-  }
-}
-
-export function persistedStateToSendState(persisted: PersistedToolState): SendState {
-  return {
-    currentStep: SendStep.COMPLETE,
-    completedSteps: SEND_PHASES.fromPhases(persisted.phases),
-    sendTxHash: persisted.meta.sendTxHash as string | undefined,
-    error: persisted.meta.error as string | undefined,
-    failedStep: persisted.meta.failedStep as SendStep | undefined,
-  }
-}
-
-export interface SendStepInfo {
-  step: SendStep
+interface SendStepInfo {
+  step: number
   status: StepStatus
 }
 
 interface UseSendExecutionResult {
+  state: ToolExecutionState<SendMeta>
   steps: SendStepInfo[]
   networkName?: string
   error?: string
@@ -100,46 +36,9 @@ export const useSendExecution = (
   toolState: DynamicToolUIPart['state'],
   sendData: SendData | null
 ): UseSendExecutionResult => {
-  const { evmAddress, solanaAddress, solanaWallet, evmWallet } = useWalletConnection()
-  const store = useChatStore()
-  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
-  const { primaryWallet } = useDynamicContext()
-  const changePrimaryWallet = useSwitchWallet()
+  const ctx = useToolExecution<SendMeta>(toolCallId, 'send', {})
 
-  const evmAddressRef = useRef(evmAddress)
-  const solanaAddressRef = useRef(solanaAddress)
-  const solanaWalletRef = useRef(solanaWallet)
-  const evmWalletRef = useRef(evmWallet)
-  const activeConversationIdRef = useRef(activeConversationId)
-  const primaryWalletRef = useRef(primaryWallet)
-  evmAddressRef.current = evmAddress
-  solanaAddressRef.current = solanaAddress
-  solanaWalletRef.current = solanaWallet
-  evmWalletRef.current = evmWallet
-  activeConversationIdRef.current = activeConversationId
-  primaryWalletRef.current = primaryWallet
-
-  const hasHydratedRef = useRef(false)
-  const lastToolCallIdRef = useRef<string | undefined>(undefined)
-  useEffect(() => {
-    if (lastToolCallIdRef.current !== toolCallId) {
-      hasHydratedRef.current = false
-      lastToolCallIdRef.current = toolCallId
-    }
-
-    if (!hasHydratedRef.current && !store.runtimeToolStates.has(toolCallId)) {
-      const persisted = store.getPersistedTransaction(toolCallId)
-      if (persisted) {
-        const hydratedState = persistedStateToSendState(persisted)
-        store.initializeRuntimeState(toolCallId, hydratedState)
-        hasHydratedRef.current = true
-      }
-    }
-  }, [toolCallId, store])
-
-  const { state } = useToolExecutionEffect(toolCallId, sendData, initialSendState, async (data, setState) => {
-    let sendTxHash: string | undefined
-
+  useExecuteOnce(ctx, sendData, async (data, ctx) => {
     try {
       const { tx } = data
 
@@ -148,126 +47,59 @@ export const useSendExecution = (
       if (!data.sendData?.chainId) throw new Error('Invalid send output: missing sendData.chainId')
 
       const assetChainId = data.sendData.chainId
-      const { chainNamespace, chainReference } = fromChainId(assetChainId)
+      const { chainNamespace } = fromChainId(assetChainId)
 
-      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm ? evmAddressRef.current : solanaAddressRef.current
-      if (!currentAddress) {
-        throw new Error('Wallet disconnected. Please reconnect and try again.')
-      }
+      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm
+        ? ctx.refs.evmAddress.current
+        : ctx.refs.solanaAddress.current
+      if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
       if (currentAddress.toLowerCase() !== tx.from.toLowerCase()) {
         throw new Error('Wallet address changed. Please re-initiate the transaction.')
       }
 
-      // Step 0: Preparation (completed by this point)
-      setState(draft => {
-        draft.completedSteps.add(SendStep.PREPARATION)
-        draft.currentStep = SendStep.NETWORK_SWITCH
-        draft.error = undefined
-      })
-
-      // Step 1: Network Switch
-      // Non-EVM: no wallet network switch needed; skip step
-      if (chainNamespace !== CHAIN_NAMESPACE.Evm) {
-        if (
-          chainNamespace === CHAIN_NAMESPACE.Solana &&
-          solanaWalletRef.current &&
-          primaryWalletRef.current &&
-          !isSolanaWallet(primaryWalletRef.current)
-        ) {
-          await changePrimaryWallet(solanaWalletRef.current.id)
-        }
-
-        setState(draft => {
-          draft.completedSteps.add(SendStep.NETWORK_SWITCH)
-          draft.currentStep = (draft.currentStep + 1) as SendStep
-          draft.error = undefined
-        })
-      } else {
-        // EVM: always switch to the chain to avoid race conditions
-        const chainIdNumber = Number(chainReference)
-
-        if (!evmWalletRef.current) {
-          throw new Error('EVM wallet not connected')
-        }
-
-        if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
-          await changePrimaryWallet(evmWalletRef.current.id)
-        }
-
-        // EthereumWallet.connector has switchNetwork properly typed
-        await evmWalletRef.current.connector.switchNetwork({ networkChainId: chainIdNumber })
-
-        setState(draft => {
-          draft.completedSteps.add(draft.currentStep)
-          draft.currentStep = (draft.currentStep + 1) as SendStep
-          draft.error = undefined
-        })
+      let solanaSigner: SolanaWalletSigner | undefined
+      if (chainNamespace === CHAIN_NAMESPACE.Solana && ctx.refs.solanaWallet.current) {
+        solanaSigner = await ctx.refs.solanaWallet.current.getSigner()
       }
+
+      // Step 0: Preparation complete
+      ctx.setState(draft => {
+        draft.toolOutput = data
+        draft.meta.networkName = data.sendData.asset.network
+      })
+      ctx.advanceStep()
+
+      // Step 1: Network switch
+      await switchNetworkStep(ctx, assetChainId)
 
       // Step 2: Send
-      // Get Solana signer if needed - SolanaWallet has getSigner() directly on the class
-      let solanaSigner: SolanaWalletSigner | undefined
-      if (chainNamespace === CHAIN_NAMESPACE.Solana && solanaWalletRef.current) {
-        solanaSigner = await solanaWalletRef.current.getSigner()
-      }
+      const sendTxHash = await executeSend(tx, { solanaSigner })
+      ctx.setMeta({ sendTxHash })
+      ctx.advanceStep()
+      ctx.markTerminal()
+      ctx.persist()
 
-      sendTxHash = await executeSend(tx, { solanaSigner })
-
-      setState(draft => {
-        draft.sendTxHash = sendTxHash
-        draft.completedSteps.add(draft.currentStep)
-        draft.currentStep = SendStep.COMPLETE
-        draft.error = undefined
-      })
-
-      // Track successful send
       analytics.trackSend({
         asset: data.sendData.asset.symbol,
         amount: data.sendData.amount,
         network: data.sendData.asset.network,
       })
 
-      // Save terminal state with actual accumulated completedSteps
-      const finalState: SendState = {
-        currentStep: SendStep.COMPLETE,
-        completedSteps: new Set([SendStep.PREPARATION, SendStep.SEND]),
-        sendTxHash,
-      }
-      if (activeConversationIdRef.current) {
-        const persisted = sendStateToPersistedState(
-          toolCallId,
-          finalState,
-          activeConversationIdRef.current,
-          data,
-          data.sendData.asset.network,
-          evmAddress ?? solanaAddress
-        )
-        store.persistTransaction(persisted)
-      }
+      toast.success(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} is complete`)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      let errorState: SendState | undefined
-      setState(draft => {
+      ctx.setState(draft => {
         draft.error = errorMessage
         draft.failedStep = draft.currentStep
-        errorState = current(draft)
+        draft.terminal = true
       })
+      ctx.persist()
 
-      if (errorState && activeConversationIdRef.current) {
-        const persisted = sendStateToPersistedState(
-          toolCallId,
-          errorState,
-          activeConversationIdRef.current,
-          data,
-          data.sendData.asset.network,
-          evmAddress ?? solanaAddress
-        )
-        store.persistTransaction(persisted)
-      }
+      toast.error(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} failed`)
     }
   })
 
-  const preparationStepStatus = (() => {
+  const prepareStepStatus = (() => {
     if (toolState === 'output-error') return StepStatus.FAILED
     if (toolState === 'input-streaming' || toolState === 'input-available') return StepStatus.IN_PROGRESS
     if (toolState === 'output-available') return StepStatus.COMPLETE
@@ -275,13 +107,14 @@ export const useSendExecution = (
   })()
 
   return {
+    state: ctx.state,
     steps: [
-      { step: SendStep.PREPARATION, status: preparationStepStatus },
-      { step: SendStep.NETWORK_SWITCH, status: getStepStatus(SendStep.NETWORK_SWITCH, state) },
-      { step: SendStep.SEND, status: getStepStatus(SendStep.SEND, state) },
+      { step: SEND_STEPS.PREPARE, status: prepareStepStatus },
+      { step: SEND_STEPS.NETWORK, status: getStepStatus(SEND_STEPS.NETWORK, ctx.state) },
+      { step: SEND_STEPS.SEND, status: getStepStatus(SEND_STEPS.SEND, ctx.state) },
     ],
     networkName: sendData?.sendData?.asset?.network,
-    error: state.error,
-    sendTxHash: state.sendTxHash,
+    error: ctx.state.error,
+    sendTxHash: ctx.state.meta.sendTxHash,
   }
 }
