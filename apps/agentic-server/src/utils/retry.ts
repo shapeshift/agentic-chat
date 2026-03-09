@@ -1,14 +1,10 @@
+import { withRetry as _withRetry } from '@shapeshiftoss/utils'
+import type { RetryOptions as _RetryOptions } from '@shapeshiftoss/utils'
 import axios from 'axios'
 
 const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504])
 
-const RETRYABLE_ERROR_CODES = new Set([
-  'ETIMEDOUT',
-  'ECONNRESET',
-  'ECONNREFUSED',
-  'EHOSTUNREACH',
-  'ERR_NETWORK',
-])
+const RETRYABLE_ERROR_CODES = new Set(['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'EHOSTUNREACH', 'ERR_NETWORK'])
 
 function isRetryableError(error: unknown): boolean {
   if (axios.isAxiosError(error)) {
@@ -25,34 +21,8 @@ function isRetryableError(error: unknown): boolean {
   return false
 }
 
-interface RetryOptions {
-  maxRetries?: number
-  initialDelayMs?: number
-}
+export type RetryOptions = Omit<_RetryOptions, 'isRetryable'>
 
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options?: RetryOptions
-): Promise<T> {
-  const maxRetries = options?.maxRetries ?? 3
-  const initialDelayMs = options?.initialDelayMs ?? 1000
-
-  let lastError: Error | undefined
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn()
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error))
-
-      if (!isRetryableError(error) || attempt === maxRetries) throw lastError
-
-      const jitter = 0.75 + Math.random() * 0.5
-      const delayMs = initialDelayMs * Math.pow(2, attempt) * jitter
-      console.warn(`[retry] Attempt ${attempt + 1}/${maxRetries} after ${delayMs}ms: ${lastError.message}`)
-      await new Promise(resolve => setTimeout(resolve, delayMs))
-    }
-  }
-
-  throw lastError
+export function withRetry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T> {
+  return _withRetry(fn, { ...options, isRetryable: isRetryableError })
 }

@@ -25,26 +25,45 @@ describe('withRetry', () => {
 
   it('throws after exhausting retries', async () => {
     const fn = mock(() => Promise.reject(new Error('ECONNRESET')))
-    await expect(withRetry(fn, { maxRetries: 2, initialDelayMs: 1 })).rejects.toThrow('ECONNRESET')
+    try {
+      await withRetry(fn, { maxRetries: 2, initialDelayMs: 1 })
+      throw new Error('should not reach here')
+    } catch (e) {
+      expect((e as Error).message).toBe('ECONNRESET')
+    }
     expect(fn).toHaveBeenCalledTimes(3) // 1 initial + 2 retries
   })
 
   it('does not retry non-retryable errors', async () => {
     const fn = mock(() => Promise.reject(new Error('insufficient funds')))
-    await expect(withRetry(fn, { initialDelayMs: 1 })).rejects.toThrow('insufficient funds')
+    try {
+      await withRetry(fn, { initialDelayMs: 1 })
+      throw new Error('should not reach here')
+    } catch (e) {
+      expect((e as Error).message).toBe('insufficient funds')
+    }
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
   it('does not retry user cancellations', async () => {
-    const err = new Error('user rejected the request')
-    const fn = mock(() => Promise.reject(err))
-    await expect(withRetry(fn, { initialDelayMs: 1 })).rejects.toThrow('user rejected')
+    const fn = mock(() => Promise.reject(new Error('user rejected the request')))
+    try {
+      await withRetry(fn, { initialDelayMs: 1 })
+      throw new Error('should not reach here')
+    } catch (e) {
+      expect((e as Error).message).toInclude('user rejected')
+    }
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
   it('respects custom maxRetries', async () => {
     const fn = mock(() => Promise.reject(new Error('ETIMEDOUT')))
-    await expect(withRetry(fn, { maxRetries: 1, initialDelayMs: 1 })).rejects.toThrow('ETIMEDOUT')
+    try {
+      await withRetry(fn, { maxRetries: 1, initialDelayMs: 1 })
+      throw new Error('should not reach here')
+    } catch (e) {
+      expect((e as Error).message).toBe('ETIMEDOUT')
+    }
     expect(fn).toHaveBeenCalledTimes(2) // 1 initial + 1 retry
   })
 

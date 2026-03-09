@@ -32,6 +32,7 @@ export * from './assertUnreachable.js'
 export * from './getAssetNamespaceFromChainId.js'
 export * from './viem.js'
 export * from './networkIcons.js'
+export * from './retry.js'
 export * from './number.js'
 export { assetService } from './AssetService.js'
 
