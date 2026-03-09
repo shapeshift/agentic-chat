@@ -98,3 +98,24 @@ describe('getStepStatus (number[] version)', () => {
     expect(getStepStatus(2, state)).toBe(StepStatus.FAILED)
   })
 })
+
+describe('getStepStatus edge cases', () => {
+  it('returns SKIPPED for step in skippedSteps even if past', () => {
+    const state = makeState({ currentStep: 3, skippedSteps: [1], completedSteps: [0, 2] })
+    expect(getStepStatus(1, state)).toBe(StepStatus.SKIPPED)
+  })
+
+  it('handles empty completedSteps and skippedSteps', () => {
+    const state = makeState({ currentStep: 0 })
+    expect(getStepStatus(0, state)).toBe(StepStatus.IN_PROGRESS)
+    expect(getStepStatus(1, state)).toBe(StepStatus.NOT_STARTED)
+  })
+
+  it('handles terminal state with error', () => {
+    const state = makeState({ currentStep: 2, failedStep: 2, error: 'fail', terminal: true, completedSteps: [0, 1] })
+    expect(getStepStatus(0, state)).toBe(StepStatus.COMPLETE)
+    expect(getStepStatus(1, state)).toBe(StepStatus.COMPLETE)
+    expect(getStepStatus(2, state)).toBe(StepStatus.FAILED)
+    expect(getStepStatus(3, state)).toBe(StepStatus.NOT_STARTED)
+  })
+})
