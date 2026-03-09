@@ -21,7 +21,7 @@ import type { Conversation } from '@/types'
 enableMapSet()
 
 const STORE_VERSION = 2
-const MAX_MESSAGES_PER_CONVERSATION = 500
+export const MAX_MESSAGES_PER_CONVERSATION = 500
 
 type ChatMessage = ReturnType<typeof useChat>['messages'][number]
 
