@@ -26,3 +26,43 @@ export function getUserFriendlyErrorMessage(error: unknown, operation: string): 
   }
   return `${operation} failed: ${error instanceof Error ? error.message : String(error)}`
 }
+
+const RETRYABLE_PATTERNS = [
+  'etimedout',
+  'econnreset',
+  'econnrefused',
+  'ehostunreach',
+  'fetch failed',
+  'network error',
+  'timeout',
+  'rate limit',
+  'gas estimation failed',
+  'status 429',
+  'status 502',
+  'status 503',
+]
+
+const NON_RETRYABLE_PATTERNS = [
+  'insufficient funds',
+  'exceeds balance',
+  'execution reverted',
+  'revert',
+  'invalid',
+  'bad request',
+  'status 400',
+  'status 401',
+  'status 403',
+  'status 404',
+]
+
+export function isRetryableError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  if (isUserCancellation(error)) return false
+
+  const message = error.message.toLowerCase()
+
+  if (NON_RETRYABLE_PATTERNS.some(p => message.includes(p))) return false
+  if (RETRYABLE_PATTERNS.some(p => message.includes(p))) return true
+
+  return false
+}
