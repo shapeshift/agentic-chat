@@ -28,7 +28,7 @@ export interface ExecutionContext<TMeta> {
   }
 }
 
-export function useToolExecution<TMeta extends Record<string, unknown>>(
+export function useToolExecution<TMeta extends object>(
   toolCallId: string,
   toolType: ToolType,
   initialMeta: TMeta,

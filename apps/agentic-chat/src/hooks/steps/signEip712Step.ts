@@ -9,7 +9,7 @@ interface Eip712SigningData {
   message: object
 }
 
-export async function signEip712Step<TMeta extends Record<string, unknown>>(
+export async function signEip712Step<TMeta extends object>(
   ctx: ExecutionContext<TMeta>,
   signingData: Eip712SigningData
 ): Promise<string> {

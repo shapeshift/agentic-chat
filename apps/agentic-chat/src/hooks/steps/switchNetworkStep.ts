@@ -4,7 +4,7 @@ import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 
 import type { ExecutionContext } from '../useToolExecution'
 
-export async function switchNetworkStep<TMeta extends Record<string, unknown>>(
+export async function switchNetworkStep<TMeta extends object>(
   ctx: ExecutionContext<TMeta>,
   chainId: string
 ): Promise<void> {
@@ -33,7 +33,7 @@ export async function switchNetworkStep<TMeta extends Record<string, unknown>>(
   ctx.advanceStep()
 }
 
-export async function switchNetworkStepByChainIdNumber<TMeta extends Record<string, unknown>>(
+export async function switchNetworkStepByChainIdNumber<TMeta extends object>(
   ctx: ExecutionContext<TMeta>,
   chainIdNumber: number
 ): Promise<void> {

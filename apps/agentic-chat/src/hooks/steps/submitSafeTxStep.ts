@@ -10,7 +10,7 @@ interface SafeTxParams {
   chainId: number
 }
 
-export async function submitSafeTxStep<TMeta extends Record<string, unknown>>(
+export async function submitSafeTxStep<TMeta extends object>(
   ctx: ExecutionContext<TMeta>,
   params: SafeTxParams
 ): Promise<string> {

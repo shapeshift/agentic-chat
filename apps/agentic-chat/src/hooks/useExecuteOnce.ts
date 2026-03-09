@@ -4,7 +4,7 @@ import { useChatStore } from '@/stores/chatStore'
 
 import type { ExecutionContext } from './useToolExecution'
 
-export function useExecuteOnce<TMeta extends Record<string, unknown>, TData>(
+export function useExecuteOnce<TMeta extends object, TData>(
   ctx: ExecutionContext<TMeta>,
   data: TData | null,
   executor: (data: TData, ctx: ExecutionContext<TMeta>) => Promise<void>

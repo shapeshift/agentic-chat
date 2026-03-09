@@ -41,7 +41,7 @@ export type ToolOutput =
   | VaultWithdrawOutput
   | VaultWithdrawAllOutput
 
-export interface ToolExecutionState<TMeta = Record<string, unknown>> {
+export interface ToolExecutionState<TMeta = unknown> {
   toolCallId: string
   toolType: ToolType
   conversationId: string
@@ -60,7 +60,6 @@ export interface ToolExecutionState<TMeta = Record<string, unknown>> {
 }
 
 export interface SwapMeta {
-  [key: string]: unknown
   approvalTxHash?: string
   swapTxHash?: string
   networkName?: string
@@ -139,7 +138,7 @@ export function markTerminal<TMeta>(state: ToolExecutionState<TMeta>): ToolExecu
   return { ...state, terminal: true }
 }
 
-export function getStepStatus(step: number, state: ToolExecutionState): StepStatus {
+export function getStepStatus(step: number, state: ToolExecutionState<unknown>): StepStatus {
   if (state.failedStep === step) return StepStatus.FAILED
   if (state.currentStep < step) return StepStatus.NOT_STARTED
   if (state.currentStep === step && !state.error) return StepStatus.IN_PROGRESS

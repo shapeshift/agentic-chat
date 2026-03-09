@@ -78,7 +78,7 @@ export const useSwapExecution = (
       // Step 2: Approve (skip if not needed)
       if (needsApproval && approvalTx) {
         const approvalTxHash = await executeApproval(approvalTx, { solanaSigner })
-        ctx.setMeta({ approvalTxHash } as Partial<SwapMeta>)
+        ctx.setMeta({ approvalTxHash })
 
         if (chainNamespace === CHAIN_NAMESPACE.Evm) {
           await waitForConfirmedReceipt(Number(chainReference), approvalTxHash as `0x${string}`)
@@ -90,7 +90,7 @@ export const useSwapExecution = (
 
       // Step 3: Swap
       const swapTxHash = await executeSwap(swapTx, { solanaSigner })
-      ctx.setMeta({ swapTxHash } as Partial<SwapMeta>)
+      ctx.setMeta({ swapTxHash })
       ctx.advanceStep()
       ctx.markTerminal()
       ctx.persist()
