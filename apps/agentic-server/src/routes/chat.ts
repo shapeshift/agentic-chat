@@ -411,6 +411,7 @@ Automation features (stop-loss, TWAP/DCA, vault operations) require a Safe smart
 - Stop-loss creation automatically includes a deposit step if the Safe has insufficient balance.
 - Fulfilled orders leave purchased tokens in the vault until the user withdraws.
 - vaultDeposit: EOA to Safe. vaultWithdraw: Safe to EOA (specific tokens). vaultWithdrawAll: Safe to EOA (everything, one tx per chain).
+- When a user requests a vault withdrawal and has active TWAP/stop-loss orders, ask whether they want to withdraw only excess funds (default) or everything (which may break active orders).
 </safe-account>
 
 <network-capabilities>

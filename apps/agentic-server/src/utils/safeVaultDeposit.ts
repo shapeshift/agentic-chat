@@ -3,11 +3,11 @@ import type { Asset } from '@shapeshiftoss/types'
 import { fromBaseUnit, toBigInt } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi } from 'viem'
 
-import { isConditionalOrderActive } from '../lib/composableCow/queries'
 import type { TransactionData } from '../lib/schemas/swapSchemas'
 
 import { toChecksumAddress } from './addressValidation'
 import { getBalance } from './balanceHelpers'
+import { getCommittedAmountForToken } from './committedBalances'
 import { createTransaction } from './transactionHelpers'
 import { getAddressForChain } from './walletContextSimple'
 import type { WalletContext } from './walletContextSimple'
@@ -32,25 +32,7 @@ interface SafeVaultDepositResult {
 export async function calculateSafeVaultDeposit(params: SafeVaultDepositParams): Promise<SafeVaultDepositResult> {
   const { walletContext, safeAddress, sellAsset, sellAmountBaseUnit, evmChainId, sellTokenAddress } = params
 
-  let committedAmount = 0n
-  const allOrders = (walletContext?.registryOrders ?? []).filter(
-    o => o.chainId === evmChainId && o.sellTokenAddress.toLowerCase() === sellTokenAddress.toLowerCase()
-  )
-  const nowSeconds = Math.floor(Date.now() / 1000)
-  const existingOrders = allOrders.filter(o => {
-    if (o.status !== 'open') return false
-    if (o.validTo > 0 && o.validTo < nowSeconds) return false
-    return true
-  })
-
-  if (existingOrders.length > 0) {
-    const activeResults = await Promise.all(
-      existingOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, evmChainId))
-    )
-    committedAmount = existingOrders
-      .filter((_, i) => activeResults[i])
-      .reduce((sum, o) => sum + toBigInt(o.sellAmountBaseUnit), 0n)
-  }
+  const committedAmount = await getCommittedAmountForToken(walletContext, safeAddress, evmChainId, sellTokenAddress)
 
   const totalNeeded = committedAmount + toBigInt(sellAmountBaseUnit)
 
