@@ -17,6 +17,7 @@ export function calculate24hDelta(assets: PortfolioAsset[]): PortfolioDelta | nu
 
     const denominator = bn(1).plus(priceChange.div(100))
     if (denominator.lte(0)) {
+      // Fallback: treat as no usable historical data rather than exploding the delta
       return sum.plus(current)
     }
 
@@ -91,8 +92,9 @@ export function groupPortfolioAssets(assets: PortfolioAsset[]): GroupedPortfolio
 
   return Array.from(groupMap.values())
     .map(group => {
-      if (group.length === 1) return buildSingleAssetGroup(group[0]!)
-      return buildMultiAssetGroup(group, group[0]!.relatedAssetKey ?? group[0]!.assetId)
+      const first = group[0]!
+      if (group.length === 1) return buildSingleAssetGroup(first)
+      return buildMultiAssetGroup(group, first.relatedAssetKey ?? first.assetId)
     })
     .sort((a, b) => (bnOrZero(b.totalFiatAmount).gte(bnOrZero(a.totalFiatAmount)) ? 1 : -1))
 }

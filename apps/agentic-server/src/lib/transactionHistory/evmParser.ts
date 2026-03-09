@@ -142,7 +142,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
         to: transfer.netAmount > 0n ? userAddress : transfer.to,
         contract: transfer.contract,
         assetId,
-        icon: AssetService.getInstanceOrNull()?.getAsset(assetId)?.icon,
+        icon: AssetService.getIcon(assetId),
       }
     })
 
@@ -159,7 +159,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
           from: userAddress,
           to: tx.to,
           assetId: nativeAssetId,
-          icon: AssetService.getInstanceOrNull()?.getAsset(nativeAssetId)?.icon,
+          icon: AssetService.getIcon(nativeAssetId),
         },
         ...tokenTransfers,
       ]
@@ -185,7 +185,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
               to: transfer.to,
               contract: transfer.contract,
               assetId,
-              icon: AssetService.getInstanceOrNull()?.getAsset(assetId)?.icon,
+              icon: AssetService.getIcon(assetId),
             }
           })
         : undefined

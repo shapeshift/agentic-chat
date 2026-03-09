@@ -47,7 +47,7 @@ export function parseSolanaTransaction(tx: SolanaTx, userAddress: string, networ
               to: transfer.toUserAccount || '',
               contract: transfer.mint,
               assetId,
-              icon: AssetService.getInstanceOrNull()?.getAsset(assetId)?.icon,
+              icon: AssetService.getIcon(assetId),
             }
           })
       : undefined

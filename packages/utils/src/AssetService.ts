@@ -78,6 +78,10 @@ class AssetService {
     return AssetService.instance
   }
 
+  static getIcon(assetId: AssetId): string | undefined {
+    return AssetService.instance?.getAsset(assetId)?.icon
+  }
+
   static getInstance(): AssetService {
     if (!AssetService.instance) throw new Error('AssetService not initialized. Call AssetService.initialize() first.')
 

@@ -89,7 +89,7 @@ export async function initializeCoinGeckoAdapters(): Promise<void> {
 
   if (adapters.length === 0) throw new Error('All CoinGecko adapter fetches failed')
 
-  generatedAssetIdToCoingeckoMap = adapters.reduce((acc, cur) => ({ ...acc, ...cur }), {})
+  generatedAssetIdToCoingeckoMap = Object.assign({}, ...adapters)
   generatedCoingeckoToAssetIdsMap = invertBy(generatedAssetIdToCoingeckoMap)
 }
 
