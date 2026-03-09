@@ -1,5 +1,5 @@
 import type { Clock } from 'lucide-react'
-import { ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
+import { ExternalLink, CheckCircle, XCircle, AlertCircle, AlertTriangle, Eye } from 'lucide-react'
 
 import { stopPropagationHandler } from '@/lib/eventHandlers'
 import { getExplorerUrl } from '@/lib/explorers'
@@ -10,13 +10,15 @@ import { ToolCard } from '../ui/ToolCard'
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-type TwapOrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired'
+type TwapOrderStatus = 'open' | 'fulfilled' | 'cancelled' | 'expired' | 'failed' | 'partiallyFilled'
 
 const STATUS_CONFIG: Record<TwapOrderStatus, { icon: typeof Clock; label: string; className: string }> = {
   open: { icon: Eye, label: 'Active', className: 'text-blue-500' },
   fulfilled: { icon: CheckCircle, label: 'Filled', className: 'text-green-500' },
   cancelled: { icon: XCircle, label: 'Cancelled', className: 'text-red-500' },
   expired: { icon: AlertCircle, label: 'Expired', className: 'text-muted-foreground' },
+  failed: { icon: AlertTriangle, label: 'Failed', className: 'text-orange-500' },
+  partiallyFilled: { icon: AlertCircle, label: 'Partially Filled', className: 'text-yellow-500' },
 }
 
 function isValidStatus(status: string): status is TwapOrderStatus {

@@ -12,7 +12,7 @@ export interface OrderRecord {
   validTo: number
   submitTxHash: string
   createdAt: number
-  status: 'open' | 'triggered' | 'fulfilled' | 'cancelled' | 'expired'
+  status: 'open' | 'triggered' | 'fulfilled' | 'cancelled' | 'expired' | 'failed' | 'partiallyFilled'
   conditionalOrderParams: { handler: string; salt: string; staticInput: string }
   orderType: 'stopLoss' | 'twap'
   network: string

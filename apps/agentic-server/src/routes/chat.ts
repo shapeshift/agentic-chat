@@ -401,6 +401,9 @@ Limit orders, stop-loss, and TWAP/DCA all use CoW Protocol.
 - Time-based execution (no price oracle needed) — each sub-order executes at market price.
 - If the tool output includes warnings, always surface them to the user and suggest increasing the total amount or reducing intervals.
 - Per-part amounts below ~$2 (L2s) or ~$10 (Ethereum) may not be filled by solvers.
+- Status "failed" means the TWAP expired with zero parts filled (solvers ignored all sub-orders). Advise increasing total amount, reducing number of intervals, or choosing a more liquid token pair.
+- Status "partiallyFilled" means some (but not all) sub-orders were filled before the TWAP window ended.
+- Status "expired" means the TWAP window ended but fill state couldn't be determined (e.g. API unavailable or legacy order without part count data). Do not assume failure — suggest the user check back later.
 </cow-protocol>
 
 <safe-account>
@@ -466,7 +469,7 @@ const chatRequestSchema = z.object({
         submitTxHash: z.string(),
         createdAt: z.number(),
         network: z.string(),
-        status: z.enum(['open', 'triggered', 'fulfilled', 'cancelled', 'expired']),
+        status: z.enum(['open', 'triggered', 'fulfilled', 'cancelled', 'expired', 'failed', 'partiallyFilled']),
         orderType: z.enum(['stopLoss', 'twap']),
       })
     )

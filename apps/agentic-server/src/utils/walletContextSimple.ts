@@ -25,7 +25,7 @@ export interface ActiveOrderSummary {
   submitTxHash: string
   createdAt: number
   network: string
-  status: 'open' | 'triggered' | 'fulfilled' | 'cancelled' | 'expired'
+  status: 'open' | 'triggered' | 'fulfilled' | 'cancelled' | 'expired' | 'failed' | 'partiallyFilled'
   orderType: 'stopLoss' | 'twap'
   numParts?: number
 }
