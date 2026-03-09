@@ -1,6 +1,5 @@
-import type { AssetId } from '@shapeshiftoss/caip'
 import { TrendingDown, TrendingUp } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { bnOrZero } from '@/lib/bignumber'
 import { cn } from '@/lib/utils'
@@ -11,8 +10,7 @@ import { AssetIcon } from './AssetIcon'
 type AssetListItemProps = {
   name: string
   symbol: string
-  assetId?: AssetId
-  iconUrl?: string
+  icon?: string
   price?: string | number | null
   priceChange24h?: number | null
   rank?: number
@@ -27,41 +25,10 @@ const variantColorMap = {
   loss: 'text-red-500',
 } as const
 
-function FallbackIcon({ symbol, className }: { symbol: string; className?: string }) {
-  return (
-    <div
-      className={cn(
-        'rounded-full flex items-center justify-center bg-primary text-primary-foreground font-bold text-sm',
-        className ?? 'w-8 h-8'
-      )}
-    >
-      {symbol.charAt(0).toUpperCase()}
-    </div>
-  )
-}
-
-function IconFromUrl({ url, symbol, className }: { url: string; symbol: string; className?: string }) {
-  const [hasError, setHasError] = useState(false)
-
-  if (hasError || !url) {
-    return <FallbackIcon symbol={symbol} className={className} />
-  }
-
-  return (
-    <img
-      src={url}
-      alt={symbol}
-      className={cn('rounded-full', className ?? 'w-8 h-8')}
-      onError={() => setHasError(true)}
-    />
-  )
-}
-
 export function AssetListItem({
   name,
   symbol,
-  assetId,
-  iconUrl,
+  icon,
   price,
   priceChange24h,
   rank,
@@ -82,9 +49,7 @@ export function AssetListItem({
         {rank !== undefined && (
           <span className="text-sm font-medium text-muted-foreground w-6 text-right">#{rank}</span>
         )}
-        {assetId && <AssetIcon assetId={assetId} className="w-8 h-8" />}
-        {!assetId && iconUrl && <IconFromUrl url={iconUrl} symbol={symbol} />}
-        {!assetId && !iconUrl && <FallbackIcon symbol={symbol} />}
+        <AssetIcon icon={icon} symbol={symbol} className="w-8 h-8" />
         <div className="flex flex-col">
           <span className="font-medium text-sm leading-tight">{name}</span>
           <span className="text-xs text-muted-foreground leading-tight">{subtitle ?? symbol.toUpperCase()}</span>

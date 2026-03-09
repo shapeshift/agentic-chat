@@ -1,6 +1,6 @@
 import type { Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
 import { networkToChainIdMap, networkToNativeAssetId } from '@shapeshiftoss/types'
-import { fromBaseUnit } from '@shapeshiftoss/utils'
+import { AssetService, fromBaseUnit } from '@shapeshiftoss/utils'
 
 import { EVM_NATIVE_DECIMALS, PRECISION_HIGH } from './constants'
 import type { EvmTx } from './schemas'
@@ -142,6 +142,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
         to: transfer.netAmount > 0n ? userAddress : transfer.to,
         contract: transfer.contract,
         assetId,
+        icon: AssetService.getInstanceOrNull()?.getAsset(assetId)?.icon,
       }
     })
 
@@ -149,6 +150,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
     const hasNegativeToken = sortedTransfers.some(t => t.netAmount < 0n)
 
     if (hasNativeValue && !hasNegativeToken) {
+      const nativeAssetId = networkToNativeAssetId[network]
       tokenTransfers = [
         {
           symbol: 'ETH',
@@ -156,7 +158,8 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
           decimals: EVM_NATIVE_DECIMALS,
           from: userAddress,
           to: tx.to,
-          assetId: networkToNativeAssetId[network],
+          assetId: nativeAssetId,
+          icon: AssetService.getInstanceOrNull()?.getAsset(nativeAssetId)?.icon,
         },
         ...tokenTransfers,
       ]
@@ -182,6 +185,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
               to: transfer.to,
               contract: transfer.contract,
               assetId,
+              icon: AssetService.getInstanceOrNull()?.getAsset(assetId)?.icon,
             }
           })
         : undefined

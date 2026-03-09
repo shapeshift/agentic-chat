@@ -36,7 +36,7 @@ export function GroupedAssetRow({ group }: GroupedAssetRowProps) {
 
   return (
     <DrawerListItem expandedChildren={<RelatedAssetsList assets={relatedAssets} />}>
-      <AssetIcon assetId={primaryAsset.assetId} className="w-10 h-10" />
+      <AssetIcon icon={primaryAsset.icon} symbol={primaryAsset.symbol} className="w-10 h-10" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm md:text-base text-foreground">{primaryAsset.symbol}</span>

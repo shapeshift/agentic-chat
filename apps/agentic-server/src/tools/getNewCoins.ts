@@ -1,4 +1,5 @@
 import { coingeckoToAssetIds } from '@shapeshiftoss/caip'
+import { AssetService } from '@shapeshiftoss/utils'
 import { formatDistanceToNow, fromUnixTime } from 'date-fns'
 import { z } from 'zod'
 
@@ -29,6 +30,7 @@ export async function executeGetNewCoins(input: GetNewCoinsInput): Promise<GetNe
       symbol: coin.symbol,
       activatedAt: coin.activated_at,
       activatedAtFormatted: formatDistanceToNow(fromUnixTime(coin.activated_at), { addSuffix: true }),
+      icon: assetIds[0] ? AssetService.getInstance().getAsset(assetIds[0])?.icon : undefined,
       assetId: assetIds[0],
     }
   })

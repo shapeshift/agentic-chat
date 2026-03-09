@@ -77,7 +77,7 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps<'getAssetsTool'>)
         <ToolCard.HeaderRow>
           <div className="flex items-start justify-between w-full">
             <div className="flex items-center gap-3">
-              <AssetIcon assetId={asset.assetId} />
+              <AssetIcon icon={asset.icon} symbol={asset.symbol} />
               <div className="flex flex-col">
                 <span className="text-[20px] font-bold leading-7">{asset.name}</span>
                 <span className="text-sm text-muted-foreground font-normal leading-5">

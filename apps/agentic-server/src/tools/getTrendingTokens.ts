@@ -1,4 +1,5 @@
 import { coingeckoToAssetIds } from '@shapeshiftoss/caip'
+import { AssetService } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
 import { getTrendingSearch } from '../lib/asset/coingecko'
@@ -29,6 +30,7 @@ export async function executeGetTrendingTokens(input: GetTrendingTokensInput): P
       price: item.data?.price ?? null,
       priceChange24h: item.data?.price_change_percentage_24h?.usd ?? null,
       marketCapRank: item.market_cap_rank,
+      icon: item.large ?? (assetIds[0] ? AssetService.getInstance().getAsset(assetIds[0])?.icon : undefined),
       assetId: assetIds[0],
     }
   })

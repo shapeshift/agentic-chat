@@ -1,7 +1,7 @@
 import { assetIdToCoingecko } from '@shapeshiftoss/caip'
 import type { Asset, StaticAsset } from '@shapeshiftoss/types'
 import { chainIdToNetwork, NETWORKS } from '@shapeshiftoss/types'
-import { assetService } from '@shapeshiftoss/utils'
+import { AssetService } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
 import { getMarketData } from '../lib/asset/coingecko'
@@ -84,19 +84,19 @@ async function getAssetWithMarketData(input: GetAssetsInput): Promise<GetAssetsO
   const { searchTerm, assetId, contractAddress, network, assetType, pools } = input
 
   if (assetId) {
-    const asset = assetService.getAsset(assetId)
+    const asset = AssetService.getInstance().getAsset(assetId)
     if (!asset) return { assets: [] }
     return hydrateAsset(asset, network)
   }
 
   if (contractAddress) {
-    const result = assetService.searchByContract(contractAddress, network)[0]
+    const result = AssetService.getInstance().searchByContract(contractAddress, network)[0]
     if (!result) return { assets: [] }
     return hydrateAsset(result, network)
   }
 
   if (searchTerm) {
-    const result = assetService.searchWithFilters(searchTerm, { network, assetType, pools })[0]
+    const result = AssetService.getInstance().searchWithFilters(searchTerm, { network, assetType, pools })[0]
     if (!result) return { assets: [] }
     return hydrateAsset(result, network)
   }

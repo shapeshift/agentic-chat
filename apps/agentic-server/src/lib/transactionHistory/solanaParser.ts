@@ -1,6 +1,6 @@
 import type { Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
-import { fromBaseUnit } from '@shapeshiftoss/utils'
+import { AssetService, fromBaseUnit } from '@shapeshiftoss/utils'
 
 import { PRECISION_MEDIUM, SOLANA_NATIVE_DECIMALS } from './constants'
 import type { SolanaTx } from './schemas'
@@ -47,6 +47,7 @@ export function parseSolanaTransaction(tx: SolanaTx, userAddress: string, networ
               to: transfer.toUserAccount || '',
               contract: transfer.mint,
               assetId,
+              icon: AssetService.getInstanceOrNull()?.getAsset(assetId)?.icon,
             }
           })
       : undefined

@@ -1,5 +1,5 @@
 import { NETWORKS } from '@shapeshiftoss/types'
-import { assetService } from '@shapeshiftoss/utils'
+import { AssetService } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
 import { getAssetPrices as getAssetPricesLib } from '../lib/asset/prices'
@@ -39,7 +39,9 @@ export async function executeGetAssetPrices(input: GetAssetPricesInput): Promise
     if (assetInput.assetId) {
       assetIds.push(assetInput.assetId)
     } else if (assetInput.searchTerm) {
-      const result = assetService.searchWithFilters(assetInput.searchTerm, { network: assetInput.network })[0]
+      const result = AssetService.getInstance().searchWithFilters(assetInput.searchTerm, {
+        network: assetInput.network,
+      })[0]
       if (!result) {
         throw new Error(
           `Asset not found: ${assetInput.searchTerm}${assetInput.network ? ` on ${assetInput.network}` : ''}`

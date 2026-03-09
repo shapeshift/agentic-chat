@@ -196,6 +196,7 @@ export type TrimmedTrendingCoin = {
   price: string | null
   priceChange24h: number | null
   marketCapRank: number
+  icon?: string
   assetId?: string
 }
 
@@ -208,6 +209,7 @@ export type TrimmedGainerLoserCoin = {
   priceChange1h?: number
   priceChange7d?: number
   marketCapRank: number | null
+  icon?: string
   assetId?: string
 }
 
@@ -239,5 +241,6 @@ export type TrimmedNewCoin = {
   symbol: string
   activatedAt: number
   activatedAtFormatted: string
+  icon?: string
   assetId?: string
 }

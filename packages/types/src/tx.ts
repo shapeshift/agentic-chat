@@ -19,6 +19,7 @@ export type TokenTransfer = {
   to: string
   contract?: string
   assetId: string
+  icon?: string
 }
 
 export const TRANSACTION_TYPES = ['send', 'receive', 'swap', 'contract'] as const

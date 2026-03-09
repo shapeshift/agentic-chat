@@ -40,7 +40,7 @@ export function TrendingTokensUI({ toolPart }: ToolUIComponentProps<'getTrending
                 key={token.id}
                 name={token.name}
                 symbol={token.symbol}
-                assetId={token.assetId}
+                icon={token.icon}
                 price={token.price}
                 priceChange24h={token.priceChange24h}
                 rank={index + 1}

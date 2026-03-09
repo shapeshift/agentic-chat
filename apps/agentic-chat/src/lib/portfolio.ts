@@ -1,5 +1,3 @@
-import { getPrimaryAssetId, getRelatedAssetIds } from '@shapeshiftoss/utils'
-
 import type { GroupedPortfolioAsset, PortfolioAsset, PortfolioDelta } from '@/types/portfolio'
 
 import { bn, bnOrZero } from './bignumber'
@@ -19,7 +17,6 @@ export function calculate24hDelta(assets: PortfolioAsset[]): PortfolioDelta | nu
 
     const denominator = bn(1).plus(priceChange.div(100))
     if (denominator.lte(0)) {
-      // Fallback: treat as no usable historical data rather than exploding the delta
       return sum.plus(current)
     }
 
@@ -84,31 +81,18 @@ function buildMultiAssetGroup(assets: PortfolioAsset[], primaryAssetId: string):
 }
 
 export function groupPortfolioAssets(assets: PortfolioAsset[]): GroupedPortfolioAsset[] {
-  const groups: GroupedPortfolioAsset[] = []
-  const processed = new Set<string>()
+  const groupMap = new Map<string, PortfolioAsset[]>()
 
   for (const asset of assets) {
-    if (processed.has(asset.assetId)) continue
-
-    const relatedIds = getRelatedAssetIds(asset.assetId)
-
-    // Single-chain asset
-    if (!relatedIds) {
-      groups.push(buildSingleAssetGroup(asset))
-      processed.add(asset.assetId)
-      continue
-    }
-
-    // Multi-chain asset
-    const primaryId = getPrimaryAssetId(asset.assetId)
-    if (processed.has(primaryId)) continue
-
-    const related = assets.filter(a => relatedIds.includes(a.assetId))
-    if (related.length === 0) continue
-
-    related.forEach(a => processed.add(a.assetId))
-    groups.push(buildMultiAssetGroup(related, primaryId))
+    const key = asset.relatedAssetKey ?? asset.assetId
+    if (!groupMap.has(key)) groupMap.set(key, [])
+    groupMap.get(key)!.push(asset)
   }
 
-  return groups.sort((a, b) => (bnOrZero(b.totalFiatAmount).gte(bnOrZero(a.totalFiatAmount)) ? 1 : -1))
+  return Array.from(groupMap.values())
+    .map(group => {
+      if (group.length === 1) return buildSingleAssetGroup(group[0]!)
+      return buildMultiAssetGroup(group, group[0]!.relatedAssetKey ?? group[0]!.assetId)
+    })
+    .sort((a, b) => (bnOrZero(b.totalFiatAmount).gte(bnOrZero(a.totalFiatAmount)) ? 1 : -1))
 }

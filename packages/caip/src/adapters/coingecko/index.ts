@@ -21,7 +21,27 @@ import {
   thorchainChainId,
 } from '../../constants.js'
 
-import * as adapters from './generated/index.js'
+const COINGECKO_BASE =
+  'https://raw.githubusercontent.com/shapeshift/web/develop/packages/caip/src/adapters/coingecko/generated'
+
+const COINGECKO_CHAINS = [
+  'bip122_000000000019d6689c085ae165831e93',
+  'bip122_000000000000000000651ef99cb9fcbe',
+  'bip122_00000000001a91e3dace36e2be3bf030',
+  'bip122_12a765e31ffd4059bada1e25190f6e98',
+  'cosmos_cosmoshub-4',
+  'cosmos_mayachain-mainnet-v1',
+  'cosmos_thorchain-1',
+  'eip155_1',
+  'eip155_10',
+  'eip155_100',
+  'eip155_137',
+  'eip155_42161',
+  'eip155_43114',
+  'eip155_56',
+  'eip155_8453',
+  'solana_5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+]
 
 // https://api.coingecko.com/api/v3/asset_platforms
 export enum CoingeckoAssetPlatform {
@@ -45,14 +65,33 @@ type CoinGeckoId = string
 export const coingeckoBaseUrl = 'https://api.proxy.shapeshift.com/api/v1/markets'
 export const coingeckoUrl = `${coingeckoBaseUrl}/coins/list?include_platform=true`
 
-const assetIdToCoinGeckoIdMapByChain: Record<AssetId, CoinGeckoId>[] = Object.values(adapters)
+let generatedAssetIdToCoingeckoMap: Record<AssetId, CoinGeckoId> = {}
+let generatedCoingeckoToAssetIdsMap: Record<CoinGeckoId, AssetId[]> = {}
 
-const generatedAssetIdToCoingeckoMap = assetIdToCoinGeckoIdMapByChain.reduce((acc, cur) => ({
-  ...acc,
-  ...cur,
-}))
+export async function initializeCoinGeckoAdapters(): Promise<void> {
+  const results = await Promise.allSettled(
+    COINGECKO_CHAINS.map(async chain => {
+      const response = await fetch(`${COINGECKO_BASE}/${chain}/adapter.json`)
+      if (!response.ok) throw new Error(`CoinGecko adapter fetch failed for ${chain}: HTTP ${response.status}`)
+      return response.json() as Promise<Record<AssetId, string>>
+    })
+  )
 
-const generatedCoingeckoToAssetIdsMap: Record<CoinGeckoId, AssetId[]> = invertBy(generatedAssetIdToCoingeckoMap)
+  const adapters: Record<AssetId, string>[] = []
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i]!
+    if (result.status === 'fulfilled') {
+      adapters.push(result.value)
+    } else {
+      console.warn(`[CoinGecko] Skipping ${COINGECKO_CHAINS[i]}: ${result.reason}`)
+    }
+  }
+
+  if (adapters.length === 0) throw new Error('All CoinGecko adapter fetches failed')
+
+  generatedAssetIdToCoingeckoMap = adapters.reduce((acc, cur) => ({ ...acc, ...cur }), {})
+  generatedCoingeckoToAssetIdsMap = invertBy(generatedAssetIdToCoingeckoMap)
+}
 
 export const coingeckoToAssetIds = (id: CoinGeckoId): AssetId[] => generatedCoingeckoToAssetIdsMap[id] || []
 
