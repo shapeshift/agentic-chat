@@ -1,6 +1,6 @@
 import { AlertTriangle } from 'lucide-react'
 import { useCallback, useMemo, useRef } from 'react'
-import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
+import { Virtuoso } from 'react-virtuoso'
 
 import { useStreamPauseDetector } from '../hooks/useStreamPauseDetector'
 import { useChatContext } from '../providers/ChatProvider'
@@ -19,7 +19,6 @@ const WELCOME_SUGGESTIONS = [
 
 export function Chat() {
   const { messages, sendMessage, status, error } = useChatContext()
-  const virtuosoRef = useRef<VirtuosoHandle>(null)
   const shouldAutoScrollRef = useRef(true)
 
   const lastMessageContent = useMemo(() => {
@@ -54,7 +53,7 @@ export function Chat() {
     (_index: number, item: (typeof items)[number]) => {
       if (item.type === 'loading') {
         return (
-          <div className="mx-auto max-w-2xl px-4 pb-4">
+          <div className="mx-auto max-w-2xl px-4 py-2">
             <LoadingIndicator />
           </div>
         )
@@ -62,7 +61,7 @@ export function Chat() {
 
       if (item.type === 'error') {
         return (
-          <div className="mx-auto max-w-2xl px-4 pb-4">
+          <div className="mx-auto max-w-2xl px-4 py-2">
             <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
               <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
               <div className="flex flex-col gap-1">
@@ -80,7 +79,7 @@ export function Chat() {
       if (!message) return null
 
       return (
-        <div className="mx-auto max-w-2xl px-4 pt-4">
+        <div className="mx-auto max-w-2xl px-4 py-2">
           {message.role === 'user' && <UserMessage message={message} />}
           {message.role === 'assistant' && <AssistantMessage message={message} />}
         </div>
@@ -99,13 +98,12 @@ export function Chat() {
           </div>
         ) : (
           <Virtuoso
-            ref={virtuosoRef}
             data={items}
             itemContent={itemContent}
             initialTopMostItemIndex={items.length - 1}
             followOutput={isActive => {
               if (!shouldAutoScrollRef.current) return false
-              return isActive ? 'smooth' : false
+              return isActive ? 'auto' : false
             }}
             atBottomStateChange={atBottom => {
               shouldAutoScrollRef.current = atBottom
