@@ -1,7 +1,7 @@
 import { ExternalLink, XCircle } from 'lucide-react'
 
 import { useCancelLimitOrderExecution } from '@/hooks/useCancelLimitOrderExecution'
-import { StepStatus } from '@/hooks/useSwapExecution'
+import { StepStatus } from '@/lib/stepUtils'
 import { useChatStore } from '@/stores/chatStore'
 
 import { TruncateText } from '../ui/TruncateText'

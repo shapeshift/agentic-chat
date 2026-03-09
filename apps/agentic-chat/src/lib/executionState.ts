@@ -60,6 +60,7 @@ export interface ToolExecutionState<TMeta = Record<string, unknown>> {
 }
 
 export interface SwapMeta {
+  [key: string]: unknown
   approvalTxHash?: string
   swapTxHash?: string
   networkName?: string

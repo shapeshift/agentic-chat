@@ -1,7 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 
 import { useLimitOrderExecution } from '@/hooks/useLimitOrderExecution'
-import { StepStatus } from '@/hooks/useSwapExecution'
+import { StepStatus } from '@/lib/stepUtils'
 import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
