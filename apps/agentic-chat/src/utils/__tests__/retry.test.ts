@@ -1,4 +1,4 @@
-import { describe, expect, it, mock, beforeEach } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 
 import { withRetry } from '../retry'
 
@@ -58,8 +58,8 @@ describe('withRetry', () => {
     await withRetry(fn, { maxRetries: 2, initialDelayMs: 50 }).catch(() => {})
 
     // First retry delay ~50ms, second ~100ms
-    const delay1 = timestamps[1] - timestamps[0]
-    const delay2 = timestamps[2] - timestamps[1]
+    const delay1 = timestamps[1]! - timestamps[0]!
+    const delay2 = timestamps[2]! - timestamps[1]!
     expect(delay1).toBeGreaterThanOrEqual(30)
     expect(delay1).toBeLessThan(150)
     expect(delay2).toBeGreaterThanOrEqual(60)
