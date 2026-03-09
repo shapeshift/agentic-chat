@@ -1,6 +1,6 @@
 ---
 id: sa-zvzb
-status: open
+status: done
 deps: []
 links: []
 created: 2026-03-06T08:47:51Z
@@ -42,14 +42,14 @@ Users with active TWAP/stop-loss orders in their Safe vault need clear options w
 
 ## Acceptance Criteria
 
-- [ ] \`vaultWithdrawSchema\` and \`vaultWithdrawAllSchema\` accept optional \`ignoreActiveOrders\` boolean parameter
-- [ ] When \`ignoreActiveOrders\` is false/undefined, committed amounts are subtracted from available balance
-- [ ] When \`ignoreActiveOrders\` is true, full balance is withdrawn (current behavior)
-- [ ] Output includes a \`warnings\` field listing any active orders that would be affected
-- [ ] System prompt instructs agent to ask user preference when active orders exist and user doesn't specify
-- [ ] Committed amount calculation reuses the pattern from \`safeVaultDeposit.ts\`
-- [ ] Withdraw of a token with zero excess (all committed) throws a clear error when \`ignoreActiveOrders\` is false
-- [ ] Lint and type-check pass
+- [x] \`vaultWithdrawSchema\` and \`vaultWithdrawAllSchema\` accept optional \`ignoreActiveOrders\` boolean parameter
+- [x] When \`ignoreActiveOrders\` is false/undefined, committed amounts are subtracted from available balance
+- [x] When \`ignoreActiveOrders\` is true, full balance is withdrawn (current behavior)
+- [x] Output includes a \`warnings\` field listing any active orders that would be affected
+- [x] System prompt instructs agent to ask user preference when active orders exist and user doesn't specify
+- [x] Committed amount calculation reuses the pattern from \`safeVaultDeposit.ts\`
+- [x] Withdraw of a token with zero excess (all committed) throws a clear error when \`ignoreActiveOrders\` is false
+- [x] Lint and type-check pass
 
 ## Gotchas
 
@@ -60,4 +60,4 @@ Users with active TWAP/stop-loss orders in their Safe vault need clear options w
 
 ## Acceptance Criteria
 
-- [ ] vaultWithdrawSchema and vaultWithdrawAllSchema accept optional ignoreActiveOrders boolean\n- [ ] When ignoreActiveOrders is false/undefined, committed amounts subtracted from available balance\n- [ ] When ignoreActiveOrders is true, full balance withdrawn (current behavior)\n- [ ] Output includes warnings field listing affected active orders\n- [ ] System prompt instructs agent to ask user preference when active orders exist\n- [ ] Committed amount calculation reuses safeVaultDeposit.ts pattern\n- [ ] Zero excess throws clear error when ignoreActiveOrders is false\n- [ ] Lint and type-check pass
+- [x] vaultWithdrawSchema and vaultWithdrawAllSchema accept optional ignoreActiveOrders boolean\n- [x] When ignoreActiveOrders is false/undefined, committed amounts subtracted from available balance\n- [x] When ignoreActiveOrders is true, full balance withdrawn (current behavior)\n- [x] Output includes warnings field listing affected active orders\n- [x] System prompt instructs agent to ask user preference when active orders exist\n- [x] Committed amount calculation reuses safeVaultDeposit.ts pattern\n- [x] Zero excess throws clear error when ignoreActiveOrders is false\n- [x] Lint and type-check pass
