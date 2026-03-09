@@ -13,9 +13,6 @@ export const MAX_MESSAGES_PER_CONVERSATION = 500
 
 type ChatMessage = ReturnType<typeof useChat>['messages'][number]
 
-/** @deprecated Use ToolExecutionState from @/lib/executionState directly */
-export type PersistedToolState = ToolExecutionState
-
 interface ChatState {
   // Conversation metadata (persisted)
   conversations: Conversation[]
