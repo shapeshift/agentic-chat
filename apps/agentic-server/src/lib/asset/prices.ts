@@ -1,7 +1,7 @@
 import type { AssetId } from '@shapeshiftoss/caip'
 import type { Asset } from '@shapeshiftoss/types'
 import { chainIdToNetwork } from '@shapeshiftoss/types'
-import { assetService } from '@shapeshiftoss/utils'
+import { AssetService } from '@shapeshiftoss/utils'
 
 import { getSimplePrices } from './coingecko'
 
@@ -13,7 +13,7 @@ export async function getAssetPrices(assetIds: AssetId[]): Promise<AssetWithPric
   if (assetIds.length === 0) return []
 
   const staticAssets = assetIds
-    .map(id => assetService.getAsset(id))
+    .map(id => AssetService.getInstance().getAsset(id))
     .filter((a): a is NonNullable<typeof a> => a !== undefined)
 
   if (staticAssets.length === 0) return []

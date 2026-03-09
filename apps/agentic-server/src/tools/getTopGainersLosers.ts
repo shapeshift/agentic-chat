@@ -1,4 +1,5 @@
 import { coingeckoToAssetIds } from '@shapeshiftoss/caip'
+import { AssetService } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
 import { getTopGainersLosers } from '../lib/asset/coingecko'
@@ -39,6 +40,7 @@ export async function executeGetTopGainersLosers(input: GetTopGainersLosersInput
       priceChange1h: coin.usd_1h_change,
       priceChange7d: coin.usd_7d_change,
       marketCapRank: coin.market_cap_rank,
+      icon: coin.image ?? (assetIds[0] ? AssetService.getInstance().getAsset(assetIds[0])?.icon : undefined),
       assetId: assetIds[0],
     }
   }

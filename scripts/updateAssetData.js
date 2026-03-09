@@ -1,4 +1,11 @@
 #!/usr/bin/env tsx
+/**
+ * Local development utility: downloads asset data and CoinGecko mappings from
+ * the ShapeShift web repository. In production, these are fetched at server
+ * startup by AssetService.initialize() and initializeCoinGeckoAdapters().
+ *
+ * Usage: bun run update-assets
+ */
 import fs from 'fs/promises';
 import path from 'path';
 const ASSET_DATA_BASE = 'https://raw.githubusercontent.com/shapeshift/web/develop/src/lib/asset-service/service';
@@ -17,14 +24,13 @@ const COINGECKO_CHAINS = [
     'eip155_100', // Gnosis
     'eip155_137', // Polygon
     'eip155_42161', // Arbitrum
-    'eip155_42170', // Arbitrum Nova
     'eip155_43114', // Avalanche
     'eip155_56', // BSC
     'eip155_8453', // Base
     'solana_5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp', // Solana
 ];
 async function downloadAssetData() {
-    console.log('=== Updating Asset Data ===\n');
+    console.log('=== Downloading Asset Data (local dev only) ===\n');
     const outputDir = path.join(__dirname, '../packages/utils/src/assetData');
     await fs.mkdir(outputDir, { recursive: true });
     for (const file of ASSET_DATA_FILES) {
@@ -49,7 +55,7 @@ async function downloadAssetData() {
     console.log(`\n✓ Asset data saved to: ${outputDir}\n`);
 }
 async function downloadCoinGeckoMappings() {
-    console.log('=== Updating CoinGecko Mappings ===\n');
+    console.log('=== Downloading CoinGecko Mappings (local dev only) ===\n');
     const outputDir = path.join(__dirname, '../packages/caip/src/adapters/coingecko/generated');
     await fs.mkdir(outputDir, { recursive: true });
     for (const chain of COINGECKO_CHAINS) {
@@ -76,17 +82,15 @@ async function downloadCoinGeckoMappings() {
     console.log(`\n✓ CoinGecko mappings saved to: ${outputDir}\n`);
 }
 async function main() {
-    console.log('Updating assets and CoinGecko mappings from ShapeShift repository...\n');
+    console.log('Downloading asset data for local development...');
+    console.log('(In production, this data is fetched at server startup)\n');
     try {
         await downloadAssetData();
         await downloadCoinGeckoMappings();
-        console.log('✅ All updates complete!');
-        console.log('\nNext steps:');
-        console.log('1. Run `yarn build` to rebuild packages');
-        console.log('2. Commit the updated asset data and mappings');
+        console.log('✅ All downloads complete!');
     }
     catch (error) {
-        console.error('\n✗ Update failed:', error);
+        console.error('\n✗ Download failed:', error);
         process.exit(1);
     }
 }

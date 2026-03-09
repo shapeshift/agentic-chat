@@ -40,7 +40,7 @@ export function NewCoinsUI({ toolPart }: ToolUIComponentProps<'getNewCoinsTool'>
                 key={coin.id}
                 name={coin.name}
                 symbol={coin.symbol}
-                assetId={coin.assetId}
+                icon={coin.icon}
                 rank={index + 1}
                 subtitle={`Listed ${coin.activatedAtFormatted}`}
               />

@@ -1,5 +1,5 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
-import { assetService, getFeeAssetIdByChainId, toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
+import { AssetService, getFeeAssetIdByChainId, toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
@@ -42,7 +42,7 @@ function buildTransferTransaction(
   const feeAssetId = getFeeAssetIdByChainId(`eip155:${chainId}`)
   const isNative = balance.assetId === feeAssetId
 
-  const asset = assetService.getAsset(balance.assetId)
+  const asset = AssetService.getInstance().getAsset(balance.assetId)
   const precision = asset?.precision ?? 18
 
   if (isNative) {

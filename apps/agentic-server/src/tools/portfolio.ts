@@ -1,6 +1,6 @@
 import type { EvmSolanaNetwork } from '@shapeshiftoss/types'
 import { chainIdToNetwork, EVM_SOLANA_NETWORKS, networkToChainIdMap } from '@shapeshiftoss/types'
-import { calculateUsdValue, fromBaseUnit } from '@shapeshiftoss/utils'
+import { calculateUsdValue, fromBaseUnit, isMultiChainAsset, getPrimaryAssetId } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
 import { z } from 'zod'
 
@@ -32,6 +32,8 @@ export type PortfolioDataFull = {
       precision: number
       price: string
       priceChange24h?: number
+      icon?: string
+      relatedAssetKey?: string
     }
     baseUnitValue: string
     cryptoAmount: string
@@ -112,6 +114,8 @@ async function getPortfolioDataSingle(
             precision: asset.precision,
             price: asset.price,
             priceChange24h: asset.priceChange24h ?? undefined,
+            icon: asset.icon,
+            relatedAssetKey: isMultiChainAsset(asset.assetId) ? getPrimaryAssetId(asset.assetId) : undefined,
           },
           baseUnitValue,
           cryptoAmount,

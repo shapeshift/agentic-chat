@@ -36,7 +36,7 @@ function GainerLoserCard({ items, title, icon, variant }: GainerLoserCardProps) 
                 key={coin.id}
                 name={coin.name}
                 symbol={coin.symbol}
-                assetId={coin.assetId}
+                icon={coin.icon}
                 price={coin.price}
                 priceChange24h={coin.priceChange24h}
                 rank={index + 1}

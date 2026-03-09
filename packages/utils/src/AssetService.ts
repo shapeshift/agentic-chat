@@ -2,25 +2,25 @@ import type { AssetId } from '@shapeshiftoss/caip'
 import type { Network, StaticAsset } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
 
-import { decodeAssetData } from './assetData/decodeAssetData.js'
-import encodedAssetData from './assetData/encodedAssetData.json'
-import type { EncodedAssetData } from './assetData/types.js'
+const ASSET_DATA_URL =
+  'https://raw.githubusercontent.com/shapeshift/web/develop/public/generated/generatedAssetData.json'
 
 class AssetService {
-  private static instance: AssetService
+  private static instance: AssetService | null = null
+  private static initializedAt: number = 0
+  private static refreshing: boolean = false
+  private static MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000 // 2 weeks
+  private static onStaleCallback: (() => Promise<void>) | null = null
+
   private readonly assetsById: Record<AssetId, StaticAsset>
   private readonly assetsBySymbol: Map<string, StaticAsset[]>
   private readonly assetsByName: Map<string, StaticAsset[]>
   private readonly assetsByContract: Map<string, StaticAsset[]>
-
   private readonly sortedAssetIds: AssetId[]
 
-  private constructor() {
-    const { assetData, sortedAssetIds } = decodeAssetData(encodedAssetData as unknown as EncodedAssetData)
-
+  private constructor(assetData: Record<AssetId, StaticAsset>, sortedAssetIds: AssetId[]) {
     this.assetsById = assetData
     this.sortedAssetIds = sortedAssetIds
-
     this.assetsBySymbol = new Map()
     this.assetsByName = new Map()
     this.assetsByContract = new Map()
@@ -51,10 +51,51 @@ class AssetService {
     }
   }
 
+  static async initialize(): Promise<void> {
+    if (AssetService.instance) return
+    await AssetService.fetchAndBuild()
+  }
+
+  static async refresh(): Promise<void> {
+    await AssetService.fetchAndBuild()
+  }
+
+  private static async fetchAndBuild(): Promise<void> {
+    const response = await fetch(ASSET_DATA_URL)
+    if (!response.ok) throw new Error(`Failed to fetch asset data: HTTP ${response.status}`)
+    const data = (await response.json()) as { byId: Record<AssetId, StaticAsset> }
+    const assetData = data.byId
+    const sortedAssetIds = Object.keys(assetData)
+    AssetService.instance = new AssetService(assetData, sortedAssetIds)
+    AssetService.initializedAt = Date.now()
+  }
+
+  static setOnStale(callback: () => Promise<void>): void {
+    AssetService.onStaleCallback = callback
+  }
+
+  static getInstanceOrNull(): AssetService | null {
+    return AssetService.instance
+  }
+
+  static getIcon(assetId: AssetId): string | undefined {
+    return AssetService.instance?.getAsset(assetId)?.icon
+  }
+
   static getInstance(): AssetService {
-    if (!AssetService.instance) {
-      AssetService.instance = new AssetService()
+    if (!AssetService.instance) throw new Error('AssetService not initialized. Call AssetService.initialize() first.')
+
+    if (!AssetService.refreshing && Date.now() - AssetService.initializedAt > AssetService.MAX_AGE_MS) {
+      AssetService.refreshing = true
+      const refresh = AssetService.onStaleCallback ?? AssetService.fetchAndBuild.bind(AssetService)
+      refresh()
+        .then(() => console.log('Asset data refreshed in background'))
+        .catch(err => console.error('Background asset refresh failed:', err))
+        .finally(() => {
+          AssetService.refreshing = false
+        })
     }
+
     return AssetService.instance
   }
 
@@ -81,7 +122,6 @@ class AssetService {
 
     let score = 0
 
-    // Symbol matches (mutually exclusive within this group)
     if (symbol === term) {
       score += 1000
     } else if (symbol.startsWith(term)) {
@@ -90,7 +130,6 @@ class AssetService {
       score += 300 - Math.min(symbol.length, 50)
     }
 
-    // Name matches (cumulative with symbol!)
     if (name === term) {
       score += 500
     } else if (name.startsWith(term)) {
@@ -99,7 +138,6 @@ class AssetService {
       score += 150 - Math.min(name.length, 50)
     }
 
-    // Additional signals (all cumulative)
     if (isNative) score += 100
 
     return score
@@ -188,4 +226,4 @@ class AssetService {
   }
 }
 
-export const assetService = AssetService.getInstance()
+export { AssetService }

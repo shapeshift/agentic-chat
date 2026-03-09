@@ -13,6 +13,8 @@ type PortfolioBalanceItem = {
     precision: number
     price: string
     priceChange24h?: number
+    icon?: string
+    relatedAssetKey?: string
   }
   baseUnitValue: string
   cryptoAmount: string
@@ -68,12 +70,13 @@ export async function fetchFullPortfolio(
         chainId: result.chainId,
         name: balance.asset.name,
         symbol: balance.asset.symbol,
-        icon: undefined,
+        icon: balance.asset.icon,
         cryptoBalancePrecision: balance.cryptoAmount,
         fiatAmount: balance.usdAmount,
         price: balance.asset.price,
         priceChange24h: balance.asset.priceChange24h?.toString() ?? '0',
         allocation: 0,
+        relatedAssetKey: balance.asset.relatedAssetKey,
       }))
     )
 

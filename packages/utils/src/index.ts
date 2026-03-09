@@ -34,7 +34,7 @@ export * from './viem.js'
 export * from './networkIcons.js'
 export * from './retry.js'
 export * from './number.js'
-export { assetService } from './AssetService.js'
+export { AssetService } from './AssetService.js'
 
 export const fromBaseUnit = (value: string | number | BigNumber, precision: number): string => {
   const bn = new BigNumber(value)

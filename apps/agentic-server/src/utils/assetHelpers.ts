@@ -1,6 +1,6 @@
 import type { Asset } from '@shapeshiftoss/types'
 import { chainIdToNetwork } from '@shapeshiftoss/types'
-import { assetService, getFeeAssetIdByChainId, toBigInt } from '@shapeshiftoss/utils'
+import { AssetService, getFeeAssetIdByChainId, toBigInt } from '@shapeshiftoss/utils'
 
 import { getAssetPrices } from '../lib/asset/prices'
 import type { AssetInput } from '../lib/schemas/swapSchemas'
@@ -12,7 +12,7 @@ import type { WalletContext } from './walletContextSimple'
 const OWNERSHIP_BONUS = 100
 
 export async function resolveAsset(assetInput: AssetInput, walletContext?: WalletContext): Promise<Asset> {
-  const scoredAssets = assetService.searchWithScores(assetInput.symbolOrName, assetInput.network)
+  const scoredAssets = AssetService.getInstance().searchWithScores(assetInput.symbolOrName, assetInput.network)
 
   if (!scoredAssets || scoredAssets.length === 0) {
     throw new Error(

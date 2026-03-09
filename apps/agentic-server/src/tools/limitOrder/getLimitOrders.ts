@@ -1,5 +1,5 @@
 import type { Network } from '@shapeshiftoss/types'
-import { assetService, fromBaseUnit, toBigInt } from '@shapeshiftoss/utils'
+import { AssetService, fromBaseUnit, toBigInt } from '@shapeshiftoss/utils'
 import { z } from 'zod'
 
 import { getCowOrders } from '../../lib/cow'
@@ -47,7 +47,7 @@ const DEFAULT_DECIMALS = 18
 function resolveTokenMetadata(tokenAddress: string, chainId: number): { symbol: string; precision: number } | null {
   const network = CHAIN_ID_TO_NETWORK[chainId] as Network | undefined
   if (!network) return null
-  const asset = assetService.searchByContract(tokenAddress, network)[0]
+  const asset = AssetService.getInstance().searchByContract(tokenAddress, network)[0]
   if (!asset) return null
   return { symbol: asset.symbol, precision: asset.precision }
 }

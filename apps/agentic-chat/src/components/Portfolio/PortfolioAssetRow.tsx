@@ -10,7 +10,12 @@ type PortfolioAssetRowProps = {
 export function PortfolioAssetRow({ asset, showNetwork }: PortfolioAssetRowProps) {
   return (
     <>
-      <AssetIcon assetId={asset.assetId} chainId={showNetwork ? asset.chainId : undefined} className="w-10 h-10" />
+      <AssetIcon
+        icon={asset.icon}
+        symbol={asset.symbol}
+        chainId={showNetwork ? asset.chainId : undefined}
+        className="w-10 h-10"
+      />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm md:text-base text-foreground">{asset.symbol}</span>

@@ -1,8 +1,10 @@
 import util from 'util'
 
+import { AssetService } from '@shapeshiftoss/utils'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
+import { initializeAllAssetData, refreshAllAssetData } from './lib/assetInit'
 import { handleChatRequest } from './routes/chat'
 import { handlePortfolioRequest } from './routes/portfolio'
 
@@ -10,6 +12,16 @@ import { handlePortfolioRequest } from './routes/portfolio'
 util.inspect.defaultOptions.depth = null
 util.inspect.defaultOptions.maxArrayLength = null
 util.inspect.defaultOptions.maxStringLength = null
+
+console.log('Initializing asset data...')
+try {
+  await initializeAllAssetData()
+  AssetService.setOnStale(refreshAllAssetData)
+  console.log('Asset data initialized')
+} catch (error) {
+  console.error('Failed to initialize asset data:', error)
+  process.exit(1)
+}
 
 const app = new Hono()
 
