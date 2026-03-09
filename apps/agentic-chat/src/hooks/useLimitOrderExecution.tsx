@@ -1,103 +1,33 @@
-import { isEthereumWallet } from '@dynamic-labs/ethereum'
-import { useDynamicContext, useSwitchWallet } from '@dynamic-labs/sdk-react-core'
 import type { CreateLimitOrderOutput } from '@shapeshiftoss/agentic-server'
 import type { DynamicToolUIPart } from 'ai'
-import { current } from 'immer'
-import { useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
 import { getCowApiUrl } from '@/lib/cow-config'
+import type { LimitOrderMeta, ToolExecutionState } from '@/lib/executionState'
+import { getStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
-import { createStepPhaseMap, getStepStatus, signTypedDataWithWallet, StepStatus } from '@/lib/stepUtils'
-import type { PersistedToolState } from '@/stores/chatStore'
-import { useChatStore } from '@/stores/chatStore'
-import { withRetry } from '@/utils/retry'
+import { StepStatus } from '@/lib/stepUtils'
 import { executeApproval } from '@/utils/swapExecutor'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
+import { withRetry } from '@/utils/retry'
 
-import { useToolExecutionEffect } from './useToolExecutionEffect'
-import { useWalletConnection } from './useWalletConnection'
+import { signEip712Step } from './steps/signEip712Step'
+import { switchNetworkStepByChainIdNumber } from './steps/switchNetworkStep'
+import { useExecuteOnce } from './useExecuteOnce'
+import { useToolExecution } from './useToolExecution'
+
+export const LIMIT_ORDER_STEPS = { PREPARE: 0, NETWORK: 1, APPROVE: 2, SIGN: 3, SUBMIT: 4 } as const
 
 type LimitOrderData = CreateLimitOrderOutput
 
-export enum LimitOrderStep {
-  PREPARE = 0,
-  NETWORK_SWITCH = 1,
-  APPROVAL = 2,
-  APPROVAL_CONFIRMATION = 3,
-  SIGN = 4,
-  SUBMIT = 5,
-  COMPLETE = 6,
-}
-
-const LIMIT_ORDER_PHASES = createStepPhaseMap<LimitOrderStep>({
-  [LimitOrderStep.PREPARE]: 'prepare_complete',
-  [LimitOrderStep.NETWORK_SWITCH]: 'network_switched',
-  [LimitOrderStep.APPROVAL]: 'approved',
-  [LimitOrderStep.APPROVAL_CONFIRMATION]: 'approval_confirmed',
-  [LimitOrderStep.SIGN]: 'signed',
-  [LimitOrderStep.SUBMIT]: 'submitted',
-})
-
-interface LimitOrderState {
-  currentStep: LimitOrderStep
-  completedSteps: Set<LimitOrderStep>
-  approvalTxHash?: string
-  orderId?: string
-  signature?: string
-  error?: string
-  failedStep?: LimitOrderStep
-}
-
-const initialLimitOrderState: LimitOrderState = {
-  currentStep: LimitOrderStep.PREPARE,
-  completedSteps: new Set(),
-}
-
-export function limitOrderStateToPersistedState(
-  toolCallId: string,
-  state: LimitOrderState,
-  conversationId: string,
-  orderOutput: CreateLimitOrderOutput | null,
-  networkName?: string,
-  walletAddress?: string
-): PersistedToolState {
-  return {
-    toolCallId,
-    toolType: 'limit_order',
-    conversationId,
-    timestamp: Date.now(),
-    phases: LIMIT_ORDER_PHASES.toPhases(state.completedSteps, state.error),
-    meta: {
-      ...(state.orderId && { orderId: state.orderId }),
-      ...(state.approvalTxHash && { approvalTxHash: state.approvalTxHash }),
-      ...(state.error && { error: state.error }),
-      ...(networkName && { networkName }),
-    },
-    ...(orderOutput && { toolOutput: orderOutput }),
-    ...(walletAddress && { walletAddress }),
-  }
-}
-
-export function persistedStateToLimitOrderState(persisted: PersistedToolState): LimitOrderState {
-  const hasError = persisted.phases.includes('error')
-  return {
-    currentStep: LimitOrderStep.COMPLETE,
-    completedSteps: LIMIT_ORDER_PHASES.fromPhases(persisted.phases),
-    orderId: persisted.meta.orderId as string | undefined,
-    approvalTxHash: persisted.meta.approvalTxHash as string | undefined,
-    error: hasError ? (persisted.meta.error as string) : undefined,
-  }
-}
-
-export interface LimitOrderStepInfo {
-  step: LimitOrderStep
+interface LimitOrderStepInfo {
+  step: number
   status: StepStatus
 }
 
 interface UseLimitOrderExecutionResult {
+  state: ToolExecutionState<LimitOrderMeta>
   steps: LimitOrderStepInfo[]
   networkName?: string
   error?: string
@@ -159,56 +89,9 @@ export const useLimitOrderExecution = (
   toolState: DynamicToolUIPart['state'],
   orderData: LimitOrderData | null
 ): UseLimitOrderExecutionResult => {
-  const { evmAddress, evmWallet } = useWalletConnection()
-  const store = useChatStore()
-  const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
-  const { primaryWallet } = useDynamicContext()
-  const changePrimaryWallet = useSwitchWallet()
+  const ctx = useToolExecution<LimitOrderMeta>(toolCallId, 'limit_order', {})
 
-  const evmAddressRef = useRef(evmAddress)
-  const evmWalletRef = useRef(evmWallet)
-  const activeConversationIdRef = useRef(activeConversationId)
-  const primaryWalletRef = useRef(primaryWallet)
-  evmAddressRef.current = evmAddress
-  evmWalletRef.current = evmWallet
-  activeConversationIdRef.current = activeConversationId
-  primaryWalletRef.current = primaryWallet
-
-  const hasHydratedRef = useRef(false)
-  const lastToolCallIdRef = useRef<string | undefined>(undefined)
-  useEffect(() => {
-    if (lastToolCallIdRef.current !== toolCallId) {
-      hasHydratedRef.current = false
-      lastToolCallIdRef.current = toolCallId
-    }
-
-    if (!hasHydratedRef.current && !store.runtimeToolStates.has(toolCallId)) {
-      const persisted = store.getPersistedTransaction(toolCallId)
-      if (persisted) {
-        const hydratedState = persistedStateToLimitOrderState(persisted)
-        store.initializeRuntimeState(toolCallId, hydratedState)
-        hasHydratedRef.current = true
-      }
-    }
-  }, [toolCallId, store])
-
-  const { state } = useToolExecutionEffect(toolCallId, orderData, initialLimitOrderState, async (data, setState) => {
-    let orderId: string | undefined
-    let approvalTxHash: string | undefined
-
-    const persistState = (finalState: LimitOrderState) => {
-      if (!activeConversationIdRef.current) return
-      const persisted = limitOrderStateToPersistedState(
-        toolCallId,
-        finalState,
-        activeConversationIdRef.current,
-        data,
-        data.summary.network,
-        evmAddressRef.current
-      )
-      store.persistTransaction(persisted)
-    }
-
+  useExecuteOnce(ctx, orderData, async (data, ctx) => {
     try {
       const { signingData, orderParams, needsApproval, approvalTx } = data
 
@@ -216,103 +99,41 @@ export const useLimitOrderExecution = (
       if (!orderParams?.receiver) throw new Error('Invalid limit order output: missing orderParams.receiver')
       if (!signingData) throw new Error('Invalid limit order output: missing signingData')
 
-      if (!evmAddressRef.current) {
-        throw new Error('Wallet disconnected. Please reconnect and try again.')
-      }
-
-      if (evmAddressRef.current.toLowerCase() !== orderParams.receiver.toLowerCase()) {
+      const currentAddress = ctx.refs.evmAddress.current
+      if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
+      if (currentAddress.toLowerCase() !== orderParams.receiver.toLowerCase()) {
         throw new Error('Wallet address changed. Please re-initiate the limit order.')
       }
 
-      // Step 0: Prepare (completed by this point)
-      setState(draft => {
-        draft.completedSteps.add(LimitOrderStep.PREPARE)
-        draft.currentStep = LimitOrderStep.NETWORK_SWITCH
-        draft.error = undefined
+      // Step 0: Prepare
+      ctx.setState(draft => {
+        draft.toolOutput = data
+        draft.meta.networkName = data.summary.network
       })
+      ctx.advanceStep()
 
-      // Step 1: Network Switch
-      if (!evmWalletRef.current) {
-        throw new Error('EVM wallet not connected')
-      }
+      // Step 1: Network switch
+      await switchNetworkStepByChainIdNumber(ctx, orderParams.chainId)
 
-      if (primaryWalletRef.current && !isEthereumWallet(primaryWalletRef.current)) {
-        await changePrimaryWallet(evmWalletRef.current.id)
-      }
-
-      await evmWalletRef.current.connector.switchNetwork({ networkChainId: orderParams.chainId })
-
-      setState(draft => {
-        draft.completedSteps.add(draft.currentStep)
-        draft.currentStep = LimitOrderStep.APPROVAL
-        draft.error = undefined
-      })
-
-      // Step 2: Approval (if needed)
+      // Step 2: Approve (skip if not needed)
       if (needsApproval && approvalTx) {
-        approvalTxHash = await executeApproval(approvalTx)
-        setState(draft => {
-          draft.approvalTxHash = approvalTxHash
-          draft.completedSteps.add(LimitOrderStep.APPROVAL)
-          draft.currentStep = LimitOrderStep.APPROVAL_CONFIRMATION
-          draft.error = undefined
-        })
-      } else {
-        setState(draft => {
-          draft.currentStep = LimitOrderStep.APPROVAL_CONFIRMATION
-          draft.error = undefined
-        })
-      }
-
-      // Step 3: Approval Confirmation (if approval was needed)
-      if (needsApproval && approvalTxHash) {
+        const approvalTxHash = await executeApproval(approvalTx)
+        ctx.setMeta({ approvalTxHash } as Partial<LimitOrderMeta>)
         await waitForConfirmedReceipt(orderParams.chainId, approvalTxHash as `0x${string}`)
-        setState(draft => {
-          draft.completedSteps.add(LimitOrderStep.APPROVAL_CONFIRMATION)
-          draft.currentStep = LimitOrderStep.SIGN
-          draft.error = undefined
-        })
+        ctx.advanceStep()
       } else {
-        setState(draft => {
-          draft.currentStep = LimitOrderStep.SIGN
-          draft.error = undefined
-        })
+        ctx.skipStep()
       }
 
-      // Step 4: Sign EIP-712 message
-      const signature = await signTypedDataWithWallet(evmWalletRef.current, signingData)
+      // Step 3: Sign EIP-712 message
+      const signature = await signEip712Step(ctx, signingData)
 
-      setState(draft => {
-        draft.signature = signature
-        draft.completedSteps.add(LimitOrderStep.SIGN)
-        draft.currentStep = LimitOrderStep.SUBMIT
-        draft.error = undefined
-      })
-
-      // Step 5: Submit to CoW
-      orderId = await submitSignedOrder(orderParams.chainId, orderParams, signingData, signature)
-
-      // Persist successful state immediately after order submission succeeds
-      persistState({
-        currentStep: LimitOrderStep.COMPLETE,
-        completedSteps: new Set([
-          LimitOrderStep.PREPARE,
-          LimitOrderStep.NETWORK_SWITCH,
-          ...(needsApproval ? [LimitOrderStep.APPROVAL, LimitOrderStep.APPROVAL_CONFIRMATION] : []),
-          LimitOrderStep.SIGN,
-          LimitOrderStep.SUBMIT,
-        ]),
-        ...(orderId && { orderId }),
-        ...(approvalTxHash && { approvalTxHash }),
-      })
-
-      // Update runtime state
-      setState(draft => {
-        draft.orderId = orderId
-        draft.completedSteps.add(LimitOrderStep.SUBMIT)
-        draft.currentStep = LimitOrderStep.COMPLETE
-        draft.error = undefined
-      })
+      // Step 4: Submit to CoW
+      const orderId = await submitSignedOrder(orderParams.chainId, orderParams, signingData, signature)
+      ctx.setMeta({ orderId } as Partial<LimitOrderMeta>)
+      ctx.advanceStep()
+      ctx.markTerminal()
+      ctx.persist()
 
       toast.success(
         <span>
@@ -336,14 +157,12 @@ export const useLimitOrderExecution = (
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      let errorState: LimitOrderState | undefined
-      setState(draft => {
+      ctx.setState(draft => {
         draft.error = errorMessage
         draft.failedStep = draft.currentStep
-        errorState = current(draft)
+        draft.terminal = true
       })
-
-      if (errorState) persistState(errorState)
+      ctx.persist()
 
       toast.error(
         <span>
@@ -361,20 +180,19 @@ export const useLimitOrderExecution = (
   })()
 
   return {
+    state: ctx.state,
     steps: [
-      { step: LimitOrderStep.PREPARE, status: prepareStepStatus },
-      { step: LimitOrderStep.NETWORK_SWITCH, status: getStepStatus(LimitOrderStep.NETWORK_SWITCH, state) },
-      { step: LimitOrderStep.APPROVAL, status: getStepStatus(LimitOrderStep.APPROVAL, state) },
-      {
-        step: LimitOrderStep.APPROVAL_CONFIRMATION,
-        status: getStepStatus(LimitOrderStep.APPROVAL_CONFIRMATION, state),
-      },
-      { step: LimitOrderStep.SIGN, status: getStepStatus(LimitOrderStep.SIGN, state) },
-      { step: LimitOrderStep.SUBMIT, status: getStepStatus(LimitOrderStep.SUBMIT, state) },
+      { step: LIMIT_ORDER_STEPS.PREPARE, status: prepareStepStatus },
+      { step: LIMIT_ORDER_STEPS.NETWORK, status: getStepStatus(LIMIT_ORDER_STEPS.NETWORK, ctx.state) },
+      { step: LIMIT_ORDER_STEPS.APPROVE, status: getStepStatus(LIMIT_ORDER_STEPS.APPROVE, ctx.state) },
+      { step: LIMIT_ORDER_STEPS.SIGN, status: getStepStatus(LIMIT_ORDER_STEPS.SIGN, ctx.state) },
+      { step: LIMIT_ORDER_STEPS.SUBMIT, status: getStepStatus(LIMIT_ORDER_STEPS.SUBMIT, ctx.state) },
     ],
     networkName: orderData?.summary?.network,
-    error: state.error,
-    orderId: state.orderId,
-    trackingUrl: state.orderId ? `https://explorer.cow.fi/orders/${state.orderId}` : orderData?.trackingUrl,
+    error: ctx.state.error,
+    orderId: ctx.state.meta.orderId,
+    trackingUrl: ctx.state.meta.orderId
+      ? `https://explorer.cow.fi/orders/${ctx.state.meta.orderId}`
+      : orderData?.trackingUrl,
   }
 }
