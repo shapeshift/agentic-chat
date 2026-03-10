@@ -1,8 +1,10 @@
+import type { CreateStopLossOutput } from '@shapeshiftoss/agentic-server'
 import { ExternalLink } from 'lucide-react'
 
 import { Execution } from '@/components/Execution'
-import { CONDITIONAL_ORDER_STEPS, useStopLossExecution } from '@/hooks/useStopLossExecution'
+import { CONDITIONAL_ORDER_STEPS, useConditionalOrderExecution } from './useConditionalOrderExecution'
 import { getExplorerUrl, getSafeAppUrl } from '@/lib/explorers'
+import { analytics } from '@/lib/mixpanel'
 import { StepStatus } from '@/lib/stepUtils'
 
 import { Amount } from '../ui/Amount'
@@ -16,7 +18,61 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
   const orderOutput = output
 
   const orderData = toolState === 'output-available' && orderOutput ? orderOutput : null
-  const { state, steps, networkName, submitTxHash } = useStopLossExecution(toolCallId, toolState, orderData)
+  const { state, steps, networkName, submitTxHash } = useConditionalOrderExecution(toolCallId, toolState, orderData, {
+    toolType: 'stop_loss',
+    orderType: 'stopLoss',
+    errorLabel: 'stop-loss',
+    toOrderRecord: ({ data, safeAddress, submitTxHash, chainId }) => ({
+      orderHash: data.orderHash,
+      safeAddress,
+      chainId,
+      sellToken: {
+        address: data.sellTokenAddress,
+        symbol: data.summary.sellAsset.symbol,
+        amount: data.summary.sellAsset.amount,
+        precision: data.sellPrecision,
+      },
+      buyToken: {
+        address: data.buyTokenAddress,
+        symbol: data.summary.buyAsset.symbol,
+        amount: data.summary.buyAsset.estimatedAmount,
+        precision: data.buyPrecision,
+      },
+      sellAmountBaseUnit: data.sellAmountBaseUnit,
+      strikePrice: data.summary.triggerPrice,
+      validTo: data.validTo,
+      submitTxHash,
+      createdAt: Date.now(),
+      status: 'open',
+      conditionalOrderParams: {
+        handler: data.conditionalOrderParams.handler,
+        salt: data.conditionalOrderParams.salt,
+        staticInput: data.conditionalOrderParams.staticInput,
+      },
+      orderType: 'stopLoss',
+      network: data.summary.network,
+    }),
+    renderSuccessToast: (data: CreateStopLossOutput) => (
+      <span>
+        Your stop-loss for{' '}
+        <Amount.Crypto
+          value={data.summary.sellAsset.amount}
+          symbol={data.summary.sellAsset.symbol.toUpperCase()}
+          className="font-bold"
+        />{' '}
+        at ${data.summary.triggerPrice} is now active on-chain
+      </span>
+    ),
+    onSuccess: (data: CreateStopLossOutput) => {
+      analytics.trackStopLoss({
+        sellAsset: data.summary.sellAsset.symbol,
+        buyAsset: data.summary.buyAsset.symbol,
+        sellAmount: data.summary.sellAsset.amount,
+        triggerPrice: data.summary.triggerPrice,
+        network: data.summary.network,
+      })
+    },
+  })
 
   const needsDeposit = orderOutput?.needsDeposit ?? false
   const needsApproval = orderOutput?.needsApproval ?? false

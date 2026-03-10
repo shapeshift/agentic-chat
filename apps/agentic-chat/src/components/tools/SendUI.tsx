@@ -1,7 +1,18 @@
+import type { SendOutput } from '@shapeshiftoss/agentic-server'
+import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
+import { toast } from 'sonner'
+
 import { Execution } from '@/components/Execution'
-import { SEND_STEPS, useSendExecution } from '@/hooks/useSendExecution'
-import { StepStatus } from '@/lib/stepUtils'
+import type { SendMeta } from '@/lib/executionState'
+import { toolStateToStepStatus } from '@/lib/executionState'
+import { analytics } from '@/lib/mixpanel'
 import { firstFourLastFour } from '@/lib/utils'
+import type { SolanaWalletSigner } from '@/utils/chains/types'
+import { executeSend } from '@/utils/sendExecutor'
+
+import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'
@@ -9,15 +20,72 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
+const SEND_STEPS = { PREPARE: 0, NETWORK: 1, SEND: 2 } as const
+
 export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
   const sendOutput = output
   const address = sendOutput?.summary.from
 
   const sendData = toolState === 'output-available' && sendOutput ? sendOutput : null
-  const { state, steps, networkName } = useSendExecution(toolCallId, toolState, sendData)
 
-  const prepareStepStatus = steps[SEND_STEPS.PREPARE]?.status ?? StepStatus.NOT_STARTED
+  const ctx = useToolExecution<SendMeta>(toolCallId, 'send', {})
+
+  useExecuteOnce(ctx, sendData, async (data: SendOutput, ctx) => {
+    try {
+      const { tx } = data
+
+      if (!tx?.from) throw new Error('Invalid send output: missing tx.from')
+      if (!tx?.chainId) throw new Error('Invalid send output: missing tx.chainId')
+      if (!data.sendData?.chainId) throw new Error('Invalid send output: missing sendData.chainId')
+
+      const assetChainId = data.sendData.chainId
+      const { chainNamespace } = fromChainId(assetChainId)
+
+      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm
+        ? ctx.refs.evmAddress.current
+        : ctx.refs.solanaAddress.current
+      if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
+      if (currentAddress.toLowerCase() !== tx.from.toLowerCase()) {
+        throw new Error('Wallet address changed. Please re-initiate the transaction.')
+      }
+
+      let solanaSigner: SolanaWalletSigner | undefined
+      if (chainNamespace === CHAIN_NAMESPACE.Solana && ctx.refs.solanaWallet.current) {
+        solanaSigner = await ctx.refs.solanaWallet.current.getSigner()
+      }
+
+      ctx.setState(draft => {
+        draft.toolOutput = data
+        draft.meta.networkName = data.sendData.asset.network
+      })
+      ctx.advanceStep()
+
+      await switchNetworkStep(ctx, assetChainId)
+
+      const sendTxHash = await executeSend(tx, { solanaSigner })
+      ctx.setMeta({ sendTxHash })
+      ctx.advanceStep()
+      ctx.markTerminal()
+      ctx.persist()
+
+      analytics.trackSend({
+        asset: data.sendData.asset.symbol,
+        amount: data.sendData.amount,
+        network: data.sendData.asset.network,
+      })
+
+      toast.success(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} is complete`)
+    } catch (error) {
+      ctx.failAndPersist(error)
+
+      toast.error(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} failed`)
+    }
+  })
+
+  const prepareStepStatus = toolStateToStepStatus(toolState)
+
+  const networkName = sendData?.sendData?.asset?.network
 
   const hasError = toolState === 'output-error'
   const isLoading = !sendOutput && !hasError
@@ -25,7 +93,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
   const summary = sendOutput?.summary
 
   return (
-    <Execution.Root state={state} toolCallId={toolCallId}>
+    <Execution.Root state={ctx.state} toolCallId={toolCallId}>
       <Execution.HistoricalGuard fallbackLabel="Send">
         <TxStepCard.Root>
           <TxStepCard.Header>

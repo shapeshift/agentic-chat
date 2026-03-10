@@ -1,7 +1,15 @@
+import type { VaultWithdrawOutput } from '@shapeshiftoss/agentic-server'
+import { toast } from 'sonner'
+
 import { Execution } from '@/components/Execution'
-import { VAULT_WITHDRAW_STEPS, useVaultWithdrawExecution } from '@/hooks/useVaultWithdrawExecution'
-import { StepStatus } from '@/lib/stepUtils'
+import type { VaultWithdrawMeta } from '@/lib/executionState'
+import { toolStateToStepStatus } from '@/lib/executionState'
 import { firstFourLastFour } from '@/lib/utils'
+
+import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'
@@ -9,21 +17,61 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
+const VAULT_WITHDRAW_STEPS = { PREPARE: 0, NETWORK: 1, WITHDRAW: 2 } as const
+
 export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdrawTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
   const withdrawOutput = output
 
   const withdrawData = toolState === 'output-available' && withdrawOutput ? withdrawOutput : null
-  const { state, steps, networkName } = useVaultWithdrawExecution(toolCallId, toolState, withdrawData)
 
-  const prepareStepStatus = steps[VAULT_WITHDRAW_STEPS.PREPARE]?.status ?? StepStatus.NOT_STARTED
+  const ctx = useToolExecution<VaultWithdrawMeta>(toolCallId, 'vault_withdraw', {})
+
+  useExecuteOnce(ctx, withdrawData, async (data: VaultWithdrawOutput, ctx) => {
+    try {
+      const { safeTransaction, summary } = data
+
+      if (!ctx.refs.evmAddress.current) {
+        throw new Error('Wallet disconnected. Please reconnect and try again.')
+      }
+
+      ctx.setState(draft => {
+        draft.toolOutput = data
+        draft.meta.networkName = data.summary.network
+      })
+      ctx.advanceStep()
+
+      await switchNetworkStepByChainIdNumber(ctx, safeTransaction.chainId)
+
+      const withdrawTxHash = await submitSafeTxStep(ctx, {
+        safeAddress: summary.safeAddress,
+        to: safeTransaction.to,
+        data: safeTransaction.data,
+        value: safeTransaction.value,
+        chainId: safeTransaction.chainId,
+      })
+      ctx.setMeta({ withdrawTxHash })
+      ctx.markTerminal()
+      ctx.persist()
+
+      toast.success(`Vault withdrawal of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`)
+    } catch (error) {
+      ctx.failAndPersist(error)
+
+      toast.error(`Vault withdrawal failed`)
+    }
+  })
+
+  const prepareStepStatus = toolStateToStepStatus(toolState)
+
+  const networkName = withdrawData?.summary?.network
 
   const summary = withdrawOutput?.summary
   const hasError = toolState === 'output-error'
   const isLoading = !summary && !hasError
 
   return (
-    <Execution.Root state={state} toolCallId={toolCallId}>
+    <Execution.Root state={ctx.state} toolCallId={toolCallId}>
       <Execution.HistoricalGuard fallbackLabel="Vault withdrawal">
         <TxStepCard.Root>
           <TxStepCard.Header>

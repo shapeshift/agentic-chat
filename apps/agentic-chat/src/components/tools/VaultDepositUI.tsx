@@ -1,7 +1,16 @@
+import type { VaultDepositOutput } from '@shapeshiftoss/agentic-server'
+import { fromChainId } from '@shapeshiftoss/caip'
+import { toast } from 'sonner'
+
 import { Execution } from '@/components/Execution'
-import { VAULT_DEPOSIT_STEPS, useVaultDepositExecution } from '@/hooks/useVaultDepositExecution'
-import { StepStatus } from '@/lib/stepUtils'
+import type { VaultDepositMeta } from '@/lib/executionState'
+import { toolStateToStepStatus } from '@/lib/executionState'
 import { firstFourLastFour } from '@/lib/utils'
+import { sendTransaction } from '@/utils/sendTransaction'
+
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'
@@ -9,21 +18,63 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
+const VAULT_DEPOSIT_STEPS = { PREPARE: 0, NETWORK: 1, DEPOSIT: 2 } as const
+
 export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
   const depositOutput = output
 
   const depositData = toolState === 'output-available' && depositOutput ? depositOutput : null
-  const { state, steps, networkName } = useVaultDepositExecution(toolCallId, toolState, depositData)
 
-  const prepareStepStatus = steps[VAULT_DEPOSIT_STEPS.PREPARE]?.status ?? StepStatus.NOT_STARTED
+  const ctx = useToolExecution<VaultDepositMeta>(toolCallId, 'vault_deposit', {})
+
+  useExecuteOnce(ctx, depositData, async (data: VaultDepositOutput, ctx) => {
+    try {
+      const { depositTx } = data
+
+      if (!ctx.refs.evmAddress.current) {
+        throw new Error('Wallet disconnected. Please reconnect and try again.')
+      }
+
+      ctx.setState(draft => {
+        draft.toolOutput = data
+        draft.meta.networkName = data.summary.network
+      })
+      ctx.advanceStep()
+
+      const { chainReference } = fromChainId(depositTx.chainId)
+      await switchNetworkStepByChainIdNumber(ctx, Number(chainReference))
+
+      const depositTxHash = await sendTransaction({
+        chainId: depositTx.chainId,
+        data: depositTx.data,
+        from: depositTx.from,
+        to: depositTx.to,
+        value: depositTx.value,
+      })
+      ctx.setMeta({ depositTxHash })
+      ctx.advanceStep()
+      ctx.markTerminal()
+      ctx.persist()
+
+      toast.success(`Vault deposit of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`)
+    } catch (error) {
+      ctx.failAndPersist(error)
+
+      toast.error(`Vault deposit failed`)
+    }
+  })
+
+  const prepareStepStatus = toolStateToStepStatus(toolState)
+
+  const networkName = depositData?.summary?.network
 
   const summary = depositOutput?.summary
   const hasError = toolState === 'output-error'
   const isLoading = !summary && !hasError
 
   return (
-    <Execution.Root state={state} toolCallId={toolCallId}>
+    <Execution.Root state={ctx.state} toolCallId={toolCallId}>
       <Execution.HistoricalGuard fallbackLabel="Vault deposit">
         <TxStepCard.Root>
           <TxStepCard.Header>
