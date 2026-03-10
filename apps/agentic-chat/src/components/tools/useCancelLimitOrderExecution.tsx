@@ -8,10 +8,10 @@ import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
 import { StepStatus } from '@/lib/stepUtils'
 
-import { signEip712Step } from './steps/signEip712Step'
-import { switchNetworkStepByChainIdNumber } from './steps/switchNetworkStep'
-import { useExecuteOnce } from './useExecuteOnce'
-import { useToolExecution } from './useToolExecution'
+import { signEip712Step } from '@/lib/steps/signEip712Step'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 
 export const CANCEL_LIMIT_ORDER_STEPS = { PREPARE: 0, NETWORK: 1, SIGN: 2, SUBMIT: 3 } as const
 

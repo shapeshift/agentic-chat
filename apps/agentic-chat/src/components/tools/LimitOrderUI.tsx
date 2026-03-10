@@ -1,7 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 
 import { Execution } from '@/components/Execution'
-import { LIMIT_ORDER_STEPS, useLimitOrderExecution } from '@/hooks/useLimitOrderExecution'
+import { LIMIT_ORDER_STEPS, useLimitOrderExecution } from './useLimitOrderExecution'
 import { StepStatus } from '@/lib/stepUtils'
 
 import { Amount } from '../ui/Amount'

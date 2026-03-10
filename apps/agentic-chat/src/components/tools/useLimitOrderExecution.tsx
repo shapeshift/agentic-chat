@@ -12,10 +12,10 @@ import { executeApproval } from '@/utils/swapExecutor'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 import { withRetry } from '@/utils/retry'
 
-import { signEip712Step } from './steps/signEip712Step'
-import { switchNetworkStepByChainIdNumber } from './steps/switchNetworkStep'
-import { useExecuteOnce } from './useExecuteOnce'
-import { useToolExecution } from './useToolExecution'
+import { signEip712Step } from '@/lib/steps/signEip712Step'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 
 export const LIMIT_ORDER_STEPS = { PREPARE: 0, NETWORK: 1, APPROVE: 2, SIGN: 3, SUBMIT: 4 } as const
 

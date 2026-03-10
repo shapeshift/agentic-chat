@@ -1,5 +1,5 @@
 import { Execution } from '@/components/Execution'
-import { VAULT_WITHDRAW_ALL_STEPS, useVaultWithdrawAllExecution } from '@/hooks/useVaultWithdrawAllExecution'
+import { VAULT_WITHDRAW_ALL_STEPS, useVaultWithdrawAllExecution } from './useVaultWithdrawAllExecution'
 import { getExplorerUrl } from '@/lib/explorers'
 import { StepStatus } from '@/lib/stepUtils'
 import { firstFourLastFour } from '@/lib/utils'

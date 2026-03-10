@@ -1,8 +1,8 @@
 import { ExternalLink } from 'lucide-react'
 
 import { Execution } from '@/components/Execution'
-import type { CancelConditionalOrderConfig, CancelConditionalOrderData } from '@/hooks/useCancelConditionalOrderExecution'
-import { CANCEL_CONDITIONAL_STEPS, useCancelConditionalOrderExecution } from '@/hooks/useCancelConditionalOrderExecution'
+import type { CancelConditionalOrderConfig, CancelConditionalOrderData } from './useCancelConditionalOrderExecution'
+import { CANCEL_CONDITIONAL_STEPS, useCancelConditionalOrderExecution } from './useCancelConditionalOrderExecution'
 import { getExplorerUrl } from '@/lib/explorers'
 import { StepStatus } from '@/lib/stepUtils'
 

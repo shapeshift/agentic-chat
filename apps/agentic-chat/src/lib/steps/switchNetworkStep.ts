@@ -2,7 +2,7 @@ import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { isSolanaWallet } from '@dynamic-labs/solana'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 
-import type { ExecutionContext } from '../useToolExecution'
+import type { ExecutionContext } from '@/hooks/useToolExecution'
 
 export async function switchNetworkStep<TMeta extends object>(
   ctx: ExecutionContext<TMeta>,

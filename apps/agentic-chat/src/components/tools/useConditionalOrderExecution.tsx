@@ -11,10 +11,10 @@ import { useOrderStore } from '@/stores/orderStore'
 import { sendTransaction } from '@/utils/sendTransaction'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
-import { switchNetworkStepByChainIdNumber } from './steps/switchNetworkStep'
-import { useExecuteOnce } from './useExecuteOnce'
-import type { ExecutionContext } from './useToolExecution'
-import { useToolExecution } from './useToolExecution'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import type { ExecutionContext } from '@/hooks/useToolExecution'
+import { useToolExecution } from '@/hooks/useToolExecution'
 
 export const CONDITIONAL_ORDER_STEPS = {
   PREPARE: 0,

@@ -8,8 +8,8 @@ import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { executeSafeBatchTransaction } from '@/lib/safe'
 import { StepStatus } from '@/lib/stepUtils'
 
-import { useExecuteOnce } from './useExecuteOnce'
-import { useToolExecution } from './useToolExecution'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 
 export const VAULT_WITHDRAW_ALL_STEPS = { PREPARE: 0, WITHDRAW_CHAINS: 1 } as const
 

@@ -1,5 +1,5 @@
 import { Execution } from '@/components/Execution'
-import { SWAP_STEPS, useSwapExecution } from '@/hooks/useSwapExecution'
+import { SWAP_STEPS, useSwapExecution } from './useSwapExecution'
 import { bnOrZero } from '@/lib/bignumber'
 import { StepStatus } from '@/lib/stepUtils'
 import { firstFourLastFour } from '@/lib/utils'

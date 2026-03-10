@@ -1,4 +1,4 @@
-import type { CancelConditionalOrderConfig } from '@/hooks/useCancelConditionalOrderExecution'
+import type { CancelConditionalOrderConfig } from './useCancelConditionalOrderExecution'
 
 import { CancelConditionalOrderUI } from './CancelConditionalOrderUI'
 import type { ToolUIComponentProps } from './toolUIHelpers'

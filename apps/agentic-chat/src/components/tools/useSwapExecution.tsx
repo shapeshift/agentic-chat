@@ -12,9 +12,9 @@ import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
-import { switchNetworkStep } from './steps/switchNetworkStep'
-import { useExecuteOnce } from './useExecuteOnce'
-import { useToolExecution } from './useToolExecution'
+import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 
 export const SWAP_STEPS = { QUOTE: 0, NETWORK: 1, APPROVE: 2, SWAP: 3 } as const
 

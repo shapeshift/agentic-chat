@@ -1,6 +1,6 @@
 import { signTypedDataWithWallet } from '@/lib/stepUtils'
 
-import type { ExecutionContext } from '../useToolExecution'
+import type { ExecutionContext } from '@/hooks/useToolExecution'
 
 interface Eip712SigningData {
   domain: object

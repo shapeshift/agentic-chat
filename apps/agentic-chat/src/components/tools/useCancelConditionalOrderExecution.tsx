@@ -8,10 +8,10 @@ import { analytics } from '@/lib/mixpanel'
 import { StepStatus } from '@/lib/stepUtils'
 import { useOrderStore } from '@/stores/orderStore'
 
-import { switchNetworkStepByChainIdNumber } from './steps/switchNetworkStep'
-import { submitSafeTxStep } from './steps/submitSafeTxStep'
-import { useExecuteOnce } from './useExecuteOnce'
-import { useToolExecution } from './useToolExecution'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 
 export const CANCEL_CONDITIONAL_STEPS = { PREPARE: 0, NETWORK: 1, SUBMIT_CANCEL: 2, CONFIRM_TX: 3 } as const
 

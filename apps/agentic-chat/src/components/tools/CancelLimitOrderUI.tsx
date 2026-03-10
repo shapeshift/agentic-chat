@@ -1,7 +1,7 @@
 import { ExternalLink, XCircle } from 'lucide-react'
 
 import { Execution } from '@/components/Execution'
-import { CANCEL_LIMIT_ORDER_STEPS, useCancelLimitOrderExecution } from '@/hooks/useCancelLimitOrderExecution'
+import { CANCEL_LIMIT_ORDER_STEPS, useCancelLimitOrderExecution } from './useCancelLimitOrderExecution'
 import { StepStatus } from '@/lib/stepUtils'
 
 import { TxStepCard } from '../ui/TxStepCard'
