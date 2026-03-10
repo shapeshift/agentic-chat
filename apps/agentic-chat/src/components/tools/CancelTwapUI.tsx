@@ -1,5 +1,12 @@
 import { CancelConditionalOrderUI } from './CancelConditionalOrderUI'
 import type { ToolUIComponentProps } from './toolUIHelpers'
+import type { CancelConditionalOrderConfig } from './useCancelConditionalOrderExecution'
+
+const config: CancelConditionalOrderConfig = {
+  toolType: 'cancel_twap',
+  orderLabel: 'TWAP/DCA order',
+  renderSuccessToast: () => <span>TWAP/DCA order cancelled successfully</span>,
+}
 
 export function CancelTwapUI({ toolPart }: ToolUIComponentProps<'cancelTwapTool'>) {
   return (
@@ -7,8 +14,7 @@ export function CancelTwapUI({ toolPart }: ToolUIComponentProps<'cancelTwapTool'
       toolCallId={toolPart.toolCallId}
       state={toolPart.state}
       cancelOutput={toolPart.output}
-      toolType="cancel_twap"
-      orderLabel="TWAP/DCA order"
+      config={config}
       headerLabel="Cancel TWAP/DCA"
     />
   )

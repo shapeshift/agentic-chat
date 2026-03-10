@@ -1,6 +1,14 @@
-import { StepStatus, useVaultWithdrawExecution } from '@/hooks/useVaultWithdrawExecution'
+import type { VaultWithdrawOutput } from '@shapeshiftoss/agentic-server'
+import { toast } from 'sonner'
+
+import { Execution } from '@/components/Execution'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
+import type { VaultWithdrawMeta } from '@/lib/executionState'
+import { toolStateToStepStatus } from '@/lib/executionState'
+import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import { firstFourLastFour } from '@/lib/utils'
-import { useChatStore } from '@/stores/chatStore'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'
@@ -8,101 +16,116 @@ import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
+const VAULT_WITHDRAW_STEPS = { PREPARE: 0, NETWORK: 1, WITHDRAW: 2 } as const
+
 export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdrawTool'>) {
-  const { state, output, toolCallId } = toolPart
+  const { state: toolState, output, toolCallId } = toolPart
   const withdrawOutput = output
-  const { isHistorical, getPersistedTransaction } = useChatStore()
 
-  const withdrawData = state === 'output-available' && withdrawOutput ? withdrawOutput : null
-  const { error, steps, networkName } = useVaultWithdrawExecution(toolCallId, state, withdrawData)
+  const withdrawData = toolState === 'output-available' && withdrawOutput ? withdrawOutput : null
 
-  const isHistoricalSkipped = isHistorical(toolCallId) && !getPersistedTransaction(toolCallId)
+  const ctx = useToolExecution<VaultWithdrawMeta>(toolCallId, 'vault_withdraw', {})
 
-  if (isHistoricalSkipped) {
-    return (
-      <TxStepCard.Root>
-        <div className="text-sm text-muted-foreground font-medium p-4">
-          Vault withdrawal execution skipped (no saved data)
-        </div>
-      </TxStepCard.Root>
-    )
-  }
+  useExecuteOnce(ctx, withdrawData, async (data: VaultWithdrawOutput, ctx) => {
+    try {
+      const { safeTransaction, summary } = data
 
-  const [prepareStep, networkStep, withdrawStep] = steps
-  if (!prepareStep || !networkStep || !withdrawStep)
-    return (
-      <TxStepCard.Root>
-        <div className="text-sm text-muted-foreground font-medium p-4">Unable to load steps. Please try again.</div>
-      </TxStepCard.Root>
-    )
+      if (!ctx.refs.evmAddress.current) {
+        throw new Error('Wallet disconnected. Please reconnect and try again.')
+      }
 
-  const completedCount = [prepareStep.status, networkStep.status, withdrawStep.status].filter(
-    s => s === StepStatus.COMPLETE || s === StepStatus.SKIPPED
-  ).length
+      ctx.setState(draft => {
+        draft.toolOutput = data
+        draft.meta.networkName = data.summary.network
+      })
+      ctx.advanceStep()
 
-  const footerMessage = (() => {
-    if (state === 'output-error') return { type: 'error' as const, text: 'Failed to prepare vault withdrawal' }
-    if (error) return { type: 'error' as const, text: `Withdrawal failed: ${error}` }
-    return null
-  })()
+      await switchNetworkStepByChainIdNumber(ctx, safeTransaction.chainId)
+
+      const withdrawTxHash = await submitSafeTxStep(ctx, {
+        safeAddress: summary.safeAddress,
+        to: safeTransaction.to,
+        data: safeTransaction.data,
+        value: safeTransaction.value,
+        chainId: safeTransaction.chainId,
+      })
+      ctx.setMeta({ withdrawTxHash })
+      ctx.markTerminal()
+      ctx.persist()
+
+      toast.success(
+        `Vault withdrawal of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`
+      )
+    } catch (error) {
+      ctx.failAndPersist(error)
+
+      toast.error(`Vault withdrawal failed`)
+    }
+  })
+
+  const prepareStepStatus = toolStateToStepStatus(toolState)
+
+  const networkName = withdrawData?.summary?.network
 
   const summary = withdrawOutput?.summary
-  const hasError = state === 'output-error'
+  const hasError = toolState === 'output-error'
   const isLoading = !summary && !hasError
 
   return (
-    <TxStepCard.Root>
-      <TxStepCard.Header>
-        <TxStepCard.HeaderRow>
-          <div className="text-xs text-muted-foreground font-normal">Vault Withdrawal</div>
-          {summary && <div className="text-xs text-muted-foreground font-normal">{summary.network}</div>}
-        </TxStepCard.HeaderRow>
-        <TxStepCard.HeaderRow>
-          {summary ? (
-            <div className="text-lg font-semibold">Withdraw {summary.asset.symbol.toUpperCase()}</div>
-          ) : isLoading ? (
-            <Skeleton className="h-7 w-40" />
-          ) : null}
-          <TxStepCard.Amount
-            value={summary?.asset.amount}
-            symbol={summary?.asset.symbol.toUpperCase()}
-            isLoading={isLoading}
-          />
-        </TxStepCard.HeaderRow>
-      </TxStepCard.Header>
+    <Execution.Root state={ctx.state} toolCallId={toolCallId}>
+      <Execution.HistoricalGuard fallbackLabel="Vault withdrawal">
+        <TxStepCard.Root>
+          <TxStepCard.Header>
+            <TxStepCard.HeaderRow>
+              <div className="text-xs text-muted-foreground font-normal">Vault Withdrawal</div>
+              {summary && <div className="text-xs text-muted-foreground font-normal">{summary.network}</div>}
+            </TxStepCard.HeaderRow>
+            <TxStepCard.HeaderRow>
+              {summary ? (
+                <div className="text-lg font-semibold">Withdraw {summary.asset.symbol.toUpperCase()}</div>
+              ) : isLoading ? (
+                <Skeleton className="h-7 w-40" />
+              ) : null}
+              <TxStepCard.Amount
+                value={summary?.asset.amount}
+                symbol={summary?.asset.symbol.toUpperCase()}
+                isLoading={isLoading}
+              />
+            </TxStepCard.HeaderRow>
+          </TxStepCard.Header>
 
-      {summary && (
-        <TxStepCard.Content>
-          <TxStepCard.Details>
-            <TxStepCard.DetailItem
-              label="Asset"
-              value={<Amount.Crypto value={summary.asset.amount} symbol={summary.asset.symbol.toUpperCase()} />}
+          {summary && (
+            <TxStepCard.Content>
+              <TxStepCard.Details>
+                <TxStepCard.DetailItem
+                  label="Asset"
+                  value={<Amount.Crypto value={summary.asset.amount} symbol={summary.asset.symbol.toUpperCase()} />}
+                />
+                <TxStepCard.DetailItem label="Safe Vault" value={firstFourLastFour(summary.safeAddress)} />
+                <TxStepCard.DetailItem label="To" value={firstFourLastFour(summary.toAddress)} />
+                <TxStepCard.DetailItem label="Network" value={summary.network} />
+              </TxStepCard.Details>
+            </TxStepCard.Content>
+          )}
+
+          <Execution.Stepper>
+            <Execution.Step
+              index={VAULT_WITHDRAW_STEPS.PREPARE}
+              label="Preparing withdrawal"
+              overrideStatus={prepareStepStatus}
+              connectorBottom
             />
-            <TxStepCard.DetailItem label="Safe Vault" value={firstFourLastFour(summary.safeAddress)} />
-            <TxStepCard.DetailItem label="To" value={firstFourLastFour(summary.toAddress)} />
-            <TxStepCard.DetailItem label="Network" value={summary.network} />
-          </TxStepCard.Details>
-        </TxStepCard.Content>
-      )}
-
-      <TxStepCard.Stepper completedCount={completedCount} totalCount={3}>
-        <TxStepCard.Step status={prepareStep.status} connectorBottom>
-          Preparing withdrawal
-        </TxStepCard.Step>
-        <TxStepCard.Step status={networkStep.status} connectorTop connectorBottom>
-          {networkName ? `Switch to ${networkName}` : 'Switch network'}
-        </TxStepCard.Step>
-        <TxStepCard.Step status={withdrawStep.status} connectorTop>
-          Sign Safe transaction
-        </TxStepCard.Step>
-        {footerMessage && (
-          <div
-            className={`text-sm font-medium mt-4 ${footerMessage.type === 'error' ? 'text-red-500' : 'text-muted-foreground'}`}
-          >
-            {footerMessage.text}
-          </div>
-        )}
-      </TxStepCard.Stepper>
-    </TxStepCard.Root>
+            <Execution.Step
+              index={VAULT_WITHDRAW_STEPS.NETWORK}
+              label={networkName ? `Switch to ${networkName}` : 'Switch network'}
+              connectorTop
+              connectorBottom
+            />
+            <Execution.Step index={VAULT_WITHDRAW_STEPS.WITHDRAW} label="Sign Safe transaction" connectorTop />
+          </Execution.Stepper>
+          <Execution.ErrorFooter />
+        </TxStepCard.Root>
+      </Execution.HistoricalGuard>
+    </Execution.Root>
   )
 }

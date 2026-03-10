@@ -1,63 +1,17 @@
 import type { useChat } from '@ai-sdk/react'
-import type {
-  CancelLimitOrderOutput,
-  CancelStopLossOutput,
-  CreateLimitOrderOutput,
-  CreateStopLossOutput,
-  CreateTwapOutput,
-  InitiateSwapOutput,
-  SendOutput,
-  SwitchNetworkOutput,
-  VaultDepositOutput,
-  VaultWithdrawAllOutput,
-  VaultWithdrawOutput,
-} from '@shapeshiftoss/agentic-server'
 import { produce, enableMapSet } from 'immer'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
+import type { ToolExecutionState } from '@/lib/executionState'
 import type { Conversation } from '@/types'
 
 enableMapSet()
 
-const STORE_VERSION = 2
+export const STORE_VERSION = 3
 export const MAX_MESSAGES_PER_CONVERSATION = 500
 
 type ChatMessage = ReturnType<typeof useChat>['messages'][number]
-
-export interface PersistedToolState {
-  toolCallId: string
-  toolType:
-    | 'swap'
-    | 'send'
-    | 'network_switch'
-    | 'limit_order'
-    | 'cancel_limit_order'
-    | 'stop_loss'
-    | 'cancel_stop_loss'
-    | 'twap'
-    | 'cancel_twap'
-    | 'vault_deposit'
-    | 'vault_withdraw'
-    | 'vault_withdraw_all'
-  conversationId: string
-  timestamp: number
-  phases: string[]
-  meta: Record<string, unknown>
-  toolOutput?:
-    | InitiateSwapOutput
-    | SendOutput
-    | SwitchNetworkOutput
-    | CreateLimitOrderOutput
-    | CancelLimitOrderOutput
-    | CreateStopLossOutput
-    | CancelStopLossOutput
-    | CreateTwapOutput
-    | VaultDepositOutput
-    | VaultWithdrawOutput
-    | VaultWithdrawAllOutput
-  walletAddress?: string
-}
 
 interface ChatState {
   // Conversation metadata (persisted)
@@ -68,8 +22,8 @@ interface ChatState {
 
   // Tool execution state
   historicalToolIds: Set<string>
-  runtimeToolStates: Map<string, unknown>
-  persistedTransactions: PersistedToolState[]
+  runtimeToolStates: Map<string, ToolExecutionState>
+  persistedTransactions: ToolExecutionState[]
 
   // Conversation methods
   saveConversation: (id: string, title: string) => void
@@ -84,11 +38,11 @@ interface ChatState {
   isHistorical: (toolCallId: string) => boolean
   clearHistoricalTools: () => void
   hasRuntimeState: (toolCallId: string) => boolean
-  initializeRuntimeState: <T>(toolCallId: string, initialState: T) => void
-  getRuntimeState: <T>(toolCallId: string, initialState: T) => T
-  setRuntimeState: <T>(toolCallId: string, updater: (draft: T) => void) => void
-  persistTransaction: (state: PersistedToolState) => void
-  getPersistedTransaction: (toolCallId: string) => PersistedToolState | undefined
+  initializeRuntimeState: <T extends ToolExecutionState>(toolCallId: string, initialState: T) => void
+  getRuntimeState: <T extends ToolExecutionState>(toolCallId: string, initialState: T) => T
+  setRuntimeState: <T extends ToolExecutionState>(toolCallId: string, updater: (draft: T) => void) => void
+  persistTransaction: (state: ToolExecutionState) => void
+  getPersistedTransaction: (toolCallId: string) => ToolExecutionState | undefined
 }
 
 export const useChatStore = create<ChatState>()(
@@ -164,7 +118,7 @@ export const useChatStore = create<ChatState>()(
         return get().runtimeToolStates.has(toolCallId)
       },
 
-      initializeRuntimeState: <T>(toolCallId: string, initialState: T) => {
+      initializeRuntimeState: <T extends ToolExecutionState>(toolCallId: string, initialState: T) => {
         const currentStates = get().runtimeToolStates
         if (!currentStates.has(toolCallId)) {
           const newStates = new Map(currentStates)
@@ -173,12 +127,12 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
-      getRuntimeState: <T>(toolCallId: string, initialState: T): T => {
+      getRuntimeState: <T extends ToolExecutionState>(toolCallId: string, initialState: T): T => {
         const state = get().runtimeToolStates.get(toolCallId)
         return state !== undefined ? (state as T) : initialState
       },
 
-      setRuntimeState: <T>(toolCallId: string, updater: (draft: T) => void) => {
+      setRuntimeState: <T extends ToolExecutionState>(toolCallId: string, updater: (draft: T) => void) => {
         const currentStates = get().runtimeToolStates
         const currentState = currentStates.get(toolCallId) as T | undefined
 
@@ -193,30 +147,15 @@ export const useChatStore = create<ChatState>()(
         set({ runtimeToolStates: newStates })
       },
 
-      persistTransaction: (state: PersistedToolState) => {
+      persistTransaction: (state: ToolExecutionState) => {
         set(storeState => {
           const existingIndex = storeState.persistedTransactions.findIndex(tx => tx.toolCallId === state.toolCallId)
 
-          let updated: PersistedToolState[]
+          let updated: ToolExecutionState[]
           if (existingIndex >= 0) {
             const existing = storeState.persistedTransactions[existingIndex]
-            if (existing) {
-              // Don't overwrite terminal states - they're immutable
-              // A state is terminal if it has a tx hash (swap/stop-loss/twap) or order ID (limit order) - the critical operation completed
-              const hasTxHash =
-                existing.meta.swapTxHash ||
-                existing.meta.approvalTxHash ||
-                existing.meta.submitTxHash ||
-                existing.meta.sendTxHash ||
-                existing.meta.cancelTxHash ||
-                existing.meta.depositTxHash ||
-                existing.meta.withdrawTxHash
-              const hasOrderId = existing.meta.orderId
-
-              if (hasTxHash || hasOrderId) {
-                // Terminal state - don't overwrite, keep existing
-                return storeState
-              }
+            if (existing?.terminal) {
+              return storeState
             }
 
             updated = [...storeState.persistedTransactions]
@@ -249,6 +188,9 @@ export const useChatStore = create<ChatState>()(
         const state = persisted as Record<string, unknown>
         if (version < 2) {
           state.messagesByConversation = {}
+        }
+        if (version < 3) {
+          state.persistedTransactions = []
         }
         return state as unknown as ChatState
       },

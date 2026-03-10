@@ -1,21 +1,24 @@
 import { describe, expect, it } from 'bun:test'
 
-import type { PersistedToolState } from '../../stores/chatStore'
 import { normalizeToActivityItem } from '../activityNormalizer'
+import type { ToolExecutionState } from '../executionState'
 
-const makePersistedState = (overrides: Partial<PersistedToolState>): PersistedToolState => ({
+const makeExecutionState = (overrides: Partial<ToolExecutionState>): ToolExecutionState => ({
   toolCallId: 'tc-1',
   toolType: 'swap',
   conversationId: 'conv-1',
   timestamp: 1700000000,
-  phases: [],
+  currentStep: 0,
+  completedSteps: [],
+  skippedSteps: [],
+  terminal: false,
   meta: {},
   ...overrides,
 })
 
 describe('normalizeToActivityItem', () => {
   it('dispatches to swap normalizer', () => {
-    const tx = makePersistedState({
+    const tx = makeExecutionState({
       toolType: 'swap',
       meta: { swapTxHash: '0xswap' },
       toolOutput: {
@@ -35,7 +38,7 @@ describe('normalizeToActivityItem', () => {
   })
 
   it('dispatches to send normalizer', () => {
-    const tx = makePersistedState({
+    const tx = makeExecutionState({
       toolType: 'send',
       meta: { sendTxHash: '0xsend' },
       toolOutput: {
@@ -51,7 +54,7 @@ describe('normalizeToActivityItem', () => {
   })
 
   it('dispatches to limit_order normalizer', () => {
-    const tx = makePersistedState({
+    const tx = makeExecutionState({
       toolType: 'limit_order',
       meta: { orderId: '0xorder1' },
       toolOutput: {
@@ -74,12 +77,12 @@ describe('normalizeToActivityItem', () => {
   })
 
   it('returns null for unknown tool types', () => {
-    const tx = makePersistedState({ toolType: 'cancel_limit_order' })
+    const tx = makeExecutionState({ toolType: 'cancel_limit_order' })
     expect(normalizeToActivityItem(tx)).toBeNull()
   })
 
   it('returns null for swap without tx hash', () => {
-    const tx = makePersistedState({
+    const tx = makeExecutionState({
       toolType: 'swap',
       meta: {},
       toolOutput: {
@@ -95,7 +98,7 @@ describe('normalizeToActivityItem', () => {
   })
 
   it('returns null for send without tx hash', () => {
-    const tx = makePersistedState({
+    const tx = makeExecutionState({
       toolType: 'send',
       meta: {},
       toolOutput: {
@@ -107,7 +110,7 @@ describe('normalizeToActivityItem', () => {
   })
 
   it('returns null for limit order without orderId', () => {
-    const tx = makePersistedState({
+    const tx = makeExecutionState({
       toolType: 'limit_order',
       meta: {},
       toolOutput: {
@@ -126,7 +129,7 @@ describe('normalizeToActivityItem', () => {
   })
 
   it('includes approval details when present in swap', () => {
-    const tx = makePersistedState({
+    const tx = makeExecutionState({
       toolType: 'swap',
       meta: { swapTxHash: '0xswap', approvalTxHash: '0xapproval' },
       toolOutput: {

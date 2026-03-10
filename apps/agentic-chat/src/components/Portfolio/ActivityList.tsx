@@ -23,7 +23,7 @@ export function ActivityList() {
   const activities = useMemo(() => {
     return transactions
       .filter(tx => tx.toolType === 'swap' || tx.toolType === 'send' || tx.toolType === 'limit_order')
-      .filter(tx => !tx.phases.includes('error'))
+      .filter(tx => !tx.error)
       .filter(tx => tx.walletAddress && connectedAddresses.has(tx.walletAddress.toLowerCase()))
       .map(tx => normalizeToActivityItem(tx))
       .filter((item): item is ActivityItem => item !== null)

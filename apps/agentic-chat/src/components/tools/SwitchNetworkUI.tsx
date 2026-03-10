@@ -1,6 +1,11 @@
+import { isEthereumWallet } from '@dynamic-labs/ethereum'
+import { isSolanaWallet } from '@dynamic-labs/solana'
+import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import { ArrowRightLeft } from 'lucide-react'
 
-import { useNetworkSwitch } from '@/hooks/useNetworkSwitch'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
+import { networkNameToChainId } from '@/lib/chains'
 import { useChatStore } from '@/stores/chatStore'
 
 import { CollapsableDetails } from '../ui/CollapsableDetails'
@@ -8,6 +13,13 @@ import { StatusText } from '../ui/StatusText'
 
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
+
+type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'
+
+interface NetworkSwitchMeta {
+  network?: string
+  phase: NetworkSwitchPhase
+}
 
 const Icon = ArrowRightLeft
 
@@ -23,7 +35,77 @@ export function SwitchNetworkUI({ toolPart }: ToolUIComponentProps<'switchNetwor
   const { isHistorical, getPersistedTransaction } = useChatStore()
 
   const networkData = state === 'output-available' && networkOutput ? networkOutput : null
-  const { phase, error } = useNetworkSwitch(toolCallId, networkData)
+
+  const ctx = useToolExecution<NetworkSwitchMeta>(toolCallId, 'network_switch', {
+    phase: 'idle',
+  })
+
+  useExecuteOnce(ctx, networkData, async (data: SwitchNetworkOutput, ctx) => {
+    const { refs } = ctx
+
+    const targetChainId = networkNameToChainId[data.network]
+
+    if (!targetChainId) {
+      ctx.setState(draft => {
+        draft.error = `Network "${data.network}" not found`
+        draft.meta.phase = 'error'
+        draft.meta.network = data.network
+      })
+      ctx.markTerminal()
+      ctx.persist()
+      return
+    }
+
+    if (data.network === 'solana') {
+      if (refs.solanaWallet.current && refs.primaryWallet.current && !isSolanaWallet(refs.primaryWallet.current)) {
+        await refs.changePrimaryWallet.current(refs.solanaWallet.current.id)
+      }
+
+      ctx.setState(draft => {
+        draft.meta.phase = 'success'
+        draft.meta.network = data.network
+      })
+      ctx.advanceStep()
+      ctx.markTerminal()
+      ctx.persist()
+      return
+    }
+
+    ctx.setState(draft => {
+      draft.meta.phase = 'switching'
+      draft.meta.network = data.network
+      draft.error = undefined
+    })
+
+    try {
+      if (refs.evmWallet.current && refs.primaryWallet.current && !isEthereumWallet(refs.primaryWallet.current)) {
+        await refs.changePrimaryWallet.current(refs.evmWallet.current.id)
+      }
+
+      if (!refs.evmWallet.current) {
+        throw new Error('EVM wallet not connected')
+      }
+
+      await refs.evmWallet.current.connector.switchNetwork({ networkChainId: targetChainId })
+      ctx.setState(draft => {
+        draft.meta.phase = 'success'
+      })
+      ctx.advanceStep()
+      ctx.markTerminal()
+      ctx.persist()
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      ctx.setState(draft => {
+        draft.meta.phase = 'error'
+        draft.error = errorMessage
+      })
+      ctx.markTerminal()
+      ctx.persist()
+    }
+  })
+
+  const phase = ctx.state.meta.phase
+  const error = ctx.state.error
 
   const stateRender = useToolStateRender(state, {
     loading: 'Preparing network switch...',

@@ -1,5 +1,12 @@
 import { CancelConditionalOrderUI } from './CancelConditionalOrderUI'
 import type { ToolUIComponentProps } from './toolUIHelpers'
+import type { CancelConditionalOrderConfig } from './useCancelConditionalOrderExecution'
+
+const config: CancelConditionalOrderConfig = {
+  toolType: 'cancel_stop_loss',
+  orderLabel: 'Stop-loss order',
+  renderSuccessToast: () => <span>Stop-loss order cancelled successfully</span>,
+}
 
 export function CancelStopLossUI({ toolPart }: ToolUIComponentProps<'cancelStopLossTool'>) {
   return (
@@ -7,8 +14,7 @@ export function CancelStopLossUI({ toolPart }: ToolUIComponentProps<'cancelStopL
       toolCallId={toolPart.toolCallId}
       state={toolPart.state}
       cancelOutput={toolPart.output}
-      toolType="cancel_stop_loss"
-      orderLabel="Stop-loss order"
+      config={config}
       headerLabel="Cancel Stop-Loss"
     />
   )
