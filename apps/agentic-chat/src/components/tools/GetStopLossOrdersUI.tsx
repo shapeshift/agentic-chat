@@ -1,5 +1,6 @@
 import { Clock, ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
 
+import { bn } from '@/lib/bignumber'
 import { stopPropagationHandler } from '@/lib/eventHandlers'
 import { getExplorerUrl } from '@/lib/explorers'
 import { cn } from '@/lib/utils'
@@ -77,7 +78,7 @@ function StopLossOrderItem({
           {isOpen && strikePrice && (
             <>
               <span>&bull;</span>
-              <span>Strike: {strikePrice}</span>
+              <span>Strike: {bn(strikePrice).toFixed()}</span>
             </>
           )}
           {isOpen && !strikePrice && (

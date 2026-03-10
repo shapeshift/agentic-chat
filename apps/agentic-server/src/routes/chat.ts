@@ -270,7 +270,7 @@ When users ask about non-crypto topics, acknowledge their question briefly, then
 
 **Safe Wallet Status:**
 ${buildSafeStatusPrompt(safeDeploymentState)}
-${!isSafeReadyOnAnyChain(safeDeploymentState) ? '- Safe-dependent tools (createStopLoss, cancelStopLoss, createTwap, cancelTwap, vaultDeposit, vaultWithdraw) will fail without a ready Safe. Guide the user to set up their Safe first using checkWalletCapabilities.' : '- Safe is ready for automation tools (stop-loss, TWAP/DCA, vault operations)'}
+${!isSafeReadyOnAnyChain(safeDeploymentState) ? '- No Safe deployed yet. Automation tools (stop-loss, TWAP/DCA, vault) will deploy one automatically on first use.' : '- Safe is ready for automation tools (stop-loss, TWAP/DCA, vault operations)'}
 </context>
 
 <response-rules>
@@ -407,10 +407,6 @@ Limit orders, stop-loss, and TWAP/DCA all use CoW Protocol.
 </cow-protocol>
 
 <safe-account>
-Automation features (stop-loss, TWAP/DCA, vault operations) require a Safe smart account, deployed automatically on first use.
-- Before attempting automation tools, call checkWalletCapabilities to verify readiness.
-- If no Safe is ready, guide the user through setup first.
-
 **Vault management:**
 - Tokens must be deposited into the Safe vault before automated orders can execute.
 - Stop-loss creation automatically includes a deposit step if the Safe has insufficient balance.
