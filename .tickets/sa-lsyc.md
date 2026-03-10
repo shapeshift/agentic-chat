@@ -1,6 +1,6 @@
 ---
 id: sa-lsyc
-status: open
+status: closed
 deps: []
 links: []
 created: 2026-03-06T06:20:41Z

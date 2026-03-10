@@ -64,7 +64,7 @@ export function deriveTwapStatus(
   cowOrders: CowOrder[],
   isActive: boolean,
   nowSeconds: number,
-  cowApiFailed: boolean,
+  cowApiFailed: boolean
 ): CowOrderStatus {
   if (!isActive) return 'cancelled'
   if (order.validTo > 0 && order.validTo < nowSeconds) {

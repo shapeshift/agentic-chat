@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
 import { deriveTwapStatus, getTwapFilledPartCount } from '../getTwapOrders'
+
 import {
   BUY_TOKEN,
   createCowPartOrder,
@@ -44,10 +45,7 @@ describe('deriveTwapStatus', () => {
 
   it('returns fulfilled when all parts are filled', () => {
     const order = createTwapOrder({ validTo: PAST_VALID_TO, numParts: 2, sellAmountBaseUnit: '2000000000000000000' })
-    const cowOrders = [
-      createCowPartOrder({ uid: '1' }),
-      createCowPartOrder({ uid: '2' }),
-    ]
+    const cowOrders = [createCowPartOrder({ uid: '1' }), createCowPartOrder({ uid: '2' })]
     expect(deriveTwapStatus(order, cowOrders, true, NOW_SECONDS, false)).toBe('fulfilled')
   })
 
@@ -86,10 +84,7 @@ describe('getTwapFilledPartCount', () => {
 
   it('counts matching filled parts correctly', () => {
     const order = createTwapOrder({ numParts: 3 })
-    const cowOrders = [
-      createCowPartOrder({ uid: '1' }),
-      createCowPartOrder({ uid: '2' }),
-    ]
+    const cowOrders = [createCowPartOrder({ uid: '1' }), createCowPartOrder({ uid: '2' })]
     expect(getTwapFilledPartCount(order, cowOrders)).toBe(2)
   })
 
@@ -126,10 +121,12 @@ describe('getTwapFilledPartCount', () => {
 
   it('matches tokens case-insensitively', () => {
     const order = createTwapOrder({ numParts: 3 })
-    const cowOrders = [createCowPartOrder({
-      sellToken: SELL_TOKEN.toUpperCase(),
-      buyToken: BUY_TOKEN.toUpperCase(),
-    })]
+    const cowOrders = [
+      createCowPartOrder({
+        sellToken: SELL_TOKEN.toUpperCase(),
+        buyToken: BUY_TOKEN.toUpperCase(),
+      }),
+    ]
     expect(getTwapFilledPartCount(order, cowOrders)).toBe(1)
   })
 })

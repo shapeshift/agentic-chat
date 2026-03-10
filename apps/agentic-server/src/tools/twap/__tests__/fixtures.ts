@@ -1,5 +1,5 @@
-import type { ActiveOrderSummary } from '../../../utils/walletContextSimple'
 import type { CowOrder } from '../../../lib/cow/types'
+import type { ActiveOrderSummary } from '../../../utils/walletContextSimple'
 
 export const NOW_SECONDS = 1700000000
 export const PAST_VALID_TO = NOW_SECONDS - 3600
