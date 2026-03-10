@@ -94,7 +94,7 @@ export function useCancelConditionalOrderExecution(
       const errorMessage = ctx.failAndPersist(error)
 
       toast.error(
-        <span>Failed to cancel: {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}</span>,
+        <span>Failed to cancel {config.orderLabel}: {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}</span>,
       )
     }
   })

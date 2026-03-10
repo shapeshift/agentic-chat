@@ -37,7 +37,7 @@ export function CancelConditionalOrderUI({
 
   return (
     <Execution.Root state={state} toolCallId={toolCallId}>
-      <Execution.HistoricalGuard fallbackLabel="Cancel execution">
+      <Execution.HistoricalGuard fallbackLabel={`Cancel ${config.orderLabel}`}>
         <TxStepCard.Root>
           <TxStepCard.Header>
             <TxStepCard.HeaderRow>
