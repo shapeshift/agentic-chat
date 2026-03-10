@@ -1,16 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { getUserFriendlyError, StepStatus } from '../stepUtils'
-
-describe('StepStatus', () => {
-  it('has the expected string values', () => {
-    expect(StepStatus.NOT_STARTED).toBe('not_started')
-    expect(StepStatus.IN_PROGRESS).toBe('in_progress')
-    expect(StepStatus.COMPLETE).toBe('complete')
-    expect(StepStatus.SKIPPED).toBe('skipped')
-    expect(StepStatus.FAILED).toBe('failed')
-  })
-})
+import { getUserFriendlyError } from '../stepUtils'
 
 describe('getUserFriendlyError', () => {
   it('returns friendly message for user rejection', () => {

@@ -38,9 +38,9 @@ interface ChatState {
   isHistorical: (toolCallId: string) => boolean
   clearHistoricalTools: () => void
   hasRuntimeState: (toolCallId: string) => boolean
-  initializeRuntimeState: <T>(toolCallId: string, initialState: T) => void
-  getRuntimeState: <T>(toolCallId: string, initialState: T) => T
-  setRuntimeState: <T>(toolCallId: string, updater: (draft: T) => void) => void
+  initializeRuntimeState: <T extends ToolExecutionState>(toolCallId: string, initialState: T) => void
+  getRuntimeState: <T extends ToolExecutionState>(toolCallId: string, initialState: T) => T
+  setRuntimeState: <T extends ToolExecutionState>(toolCallId: string, updater: (draft: T) => void) => void
   persistTransaction: (state: ToolExecutionState) => void
   getPersistedTransaction: (toolCallId: string) => ToolExecutionState | undefined
 }
@@ -118,7 +118,7 @@ export const useChatStore = create<ChatState>()(
         return get().runtimeToolStates.has(toolCallId)
       },
 
-      initializeRuntimeState: <T>(toolCallId: string, initialState: T) => {
+      initializeRuntimeState: <T extends ToolExecutionState>(toolCallId: string, initialState: T) => {
         const currentStates = get().runtimeToolStates
         if (!currentStates.has(toolCallId)) {
           const newStates = new Map(currentStates)
@@ -127,12 +127,12 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
-      getRuntimeState: <T>(toolCallId: string, initialState: T): T => {
+      getRuntimeState: <T extends ToolExecutionState>(toolCallId: string, initialState: T): T => {
         const state = get().runtimeToolStates.get(toolCallId)
         return state !== undefined ? (state as T) : initialState
       },
 
-      setRuntimeState: <T>(toolCallId: string, updater: (draft: T) => void) => {
+      setRuntimeState: <T extends ToolExecutionState>(toolCallId: string, updater: (draft: T) => void) => {
         const currentStates = get().runtimeToolStates
         const currentState = currentStates.get(toolCallId) as T | undefined
 
