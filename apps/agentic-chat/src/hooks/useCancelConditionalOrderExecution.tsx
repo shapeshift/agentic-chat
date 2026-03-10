@@ -91,13 +91,7 @@ export function useCancelConditionalOrderExecution(
       toast.success(config.renderSuccessToast(data))
       config.onSuccess?.(data)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      ctx.setState(draft => {
-        draft.error = errorMessage
-        draft.failedStep = draft.currentStep
-        draft.terminal = true
-      })
-      ctx.persist()
+      const errorMessage = ctx.failAndPersist(error)
 
       toast.error(
         <span>Failed to cancel: {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}</span>,

@@ -95,13 +95,7 @@ export const useCancelLimitOrderExecution = (
         network: data.network,
       })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      ctx.setState(draft => {
-        draft.error = errorMessage
-        draft.failedStep = draft.currentStep
-        draft.terminal = true
-      })
-      ctx.persist()
+      const errorMessage = ctx.failAndPersist(error)
 
       toast.error(
         <span>

@@ -17,6 +17,7 @@ export interface ExecutionContext<TMeta> {
   setMeta: (partial: Partial<TMeta>) => void
   markTerminal: () => void
   persist: () => void
+  failAndPersist: (error: unknown) => string
   refs: {
     evmWallet: MutableRefObject<ReturnType<typeof useWalletConnection>['evmWallet']>
     solanaWallet: MutableRefObject<ReturnType<typeof useWalletConnection>['solanaWallet']>
@@ -123,6 +124,17 @@ export function useToolExecution<TMeta extends object>(
     })
   }
 
+  const failAndPersist = (error: unknown): string => {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    setState(draft => {
+      draft.error = errorMessage
+      draft.failedStep = draft.currentStep
+      draft.terminal = true
+    })
+    persist()
+    return errorMessage
+  }
+
   const persist = () => {
     const currentState = store.getRuntimeState<ToolExecutionState<TMeta>>(toolCallId, initialState)
     const walletAddress = evmAddressRef.current ?? solanaAddressRef.current
@@ -143,6 +155,7 @@ export function useToolExecution<TMeta extends object>(
     setMeta,
     markTerminal: markTerminalFn,
     persist,
+    failAndPersist,
     refs: {
       evmWallet: evmWalletRef,
       solanaWallet: solanaWalletRef,

@@ -104,13 +104,7 @@ export const useVaultWithdrawAllExecution = (
 
       toast.success('Vault withdraw all is complete')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      ctx.setState(draft => {
-        draft.error = errorMessage
-        draft.failedStep = draft.currentStep
-        draft.terminal = true
-      })
-      ctx.persist()
+      ctx.failAndPersist(error)
 
       toast.error('Vault withdraw all failed')
     }

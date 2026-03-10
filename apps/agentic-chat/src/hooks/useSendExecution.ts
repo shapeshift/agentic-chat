@@ -87,13 +87,7 @@ export const useSendExecution = (
 
       toast.success(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} is complete`)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      ctx.setState(draft => {
-        draft.error = errorMessage
-        draft.failedStep = draft.currentStep
-        draft.terminal = true
-      })
-      ctx.persist()
+      ctx.failAndPersist(error)
 
       toast.error(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} failed`)
     }
