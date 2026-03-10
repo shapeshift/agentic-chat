@@ -3,7 +3,8 @@ import type { ReactNode } from 'react'
 
 import type { ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus } from '@/lib/executionState'
-import { getUserFriendlyError, StepStatus } from '@/lib/stepUtils'
+import type { StepStatus } from '@/lib/stepUtils'
+import { getUserFriendlyError } from '@/lib/stepUtils'
 import { useChatStore } from '@/stores/chatStore'
 
 import { TruncateText } from './ui/TruncateText'

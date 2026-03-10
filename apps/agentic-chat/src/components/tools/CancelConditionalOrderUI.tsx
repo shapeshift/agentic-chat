@@ -1,12 +1,13 @@
 import { ExternalLink } from 'lucide-react'
 
 import { Execution } from '@/components/Execution'
-import type { CancelConditionalOrderConfig, CancelConditionalOrderData } from './useCancelConditionalOrderExecution'
-import { CANCEL_CONDITIONAL_STEPS, useCancelConditionalOrderExecution } from './useCancelConditionalOrderExecution'
 import { getExplorerUrl } from '@/lib/explorers'
 import { StepStatus } from '@/lib/stepUtils'
 
 import { TxStepCard } from '../ui/TxStepCard'
+
+import { CANCEL_CONDITIONAL_STEPS, useCancelConditionalOrderExecution } from './useCancelConditionalOrderExecution'
+import type { CancelConditionalOrderConfig, CancelConditionalOrderData } from './useCancelConditionalOrderExecution'
 
 const CHAIN_ID_TO_NETWORK: Record<number, string> = { 1: 'ethereum', 100: 'gnosis', 42161: 'arbitrum' }
 
@@ -26,12 +27,7 @@ export function CancelConditionalOrderUI({
   headerLabel,
 }: CancelConditionalOrderUIProps) {
   const cancelData = toolState === 'output-available' && cancelOutput ? cancelOutput : null
-  const { state, steps, cancelTxHash } = useCancelConditionalOrderExecution(
-    toolCallId,
-    toolState,
-    cancelData,
-    config,
-  )
+  const { state, steps, cancelTxHash } = useCancelConditionalOrderExecution(toolCallId, toolState, cancelData, config)
 
   const prepareStepStatus = steps[CANCEL_CONDITIONAL_STEPS.PREPARE]?.status ?? StepStatus.NOT_STARTED
 
@@ -79,16 +75,15 @@ export function CancelConditionalOrderUI({
               connectorTop
               connectorBottom
             />
-            <Execution.Step
-              index={CANCEL_CONDITIONAL_STEPS.CONFIRM_TX}
-              label="Confirming on-chain"
-              connectorTop
-            />
+            <Execution.Step index={CANCEL_CONDITIONAL_STEPS.CONFIRM_TX} label="Confirming on-chain" connectorTop />
           </Execution.Stepper>
 
           {cancelTxHash && cancelOutput && (
             <a
-              href={getExplorerUrl(CHAIN_ID_TO_NETWORK[cancelOutput.safeTransaction.chainId] ?? 'ethereum', cancelTxHash)}
+              href={getExplorerUrl(
+                CHAIN_ID_TO_NETWORK[cancelOutput.safeTransaction.chainId] ?? 'ethereum',
+                cancelTxHash
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-3 px-4 pb-4"

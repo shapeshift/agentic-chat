@@ -2,7 +2,6 @@ import type { CreateTwapOutput } from '@shapeshiftoss/agentic-server'
 import { ExternalLink } from 'lucide-react'
 
 import { Execution } from '@/components/Execution'
-import { CONDITIONAL_ORDER_STEPS, useConditionalOrderExecution } from './useConditionalOrderExecution'
 import { getExplorerUrl, getSafeAppUrl } from '@/lib/explorers'
 import { formatDuration, formatFrequency } from '@/lib/formatDuration'
 import { analytics } from '@/lib/mixpanel'
@@ -13,6 +12,7 @@ import { Skeleton } from '../ui/Skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
+import { CONDITIONAL_ORDER_STEPS, useConditionalOrderExecution } from './useConditionalOrderExecution'
 
 export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
@@ -129,7 +129,10 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
                 <TxStepCard.DetailItem
                   label="Total Amount"
                   value={
-                    <Amount.Crypto value={summary.sellAsset.totalAmount} symbol={summary.sellAsset.symbol.toUpperCase()} />
+                    <Amount.Crypto
+                      value={summary.sellAsset.totalAmount}
+                      symbol={summary.sellAsset.symbol.toUpperCase()}
+                    />
                   }
                 />
                 <TxStepCard.DetailItem
@@ -204,11 +207,7 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
               connectorTop
               connectorBottom
             />
-            <Execution.Step
-              index={CONDITIONAL_ORDER_STEPS.SUBMIT}
-              label="Submit to ComposableCoW"
-              connectorTop
-            />
+            <Execution.Step index={CONDITIONAL_ORDER_STEPS.SUBMIT} label="Submit to ComposableCoW" connectorTop />
           </Execution.Stepper>
 
           {submitTxHash && networkName && (

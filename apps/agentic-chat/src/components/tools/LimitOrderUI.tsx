@@ -1,7 +1,6 @@
 import { ExternalLink } from 'lucide-react'
 
 import { Execution } from '@/components/Execution'
-import { LIMIT_ORDER_STEPS, useLimitOrderExecution } from './useLimitOrderExecution'
 import { StepStatus } from '@/lib/stepUtils'
 
 import { Amount } from '../ui/Amount'
@@ -9,6 +8,7 @@ import { Skeleton } from '../ui/Skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
+import { LIMIT_ORDER_STEPS, useLimitOrderExecution } from './useLimitOrderExecution'
 
 export function LimitOrderUI({ toolPart }: ToolUIComponentProps<'createLimitOrderTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
@@ -103,12 +103,7 @@ export function LimitOrderUI({ toolPart }: ToolUIComponentProps<'createLimitOrde
               connectorTop
               connectorBottom
             />
-            <Execution.Step
-              index={LIMIT_ORDER_STEPS.SIGN}
-              label="Sign order message"
-              connectorTop
-              connectorBottom
-            />
+            <Execution.Step index={LIMIT_ORDER_STEPS.SIGN} label="Sign order message" connectorTop connectorBottom />
             <Execution.Step index={LIMIT_ORDER_STEPS.SUBMIT} label="Submit to CoW Protocol" connectorTop />
           </Execution.Stepper>
 

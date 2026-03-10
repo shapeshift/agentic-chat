@@ -1,12 +1,12 @@
 import { ExternalLink, XCircle } from 'lucide-react'
 
 import { Execution } from '@/components/Execution'
-import { CANCEL_LIMIT_ORDER_STEPS, useCancelLimitOrderExecution } from './useCancelLimitOrderExecution'
 import { StepStatus } from '@/lib/stepUtils'
 
 import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
+import { CANCEL_LIMIT_ORDER_STEPS, useCancelLimitOrderExecution } from './useCancelLimitOrderExecution'
 
 export function CancelLimitOrderUI({ toolPart }: ToolUIComponentProps<'cancelLimitOrderTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
@@ -29,9 +29,7 @@ export function CancelLimitOrderUI({ toolPart }: ToolUIComponentProps<'cancelLim
           <TxStepCard.Header>
             <TxStepCard.HeaderRow>
               <div className="text-xs text-muted-foreground font-normal">Cancel Limit Order</div>
-              {networkName && (
-                <div className="text-sm text-muted-foreground font-normal capitalize">{networkName}</div>
-              )}
+              {networkName && <div className="text-sm text-muted-foreground font-normal capitalize">{networkName}</div>}
             </TxStepCard.HeaderRow>
             <TxStepCard.HeaderRow>
               <div className="flex items-center gap-2">
@@ -76,11 +74,7 @@ export function CancelLimitOrderUI({ toolPart }: ToolUIComponentProps<'cancelLim
               connectorTop
               connectorBottom
             />
-            <Execution.Step
-              index={CANCEL_LIMIT_ORDER_STEPS.SUBMIT}
-              label="Submit to CoW Protocol"
-              connectorTop
-            />
+            <Execution.Step index={CANCEL_LIMIT_ORDER_STEPS.SUBMIT} label="Submit to CoW Protocol" connectorTop />
           </Execution.Stepper>
 
           {trackingUrl && (

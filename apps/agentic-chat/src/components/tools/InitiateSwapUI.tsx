@@ -1,5 +1,4 @@
 import { Execution } from '@/components/Execution'
-import { SWAP_STEPS, useSwapExecution } from './useSwapExecution'
 import { bnOrZero } from '@/lib/bignumber'
 import { StepStatus } from '@/lib/stepUtils'
 import { firstFourLastFour } from '@/lib/utils'
@@ -9,6 +8,7 @@ import { Skeleton } from '../ui/Skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
+import { SWAP_STEPS, useSwapExecution } from './useSwapExecution'
 
 export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapTool' | 'initiateSwapUsdTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
@@ -41,7 +41,9 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapT
           <TxStepCard.Header>
             <TxStepCard.HeaderRow>
               {address && (
-                <div className="text-xs text-muted-foreground font-normal">Received from {firstFourLastFour(address)}</div>
+                <div className="text-xs text-muted-foreground font-normal">
+                  Received from {firstFourLastFour(address)}
+                </div>
               )}
               <div className="text-sm text-muted-foreground font-normal">
                 <UsdValue />
@@ -103,8 +105,18 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapT
           )}
 
           <Execution.Stepper>
-            <Execution.Step index={SWAP_STEPS.QUOTE} label="Getting swap quote" overrideStatus={quoteStepStatus} connectorBottom />
-            <Execution.Step index={SWAP_STEPS.NETWORK} label={networkName ? `Switch to ${networkName}` : 'Switch network'} connectorTop connectorBottom />
+            <Execution.Step
+              index={SWAP_STEPS.QUOTE}
+              label="Getting swap quote"
+              overrideStatus={quoteStepStatus}
+              connectorBottom
+            />
+            <Execution.Step
+              index={SWAP_STEPS.NETWORK}
+              label={networkName ? `Switch to ${networkName}` : 'Switch network'}
+              connectorTop
+              connectorBottom
+            />
             <Execution.Step index={SWAP_STEPS.APPROVE} label="Approve token spending" connectorTop connectorBottom />
             <Execution.Step index={SWAP_STEPS.SWAP} label="Sign swap transaction" connectorTop />
           </Execution.Stepper>

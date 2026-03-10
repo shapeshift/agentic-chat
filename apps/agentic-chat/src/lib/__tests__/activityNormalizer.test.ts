@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
-import type { ToolExecutionState } from '../executionState'
 import { normalizeToActivityItem } from '../activityNormalizer'
+import type { ToolExecutionState } from '../executionState'
 
 const makeExecutionState = (overrides: Partial<ToolExecutionState>): ToolExecutionState => ({
   toolCallId: 'tc-1',

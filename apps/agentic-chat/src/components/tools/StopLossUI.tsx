@@ -2,7 +2,6 @@ import type { CreateStopLossOutput } from '@shapeshiftoss/agentic-server'
 import { ExternalLink } from 'lucide-react'
 
 import { Execution } from '@/components/Execution'
-import { CONDITIONAL_ORDER_STEPS, useConditionalOrderExecution } from './useConditionalOrderExecution'
 import { getExplorerUrl, getSafeAppUrl } from '@/lib/explorers'
 import { analytics } from '@/lib/mixpanel'
 import { StepStatus } from '@/lib/stepUtils'
@@ -12,6 +11,7 @@ import { Skeleton } from '../ui/Skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
+import { CONDITIONAL_ORDER_STEPS, useConditionalOrderExecution } from './useConditionalOrderExecution'
 
 export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
@@ -125,7 +125,9 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
                 />
                 <TxStepCard.DetailItem
                   label="Sell Amount"
-                  value={<Amount.Crypto value={summary.sellAsset.amount} symbol={summary.sellAsset.symbol.toUpperCase()} />}
+                  value={
+                    <Amount.Crypto value={summary.sellAsset.amount} symbol={summary.sellAsset.symbol.toUpperCase()} />
+                  }
                 />
                 <TxStepCard.DetailItem label="Trigger Price" value={`$${summary.triggerPrice}`} />
                 <TxStepCard.DetailItem label="Current Price" value={`$${summary.currentPrice}`} />
@@ -194,11 +196,7 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
               connectorTop
               connectorBottom
             />
-            <Execution.Step
-              index={CONDITIONAL_ORDER_STEPS.SUBMIT}
-              label="Submitting stop-loss order"
-              connectorTop
-            />
+            <Execution.Step index={CONDITIONAL_ORDER_STEPS.SUBMIT} label="Submitting stop-loss order" connectorTop />
           </Execution.Stepper>
 
           {submitTxHash && networkName && (

@@ -26,7 +26,6 @@ export interface SafeDeploymentResult {
 // Predict the Safe address without deploying
 export async function predictSafeAddress(ownerAddress: string, provider: SafeProvider): Promise<string> {
   const saltNonce = computeSafeSalt(ownerAddress)
-  console.log('[Safe predict] computeSafeSalt input:', ownerAddress, '→ saltNonce:', saltNonce)
 
   const protocolKit = await Safe.init({
     provider,

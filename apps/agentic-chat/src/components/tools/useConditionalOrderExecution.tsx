@@ -2,19 +2,18 @@ import type { DynamicToolUIPart } from 'ai'
 import type { ReactNode } from 'react'
 import { toast } from 'sonner'
 
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import type { ExecutionContext } from '@/hooks/useToolExecution'
+import { useToolExecution } from '@/hooks/useToolExecution'
 import type { ConditionalOrderMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { ensureSafeReady, executeSafeTransaction } from '@/lib/safe'
-import { StepStatus } from '@/lib/stepUtils'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import type { StepStatus } from '@/lib/stepUtils'
 import type { OrderRecord } from '@/stores/orderStore'
 import { useOrderStore } from '@/stores/orderStore'
 import { sendTransaction } from '@/utils/sendTransaction'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
-
-import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
-import { useExecuteOnce } from '@/hooks/useExecuteOnce'
-import type { ExecutionContext } from '@/hooks/useToolExecution'
-import { useToolExecution } from '@/hooks/useToolExecution'
 
 export const CONDITIONAL_ORDER_STEPS = {
   PREPARE: 0,
@@ -66,7 +65,7 @@ export interface UseConditionalOrderExecutionResult {
 async function ensureSafeReadyStep<TMeta extends object>(
   ctx: ExecutionContext<TMeta>,
   ownerAddress: string,
-  chainId: number,
+  chainId: number
 ): Promise<string> {
   if (!ctx.refs.evmWallet.current) throw new Error('EVM wallet not connected')
   const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
@@ -78,7 +77,7 @@ async function ensureSafeReadyStep<TMeta extends object>(
 async function depositStep(
   ctx: ExecutionContext<ConditionalOrderMeta>,
   data: ConditionalOrderData,
-  chainId: number,
+  chainId: number
 ): Promise<void> {
   if (!data.needsDeposit || !data.depositTx) {
     ctx.skipStep()
@@ -101,7 +100,7 @@ async function approveViaSafeStep(
   ctx: ExecutionContext<ConditionalOrderMeta>,
   data: ConditionalOrderData,
   safeAddress: string,
-  chainId: number,
+  chainId: number
 ): Promise<void> {
   if (!data.needsApproval || !data.approvalTx) {
     ctx.skipStep()
@@ -117,7 +116,7 @@ async function approveViaSafeStep(
     { to: data.approvalTx.to, data: data.approvalTx.data, value: data.approvalTx.value },
     ctx.refs.evmAddress.current,
     chainId,
-    walletClient,
+    walletClient
   )
   ctx.setMeta({ approvalTxHash } as Partial<ConditionalOrderMeta>)
   ctx.advanceStep()
@@ -127,7 +126,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
   toolCallId: string,
   toolState: DynamicToolUIPart['state'],
   orderData: TData | null,
-  config: ConditionalOrderConfig<TData>,
+  config: ConditionalOrderConfig<TData>
 ): UseConditionalOrderExecutionResult {
   const ctx = useToolExecution<ConditionalOrderMeta>(toolCallId, config.toolType, {})
 
@@ -151,7 +150,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
       await switchNetworkStepByChainIdNumber(ctx, targetChainId)
 
       // Step 2: Safe check — deploy Safe + enable ComposableCoW modules
-      const safeAddress = await ensureSafeReadyStep(ctx, ctx.refs.evmAddress.current!, targetChainId)
+      const safeAddress = await ensureSafeReadyStep(ctx, ctx.refs.evmAddress.current, targetChainId)
 
       // Step 3: Deposit — transfer sell tokens from EOA to Safe (if needed)
       await depositStep(ctx, data, targetChainId)
@@ -169,16 +168,16 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
         ctx.refs.evmAddress.current,
         targetChainId,
-        walletClient,
+        walletClient
       )
       ctx.setMeta({ submitTxHash } as Partial<ConditionalOrderMeta>)
       ctx.advanceStep()
       ctx.markTerminal()
       ctx.persist()
 
-      useOrderStore.getState().saveOrder(
-        config.toOrderRecord({ data, safeAddress, submitTxHash, chainId: targetChainId }),
-      )
+      useOrderStore
+        .getState()
+        .saveOrder(config.toOrderRecord({ data, safeAddress, submitTxHash, chainId: targetChainId }))
 
       toast.success(config.renderSuccessToast(data))
       config.onSuccess?.(data)
@@ -189,7 +188,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
         <span>
           Failed to set {config.errorLabel}:{' '}
           {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}
-        </span>,
+        </span>
       )
     }
   })
@@ -201,7 +200,10 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
     steps: [
       { step: CONDITIONAL_ORDER_STEPS.PREPARE, status: prepareStepStatus },
       { step: CONDITIONAL_ORDER_STEPS.NETWORK, status: getStepStatus(CONDITIONAL_ORDER_STEPS.NETWORK, ctx.state) },
-      { step: CONDITIONAL_ORDER_STEPS.SAFE_CHECK, status: getStepStatus(CONDITIONAL_ORDER_STEPS.SAFE_CHECK, ctx.state) },
+      {
+        step: CONDITIONAL_ORDER_STEPS.SAFE_CHECK,
+        status: getStepStatus(CONDITIONAL_ORDER_STEPS.SAFE_CHECK, ctx.state),
+      },
       { step: CONDITIONAL_ORDER_STEPS.DEPOSIT, status: getStepStatus(CONDITIONAL_ORDER_STEPS.DEPOSIT, ctx.state) },
       { step: CONDITIONAL_ORDER_STEPS.APPROVE, status: getStepStatus(CONDITIONAL_ORDER_STEPS.APPROVE, ctx.state) },
       { step: CONDITIONAL_ORDER_STEPS.SUBMIT, status: getStepStatus(CONDITIONAL_ORDER_STEPS.SUBMIT, ctx.state) },

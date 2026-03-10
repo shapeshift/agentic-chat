@@ -1,5 +1,4 @@
 import { Execution } from '@/components/Execution'
-import { VAULT_WITHDRAW_ALL_STEPS, useVaultWithdrawAllExecution } from './useVaultWithdrawAllExecution'
 import { getExplorerUrl } from '@/lib/explorers'
 import { StepStatus } from '@/lib/stepUtils'
 import { firstFourLastFour } from '@/lib/utils'
@@ -9,6 +8,7 @@ import { Skeleton } from '../ui/Skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
 import type { ToolUIComponentProps } from './toolUIHelpers'
+import { VAULT_WITHDRAW_ALL_STEPS, useVaultWithdrawAllExecution } from './useVaultWithdrawAllExecution'
 
 export function VaultWithdrawAllUI({ toolPart }: ToolUIComponentProps<'vaultWithdrawAllTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
@@ -26,9 +26,10 @@ export function VaultWithdrawAllUI({ toolPart }: ToolUIComponentProps<'vaultWith
   const hasError = toolState === 'output-error'
   const isLoading = !withdrawOutput && !hasError
 
-  const withdrawChainsLabel = totalChains > 1
-    ? `Sign transactions (${Math.min(currentChainIndex + 1, totalChains)}/${totalChains} chains)`
-    : 'Sign Safe transaction'
+  const withdrawChainsLabel =
+    totalChains > 1
+      ? `Sign transactions (${Math.min(currentChainIndex + 1, totalChains)}/${totalChains} chains)`
+      : 'Sign Safe transaction'
 
   return (
     <Execution.Root state={state} toolCallId={toolCallId}>
@@ -82,7 +83,12 @@ export function VaultWithdrawAllUI({ toolPart }: ToolUIComponentProps<'vaultWith
           )}
 
           <Execution.Stepper>
-            <Execution.Step index={VAULT_WITHDRAW_ALL_STEPS.PREPARE} label="Preparing withdrawals" overrideStatus={prepareStepStatus} connectorBottom />
+            <Execution.Step
+              index={VAULT_WITHDRAW_ALL_STEPS.PREPARE}
+              label="Preparing withdrawals"
+              overrideStatus={prepareStepStatus}
+              connectorBottom
+            />
             <Execution.Step index={VAULT_WITHDRAW_ALL_STEPS.WITHDRAW_CHAINS} label={withdrawChainsLabel} connectorTop />
           </Execution.Stepper>
 

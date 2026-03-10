@@ -3,16 +3,15 @@ import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import { toast } from 'sonner'
 
 import { Execution } from '@/components/Execution'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 import type { SendMeta } from '@/lib/executionState'
 import { toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
+import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
 import { firstFourLastFour } from '@/lib/utils'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeSend } from '@/utils/sendExecutor'
-
-import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
-import { useExecuteOnce } from '@/hooks/useExecuteOnce'
-import { useToolExecution } from '@/hooks/useToolExecution'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'
@@ -42,9 +41,8 @@ export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
       const assetChainId = data.sendData.chainId
       const { chainNamespace } = fromChainId(assetChainId)
 
-      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm
-        ? ctx.refs.evmAddress.current
-        : ctx.refs.solanaAddress.current
+      const currentAddress =
+        chainNamespace === CHAIN_NAMESPACE.Evm ? ctx.refs.evmAddress.current : ctx.refs.solanaAddress.current
       if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
       if (currentAddress.toLowerCase() !== tx.from.toLowerCase()) {
         throw new Error('Wallet address changed. Please re-initiate the transaction.')
@@ -144,8 +142,18 @@ export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
           )}
 
           <Execution.Stepper>
-            <Execution.Step index={SEND_STEPS.PREPARE} label="Preparing send transaction" overrideStatus={prepareStepStatus} connectorBottom />
-            <Execution.Step index={SEND_STEPS.NETWORK} label={networkName ? `Switch to ${networkName}` : 'Switch network'} connectorTop connectorBottom />
+            <Execution.Step
+              index={SEND_STEPS.PREPARE}
+              label="Preparing send transaction"
+              overrideStatus={prepareStepStatus}
+              connectorBottom
+            />
+            <Execution.Step
+              index={SEND_STEPS.NETWORK}
+              label={networkName ? `Switch to ${networkName}` : 'Switch network'}
+              connectorTop
+              connectorBottom
+            />
             <Execution.Step index={SEND_STEPS.SEND} label="Sign and send transaction" connectorTop />
           </Execution.Stepper>
           <Execution.ErrorFooter />

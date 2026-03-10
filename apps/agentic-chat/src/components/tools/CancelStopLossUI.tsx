@@ -1,7 +1,6 @@
-import type { CancelConditionalOrderConfig } from './useCancelConditionalOrderExecution'
-
 import { CancelConditionalOrderUI } from './CancelConditionalOrderUI'
 import type { ToolUIComponentProps } from './toolUIHelpers'
+import type { CancelConditionalOrderConfig } from './useCancelConditionalOrderExecution'
 
 const config: CancelConditionalOrderConfig = {
   toolType: 'cancel_stop_loss',

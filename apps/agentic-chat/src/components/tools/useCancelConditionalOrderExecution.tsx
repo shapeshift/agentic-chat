@@ -2,16 +2,15 @@ import type { DynamicToolUIPart } from 'ai'
 import type { ReactNode } from 'react'
 import { toast } from 'sonner'
 
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 import type { CancelConditionalOrderMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
-import { StepStatus } from '@/lib/stepUtils'
-import { useOrderStore } from '@/stores/orderStore'
-
-import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
-import { useExecuteOnce } from '@/hooks/useExecuteOnce'
-import { useToolExecution } from '@/hooks/useToolExecution'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import type { StepStatus } from '@/lib/stepUtils'
+import { useOrderStore } from '@/stores/orderStore'
 
 export const CANCEL_CONDITIONAL_STEPS = { PREPARE: 0, NETWORK: 1, SUBMIT_CANCEL: 2, CONFIRM_TX: 3 } as const
 
@@ -47,7 +46,7 @@ export function useCancelConditionalOrderExecution(
   toolCallId: string,
   toolState: DynamicToolUIPart['state'],
   cancelData: CancelConditionalOrderData | null,
-  config: CancelConditionalOrderConfig,
+  config: CancelConditionalOrderConfig
 ): UseCancelConditionalOrderResult {
   const ctx = useToolExecution<CancelConditionalOrderMeta>(toolCallId, config.toolType, {})
 
@@ -94,7 +93,10 @@ export function useCancelConditionalOrderExecution(
       const errorMessage = ctx.failAndPersist(error)
 
       toast.error(
-        <span>Failed to cancel {config.orderLabel}: {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}</span>,
+        <span>
+          Failed to cancel {config.orderLabel}:{' '}
+          {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}
+        </span>
       )
     }
   })
@@ -106,8 +108,14 @@ export function useCancelConditionalOrderExecution(
     steps: [
       { step: CANCEL_CONDITIONAL_STEPS.PREPARE, status: prepareStepStatus },
       { step: CANCEL_CONDITIONAL_STEPS.NETWORK, status: getStepStatus(CANCEL_CONDITIONAL_STEPS.NETWORK, ctx.state) },
-      { step: CANCEL_CONDITIONAL_STEPS.SUBMIT_CANCEL, status: getStepStatus(CANCEL_CONDITIONAL_STEPS.SUBMIT_CANCEL, ctx.state) },
-      { step: CANCEL_CONDITIONAL_STEPS.CONFIRM_TX, status: getStepStatus(CANCEL_CONDITIONAL_STEPS.CONFIRM_TX, ctx.state) },
+      {
+        step: CANCEL_CONDITIONAL_STEPS.SUBMIT_CANCEL,
+        status: getStepStatus(CANCEL_CONDITIONAL_STEPS.SUBMIT_CANCEL, ctx.state),
+      },
+      {
+        step: CANCEL_CONDITIONAL_STEPS.CONFIRM_TX,
+        status: getStepStatus(CANCEL_CONDITIONAL_STEPS.CONFIRM_TX, ctx.state),
+      },
     ],
     error: ctx.state.error,
     cancelTxHash: ctx.state.meta.cancelTxHash,

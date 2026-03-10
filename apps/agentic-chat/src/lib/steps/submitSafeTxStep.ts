@@ -1,6 +1,5 @@
-import { executeSafeTransaction } from '@/lib/safe'
-
 import type { ExecutionContext } from '@/hooks/useToolExecution'
+import { executeSafeTransaction } from '@/lib/safe'
 
 interface SafeTxParams {
   safeAddress: string

@@ -3,19 +3,18 @@ import type { DynamicToolUIPart } from 'ai'
 import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 import { getCowApiUrl } from '@/lib/cow-config'
 import type { LimitOrderMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
-import { StepStatus } from '@/lib/stepUtils'
-import { executeApproval } from '@/utils/swapExecutor'
-import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
-import { withRetry } from '@/utils/retry'
-
 import { signEip712Step } from '@/lib/steps/signEip712Step'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
-import { useExecuteOnce } from '@/hooks/useExecuteOnce'
-import { useToolExecution } from '@/hooks/useToolExecution'
+import type { StepStatus } from '@/lib/stepUtils'
+import { withRetry } from '@/utils/retry'
+import { executeApproval } from '@/utils/swapExecutor'
+import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
 export const LIMIT_ORDER_STEPS = { PREPARE: 0, NETWORK: 1, APPROVE: 2, SIGN: 3, SUBMIT: 4 } as const
 

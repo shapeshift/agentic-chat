@@ -2,14 +2,13 @@ import type { VaultWithdrawOutput } from '@shapeshiftoss/agentic-server'
 import { toast } from 'sonner'
 
 import { Execution } from '@/components/Execution'
-import type { VaultWithdrawMeta } from '@/lib/executionState'
-import { toolStateToStepStatus } from '@/lib/executionState'
-import { firstFourLastFour } from '@/lib/utils'
-
-import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
-import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
+import type { VaultWithdrawMeta } from '@/lib/executionState'
+import { toolStateToStepStatus } from '@/lib/executionState'
+import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { firstFourLastFour } from '@/lib/utils'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'
@@ -54,7 +53,9 @@ export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdra
       ctx.markTerminal()
       ctx.persist()
 
-      toast.success(`Vault withdrawal of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`)
+      toast.success(
+        `Vault withdrawal of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`
+      )
     } catch (error) {
       ctx.failAndPersist(error)
 
@@ -108,8 +109,18 @@ export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdra
           )}
 
           <Execution.Stepper>
-            <Execution.Step index={VAULT_WITHDRAW_STEPS.PREPARE} label="Preparing withdrawal" overrideStatus={prepareStepStatus} connectorBottom />
-            <Execution.Step index={VAULT_WITHDRAW_STEPS.NETWORK} label={networkName ? `Switch to ${networkName}` : 'Switch network'} connectorTop connectorBottom />
+            <Execution.Step
+              index={VAULT_WITHDRAW_STEPS.PREPARE}
+              label="Preparing withdrawal"
+              overrideStatus={prepareStepStatus}
+              connectorBottom
+            />
+            <Execution.Step
+              index={VAULT_WITHDRAW_STEPS.NETWORK}
+              label={networkName ? `Switch to ${networkName}` : 'Switch network'}
+              connectorTop
+              connectorBottom
+            />
             <Execution.Step index={VAULT_WITHDRAW_STEPS.WITHDRAW} label="Sign Safe transaction" connectorTop />
           </Execution.Stepper>
           <Execution.ErrorFooter />

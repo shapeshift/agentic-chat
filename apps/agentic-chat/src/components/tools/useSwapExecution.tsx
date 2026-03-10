@@ -4,17 +4,16 @@ import type { DynamicToolUIPart } from 'ai'
 import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 import type { ToolExecutionState, SwapMeta } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
-import { StepStatus } from '@/lib/stepUtils'
+import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
+import type { StepStatus } from '@/lib/stepUtils'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
-
-import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
-import { useExecuteOnce } from '@/hooks/useExecuteOnce'
-import { useToolExecution } from '@/hooks/useToolExecution'
 
 export const SWAP_STEPS = { QUOTE: 0, NETWORK: 1, APPROVE: 2, SWAP: 3 } as const
 
@@ -52,9 +51,8 @@ export const useSwapExecution = (
       const sellAssetChainId = data.swapData.sellAsset.chainId
       const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
 
-      const currentAddress = chainNamespace === CHAIN_NAMESPACE.Evm
-        ? ctx.refs.evmAddress.current
-        : ctx.refs.solanaAddress.current
+      const currentAddress =
+        chainNamespace === CHAIN_NAMESPACE.Evm ? ctx.refs.evmAddress.current : ctx.refs.solanaAddress.current
       if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
       if (currentAddress.toLowerCase() !== swapTx.from.toLowerCase()) {
         throw new Error('Wallet address changed. Please re-initiate the swap.')

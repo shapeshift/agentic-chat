@@ -3,14 +3,13 @@ import { fromChainId } from '@shapeshiftoss/caip'
 import { toast } from 'sonner'
 
 import { Execution } from '@/components/Execution'
-import type { VaultDepositMeta } from '@/lib/executionState'
-import { toolStateToStepStatus } from '@/lib/executionState'
-import { firstFourLastFour } from '@/lib/utils'
-import { sendTransaction } from '@/utils/sendTransaction'
-
-import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
+import type { VaultDepositMeta } from '@/lib/executionState'
+import { toolStateToStepStatus } from '@/lib/executionState'
+import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { firstFourLastFour } from '@/lib/utils'
+import { sendTransaction } from '@/utils/sendTransaction'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'
@@ -57,7 +56,9 @@ export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositT
       ctx.markTerminal()
       ctx.persist()
 
-      toast.success(`Vault deposit of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`)
+      toast.success(
+        `Vault deposit of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`
+      )
     } catch (error) {
       ctx.failAndPersist(error)
 
@@ -111,8 +112,18 @@ export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositT
           )}
 
           <Execution.Stepper>
-            <Execution.Step index={VAULT_DEPOSIT_STEPS.PREPARE} label="Preparing deposit" overrideStatus={prepareStepStatus} connectorBottom />
-            <Execution.Step index={VAULT_DEPOSIT_STEPS.NETWORK} label={networkName ? `Switch to ${networkName}` : 'Switch network'} connectorTop connectorBottom />
+            <Execution.Step
+              index={VAULT_DEPOSIT_STEPS.PREPARE}
+              label="Preparing deposit"
+              overrideStatus={prepareStepStatus}
+              connectorBottom
+            />
+            <Execution.Step
+              index={VAULT_DEPOSIT_STEPS.NETWORK}
+              label={networkName ? `Switch to ${networkName}` : 'Switch network'}
+              connectorTop
+              connectorBottom
+            />
             <Execution.Step index={VAULT_DEPOSIT_STEPS.DEPOSIT} label="Transfer tokens to vault" connectorTop />
           </Execution.Stepper>
           <Execution.ErrorFooter />

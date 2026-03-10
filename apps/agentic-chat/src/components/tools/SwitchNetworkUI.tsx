@@ -3,9 +3,9 @@ import { isSolanaWallet } from '@dynamic-labs/solana'
 import type { SwitchNetworkOutput } from '@shapeshiftoss/agentic-server'
 import { ArrowRightLeft } from 'lucide-react'
 
-import { networkNameToChainId } from '@/lib/chains'
 import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
+import { networkNameToChainId } from '@/lib/chains'
 import { useChatStore } from '@/stores/chatStore'
 
 import { CollapsableDetails } from '../ui/CollapsableDetails'

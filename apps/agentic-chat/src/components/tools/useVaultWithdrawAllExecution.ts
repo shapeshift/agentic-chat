@@ -3,13 +3,12 @@ import type { VaultWithdrawAllOutput } from '@shapeshiftoss/agentic-server'
 import type { DynamicToolUIPart } from 'ai'
 import { toast } from 'sonner'
 
+import { useExecuteOnce } from '@/hooks/useExecuteOnce'
+import { useToolExecution } from '@/hooks/useToolExecution'
 import type { ChainResult, ToolExecutionState, VaultWithdrawAllMeta } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { executeSafeBatchTransaction } from '@/lib/safe'
-import { StepStatus } from '@/lib/stepUtils'
-
-import { useExecuteOnce } from '@/hooks/useExecuteOnce'
-import { useToolExecution } from '@/hooks/useToolExecution'
+import type { StepStatus } from '@/lib/stepUtils'
 
 export const VAULT_WITHDRAW_ALL_STEPS = { PREPARE: 0, WITHDRAW_CHAINS: 1 } as const
 
@@ -60,15 +59,15 @@ export const useVaultWithdrawAllExecution = (
         ctx.setMeta({ currentChainIndex: i })
 
         try {
-          await ctx.refs.evmWallet.current!.connector.switchNetwork({
+          await ctx.refs.evmWallet.current.connector.switchNetwork({
             networkChainId: withdrawal.chainId,
           })
 
-          const walletClient = await ctx.refs.evmWallet.current!.getWalletClient()
+          const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
           const txHash = await executeSafeBatchTransaction(
             withdrawal.safeAddress,
             withdrawal.safeBatchTransaction,
-            ctx.refs.evmAddress.current!,
+            ctx.refs.evmAddress.current,
             withdrawal.chainId,
             walletClient
           )
@@ -116,7 +115,10 @@ export const useVaultWithdrawAllExecution = (
     state: ctx.state,
     steps: [
       { step: VAULT_WITHDRAW_ALL_STEPS.PREPARE, status: prepareStepStatus },
-      { step: VAULT_WITHDRAW_ALL_STEPS.WITHDRAW_CHAINS, status: getStepStatus(VAULT_WITHDRAW_ALL_STEPS.WITHDRAW_CHAINS, ctx.state) },
+      {
+        step: VAULT_WITHDRAW_ALL_STEPS.WITHDRAW_CHAINS,
+        status: getStepStatus(VAULT_WITHDRAW_ALL_STEPS.WITHDRAW_CHAINS, ctx.state),
+      },
     ],
     chainResults: ctx.state.meta.chainResults ?? [],
     currentChainIndex: ctx.state.meta.currentChainIndex ?? 0,

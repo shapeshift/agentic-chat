@@ -32,7 +32,7 @@ export interface ExecutionContext<TMeta> {
 export function useToolExecution<TMeta extends object>(
   toolCallId: string,
   toolType: ToolType,
-  initialMeta: TMeta,
+  initialMeta: TMeta
 ): ExecutionContext<TMeta> {
   const { evmAddress, solanaAddress, solanaWallet, evmWallet } = useWalletConnection()
   const store = useChatStore()

@@ -89,8 +89,6 @@ export async function fetchFullPortfolio(
 
     const delta24h = calculate24hDelta(assetsWithAllocation)
 
-    console.log(`[Portfolio] Fetched ${allAssets.length} assets across ${results.length} networks`)
-
     return {
       assets: assetsWithAllocation,
       totalBalance: totalBalance.toFixed(2),
