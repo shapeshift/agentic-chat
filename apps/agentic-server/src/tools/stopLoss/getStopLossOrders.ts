@@ -86,10 +86,8 @@ export function deriveStopLossStatus(
   cowApiFailed: boolean
 ): CowOrderStatus {
   if (!isActive) return 'cancelled'
-  if (order.validTo > 0 && order.validTo < nowSeconds) {
-    if (cowApiFailed) return 'expired'
-    return isStopLossFulfilled(order, cowOrders) ? 'fulfilled' : 'expired'
-  }
+  if (!cowApiFailed && isStopLossFulfilled(order, cowOrders)) return 'fulfilled'
+  if (order.validTo > 0 && order.validTo < nowSeconds) return 'expired'
   return 'open'
 }
 
@@ -108,19 +106,12 @@ async function getRegistryOrders(
     chainOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, chainId))
   )
 
-  // Fetch CoW API orders to detect fulfillment for expired stop-losses
-  const needsFulfillmentCheck = chainOrders.some(
-    (order, i) => activeResults[i] && order.validTo > 0 && order.validTo < nowSeconds
-  )
-
   let cowOrders: CowOrder[] = []
   let cowApiFailed = false
-  if (needsFulfillmentCheck) {
-    try {
-      cowOrders = await getCowOrders(safeAddress, chainId)
-    } catch {
-      cowApiFailed = true
-    }
+  try {
+    cowOrders = await getCowOrders(safeAddress, chainId)
+  } catch {
+    cowApiFailed = true
   }
 
   return chainOrders.map((order, i) => {

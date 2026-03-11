@@ -96,6 +96,12 @@ describe('deriveStopLossStatus', () => {
     expect(deriveStopLossStatus(order, [], true, NOW_SECONDS, false)).toBe('open')
   })
 
+  it('returns fulfilled when cow order matched regardless of expiry', () => {
+    const order = createStopLossOrder({ validTo: FUTURE_VALID_TO })
+    const cowOrders = [createCowOrder()]
+    expect(deriveStopLossStatus(order, cowOrders, true, NOW_SECONDS, false)).toBe('fulfilled')
+  })
+
   it('returns fulfilled when expired and cow order matched', () => {
     const order = createStopLossOrder({ validTo: PAST_VALID_TO })
     const cowOrders = [createCowOrder()]
@@ -107,7 +113,12 @@ describe('deriveStopLossStatus', () => {
     expect(deriveStopLossStatus(order, [], true, NOW_SECONDS, false)).toBe('expired')
   })
 
-  it('returns expired when cowApiFailed', () => {
+  it('returns open when cowApiFailed and not expired', () => {
+    const order = createStopLossOrder({ validTo: FUTURE_VALID_TO })
+    expect(deriveStopLossStatus(order, [], true, NOW_SECONDS, true)).toBe('open')
+  })
+
+  it('returns expired when cowApiFailed and expired', () => {
     const order = createStopLossOrder({ validTo: PAST_VALID_TO })
     expect(deriveStopLossStatus(order, [], true, NOW_SECONDS, true)).toBe('expired')
   })
