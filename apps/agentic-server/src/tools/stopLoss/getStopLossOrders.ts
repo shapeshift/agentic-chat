@@ -1,14 +1,15 @@
 import { z } from 'zod'
 
 import { isConditionalOrderActive } from '../../lib/composableCow/queries'
-import type { CowOrderStatus } from '../../lib/cow/types'
+import { getCowOrders } from '../../lib/cow'
+import type { CowOrder, CowOrderStatus } from '../../lib/cow/types'
 import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { ActiveOrderSummary, WalletContext } from '../../utils/walletContextSimple'
 
 export const getStopLossOrdersSchema = z.object({
   status: z
-    .enum(['open', 'cancelled', 'expired', 'all'])
+    .enum(['open', 'fulfilled', 'cancelled', 'expired', 'all'])
     .optional()
     .default('all')
     .describe('Filter orders by status. Default is "all".'),
@@ -65,6 +66,31 @@ function mapRegistryOrderToInfo(order: ActiveOrderSummary, network: string, stat
   }
 }
 
+export function isStopLossFulfilled(order: ActiveOrderSummary, cowOrders: CowOrder[]): boolean {
+  const orderStartSeconds = Math.floor(order.createdAt / 1000)
+  return cowOrders.some(co => {
+    if (co.signingScheme !== 'eip1271') return false
+    if (co.sellToken.toLowerCase() !== order.sellTokenAddress.toLowerCase()) return false
+    if (co.buyToken.toLowerCase() !== order.buyTokenAddress.toLowerCase()) return false
+    if (!co.executedSellAmount || co.executedSellAmount === '0') return false
+    const cowCreatedSeconds = Math.floor(new Date(co.creationDate).getTime() / 1000)
+    return cowCreatedSeconds >= orderStartSeconds && cowCreatedSeconds <= order.validTo
+  })
+}
+
+export function deriveStopLossStatus(
+  order: ActiveOrderSummary,
+  cowOrders: CowOrder[],
+  isActive: boolean,
+  nowSeconds: number,
+  cowApiFailed: boolean
+): CowOrderStatus {
+  if (!isActive) return 'cancelled'
+  if (!cowApiFailed && isStopLossFulfilled(order, cowOrders)) return 'fulfilled'
+  if (order.validTo > 0 && order.validTo < nowSeconds) return 'expired'
+  return 'open'
+}
+
 async function getRegistryOrders(
   registryOrders: ActiveOrderSummary[],
   safeAddress: string,
@@ -76,21 +102,21 @@ async function getRegistryOrders(
 
   const nowSeconds = Math.floor(Date.now() / 1000)
 
-  // Check all orders on-chain and derive status
   const activeResults = await Promise.all(
     chainOrders.map(o => isConditionalOrderActive(safeAddress, o.orderHash as `0x${string}`, chainId))
   )
 
+  let cowOrders: CowOrder[] = []
+  let cowApiFailed = false
+  try {
+    cowOrders = await getCowOrders(safeAddress, chainId)
+  } catch {
+    cowApiFailed = true
+  }
+
   return chainOrders.map((order, i) => {
-    let derivedStatus: CowOrderStatus
-    if (activeResults[i]) {
-      derivedStatus = 'open'
-    } else if (order.validTo > 0 && order.validTo < nowSeconds) {
-      derivedStatus = 'expired'
-    } else {
-      derivedStatus = 'cancelled'
-    }
-    return mapRegistryOrderToInfo(order, network, derivedStatus)
+    const status = deriveStopLossStatus(order, cowOrders, !!activeResults[i], nowSeconds, cowApiFailed)
+    return mapRegistryOrderToInfo(order, network, status)
   })
 }
 
@@ -110,12 +136,7 @@ export async function executeGetStopLossOrders(
 
   const orderResults = await Promise.allSettled(
     networksToQuery.map(async ({ network, chainId }) => {
-      const caipChainId = `eip155:${chainId}`
-      const eoaAddress = walletContext.connectedWallets?.[caipChainId]?.address
       const safeAddress = await getSafeAddressForChain(walletContext, chainId)
-      console.log(
-        `[getStopLossOrders] ${network} (chainId=${chainId}) — EOA: ${eoaAddress ?? 'none'}, Safe vault: ${safeAddress ?? 'none'}`
-      )
       if (!safeAddress) return [] as StopLossOrderInfo[]
 
       return getRegistryOrders(registryOrderSummaries, safeAddress, chainId, network).catch(err => {
@@ -150,7 +171,7 @@ export async function executeGetStopLossOrders(
 export const getStopLossOrdersTool = {
   description: `Get the user's stop-loss orders from CoW Protocol.
 
-UI CARD DISPLAYS: list of stop-loss orders with status badges (Open/Cancelled/Expired), amounts, strike prices, and CoW tracking links.
+UI CARD DISPLAYS: list of stop-loss orders with status badges (Open/Fulfilled/Cancelled/Expired), amounts, strike prices, and CoW tracking links.
 
 Your role is to supplement the card, not duplicate it. Do not list or repeat any data shown in the card.
 
