@@ -56,6 +56,8 @@ export interface ToolExecutionState<TMeta = unknown> {
   error?: string
   terminal: boolean
 
+  substatus?: string
+
   meta: TMeta
 }
 
@@ -120,18 +122,18 @@ export function advanceStep<TMeta>(state: ToolExecutionState<TMeta>): ToolExecut
   const completedSteps = state.completedSteps.includes(state.currentStep)
     ? state.completedSteps
     : [...state.completedSteps, state.currentStep]
-  return { ...state, completedSteps, currentStep: state.currentStep + 1, error: undefined }
+  return { ...state, completedSteps, currentStep: state.currentStep + 1, error: undefined, substatus: undefined }
 }
 
 export function failStep<TMeta>(state: ToolExecutionState<TMeta>, error: string): ToolExecutionState<TMeta> {
-  return { ...state, failedStep: state.currentStep, error, terminal: true }
+  return { ...state, failedStep: state.currentStep, error, terminal: true, substatus: undefined }
 }
 
 export function skipStep<TMeta>(state: ToolExecutionState<TMeta>): ToolExecutionState<TMeta> {
   const skippedSteps = state.skippedSteps.includes(state.currentStep)
     ? state.skippedSteps
     : [...state.skippedSteps, state.currentStep]
-  return { ...state, skippedSteps, currentStep: state.currentStep + 1 }
+  return { ...state, skippedSteps, currentStep: state.currentStep + 1, substatus: undefined }
 }
 
 export function markTerminal<TMeta>(state: ToolExecutionState<TMeta>): ToolExecutionState<TMeta> {

@@ -66,6 +66,7 @@ export function useCancelConditionalOrderExecution(
       await switchNetworkStepByChainIdNumber(ctx, safeTransaction.chainId)
 
       // Step 2+3: Submit cancel via Safe (executeSafeTransaction already waits for on-chain confirmation)
+      ctx.setSubstatus('Submitting cancellation...')
       const cancelTxHash = await submitSafeTxStep(ctx, {
         safeAddress,
         to: safeTransaction.to,

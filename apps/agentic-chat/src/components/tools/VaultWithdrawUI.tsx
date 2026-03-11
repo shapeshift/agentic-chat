@@ -42,6 +42,7 @@ export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdra
 
       await switchNetworkStepByChainIdNumber(ctx, safeTransaction.chainId)
 
+      ctx.setSubstatus('Proposing Safe transaction...')
       const withdrawTxHash = await submitSafeTxStep(ctx, {
         safeAddress: summary.safeAddress,
         to: safeTransaction.to,

@@ -3,8 +3,7 @@ import type { ReactNode } from 'react'
 
 import type { ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus } from '@/lib/executionState'
-import type { StepStatus } from '@/lib/stepUtils'
-import { getUserFriendlyError } from '@/lib/stepUtils'
+import { StepStatus, getUserFriendlyError } from '@/lib/stepUtils'
 import { useChatStore } from '@/stores/chatStore'
 
 import { TruncateText } from './ui/TruncateText'
@@ -95,9 +94,15 @@ interface StepProps {
 function Step({ index, label, subtitle, connectorTop, connectorBottom, overrideStatus }: StepProps) {
   const { state } = useExecutionContext()
   const status = overrideStatus ?? getStepStatus(index, state)
+  const activeSubtitle = subtitle ?? (status === StepStatus.IN_PROGRESS ? state.substatus : undefined)
 
   return (
-    <TxStepCard.Step status={status} subtitle={subtitle} connectorTop={connectorTop} connectorBottom={connectorBottom}>
+    <TxStepCard.Step
+      status={status}
+      subtitle={activeSubtitle}
+      connectorTop={connectorTop}
+      connectorBottom={connectorBottom}
+    >
       {label}
     </TxStepCard.Step>
   )

@@ -44,6 +44,7 @@ export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositT
       const { chainReference } = fromChainId(depositTx.chainId)
       await switchNetworkStepByChainIdNumber(ctx, Number(chainReference))
 
+      ctx.setSubstatus('Requesting signature...')
       const depositTxHash = await sendTransaction({
         chainId: depositTx.chainId,
         data: depositTx.data,

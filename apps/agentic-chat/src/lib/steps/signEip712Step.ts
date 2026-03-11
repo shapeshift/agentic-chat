@@ -14,6 +14,7 @@ export async function signEip712Step<TMeta extends object>(
 ): Promise<string> {
   if (!ctx.refs.evmWallet.current) throw new Error('EVM wallet not connected')
 
+  ctx.setSubstatus('Requesting signature...')
   const signature = await signTypedDataWithWallet(ctx.refs.evmWallet.current, signingData)
   ctx.advanceStep()
   return signature

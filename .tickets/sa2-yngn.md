@@ -1,6 +1,6 @@
 ---
 id: sa2-yngn
-status: open
+status: in_progress
 deps: []
 links: []
 created: 2026-03-10T02:54:57Z

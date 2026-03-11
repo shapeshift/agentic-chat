@@ -15,6 +15,7 @@ export interface ExecutionContext<TMeta> {
   advanceStep: () => void
   skipStep: () => void
   setMeta: (partial: Partial<TMeta>) => void
+  setSubstatus: (text?: string) => void
   markTerminal: () => void
   persist: () => void
   failAndPersist: (error: unknown) => string
@@ -100,6 +101,7 @@ export function useToolExecution<TMeta extends object>(
       }
       draft.currentStep += 1
       draft.error = undefined
+      draft.substatus = undefined
     })
   }
 
@@ -109,12 +111,19 @@ export function useToolExecution<TMeta extends object>(
         draft.skippedSteps.push(draft.currentStep)
       }
       draft.currentStep += 1
+      draft.substatus = undefined
     })
   }
 
   const setMeta = (partial: Partial<TMeta>) => {
     setState(draft => {
       Object.assign(draft.meta, partial)
+    })
+  }
+
+  const setSubstatus = (text?: string) => {
+    setState(draft => {
+      draft.substatus = text
     })
   }
 
@@ -130,6 +139,7 @@ export function useToolExecution<TMeta extends object>(
       draft.error = errorMessage
       draft.failedStep = draft.currentStep
       draft.terminal = true
+      draft.substatus = undefined
     })
     persist()
     return errorMessage
@@ -153,6 +163,7 @@ export function useToolExecution<TMeta extends object>(
     advanceStep,
     skipStep: skipStepFn,
     setMeta,
+    setSubstatus,
     markTerminal: markTerminalFn,
     persist,
     failAndPersist,

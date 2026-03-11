@@ -116,8 +116,10 @@ export const useLimitOrderExecution = (
 
       // Step 2: Approve (skip if not needed)
       if (needsApproval && approvalTx) {
+        ctx.setSubstatus('Requesting approval signature...')
         const approvalTxHash = await executeApproval(approvalTx)
         ctx.setMeta({ approvalTxHash } as Partial<LimitOrderMeta>)
+        ctx.setSubstatus('Waiting for confirmation...')
         await waitForConfirmedReceipt(orderParams.chainId, approvalTxHash as `0x${string}`)
         ctx.advanceStep()
       } else {
@@ -128,6 +130,7 @@ export const useLimitOrderExecution = (
       const signature = await signEip712Step(ctx, signingData)
 
       // Step 4: Submit to CoW
+      ctx.setSubstatus('Submitting to CoW Protocol...')
       const orderId = await submitSignedOrder(orderParams.chainId, orderParams, signingData, signature)
       ctx.setMeta({ orderId } as Partial<LimitOrderMeta>)
       ctx.advanceStep()

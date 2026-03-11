@@ -69,6 +69,7 @@ async function ensureSafeReadyStep<TMeta extends object>(
 ): Promise<string> {
   if (!ctx.refs.evmWallet.current) throw new Error('EVM wallet not connected')
   const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
+  ctx.setSubstatus('Initializing Safe wallet...')
   const safeAddress = await ensureSafeReady(ownerAddress, chainId, ownerAddress, walletClient)
   ctx.advanceStep()
   return safeAddress
@@ -84,6 +85,7 @@ async function depositStep(
     return
   }
 
+  ctx.setSubstatus('Requesting signature...')
   const depositTxHash = await sendTransaction({
     chainId: data.depositTx.chainId,
     data: data.depositTx.data,
@@ -92,6 +94,7 @@ async function depositStep(
     value: data.depositTx.value,
   })
   ctx.setMeta({ depositTxHash } as Partial<ConditionalOrderMeta>)
+  ctx.setSubstatus('Waiting for confirmation...')
   await waitForConfirmedReceipt(chainId, depositTxHash as `0x${string}`)
   ctx.advanceStep()
 }
@@ -111,6 +114,7 @@ async function approveViaSafeStep(
   if (!ctx.refs.evmAddress.current) throw new Error('Wallet disconnected')
 
   const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
+  ctx.setSubstatus('Proposing Safe transaction...')
   const approvalTxHash = await executeSafeTransaction(
     safeAddress,
     { to: data.approvalTx.to, data: data.approvalTx.data, value: data.approvalTx.value },
@@ -163,6 +167,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
       if (!ctx.refs.evmAddress.current) throw new Error('Wallet disconnected')
 
       const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
+      ctx.setSubstatus('Proposing Safe transaction...')
       const submitTxHash = await executeSafeTransaction(
         safeAddress,
         { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },

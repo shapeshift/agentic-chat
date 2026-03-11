@@ -82,6 +82,7 @@ export const useCancelLimitOrderExecution = (
       const signature = await signEip712Step(ctx, signingData)
 
       // Step 3: Submit cancellation to CoW
+      ctx.setSubstatus('Submitting cancellation...')
       await submitCancellation(chainId, signingData.message.orderUids, signature)
       ctx.advanceStep()
       ctx.markTerminal()
