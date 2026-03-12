@@ -15,7 +15,7 @@ import {
   STOP_LOSS_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
-import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import { cowSupportedNetworkSchema, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
 import { toChecksumAddress } from '../../utils/addressValidation'
@@ -40,7 +40,7 @@ export const createStopLossSchema = z.object({
   buyAsset: z
     .string()
     .describe('Token symbol or name to receive (e.g., "USDC", "USDT"). Usually a stablecoin for stop-losses.'),
-  network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the stop-loss order'),
+  network: cowSupportedNetworkSchema.describe('Network for the stop-loss order'),
   sellAmount: z
     .string()
     .describe(

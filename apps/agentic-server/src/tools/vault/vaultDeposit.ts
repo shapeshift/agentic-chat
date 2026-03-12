@@ -4,7 +4,7 @@ import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
-import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import { cowSupportedNetworkSchema, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { validateSufficientBalance } from '../../utils/balanceHelpers'
@@ -15,7 +15,7 @@ import type { WalletContext } from '../../utils/walletContextSimple'
 export const vaultDepositSchema = z.object({
   asset: z.string().describe('Token symbol or name to deposit (e.g., "WETH", "USDC")'),
   amount: z.string().describe('Amount to deposit in human-readable format (e.g., "1" for 1 WETH)'),
-  network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the deposit'),
+  network: cowSupportedNetworkSchema.describe('Network for the deposit'),
 })
 
 export type VaultDepositInput = z.infer<typeof vaultDepositSchema>

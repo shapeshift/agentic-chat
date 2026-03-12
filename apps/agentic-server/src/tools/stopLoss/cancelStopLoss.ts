@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { cowSupportedNetworkSchema } from '../../lib/cow/types'
 import type { WalletContext } from '../../utils/walletContextSimple'
 import { executeCancelConditionalOrder } from '../conditional/cancelConditionalOrder'
 import type { CancelConditionalOrderOutput } from '../conditional/cancelConditionalOrder'
@@ -9,7 +10,7 @@ export const cancelStopLossSchema = z.object({
     .string()
     .regex(/^0x[0-9a-fA-F]{64}$/, 'Must be a valid bytes32 hex string (0x + 64 hex chars)')
     .describe('The order hash of the conditional order to cancel. Get this from the order details.'),
-  network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network where the order was created.'),
+  network: cowSupportedNetworkSchema.describe('Network where the order was created.'),
 })
 
 export type CancelStopLossInput = z.infer<typeof cancelStopLossSchema>
