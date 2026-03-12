@@ -93,81 +93,81 @@ export const useLimitOrderExecution = (
 
   useExecuteOnce(ctx, orderData, async (data, ctx) => {
     await withWalletLock(async () => {
-    try {
-      const { signingData, orderParams, needsApproval, approvalTx } = data
+      try {
+        const { signingData, orderParams, needsApproval, approvalTx } = data
 
-      if (!orderParams?.chainId) throw new Error('Invalid limit order output: missing orderParams.chainId')
-      if (!orderParams?.receiver) throw new Error('Invalid limit order output: missing orderParams.receiver')
-      if (!signingData) throw new Error('Invalid limit order output: missing signingData')
+        if (!orderParams?.chainId) throw new Error('Invalid limit order output: missing orderParams.chainId')
+        if (!orderParams?.receiver) throw new Error('Invalid limit order output: missing orderParams.receiver')
+        if (!signingData) throw new Error('Invalid limit order output: missing signingData')
 
-      const currentAddress = ctx.refs.evmAddress.current
-      if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
-      if (currentAddress.toLowerCase() !== orderParams.receiver.toLowerCase()) {
-        throw new Error('Wallet address changed. Please re-initiate the limit order.')
-      }
+        const currentAddress = ctx.refs.evmAddress.current
+        if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
+        if (currentAddress.toLowerCase() !== orderParams.receiver.toLowerCase()) {
+          throw new Error('Wallet address changed. Please re-initiate the limit order.')
+        }
 
-      // Step 0: Prepare
-      ctx.setState(draft => {
-        draft.toolOutput = data
-        draft.meta.networkName = data.summary.network
-      })
-      ctx.advanceStep()
-
-      // Step 1: Network switch
-      await switchNetworkStepByChainIdNumber(ctx, orderParams.chainId)
-
-      // Step 2: Approve (skip if not needed)
-      if (needsApproval && approvalTx) {
-        ctx.setSubstatus('Requesting approval signature...')
-        const approvalTxHash = await executeApproval(approvalTx)
-        ctx.setMeta({ approvalTxHash } as Partial<LimitOrderMeta>)
-        ctx.setSubstatus('Waiting for confirmation...')
-        await waitForConfirmedReceipt(orderParams.chainId, approvalTxHash as `0x${string}`)
+        // Step 0: Prepare
+        ctx.setState(draft => {
+          draft.toolOutput = data
+          draft.meta.networkName = data.summary.network
+        })
         ctx.advanceStep()
-      } else {
-        ctx.skipStep()
+
+        // Step 1: Network switch
+        await switchNetworkStepByChainIdNumber(ctx, orderParams.chainId)
+
+        // Step 2: Approve (skip if not needed)
+        if (needsApproval && approvalTx) {
+          ctx.setSubstatus('Requesting approval signature...')
+          const approvalTxHash = await executeApproval(approvalTx)
+          ctx.setMeta({ approvalTxHash } as Partial<LimitOrderMeta>)
+          ctx.setSubstatus('Waiting for confirmation...')
+          await waitForConfirmedReceipt(orderParams.chainId, approvalTxHash as `0x${string}`)
+          ctx.advanceStep()
+        } else {
+          ctx.skipStep()
+        }
+
+        // Step 3: Sign EIP-712 message
+        const signature = await signEip712Step(ctx, signingData)
+
+        // Step 4: Submit to CoW
+        ctx.setSubstatus('Submitting to CoW Protocol...')
+        const orderId = await submitSignedOrder(orderParams.chainId, orderParams, signingData, signature)
+        ctx.setMeta({ orderId } as Partial<LimitOrderMeta>)
+        ctx.advanceStep()
+        ctx.markTerminal()
+        ctx.persist()
+
+        toast.success(
+          <span>
+            Your limit order to sell{' '}
+            <Amount.Crypto
+              value={data.summary.sellAsset.amount}
+              symbol={data.summary.sellAsset.symbol.toUpperCase()}
+              className="font-bold"
+            />{' '}
+            has been placed
+          </span>
+        )
+
+        analytics.trackLimitOrder({
+          sellAsset: data.summary.sellAsset.symbol,
+          buyAsset: data.summary.buyAsset.symbol,
+          sellAmount: data.summary.sellAsset.amount,
+          buyAmount: data.summary.buyAsset.estimatedAmount,
+          network: data.summary.network,
+          limitPrice: data.summary.limitPrice,
+        })
+      } catch (error) {
+        const errorMessage = ctx.failAndPersist(error)
+
+        toast.error(
+          <span>
+            Failed to place limit order: {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}
+          </span>
+        )
       }
-
-      // Step 3: Sign EIP-712 message
-      const signature = await signEip712Step(ctx, signingData)
-
-      // Step 4: Submit to CoW
-      ctx.setSubstatus('Submitting to CoW Protocol...')
-      const orderId = await submitSignedOrder(orderParams.chainId, orderParams, signingData, signature)
-      ctx.setMeta({ orderId } as Partial<LimitOrderMeta>)
-      ctx.advanceStep()
-      ctx.markTerminal()
-      ctx.persist()
-
-      toast.success(
-        <span>
-          Your limit order to sell{' '}
-          <Amount.Crypto
-            value={data.summary.sellAsset.amount}
-            symbol={data.summary.sellAsset.symbol.toUpperCase()}
-            className="font-bold"
-          />{' '}
-          has been placed
-        </span>
-      )
-
-      analytics.trackLimitOrder({
-        sellAsset: data.summary.sellAsset.symbol,
-        buyAsset: data.summary.buyAsset.symbol,
-        sellAmount: data.summary.sellAsset.amount,
-        buyAmount: data.summary.buyAsset.estimatedAmount,
-        network: data.summary.network,
-        limitPrice: data.summary.limitPrice,
-      })
-    } catch (error) {
-      const errorMessage = ctx.failAndPersist(error)
-
-      toast.error(
-        <span>
-          Failed to place limit order: {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}
-        </span>
-      )
-    }
     })
   })
 

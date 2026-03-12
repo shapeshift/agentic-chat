@@ -36,81 +36,81 @@ export const useVaultWithdrawAllExecution = (
 
   useExecuteOnce(ctx, withdrawData, async (data, ctx) => {
     await withWalletLock(async () => {
-    try {
-      if (!ctx.refs.evmAddress.current) {
-        throw new Error('Wallet disconnected. Please reconnect and try again.')
-      }
-      if (!ctx.refs.evmWallet.current) {
-        throw new Error('EVM wallet not connected')
-      }
-
-      // Step 0: Prepare complete
-      ctx.setState(draft => {
-        draft.toolOutput = data
-      })
-      ctx.advanceStep()
-
-      if (ctx.refs.primaryWallet.current && !isEthereumWallet(ctx.refs.primaryWallet.current)) {
-        await ctx.refs.changePrimaryWallet.current(ctx.refs.evmWallet.current.id)
-      }
-
-      // Step 1: Execute each chain's batch sequentially (network switch -> sign batch)
-      const chainResults: ChainResult[] = []
-
-      for (const [i, withdrawal] of data.withdrawals.entries()) {
-        ctx.setMeta({ currentChainIndex: i })
-
-        try {
-          ctx.setSubstatus(`Switching to ${withdrawal.network}...`)
-          await ctx.refs.evmWallet.current.connector.switchNetwork({
-            networkChainId: withdrawal.chainId,
-          })
-
-          ctx.setSubstatus(`Proposing Safe transaction on ${withdrawal.network}...`)
-          const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
-          const txHash = await executeSafeBatchTransaction(
-            withdrawal.safeAddress,
-            withdrawal.safeBatchTransaction,
-            ctx.refs.evmAddress.current,
-            withdrawal.chainId,
-            walletClient
-          )
-
-          chainResults.push({
-            network: withdrawal.network,
-            chainId: withdrawal.chainId,
-            txHash,
-          })
-
-          ctx.setMeta({ chainResults: [...chainResults] })
-        } catch (chainError) {
-          const errorMessage = chainError instanceof Error ? chainError.message : String(chainError)
-          chainResults.push({
-            network: withdrawal.network,
-            chainId: withdrawal.chainId,
-            error: errorMessage,
-          })
-
-          ctx.setMeta({ chainResults: [...chainResults] })
+      try {
+        if (!ctx.refs.evmAddress.current) {
+          throw new Error('Wallet disconnected. Please reconnect and try again.')
         }
+        if (!ctx.refs.evmWallet.current) {
+          throw new Error('EVM wallet not connected')
+        }
+
+        // Step 0: Prepare complete
+        ctx.setState(draft => {
+          draft.toolOutput = data
+        })
+        ctx.advanceStep()
+
+        if (ctx.refs.primaryWallet.current && !isEthereumWallet(ctx.refs.primaryWallet.current)) {
+          await ctx.refs.changePrimaryWallet.current(ctx.refs.evmWallet.current.id)
+        }
+
+        // Step 1: Execute each chain's batch sequentially (network switch -> sign batch)
+        const chainResults: ChainResult[] = []
+
+        for (const [i, withdrawal] of data.withdrawals.entries()) {
+          ctx.setMeta({ currentChainIndex: i })
+
+          try {
+            ctx.setSubstatus(`Switching to ${withdrawal.network}...`)
+            await ctx.refs.evmWallet.current.connector.switchNetwork({
+              networkChainId: withdrawal.chainId,
+            })
+
+            ctx.setSubstatus(`Proposing Safe transaction on ${withdrawal.network}...`)
+            const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
+            const txHash = await executeSafeBatchTransaction(
+              withdrawal.safeAddress,
+              withdrawal.safeBatchTransaction,
+              ctx.refs.evmAddress.current,
+              withdrawal.chainId,
+              walletClient
+            )
+
+            chainResults.push({
+              network: withdrawal.network,
+              chainId: withdrawal.chainId,
+              txHash,
+            })
+
+            ctx.setMeta({ chainResults: [...chainResults] })
+          } catch (chainError) {
+            const errorMessage = chainError instanceof Error ? chainError.message : String(chainError)
+            chainResults.push({
+              network: withdrawal.network,
+              chainId: withdrawal.chainId,
+              error: errorMessage,
+            })
+
+            ctx.setMeta({ chainResults: [...chainResults] })
+          }
+        }
+
+        const hasAnySuccess = chainResults.some(r => r.txHash)
+        if (!hasAnySuccess) {
+          throw new Error('All chain withdrawals failed. Please try again.')
+        }
+
+        ctx.setMeta({ chainResults, currentChainIndex: data.withdrawals.length })
+        ctx.advanceStep()
+        ctx.markTerminal()
+        ctx.persist()
+
+        toast.success('Vault withdraw all is complete')
+      } catch (error) {
+        ctx.failAndPersist(error)
+
+        toast.error('Vault withdraw all failed')
       }
-
-      const hasAnySuccess = chainResults.some(r => r.txHash)
-      if (!hasAnySuccess) {
-        throw new Error('All chain withdrawals failed. Please try again.')
-      }
-
-      ctx.setMeta({ chainResults, currentChainIndex: data.withdrawals.length })
-      ctx.advanceStep()
-      ctx.markTerminal()
-      ctx.persist()
-
-      toast.success('Vault withdraw all is complete')
-    } catch (error) {
-      ctx.failAndPersist(error)
-
-      toast.error('Vault withdraw all failed')
-    }
     })
   })
 

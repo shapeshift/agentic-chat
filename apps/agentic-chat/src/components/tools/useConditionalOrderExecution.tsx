@@ -137,67 +137,67 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
 
   useExecuteOnce(ctx, orderData, async (data, ctx) => {
     await withWalletLock(async () => {
-    try {
-      const { safeTransaction } = data
-      const targetChainId = safeTransaction.chainId
+      try {
+        const { safeTransaction } = data
+        const targetChainId = safeTransaction.chainId
 
-      if (!ctx.refs.evmAddress.current) {
-        throw new Error('Wallet disconnected. Please reconnect and try again.')
+        if (!ctx.refs.evmAddress.current) {
+          throw new Error('Wallet disconnected. Please reconnect and try again.')
+        }
+
+        // Step 0: Prepare
+        ctx.setState(draft => {
+          draft.toolOutput = data as unknown
+          draft.meta.networkName = data.summary.network
+        })
+        ctx.advanceStep()
+
+        // Step 1: Network switch
+        await switchNetworkStepByChainIdNumber(ctx, targetChainId)
+
+        // Step 2: Safe check — deploy Safe + enable ComposableCoW modules
+        const safeAddress = await ensureSafeReadyStep(ctx, ctx.refs.evmAddress.current, targetChainId)
+
+        // Step 3: Deposit — transfer sell tokens from EOA to Safe (if needed)
+        await depositStep(ctx, data, targetChainId)
+
+        // Step 4: Approve via Safe (if needed)
+        await approveViaSafeStep(ctx, data, safeAddress, targetChainId)
+
+        // Step 5: Submit to ComposableCoW via Safe
+        if (!ctx.refs.evmWallet.current) throw new Error('EVM wallet not connected')
+        if (!ctx.refs.evmAddress.current) throw new Error('Wallet disconnected')
+
+        const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
+        ctx.setSubstatus('Proposing Safe transaction...')
+        const submitTxHash = await executeSafeTransaction(
+          safeAddress,
+          { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
+          ctx.refs.evmAddress.current,
+          targetChainId,
+          walletClient
+        )
+        ctx.setMeta({ txHash: submitTxHash } as Partial<ConditionalOrderMeta>)
+        ctx.advanceStep()
+        ctx.markTerminal()
+        ctx.persist()
+
+        useOrderStore
+          .getState()
+          .saveOrder(config.toOrderRecord({ data, safeAddress, submitTxHash, chainId: targetChainId }))
+
+        toast.success(config.renderSuccessToast(data))
+        config.onSuccess?.(data)
+      } catch (error) {
+        const errorMessage = ctx.failAndPersist(error)
+
+        toast.error(
+          <span>
+            Failed to set {config.errorLabel}:{' '}
+            {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}
+          </span>
+        )
       }
-
-      // Step 0: Prepare
-      ctx.setState(draft => {
-        draft.toolOutput = data as unknown
-        draft.meta.networkName = data.summary.network
-      })
-      ctx.advanceStep()
-
-      // Step 1: Network switch
-      await switchNetworkStepByChainIdNumber(ctx, targetChainId)
-
-      // Step 2: Safe check — deploy Safe + enable ComposableCoW modules
-      const safeAddress = await ensureSafeReadyStep(ctx, ctx.refs.evmAddress.current, targetChainId)
-
-      // Step 3: Deposit — transfer sell tokens from EOA to Safe (if needed)
-      await depositStep(ctx, data, targetChainId)
-
-      // Step 4: Approve via Safe (if needed)
-      await approveViaSafeStep(ctx, data, safeAddress, targetChainId)
-
-      // Step 5: Submit to ComposableCoW via Safe
-      if (!ctx.refs.evmWallet.current) throw new Error('EVM wallet not connected')
-      if (!ctx.refs.evmAddress.current) throw new Error('Wallet disconnected')
-
-      const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
-      ctx.setSubstatus('Proposing Safe transaction...')
-      const submitTxHash = await executeSafeTransaction(
-        safeAddress,
-        { to: safeTransaction.to, data: safeTransaction.data, value: safeTransaction.value },
-        ctx.refs.evmAddress.current,
-        targetChainId,
-        walletClient
-      )
-      ctx.setMeta({ txHash: submitTxHash } as Partial<ConditionalOrderMeta>)
-      ctx.advanceStep()
-      ctx.markTerminal()
-      ctx.persist()
-
-      useOrderStore
-        .getState()
-        .saveOrder(config.toOrderRecord({ data, safeAddress, submitTxHash, chainId: targetChainId }))
-
-      toast.success(config.renderSuccessToast(data))
-      config.onSuccess?.(data)
-    } catch (error) {
-      const errorMessage = ctx.failAndPersist(error)
-
-      toast.error(
-        <span>
-          Failed to set {config.errorLabel}:{' '}
-          {errorMessage.length > 100 ? `${errorMessage.slice(0, 100)}...` : errorMessage}
-        </span>
-      )
-    }
     })
   })
 
