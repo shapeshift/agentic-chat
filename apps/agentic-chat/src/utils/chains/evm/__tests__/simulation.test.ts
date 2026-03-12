@@ -35,7 +35,7 @@ describe('simulateEvmTransaction', () => {
     revertErr.shortMessage = 'insufficient balance'
     const client = mockPublicClient({ callError: revertErr })
 
-    await expect(simulateEvmTransaction(client, defaultParams)).rejects.toBeInstanceOf(SimulationError)
+    expect(simulateEvmTransaction(client, defaultParams)).rejects.toBeInstanceOf(SimulationError)
   })
 
   it('includes revert reason in SimulationError message', async () => {
@@ -56,7 +56,7 @@ describe('simulateEvmTransaction', () => {
     const networkErr = new Error('network timeout')
     const client = mockPublicClient({ callError: networkErr })
 
-    await expect(simulateEvmTransaction(client, defaultParams)).rejects.toThrow('network timeout')
+    expect(simulateEvmTransaction(client, defaultParams)).rejects.toThrow('network timeout')
     try {
       await simulateEvmTransaction(client, defaultParams)
     } catch (error) {

@@ -22,11 +22,7 @@ describe('simulateSolanaTransaction', () => {
   it('throws SimulationError with matching log line on error', async () => {
     const connection = mockConnection({
       err: { InstructionError: [0, 'Custom'] },
-      logs: [
-        'Program log: some info',
-        'Program log: Error: insufficient funds',
-        'Program log: cleanup',
-      ],
+      logs: ['Program log: some info', 'Program log: Error: insufficient funds', 'Program log: cleanup'],
     })
 
     try {
