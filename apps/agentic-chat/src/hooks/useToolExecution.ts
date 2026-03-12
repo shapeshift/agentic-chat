@@ -3,7 +3,8 @@ import type { MutableRefObject } from 'react'
 import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 
-import type { ToolExecutionState, ToolType } from '@/lib/executionState'
+import type { ToolExecutionState, ToolMetaMap } from '@/lib/executionState'
+import type { ToolName } from '@/types/toolOutput'
 import { useChatStore } from '@/stores/chatStore'
 
 import { useWalletConnection } from './useWalletConnection'
@@ -29,11 +30,11 @@ export interface ExecutionContext<TMeta> {
   }
 }
 
-export function useToolExecution<TMeta extends object>(
+export function useToolExecution<K extends ToolName>(
   toolCallId: string,
-  toolType: ToolType,
-  initialMeta: TMeta
-): ExecutionContext<TMeta> {
+  toolName: K,
+  initialMeta: ToolMetaMap[K]
+): ExecutionContext<ToolMetaMap[K]> {
   const { evmAddress, solanaAddress, solanaWallet, evmWallet } = useWalletConnection()
   const store = useChatStore()
   const { conversationId: activeConversationId } = useParams<{ conversationId?: string }>()
@@ -55,9 +56,9 @@ export function useToolExecution<TMeta extends object>(
   primaryWalletRef.current = primaryWallet
   changePrimaryWalletRef.current = changePrimaryWallet
 
-  const initialState: ToolExecutionState<TMeta> = {
+  const initialState: ToolExecutionState<ToolMetaMap[K]> = {
     toolCallId,
-    toolType,
+    toolName,
     conversationId: activeConversationId ?? '',
     timestamp: Date.now(),
     currentStep: 0,
@@ -86,10 +87,10 @@ export function useToolExecution<TMeta extends object>(
 
   const state = useChatStore(s => {
     const toolState = s.runtimeToolStates.get(toolCallId)
-    return toolState !== undefined ? (toolState as ToolExecutionState<TMeta>) : initialState
+    return toolState !== undefined ? (toolState as ToolExecutionState<ToolMetaMap[K]>) : initialState
   })
 
-  const setState = (updater: (draft: ToolExecutionState<TMeta>) => void) => {
+  const setState = (updater: (draft: ToolExecutionState<ToolMetaMap[K]>) => void) => {
     store.setRuntimeState(toolCallId, updater)
   }
 
@@ -112,7 +113,7 @@ export function useToolExecution<TMeta extends object>(
     })
   }
 
-  const setMeta = (partial: Partial<TMeta>) => {
+  const setMeta = (partial: Partial<ToolMetaMap[K]>) => {
     setState(draft => {
       Object.assign(draft.meta, partial)
     })
@@ -136,7 +137,7 @@ export function useToolExecution<TMeta extends object>(
   }
 
   const persist = () => {
-    const currentState = store.getRuntimeState<ToolExecutionState<TMeta>>(toolCallId, initialState)
+    const currentState = store.getRuntimeState<ToolExecutionState<ToolMetaMap[K]>>(toolCallId, initialState)
     const walletAddress = evmAddressRef.current ?? solanaAddressRef.current
     store.persistTransaction({
       ...currentState,
