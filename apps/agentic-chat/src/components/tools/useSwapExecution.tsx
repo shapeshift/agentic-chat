@@ -11,6 +11,7 @@ import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
 import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
 import type { StepStatus } from '@/lib/stepUtils'
+import { withWalletLock } from '@/lib/walletMutex'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
@@ -41,111 +42,114 @@ export const useSwapExecution = (
   const ctx = useToolExecution(toolCallId, 'initiateSwapTool', {})
 
   useExecuteOnce(ctx, swapData, async (data, ctx) => {
-    try {
-      const { needsApproval, approvalTx, swapTx } = data
+    await withWalletLock(async () => {
+      try {
+        const { needsApproval, approvalTx, swapTx } = data
 
-      if (!swapTx?.from) throw new Error('Invalid swap output: missing swapTx.from')
-      if (!swapTx?.chainId) throw new Error('Invalid swap output: missing swapTx.chainId')
-      if (!data.swapData?.sellAsset?.chainId) throw new Error('Invalid swap output: missing swapData.sellAsset.chainId')
+        if (!swapTx?.from) throw new Error('Invalid swap output: missing swapTx.from')
+        if (!swapTx?.chainId) throw new Error('Invalid swap output: missing swapTx.chainId')
+        if (!data.swapData?.sellAsset?.chainId)
+          throw new Error('Invalid swap output: missing swapData.sellAsset.chainId')
 
-      const sellAssetChainId = data.swapData.sellAsset.chainId
-      const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
+        const sellAssetChainId = data.swapData.sellAsset.chainId
+        const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
 
-      const currentAddress =
-        chainNamespace === CHAIN_NAMESPACE.Evm ? ctx.refs.evmAddress.current : ctx.refs.solanaAddress.current
-      if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
-      if (currentAddress.toLowerCase() !== swapTx.from.toLowerCase()) {
-        throw new Error('Wallet address changed. Please re-initiate the swap.')
-      }
-
-      let solanaSigner: SolanaWalletSigner | undefined
-      if (chainNamespace === CHAIN_NAMESPACE.Solana && ctx.refs.solanaWallet.current) {
-        solanaSigner = await ctx.refs.solanaWallet.current.getSigner()
-      }
-
-      // Step 0: Quote complete
-      ctx.setState(draft => {
-        draft.toolOutput = data
-        draft.meta.networkName = data.swapData.sellAsset.network
-      })
-      ctx.advanceStep()
-
-      // Step 1: Network switch
-      await switchNetworkStep(ctx, sellAssetChainId)
-
-      // Step 2: Approve (skip if not needed)
-      if (needsApproval && approvalTx) {
-        ctx.setSubstatus('Requesting approval signature...')
-        const approvalTxHash = await executeApproval(approvalTx, { solanaSigner })
-        ctx.setMeta({ approvalTxHash })
-
-        if (chainNamespace === CHAIN_NAMESPACE.Evm) {
-          ctx.setSubstatus('Waiting for confirmation...')
-          await waitForConfirmedReceipt(Number(chainReference), approvalTxHash as `0x${string}`)
+        const currentAddress =
+          chainNamespace === CHAIN_NAMESPACE.Evm ? ctx.refs.evmAddress.current : ctx.refs.solanaAddress.current
+        if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
+        if (currentAddress.toLowerCase() !== swapTx.from.toLowerCase()) {
+          throw new Error('Wallet address changed. Please re-initiate the swap.')
         }
+
+        let solanaSigner: SolanaWalletSigner | undefined
+        if (chainNamespace === CHAIN_NAMESPACE.Solana && ctx.refs.solanaWallet.current) {
+          solanaSigner = await ctx.refs.solanaWallet.current.getSigner()
+        }
+
+        // Step 0: Quote complete
+        ctx.setState(draft => {
+          draft.toolOutput = data
+          draft.meta.networkName = data.swapData.sellAsset.network
+        })
         ctx.advanceStep()
-      } else {
-        ctx.skipStep()
+
+        // Step 1: Network switch
+        await switchNetworkStep(ctx, sellAssetChainId)
+
+        // Step 2: Approve (skip if not needed)
+        if (needsApproval && approvalTx) {
+          ctx.setSubstatus('Requesting approval signature...')
+          const approvalTxHash = await executeApproval(approvalTx, { solanaSigner })
+          ctx.setMeta({ approvalTxHash })
+
+          if (chainNamespace === CHAIN_NAMESPACE.Evm) {
+            ctx.setSubstatus('Waiting for confirmation...')
+            await waitForConfirmedReceipt(Number(chainReference), approvalTxHash as `0x${string}`)
+          }
+          ctx.advanceStep()
+        } else {
+          ctx.skipStep()
+        }
+
+        // Step 3: Swap
+        ctx.setSubstatus('Requesting signature...')
+        const swapTxHash = await executeSwap(swapTx, { solanaSigner })
+        ctx.setMeta({ txHash: swapTxHash })
+        ctx.advanceStep()
+        ctx.markTerminal()
+        ctx.persist()
+
+        analytics.trackSwap({
+          sellAsset: data.swapData.sellAsset.symbol,
+          buyAsset: data.swapData.buyAsset.symbol,
+          sellAmount: data.swapData.sellAmountCryptoPrecision,
+          buyAmount: data.swapData.buyAmountCryptoPrecision,
+          network: data.swapData.sellAsset.network,
+        })
+
+        toast.success(
+          <span>
+            Your swap of{' '}
+            <Amount.Crypto
+              value={data.swapData.sellAmountCryptoPrecision}
+              symbol={data.swapData.sellAsset.symbol.toUpperCase()}
+              decimals={6}
+              className="font-bold"
+            />{' '}
+            to{' '}
+            <Amount.Crypto
+              value={data.swapData.buyAmountCryptoPrecision}
+              symbol={data.swapData.buyAsset.symbol.toUpperCase()}
+              decimals={6}
+              className="font-bold"
+            />{' '}
+            is complete
+          </span>
+        )
+      } catch (error) {
+        ctx.failAndPersist(error)
+
+        toast.error(
+          <span>
+            Your swap of{' '}
+            <Amount.Crypto
+              value={data.swapData.sellAmountCryptoPrecision}
+              symbol={data.swapData.sellAsset.symbol.toUpperCase()}
+              decimals={6}
+              className="font-bold"
+            />{' '}
+            to{' '}
+            <Amount.Crypto
+              value={data.swapData.buyAmountCryptoPrecision}
+              symbol={data.swapData.buyAsset.symbol.toUpperCase()}
+              decimals={6}
+              className="font-bold"
+            />{' '}
+            failed
+          </span>
+        )
       }
-
-      // Step 3: Swap
-      ctx.setSubstatus('Requesting signature...')
-      const swapTxHash = await executeSwap(swapTx, { solanaSigner })
-      ctx.setMeta({ txHash: swapTxHash })
-      ctx.advanceStep()
-      ctx.markTerminal()
-      ctx.persist()
-
-      analytics.trackSwap({
-        sellAsset: data.swapData.sellAsset.symbol,
-        buyAsset: data.swapData.buyAsset.symbol,
-        sellAmount: data.swapData.sellAmountCryptoPrecision,
-        buyAmount: data.swapData.buyAmountCryptoPrecision,
-        network: data.swapData.sellAsset.network,
-      })
-
-      toast.success(
-        <span>
-          Your swap of{' '}
-          <Amount.Crypto
-            value={data.swapData.sellAmountCryptoPrecision}
-            symbol={data.swapData.sellAsset.symbol.toUpperCase()}
-            decimals={6}
-            className="font-bold"
-          />{' '}
-          to{' '}
-          <Amount.Crypto
-            value={data.swapData.buyAmountCryptoPrecision}
-            symbol={data.swapData.buyAsset.symbol.toUpperCase()}
-            decimals={6}
-            className="font-bold"
-          />{' '}
-          is complete
-        </span>
-      )
-    } catch (error) {
-      ctx.failAndPersist(error)
-
-      toast.error(
-        <span>
-          Your swap of{' '}
-          <Amount.Crypto
-            value={data.swapData.sellAmountCryptoPrecision}
-            symbol={data.swapData.sellAsset.symbol.toUpperCase()}
-            decimals={6}
-            className="font-bold"
-          />{' '}
-          to{' '}
-          <Amount.Crypto
-            value={data.swapData.buyAmountCryptoPrecision}
-            symbol={data.swapData.buyAsset.symbol.toUpperCase()}
-            decimals={6}
-            className="font-bold"
-          />{' '}
-          failed
-        </span>
-      )
-    }
+    })
   })
 
   const quoteStepStatus = toolStateToStepStatus(toolState)

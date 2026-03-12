@@ -8,6 +8,7 @@ import { useToolExecution } from '@/hooks/useToolExecution'
 import { toolStateToStepStatus } from '@/lib/executionState'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import { firstFourLastFour } from '@/lib/utils'
+import { withWalletLock } from '@/lib/walletMutex'
 import { sendTransaction } from '@/utils/sendTransaction'
 
 import { Amount } from '../ui/Amount'
@@ -27,43 +28,45 @@ export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositT
   const ctx = useToolExecution(toolCallId, 'vaultDepositTool', {})
 
   useExecuteOnce(ctx, depositData, async (data: VaultDepositOutput, ctx) => {
-    try {
-      const { depositTx } = data
+    await withWalletLock(async () => {
+      try {
+        const { depositTx } = data
 
-      if (!ctx.refs.evmAddress.current) {
-        throw new Error('Wallet disconnected. Please reconnect and try again.')
+        if (!ctx.refs.evmAddress.current) {
+          throw new Error('Wallet disconnected. Please reconnect and try again.')
+        }
+
+        ctx.setState(draft => {
+          draft.toolOutput = data
+          draft.meta.networkName = data.summary.network
+        })
+        ctx.advanceStep()
+
+        const { chainReference } = fromChainId(depositTx.chainId)
+        await switchNetworkStepByChainIdNumber(ctx, Number(chainReference))
+
+        ctx.setSubstatus('Requesting signature...')
+        const depositTxHash = await sendTransaction({
+          chainId: depositTx.chainId,
+          data: depositTx.data,
+          from: depositTx.from,
+          to: depositTx.to,
+          value: depositTx.value,
+        })
+        ctx.setMeta({ txHash: depositTxHash })
+        ctx.advanceStep()
+        ctx.markTerminal()
+        ctx.persist()
+
+        toast.success(
+          `Vault deposit of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`
+        )
+      } catch (error) {
+        ctx.failAndPersist(error)
+
+        toast.error(`Vault deposit failed`)
       }
-
-      ctx.setState(draft => {
-        draft.toolOutput = data
-        draft.meta.networkName = data.summary.network
-      })
-      ctx.advanceStep()
-
-      const { chainReference } = fromChainId(depositTx.chainId)
-      await switchNetworkStepByChainIdNumber(ctx, Number(chainReference))
-
-      ctx.setSubstatus('Requesting signature...')
-      const depositTxHash = await sendTransaction({
-        chainId: depositTx.chainId,
-        data: depositTx.data,
-        from: depositTx.from,
-        to: depositTx.to,
-        value: depositTx.value,
-      })
-      ctx.setMeta({ txHash: depositTxHash })
-      ctx.advanceStep()
-      ctx.markTerminal()
-      ctx.persist()
-
-      toast.success(
-        `Vault deposit of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`
-      )
-    } catch (error) {
-      ctx.failAndPersist(error)
-
-      toast.error(`Vault deposit failed`)
-    }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)

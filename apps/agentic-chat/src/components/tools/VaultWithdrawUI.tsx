@@ -8,6 +8,7 @@ import { toolStateToStepStatus } from '@/lib/executionState'
 import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import { firstFourLastFour } from '@/lib/utils'
+import { withWalletLock } from '@/lib/walletMutex'
 
 import { Amount } from '../ui/Amount'
 import { Skeleton } from '../ui/Skeleton'
@@ -26,41 +27,43 @@ export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdra
   const ctx = useToolExecution(toolCallId, 'vaultWithdrawTool', {})
 
   useExecuteOnce(ctx, withdrawData, async (data: VaultWithdrawOutput, ctx) => {
-    try {
-      const { safeTransaction, summary } = data
+    await withWalletLock(async () => {
+      try {
+        const { safeTransaction, summary } = data
 
-      if (!ctx.refs.evmAddress.current) {
-        throw new Error('Wallet disconnected. Please reconnect and try again.')
+        if (!ctx.refs.evmAddress.current) {
+          throw new Error('Wallet disconnected. Please reconnect and try again.')
+        }
+
+        ctx.setState(draft => {
+          draft.toolOutput = data
+          draft.meta.networkName = data.summary.network
+        })
+        ctx.advanceStep()
+
+        await switchNetworkStepByChainIdNumber(ctx, safeTransaction.chainId)
+
+        ctx.setSubstatus('Proposing Safe transaction...')
+        const withdrawTxHash = await submitSafeTxStep(ctx, {
+          safeAddress: summary.safeAddress,
+          to: safeTransaction.to,
+          data: safeTransaction.data,
+          value: safeTransaction.value,
+          chainId: safeTransaction.chainId,
+        })
+        ctx.setMeta({ txHash: withdrawTxHash })
+        ctx.markTerminal()
+        ctx.persist()
+
+        toast.success(
+          `Vault withdrawal of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`
+        )
+      } catch (error) {
+        ctx.failAndPersist(error)
+
+        toast.error(`Vault withdrawal failed`)
       }
-
-      ctx.setState(draft => {
-        draft.toolOutput = data
-        draft.meta.networkName = data.summary.network
-      })
-      ctx.advanceStep()
-
-      await switchNetworkStepByChainIdNumber(ctx, safeTransaction.chainId)
-
-      ctx.setSubstatus('Proposing Safe transaction...')
-      const withdrawTxHash = await submitSafeTxStep(ctx, {
-        safeAddress: summary.safeAddress,
-        to: safeTransaction.to,
-        data: safeTransaction.data,
-        value: safeTransaction.value,
-        chainId: safeTransaction.chainId,
-      })
-      ctx.setMeta({ txHash: withdrawTxHash })
-      ctx.markTerminal()
-      ctx.persist()
-
-      toast.success(
-        `Vault withdrawal of ${data.summary.asset.amount} ${data.summary.asset.symbol.toUpperCase()} is complete`
-      )
-    } catch (error) {
-      ctx.failAndPersist(error)
-
-      toast.error(`Vault withdrawal failed`)
-    }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)

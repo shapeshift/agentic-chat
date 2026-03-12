@@ -9,6 +9,7 @@ import { toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
 import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
 import { firstFourLastFour } from '@/lib/utils'
+import { withWalletLock } from '@/lib/walletMutex'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeSend } from '@/utils/sendExecutor'
 
@@ -30,55 +31,57 @@ export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
   const ctx = useToolExecution(toolCallId, 'sendTool', {})
 
   useExecuteOnce(ctx, sendData, async (data: SendOutput, ctx) => {
-    try {
-      const { tx } = data
+    await withWalletLock(async () => {
+      try {
+        const { tx } = data
 
-      if (!tx?.from) throw new Error('Invalid send output: missing tx.from')
-      if (!tx?.chainId) throw new Error('Invalid send output: missing tx.chainId')
-      if (!data.sendData?.chainId) throw new Error('Invalid send output: missing sendData.chainId')
+        if (!tx?.from) throw new Error('Invalid send output: missing tx.from')
+        if (!tx?.chainId) throw new Error('Invalid send output: missing tx.chainId')
+        if (!data.sendData?.chainId) throw new Error('Invalid send output: missing sendData.chainId')
 
-      const assetChainId = data.sendData.chainId
-      const { chainNamespace } = fromChainId(assetChainId)
+        const assetChainId = data.sendData.chainId
+        const { chainNamespace } = fromChainId(assetChainId)
 
-      const currentAddress =
-        chainNamespace === CHAIN_NAMESPACE.Evm ? ctx.refs.evmAddress.current : ctx.refs.solanaAddress.current
-      if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
-      if (currentAddress.toLowerCase() !== tx.from.toLowerCase()) {
-        throw new Error('Wallet address changed. Please re-initiate the transaction.')
+        const currentAddress =
+          chainNamespace === CHAIN_NAMESPACE.Evm ? ctx.refs.evmAddress.current : ctx.refs.solanaAddress.current
+        if (!currentAddress) throw new Error('Wallet disconnected. Please reconnect and try again.')
+        if (currentAddress.toLowerCase() !== tx.from.toLowerCase()) {
+          throw new Error('Wallet address changed. Please re-initiate the transaction.')
+        }
+
+        let solanaSigner: SolanaWalletSigner | undefined
+        if (chainNamespace === CHAIN_NAMESPACE.Solana && ctx.refs.solanaWallet.current) {
+          solanaSigner = await ctx.refs.solanaWallet.current.getSigner()
+        }
+
+        ctx.setState(draft => {
+          draft.toolOutput = data
+          draft.meta.networkName = data.sendData.asset.network
+        })
+        ctx.advanceStep()
+
+        await switchNetworkStep(ctx, assetChainId)
+
+        ctx.setSubstatus('Requesting signature...')
+        const sendTxHash = await executeSend(tx, { solanaSigner })
+        ctx.setMeta({ txHash: sendTxHash })
+        ctx.advanceStep()
+        ctx.markTerminal()
+        ctx.persist()
+
+        analytics.trackSend({
+          asset: data.sendData.asset.symbol,
+          amount: data.sendData.amount,
+          network: data.sendData.asset.network,
+        })
+
+        toast.success(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} is complete`)
+      } catch (error) {
+        ctx.failAndPersist(error)
+
+        toast.error(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} failed`)
       }
-
-      let solanaSigner: SolanaWalletSigner | undefined
-      if (chainNamespace === CHAIN_NAMESPACE.Solana && ctx.refs.solanaWallet.current) {
-        solanaSigner = await ctx.refs.solanaWallet.current.getSigner()
-      }
-
-      ctx.setState(draft => {
-        draft.toolOutput = data
-        draft.meta.networkName = data.sendData.asset.network
-      })
-      ctx.advanceStep()
-
-      await switchNetworkStep(ctx, assetChainId)
-
-      ctx.setSubstatus('Requesting signature...')
-      const sendTxHash = await executeSend(tx, { solanaSigner })
-      ctx.setMeta({ txHash: sendTxHash })
-      ctx.advanceStep()
-      ctx.markTerminal()
-      ctx.persist()
-
-      analytics.trackSend({
-        asset: data.sendData.asset.symbol,
-        amount: data.sendData.amount,
-        network: data.sendData.asset.network,
-      })
-
-      toast.success(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} is complete`)
-    } catch (error) {
-      ctx.failAndPersist(error)
-
-      toast.error(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} failed`)
-    }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)
