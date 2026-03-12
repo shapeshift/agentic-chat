@@ -1,6 +1,6 @@
 ---
 id: sa2-lils
-status: open
+status: closed
 deps: []
 links: []
 created: 2026-03-10T08:11:48Z
