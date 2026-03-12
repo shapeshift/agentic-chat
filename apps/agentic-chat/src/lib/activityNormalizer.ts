@@ -27,10 +27,10 @@ function normalizeSwapActivity(
   tx: ToolExecutionStateFor<'initiateSwapTool'> | ToolExecutionStateFor<'initiateSwapUsdTool'>
 ): ActivityItem | null {
   const output = tx.toolOutput as InitiateSwapOutput | undefined
-  const swapTxHash = tx.meta.txHash
+  const txHash = tx.meta.txHash
   const approvalTxHash = tx.meta.approvalTxHash
 
-  if (!output?.summary?.sellAsset || !output?.summary?.buyAsset || !swapTxHash) return null
+  if (!output?.summary?.sellAsset || !output?.summary?.buyAsset || !txHash) return null
 
   const details: SwapActivityDetails = {
     sellAsset: {
@@ -57,7 +57,7 @@ function normalizeSwapActivity(
     id: tx.toolCallId,
     type: 'swap',
     timestamp: tx.timestamp,
-    txHash: swapTxHash,
+    txHash,
     chainId: output.swapData.sellAsset.chainId,
     network: output.summary.sellAsset.network,
     details,
@@ -66,9 +66,9 @@ function normalizeSwapActivity(
 
 function normalizeSendActivity(tx: ToolExecutionStateFor<'sendTool'>): ActivityItem | null {
   const output = tx.toolOutput as SendOutput | undefined
-  const sendTxHash = tx.meta.txHash
+  const txHash = tx.meta.txHash
 
-  if (!output?.summary || !sendTxHash) return null
+  if (!output?.summary || !txHash) return null
 
   const details: SendActivityDetails = {
     asset: {
@@ -85,7 +85,7 @@ function normalizeSendActivity(tx: ToolExecutionStateFor<'sendTool'>): ActivityI
     id: tx.toolCallId,
     type: 'send',
     timestamp: tx.timestamp,
-    txHash: sendTxHash,
+    txHash,
     chainId: output.sendData.chainId,
     network: output.summary.network,
     details,
