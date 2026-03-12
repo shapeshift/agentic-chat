@@ -3,6 +3,7 @@ import { Virtuoso } from 'react-virtuoso'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 import { normalizeToActivityItem } from '@/lib/activityNormalizer'
+import type { AnyToolExecutionState } from '@/lib/executionState'
 import { useChatStore } from '@/stores/chatStore'
 import type { ActivityItem } from '@/types/activity'
 
@@ -22,10 +23,10 @@ export function ActivityList() {
 
   const activities = useMemo(() => {
     return transactions
-      .filter(tx => tx.toolType === 'swap' || tx.toolType === 'send' || tx.toolType === 'limit_order')
+      .filter(tx => tx.toolName === 'initiateSwapTool' || tx.toolName === 'initiateSwapUsdTool' || tx.toolName === 'sendTool' || tx.toolName === 'createLimitOrderTool')
       .filter(tx => !tx.error)
       .filter(tx => tx.walletAddress && connectedAddresses.has(tx.walletAddress.toLowerCase()))
-      .map(tx => normalizeToActivityItem(tx))
+      .map(tx => normalizeToActivityItem(tx as AnyToolExecutionState))
       .filter((item): item is ActivityItem => item !== null)
       .sort((a, b) => b.timestamp - a.timestamp)
   }, [transactions, connectedAddresses])
