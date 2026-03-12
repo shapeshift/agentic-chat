@@ -16,11 +16,17 @@ export async function simulateEvmTransaction(publicClient: PublicClient, params:
   try {
     await publicClient.call(params)
   } catch (error) {
-    if (isRevertError(error)) throw new SimulationError(extractRevertReason(error))
+    if (isRevertError(error)) {
+      const reason = extractRevertReason(error)
+      console.warn(`[simulation] EVM revert detected: ${reason}`)
+      throw new SimulationError(reason)
+    }
     throw error
   }
 
   // Get accurate gas estimate
   const gasEstimate = await publicClient.estimateGas(params)
-  return gasEstimate + (gasEstimate * GAS_BUFFER_PERCENT) / 100n
+  const gasWithBuffer = gasEstimate + (gasEstimate * GAS_BUFFER_PERCENT) / 100n
+  console.info(`[simulation] EVM simulation passed — gas estimate: ${gasEstimate} (with buffer: ${gasWithBuffer})`)
+  return gasWithBuffer
 }
