@@ -50,7 +50,7 @@ export async function sendEvmTransaction(params: TransactionParams): Promise<str
         value,
         data,
       })
-      gas = estimatedGas
+      if (!params.gasLimit) gas = estimatedGas
     } catch (error) {
       if (error instanceof SimulationError) throw error
       console.warn('[simulation] EVM simulation failed, proceeding without:', error)
@@ -62,7 +62,7 @@ export async function sendEvmTransaction(params: TransactionParams): Promise<str
       value,
       data,
       chain,
-      ...(gas && { gas }),
+      ...(gas !== undefined && { gas }),
     }
 
     const txHash = await walletClient.sendTransaction(txParams)

@@ -96,7 +96,7 @@ export async function sendSolanaTransaction(params: TransactionParams): Promise<
       transaction
     )
     const signature = await connection.sendRawTransaction(signedTx.serialize(), {
-      skipPreflight: false,
+      skipPreflight: true,
       preflightCommitment: 'confirmed',
       maxRetries: 3,
     })

@@ -13,7 +13,10 @@ export async function simulateSolanaTransaction(
 
   if (result.value.err) {
     const logs = result.value.logs ?? []
-    const errorLog = logs.find(l => l.includes('Error') || l.includes('failed'))
+    const errorLog = logs.find(l => {
+      const lower = l.toLowerCase()
+      return lower.includes('error') || lower.includes('failed')
+    })
     const reason = errorLog ?? JSON.stringify(result.value.err)
     throw new SimulationError(reason)
   }
