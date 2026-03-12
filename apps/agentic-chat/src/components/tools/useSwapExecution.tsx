@@ -9,6 +9,7 @@ import { useToolExecution } from '@/hooks/useToolExecution'
 import type { SwapMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
+import { withWalletLock } from '@/lib/walletMutex'
 import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
 import type { StepStatus } from '@/lib/stepUtils'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
@@ -41,6 +42,7 @@ export const useSwapExecution = (
   const ctx = useToolExecution(toolCallId, 'initiateSwapTool', {})
 
   useExecuteOnce(ctx, swapData, async (data, ctx) => {
+    await withWalletLock(async () => {
     try {
       const { needsApproval, approvalTx, swapTx } = data
 
@@ -146,6 +148,7 @@ export const useSwapExecution = (
         </span>
       )
     }
+    })
   })
 
   const quoteStepStatus = toolStateToStepStatus(toolState)

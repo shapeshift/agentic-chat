@@ -8,6 +8,7 @@ import { useToolExecution } from '@/hooks/useToolExecution'
 import type { ChainResult, ToolExecutionState, VaultWithdrawAllMeta } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { executeSafeBatchTransaction } from '@/lib/safe'
+import { withWalletLock } from '@/lib/walletMutex'
 import type { StepStatus } from '@/lib/stepUtils'
 
 export const VAULT_WITHDRAW_ALL_STEPS = { PREPARE: 0, WITHDRAW_CHAINS: 1 } as const
@@ -34,6 +35,7 @@ export const useVaultWithdrawAllExecution = (
   const ctx = useToolExecution(toolCallId, 'vaultWithdrawAllTool', { chainResults: [] })
 
   useExecuteOnce(ctx, withdrawData, async (data, ctx) => {
+    await withWalletLock(async () => {
     try {
       if (!ctx.refs.evmAddress.current) {
         throw new Error('Wallet disconnected. Please reconnect and try again.')
@@ -109,6 +111,7 @@ export const useVaultWithdrawAllExecution = (
 
       toast.error('Vault withdraw all failed')
     }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)

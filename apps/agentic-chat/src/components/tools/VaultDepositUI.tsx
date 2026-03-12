@@ -7,6 +7,7 @@ import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
 import { toolStateToStepStatus } from '@/lib/executionState'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { withWalletLock } from '@/lib/walletMutex'
 import { firstFourLastFour } from '@/lib/utils'
 import { sendTransaction } from '@/utils/sendTransaction'
 
@@ -27,6 +28,7 @@ export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositT
   const ctx = useToolExecution(toolCallId, 'vaultDepositTool', {})
 
   useExecuteOnce(ctx, depositData, async (data: VaultDepositOutput, ctx) => {
+    await withWalletLock(async () => {
     try {
       const { depositTx } = data
 
@@ -64,6 +66,7 @@ export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositT
 
       toast.error(`Vault deposit failed`)
     }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)

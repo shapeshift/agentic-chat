@@ -6,6 +6,7 @@ import { ArrowRightLeft } from 'lucide-react'
 import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
 import { networkNameToChainId } from '@/lib/chains'
+import { withWalletLock } from '@/lib/walletMutex'
 import { useChatStore } from '@/stores/chatStore'
 
 import { CollapsableDetails } from '../ui/CollapsableDetails'
@@ -34,6 +35,7 @@ export function SwitchNetworkUI({ toolPart }: ToolUIComponentProps<'switchNetwor
   })
 
   useExecuteOnce(ctx, networkData, async (data: SwitchNetworkOutput, ctx) => {
+    await withWalletLock(async () => {
     const { refs } = ctx
 
     const targetChainId = networkNameToChainId[data.network]
@@ -95,6 +97,7 @@ export function SwitchNetworkUI({ toolPart }: ToolUIComponentProps<'switchNetwor
       ctx.markTerminal()
       ctx.persist()
     }
+    })
   })
 
   const phase = ctx.state.meta.phase

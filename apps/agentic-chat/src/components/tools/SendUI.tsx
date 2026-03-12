@@ -7,6 +7,7 @@ import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
 import { toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
+import { withWalletLock } from '@/lib/walletMutex'
 import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
 import { firstFourLastFour } from '@/lib/utils'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
@@ -30,6 +31,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
   const ctx = useToolExecution(toolCallId, 'sendTool', {})
 
   useExecuteOnce(ctx, sendData, async (data: SendOutput, ctx) => {
+    await withWalletLock(async () => {
     try {
       const { tx } = data
 
@@ -79,6 +81,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
 
       toast.error(`Send of ${data.sendData.amount} ${data.sendData.asset.symbol.toUpperCase()} failed`)
     }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)

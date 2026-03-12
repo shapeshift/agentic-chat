@@ -9,6 +9,7 @@ import type { ConditionalOrderMeta, ToolExecutionState } from '@/lib/executionSt
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { ensureSafeReady, executeSafeTransaction } from '@/lib/safe'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { withWalletLock } from '@/lib/walletMutex'
 import type { StepStatus } from '@/lib/stepUtils'
 import type { OrderRecord } from '@/stores/orderStore'
 import { useOrderStore } from '@/stores/orderStore'
@@ -135,6 +136,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
   const ctx = useToolExecution(toolCallId, config.toolName, {})
 
   useExecuteOnce(ctx, orderData, async (data, ctx) => {
+    await withWalletLock(async () => {
     try {
       const { safeTransaction } = data
       const targetChainId = safeTransaction.chainId
@@ -196,6 +198,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
         </span>
       )
     }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)

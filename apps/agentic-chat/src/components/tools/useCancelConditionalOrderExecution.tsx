@@ -7,6 +7,7 @@ import { useToolExecution } from '@/hooks/useToolExecution'
 import type { CancelConditionalOrderMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
+import { withWalletLock } from '@/lib/walletMutex'
 import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import type { StepStatus } from '@/lib/stepUtils'
@@ -51,6 +52,7 @@ export function useCancelConditionalOrderExecution(
   const ctx = useToolExecution(toolCallId, config.toolName, {})
 
   useExecuteOnce(ctx, cancelData, async (data, ctx) => {
+    await withWalletLock(async () => {
     try {
       const { safeTransaction, safeAddress } = data
 
@@ -100,6 +102,7 @@ export function useCancelConditionalOrderExecution(
         </span>
       )
     }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)

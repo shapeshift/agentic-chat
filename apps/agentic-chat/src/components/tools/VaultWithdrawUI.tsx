@@ -7,6 +7,7 @@ import { useToolExecution } from '@/hooks/useToolExecution'
 import { toolStateToStepStatus } from '@/lib/executionState'
 import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
+import { withWalletLock } from '@/lib/walletMutex'
 import { firstFourLastFour } from '@/lib/utils'
 
 import { Amount } from '../ui/Amount'
@@ -26,6 +27,7 @@ export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdra
   const ctx = useToolExecution(toolCallId, 'vaultWithdrawTool', {})
 
   useExecuteOnce(ctx, withdrawData, async (data: VaultWithdrawOutput, ctx) => {
+    await withWalletLock(async () => {
     try {
       const { safeTransaction, summary } = data
 
@@ -61,6 +63,7 @@ export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdra
 
       toast.error(`Vault withdrawal failed`)
     }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)

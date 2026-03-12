@@ -8,6 +8,7 @@ import { getCowApiUrl } from '@/lib/cow-config'
 import type { CancelLimitOrderMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
+import { withWalletLock } from '@/lib/walletMutex'
 import { signEip712Step } from '@/lib/steps/signEip712Step'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import type { StepStatus } from '@/lib/stepUtils'
@@ -59,6 +60,7 @@ export const useCancelLimitOrderExecution = (
   const ctx = useToolExecution(toolCallId, 'cancelLimitOrderTool', {})
 
   useExecuteOnce(ctx, cancelData, async (data, ctx) => {
+    await withWalletLock(async () => {
     try {
       const { signingData, chainId } = data
 
@@ -103,6 +105,7 @@ export const useCancelLimitOrderExecution = (
         </span>
       )
     }
+    })
   })
 
   const prepareStepStatus = toolStateToStepStatus(toolState)
