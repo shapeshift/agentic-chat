@@ -13,6 +13,7 @@ export function getUserFriendlyError(rawError: string): string {
   if (lower.includes('user rejected') || lower.includes('user denied')) return 'Transaction was rejected in your wallet'
   if (lower.includes('insufficient funds')) return 'Insufficient funds to complete this transaction'
   if (lower.includes('failed to deploy safe')) return 'Failed to set up your vault. Please try again.'
+  if (lower.includes('transaction will revert')) return rawError
   return rawError.length > 120 ? `${rawError.slice(0, 120)}...` : rawError
 }
 

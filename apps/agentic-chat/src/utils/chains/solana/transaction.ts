@@ -7,6 +7,8 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js'
 
+import { SimulationError } from '@/utils/SimulationError'
+
 import type { TransactionParams } from '../types'
 
 interface SolanaTransactionData {
@@ -81,17 +83,29 @@ export async function sendSolanaTransaction(params: TransactionParams): Promise<
 
     const transaction = new VersionedTransaction(messageV0)
 
+    // Simulate before wallet interaction
+    try {
+      const { simulateSolanaTransaction } = await import('./simulation')
+      await simulateSolanaTransaction(transaction, connection)
+    } catch (error) {
+      if (error instanceof SimulationError) throw error
+      console.warn('[simulation] Solana simulation failed, proceeding without:', error)
+    }
+
     const signedTx = await (signer.signTransaction as (tx: VersionedTransaction) => Promise<VersionedTransaction>)(
       transaction
     )
     const signature = await connection.sendRawTransaction(signedTx.serialize(), {
-      skipPreflight: false,
+      skipPreflight: true,
       preflightCommitment: 'confirmed',
       maxRetries: 3,
     })
 
     return signature
   } catch (error) {
+    if (error instanceof SimulationError) {
+      throw new Error(`Transaction will revert: ${error.message}`)
+    }
     if (error instanceof SyntaxError) {
       throw new Error('Failed to parse Solana transaction data: Invalid JSON')
     }
