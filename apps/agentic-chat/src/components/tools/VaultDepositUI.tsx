@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import { Execution } from '@/components/Execution'
 import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
-import type { VaultDepositMeta } from '@/lib/executionState'
 import { toolStateToStepStatus } from '@/lib/executionState'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import { firstFourLastFour } from '@/lib/utils'
@@ -25,7 +24,7 @@ export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositT
 
   const depositData = toolState === 'output-available' && depositOutput ? depositOutput : null
 
-  const ctx = useToolExecution<VaultDepositMeta>(toolCallId, 'vault_deposit', {})
+  const ctx = useToolExecution(toolCallId, 'vaultDepositTool', {})
 
   useExecuteOnce(ctx, depositData, async (data: VaultDepositOutput, ctx) => {
     try {
@@ -52,7 +51,7 @@ export function VaultDepositUI({ toolPart }: ToolUIComponentProps<'vaultDepositT
         to: depositTx.to,
         value: depositTx.value,
       })
-      ctx.setMeta({ depositTxHash })
+      ctx.setMeta({ txHash: depositTxHash })
       ctx.advanceStep()
       ctx.markTerminal()
       ctx.persist()

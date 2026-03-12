@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { resolveCowTokenAddress } from '../../lib/composableCow'
 import { COW_VAULT_RELAYER_ADDRESS, prepareCowLimitOrder } from '../../lib/cow'
 import type { CowOrderSigningData } from '../../lib/cow/types'
-import { getCowExplorerUrl, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import { cowSupportedNetworkSchema, getCowExplorerUrl, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
@@ -18,7 +18,7 @@ import type { WalletContext } from '../../utils/walletContextSimple'
 export const createLimitOrderSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
   buyAsset: z.string().describe('Token symbol or name to buy (e.g., "USDC", "WETH")'),
-  network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the limit order'),
+  network: cowSupportedNetworkSchema.describe('Network for the limit order'),
   sellAmount: z
     .string()
     .describe(

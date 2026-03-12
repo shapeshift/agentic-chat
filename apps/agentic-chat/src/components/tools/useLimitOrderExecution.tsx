@@ -88,7 +88,7 @@ export const useLimitOrderExecution = (
   toolState: DynamicToolUIPart['state'],
   orderData: LimitOrderData | null
 ): UseLimitOrderExecutionResult => {
-  const ctx = useToolExecution<LimitOrderMeta>(toolCallId, 'limit_order', {})
+  const ctx = useToolExecution(toolCallId, 'createLimitOrderTool', {})
 
   useExecuteOnce(ctx, orderData, async (data, ctx) => {
     try {

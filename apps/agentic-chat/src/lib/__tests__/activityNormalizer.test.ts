@@ -1,26 +1,27 @@
 import { describe, expect, it } from 'bun:test'
 
 import { normalizeToActivityItem } from '../activityNormalizer'
-import type { ToolExecutionState } from '../executionState'
+import type { AnyToolExecutionState } from '../executionState'
 
-const makeExecutionState = (overrides: Partial<ToolExecutionState>): ToolExecutionState => ({
-  toolCallId: 'tc-1',
-  toolType: 'swap',
-  conversationId: 'conv-1',
-  timestamp: 1700000000,
-  currentStep: 0,
-  completedSteps: [],
-  skippedSteps: [],
-  terminal: false,
-  meta: {},
-  ...overrides,
-})
+const makeExecutionState = (overrides: Partial<AnyToolExecutionState>): AnyToolExecutionState =>
+  ({
+    toolCallId: 'tc-1',
+    toolName: 'initiateSwapTool',
+    conversationId: 'conv-1',
+    timestamp: 1700000000,
+    currentStep: 0,
+    completedSteps: [],
+    skippedSteps: [],
+    terminal: false,
+    meta: {},
+    ...overrides,
+  }) as AnyToolExecutionState
 
 describe('normalizeToActivityItem', () => {
   it('dispatches to swap normalizer', () => {
     const tx = makeExecutionState({
-      toolType: 'swap',
-      meta: { swapTxHash: '0xswap' },
+      toolName: 'initiateSwapTool',
+      meta: { txHash: '0xswap' },
       toolOutput: {
         summary: {
           sellAsset: { symbol: 'ETH', amount: '1', network: 'ethereum', valueUSD: '2000' },
@@ -39,8 +40,8 @@ describe('normalizeToActivityItem', () => {
 
   it('dispatches to send normalizer', () => {
     const tx = makeExecutionState({
-      toolType: 'send',
-      meta: { sendTxHash: '0xsend' },
+      toolName: 'sendTool',
+      meta: { txHash: '0xsend' },
       toolOutput: {
         summary: { symbol: 'ETH', amount: '0.5', from: '0xaaa', to: '0xbbb', network: 'ethereum' },
         sendData: { chainId: 'eip155:1' },
@@ -55,7 +56,7 @@ describe('normalizeToActivityItem', () => {
 
   it('dispatches to limit_order normalizer', () => {
     const tx = makeExecutionState({
-      toolType: 'limit_order',
+      toolName: 'createLimitOrderTool',
       meta: { orderId: '0xorder1' },
       toolOutput: {
         summary: {
@@ -77,13 +78,13 @@ describe('normalizeToActivityItem', () => {
   })
 
   it('returns null for unknown tool types', () => {
-    const tx = makeExecutionState({ toolType: 'cancel_limit_order' })
+    const tx = makeExecutionState({ toolName: 'cancelLimitOrderTool' })
     expect(normalizeToActivityItem(tx)).toBeNull()
   })
 
   it('returns null for swap without tx hash', () => {
     const tx = makeExecutionState({
-      toolType: 'swap',
+      toolName: 'initiateSwapTool',
       meta: {},
       toolOutput: {
         summary: {
@@ -99,7 +100,7 @@ describe('normalizeToActivityItem', () => {
 
   it('returns null for send without tx hash', () => {
     const tx = makeExecutionState({
-      toolType: 'send',
+      toolName: 'sendTool',
       meta: {},
       toolOutput: {
         summary: { symbol: 'ETH', amount: '0.5', from: '0xaaa', to: '0xbbb', network: 'ethereum' },
@@ -111,7 +112,7 @@ describe('normalizeToActivityItem', () => {
 
   it('returns null for limit order without orderId', () => {
     const tx = makeExecutionState({
-      toolType: 'limit_order',
+      toolName: 'createLimitOrderTool',
       meta: {},
       toolOutput: {
         summary: {
@@ -130,8 +131,8 @@ describe('normalizeToActivityItem', () => {
 
   it('includes approval details when present in swap', () => {
     const tx = makeExecutionState({
-      toolType: 'swap',
-      meta: { swapTxHash: '0xswap', approvalTxHash: '0xapproval' },
+      toolName: 'initiateSwapTool',
+      meta: { txHash: '0xswap', approvalTxHash: '0xapproval' },
       toolOutput: {
         summary: {
           sellAsset: { symbol: 'USDC', amount: '1000', network: 'ethereum', valueUSD: '1000' },

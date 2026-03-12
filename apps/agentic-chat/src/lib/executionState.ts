@@ -1,53 +1,14 @@
-import type {
-  CancelLimitOrderOutput,
-  CancelStopLossOutput,
-  CreateLimitOrderOutput,
-  CreateStopLossOutput,
-  CreateTwapOutput,
-  InitiateSwapOutput,
-  SendOutput,
-  SwitchNetworkOutput,
-  VaultDepositOutput,
-  VaultWithdrawAllOutput,
-  VaultWithdrawOutput,
-} from '@shapeshiftoss/agentic-server'
+import type { ToolName } from '@/types/toolOutput'
 
 import { StepStatus } from './stepUtils'
 
-export type ToolType =
-  | 'swap'
-  | 'send'
-  | 'network_switch'
-  | 'limit_order'
-  | 'cancel_limit_order'
-  | 'stop_loss'
-  | 'cancel_stop_loss'
-  | 'twap'
-  | 'cancel_twap'
-  | 'vault_deposit'
-  | 'vault_withdraw'
-  | 'vault_withdraw_all'
-
-export type ToolOutput =
-  | InitiateSwapOutput
-  | SendOutput
-  | SwitchNetworkOutput
-  | CreateLimitOrderOutput
-  | CancelLimitOrderOutput
-  | CreateStopLossOutput
-  | CancelStopLossOutput
-  | CreateTwapOutput
-  | VaultDepositOutput
-  | VaultWithdrawOutput
-  | VaultWithdrawAllOutput
-
 export interface ToolExecutionState<TMeta = unknown> {
   toolCallId: string
-  toolType: ToolType
+  toolName: ToolName
   conversationId: string
   timestamp: number
   walletAddress?: string
-  toolOutput?: ToolOutput
+  toolOutput?: unknown
 
   currentStep: number
   completedSteps: number[]
@@ -63,18 +24,18 @@ export interface ToolExecutionState<TMeta = unknown> {
 
 export interface SwapMeta {
   approvalTxHash?: string
-  swapTxHash?: string
+  txHash?: string
   networkName?: string
 }
 
 export interface SendMeta {
-  sendTxHash?: string
+  txHash?: string
   networkName?: string
 }
 
 export interface LimitOrderMeta {
   orderId?: string
-  submitTxHash?: string
+  txHash?: string
   approvalTxHash?: string
   networkName?: string
 }
@@ -82,7 +43,7 @@ export interface LimitOrderMeta {
 export interface ConditionalOrderMeta {
   approvalTxHash?: string
   depositTxHash?: string
-  submitTxHash?: string
+  txHash?: string
   orderId?: string
   networkName?: string
 }
@@ -93,16 +54,16 @@ export interface CancelLimitOrderMeta {
 }
 
 export interface CancelConditionalOrderMeta {
-  cancelTxHash?: string
+  txHash?: string
 }
 
 export interface VaultDepositMeta {
-  depositTxHash?: string
+  txHash?: string
   networkName?: string
 }
 
 export interface VaultWithdrawMeta {
-  withdrawTxHash?: string
+  txHash?: string
   networkName?: string
 }
 
@@ -117,6 +78,49 @@ export interface VaultWithdrawAllMeta {
   chainResults: ChainResult[]
   currentChainIndex?: number
 }
+
+export type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'
+
+export interface NetworkSwitchMeta {
+  network?: string
+  phase: NetworkSwitchPhase
+}
+
+export type ToolMetaMap = {
+  sendTool: SendMeta
+  initiateSwapTool: SwapMeta
+  initiateSwapUsdTool: SwapMeta
+  switchNetworkTool: NetworkSwitchMeta
+  portfolioTool: Record<string, never>
+  getAssetsTool: Record<string, never>
+  lookupExternalAddress: Record<string, never>
+  transactionHistoryTool: Record<string, never>
+  getAllowanceTool: Record<string, never>
+  receiveTool: Record<string, never>
+  getTrendingTokensTool: Record<string, never>
+  getTopGainersLosersTool: Record<string, never>
+  getNewCoinsTool: Record<string, never>
+  createLimitOrderTool: LimitOrderMeta
+  getLimitOrdersTool: Record<string, never>
+  cancelLimitOrderTool: CancelLimitOrderMeta
+  createStopLossTool: ConditionalOrderMeta
+  getStopLossOrdersTool: Record<string, never>
+  cancelStopLossTool: CancelConditionalOrderMeta
+  createTwapTool: ConditionalOrderMeta
+  getTwapOrdersTool: Record<string, never>
+  cancelTwapTool: CancelConditionalOrderMeta
+  checkWalletCapabilitiesTool: Record<string, never>
+  vaultDepositTool: VaultDepositMeta
+  vaultWithdrawTool: VaultWithdrawMeta
+  vaultWithdrawAllTool: VaultWithdrawAllMeta
+}
+
+export type ToolExecutionStateFor<K extends ToolName> = Omit<ToolExecutionState, 'toolName' | 'meta'> & {
+  toolName: K
+  meta: ToolMetaMap[K]
+}
+
+export type AnyToolExecutionState = { [K in ToolName]: ToolExecutionStateFor<K> }[ToolName]
 
 export function advanceStep<TMeta>(state: ToolExecutionState<TMeta>): ToolExecutionState<TMeta> {
   const completedSteps = state.completedSteps.includes(state.currentStep)

@@ -3,7 +3,7 @@ import type { ToolUIComponentProps } from './toolUIHelpers'
 import type { CancelConditionalOrderConfig } from './useCancelConditionalOrderExecution'
 
 const config: CancelConditionalOrderConfig = {
-  toolType: 'cancel_stop_loss',
+  toolName: 'cancelStopLossTool',
   orderLabel: 'Stop-loss order',
   renderSuccessToast: () => <span>Stop-loss order cancelled successfully</span>,
 }

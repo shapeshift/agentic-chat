@@ -3,7 +3,7 @@ import { fromBaseUnit, toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
-import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import { cowSupportedNetworkSchema, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { getBalance } from '../../utils/balanceHelpers'
 import { getCommittedAmountForToken } from '../../utils/committedBalances'
@@ -13,7 +13,7 @@ import type { WalletContext } from '../../utils/walletContextSimple'
 export const vaultWithdrawSchema = z.object({
   asset: z.string().describe('Token symbol or name to withdraw (e.g., "WETH", "USDC")'),
   amount: z.string().describe('Amount to withdraw in human-readable format (e.g., "1" for 1 WETH)'),
-  network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the withdrawal'),
+  network: cowSupportedNetworkSchema.describe('Network for the withdrawal'),
   ignoreActiveOrders: z
     .boolean()
     .optional()

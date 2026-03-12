@@ -7,27 +7,30 @@ import type {
   SwapActivityDetails,
 } from '@/types/activity'
 
-import type { LimitOrderMeta, SendMeta, SwapMeta, ToolExecutionState } from './executionState'
+import type { AnyToolExecutionState, ToolExecutionStateFor } from './executionState'
 
-export function normalizeToActivityItem(tx: ToolExecutionState): ActivityItem | null {
-  switch (tx.toolType) {
-    case 'swap':
-      return normalizeSwapActivity(tx as ToolExecutionState<SwapMeta>)
-    case 'send':
-      return normalizeSendActivity(tx as ToolExecutionState<SendMeta>)
-    case 'limit_order':
-      return normalizeLimitOrderActivity(tx as ToolExecutionState<LimitOrderMeta>)
+export function normalizeToActivityItem(tx: AnyToolExecutionState): ActivityItem | null {
+  switch (tx.toolName) {
+    case 'initiateSwapTool':
+    case 'initiateSwapUsdTool':
+      return normalizeSwapActivity(tx)
+    case 'sendTool':
+      return normalizeSendActivity(tx)
+    case 'createLimitOrderTool':
+      return normalizeLimitOrderActivity(tx)
     default:
       return null
   }
 }
 
-function normalizeSwapActivity(tx: ToolExecutionState<SwapMeta>): ActivityItem | null {
+function normalizeSwapActivity(
+  tx: ToolExecutionStateFor<'initiateSwapTool'> | ToolExecutionStateFor<'initiateSwapUsdTool'>
+): ActivityItem | null {
   const output = tx.toolOutput as InitiateSwapOutput | undefined
-  const swapTxHash = tx.meta.swapTxHash
+  const txHash = tx.meta.txHash
   const approvalTxHash = tx.meta.approvalTxHash
 
-  if (!output?.summary?.sellAsset || !output?.summary?.buyAsset || !swapTxHash) return null
+  if (!output?.summary?.sellAsset || !output?.summary?.buyAsset || !txHash) return null
 
   const details: SwapActivityDetails = {
     sellAsset: {
@@ -54,18 +57,18 @@ function normalizeSwapActivity(tx: ToolExecutionState<SwapMeta>): ActivityItem |
     id: tx.toolCallId,
     type: 'swap',
     timestamp: tx.timestamp,
-    txHash: swapTxHash,
+    txHash,
     chainId: output.swapData.sellAsset.chainId,
     network: output.summary.sellAsset.network,
     details,
   }
 }
 
-function normalizeSendActivity(tx: ToolExecutionState<SendMeta>): ActivityItem | null {
+function normalizeSendActivity(tx: ToolExecutionStateFor<'sendTool'>): ActivityItem | null {
   const output = tx.toolOutput as SendOutput | undefined
-  const sendTxHash = tx.meta.sendTxHash
+  const txHash = tx.meta.txHash
 
-  if (!output?.summary || !sendTxHash) return null
+  if (!output?.summary || !txHash) return null
 
   const details: SendActivityDetails = {
     asset: {
@@ -82,14 +85,14 @@ function normalizeSendActivity(tx: ToolExecutionState<SendMeta>): ActivityItem |
     id: tx.toolCallId,
     type: 'send',
     timestamp: tx.timestamp,
-    txHash: sendTxHash,
+    txHash,
     chainId: output.sendData.chainId,
     network: output.summary.network,
     details,
   }
 }
 
-function normalizeLimitOrderActivity(tx: ToolExecutionState<LimitOrderMeta>): ActivityItem | null {
+function normalizeLimitOrderActivity(tx: ToolExecutionStateFor<'createLimitOrderTool'>): ActivityItem | null {
   const output = tx.toolOutput as CreateLimitOrderOutput | undefined
   const orderId = tx.meta.orderId
 

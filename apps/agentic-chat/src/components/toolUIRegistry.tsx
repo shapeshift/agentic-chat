@@ -29,39 +29,49 @@ import { VaultDepositUI } from './tools/VaultDepositUI'
 import { VaultWithdrawAllUI } from './tools/VaultWithdrawAllUI'
 import { VaultWithdrawUI } from './tools/VaultWithdrawUI'
 
+type ToolUIEntry<K extends ToolName> = {
+  component: ComponentType<ToolUIComponentProps<K>> | null
+  displayName: string
+}
+
 type ToolUIComponentMap = {
-  [K in ToolName]: ComponentType<ToolUIComponentProps<K>> | null
+  [K in ToolName]: ToolUIEntry<K>
 }
 
 const TOOL_UI_REGISTRY: ToolUIComponentMap = {
-  sendTool: SendUI,
-  initiateSwapTool: InitiateSwapUI,
-  initiateSwapUsdTool: InitiateSwapUI,
-  switchNetworkTool: SwitchNetworkUI,
-  portfolioTool: PortfolioUI,
-  getAssetsTool: GetAssetsUI,
-  lookupExternalAddress: GetAccountUI,
-  transactionHistoryTool: GetTransactionHistoryUI,
-  getAllowanceTool: GetAllowanceUI,
-  receiveTool: ReceiveUI,
-  getTrendingTokensTool: TrendingTokensUI,
-  getTopGainersLosersTool: TopGainersLosersUI,
-  getNewCoinsTool: NewCoinsUI,
-  createLimitOrderTool: LimitOrderUI,
-  getLimitOrdersTool: GetLimitOrdersUI,
-  cancelLimitOrderTool: CancelLimitOrderUI,
-  createStopLossTool: StopLossUI,
-  getStopLossOrdersTool: GetStopLossOrdersUI,
-  cancelStopLossTool: CancelStopLossUI,
-  createTwapTool: TwapUI,
-  getTwapOrdersTool: GetTwapOrdersUI,
-  cancelTwapTool: CancelTwapUI,
-  checkWalletCapabilitiesTool: CheckWalletCapabilitiesUI,
-  vaultDepositTool: VaultDepositUI,
-  vaultWithdrawTool: VaultWithdrawUI,
-  vaultWithdrawAllTool: VaultWithdrawAllUI,
+  sendTool: { component: SendUI, displayName: 'Send' },
+  initiateSwapTool: { component: InitiateSwapUI, displayName: 'Swap' },
+  initiateSwapUsdTool: { component: InitiateSwapUI, displayName: 'Swap' },
+  switchNetworkTool: { component: SwitchNetworkUI, displayName: 'Switch Network' },
+  portfolioTool: { component: PortfolioUI, displayName: 'Portfolio' },
+  getAssetsTool: { component: GetAssetsUI, displayName: 'Get Assets' },
+  lookupExternalAddress: { component: GetAccountUI, displayName: 'Lookup Address' },
+  transactionHistoryTool: { component: GetTransactionHistoryUI, displayName: 'Transaction History' },
+  getAllowanceTool: { component: GetAllowanceUI, displayName: 'Get Allowance' },
+  receiveTool: { component: ReceiveUI, displayName: 'Receive' },
+  getTrendingTokensTool: { component: TrendingTokensUI, displayName: 'Trending Tokens' },
+  getTopGainersLosersTool: { component: TopGainersLosersUI, displayName: 'Top Gainers & Losers' },
+  getNewCoinsTool: { component: NewCoinsUI, displayName: 'New Coins' },
+  createLimitOrderTool: { component: LimitOrderUI, displayName: 'Limit Order' },
+  getLimitOrdersTool: { component: GetLimitOrdersUI, displayName: 'Limit Orders' },
+  cancelLimitOrderTool: { component: CancelLimitOrderUI, displayName: 'Cancel Limit Order' },
+  createStopLossTool: { component: StopLossUI, displayName: 'Stop Loss' },
+  getStopLossOrdersTool: { component: GetStopLossOrdersUI, displayName: 'Stop Loss Orders' },
+  cancelStopLossTool: { component: CancelStopLossUI, displayName: 'Cancel Stop Loss' },
+  createTwapTool: { component: TwapUI, displayName: 'TWAP' },
+  getTwapOrdersTool: { component: GetTwapOrdersUI, displayName: 'TWAP Orders' },
+  cancelTwapTool: { component: CancelTwapUI, displayName: 'Cancel TWAP' },
+  checkWalletCapabilitiesTool: { component: CheckWalletCapabilitiesUI, displayName: 'Wallet Capabilities' },
+  vaultDepositTool: { component: VaultDepositUI, displayName: 'Vault Deposit' },
+  vaultWithdrawTool: { component: VaultWithdrawUI, displayName: 'Vault Withdraw' },
+  vaultWithdrawAllTool: { component: VaultWithdrawAllUI, displayName: 'Vault Withdraw All' },
 }
 
 export function getToolUIComponent(toolName: string): ComponentType<ToolRendererProps> | null | undefined {
-  return TOOL_UI_REGISTRY[toolName as ToolName] as ComponentType<ToolRendererProps> | null | undefined
+  const entry = TOOL_UI_REGISTRY[toolName as ToolName]
+  return entry?.component as ComponentType<ToolRendererProps> | null | undefined
+}
+
+export function getToolDisplayName(toolName: string): string {
+  return TOOL_UI_REGISTRY[toolName as ToolName]?.displayName ?? toolName
 }

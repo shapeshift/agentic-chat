@@ -1,3 +1,7 @@
+import { z } from 'zod'
+
+export const cowSupportedNetworkSchema = z.enum(['ethereum', 'gnosis', 'arbitrum'])
+
 /**
  * CoW Protocol types for limit orders
  */

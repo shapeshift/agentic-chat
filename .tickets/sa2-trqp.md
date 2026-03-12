@@ -1,6 +1,6 @@
 ---
 id: sa2-trqp
-status: open
+status: closed
 deps: []
 links: []
 created: 2026-03-10T02:46:21Z

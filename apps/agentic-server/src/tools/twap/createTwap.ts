@@ -15,7 +15,7 @@ import {
   TWAP_HANDLER_ADDRESS,
 } from '../../lib/composableCow'
 import type { ConditionalOrderParams } from '../../lib/composableCow'
-import { NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
+import { cowSupportedNetworkSchema, NETWORK_TO_CHAIN_ID } from '../../lib/cow/types'
 import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
 import { toChecksumAddress } from '../../utils/addressValidation'
@@ -35,7 +35,7 @@ function calculateDefaultIntervals(durationSeconds: number): number {
 export const createTwapSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
   buyAsset: z.string().describe('Token symbol or name to buy (e.g., "ETH", "WBTC")'),
-  network: z.enum(['ethereum', 'gnosis', 'arbitrum']).describe('Network for the TWAP/DCA order'),
+  network: cowSupportedNetworkSchema.describe('Network for the TWAP/DCA order'),
   totalAmount: z
     .string()
     .describe(

@@ -3,7 +3,7 @@ import type { ToolUIComponentProps } from './toolUIHelpers'
 import type { CancelConditionalOrderConfig } from './useCancelConditionalOrderExecution'
 
 const config: CancelConditionalOrderConfig = {
-  toolType: 'cancel_twap',
+  toolName: 'cancelTwapTool',
   orderLabel: 'TWAP/DCA order',
   renderSuccessToast: () => <span>TWAP/DCA order cancelled successfully</span>,
 }

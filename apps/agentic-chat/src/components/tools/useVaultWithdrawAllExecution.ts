@@ -31,7 +31,7 @@ export const useVaultWithdrawAllExecution = (
   toolState: DynamicToolUIPart['state'],
   withdrawData: VaultWithdrawAllOutput | null
 ): UseVaultWithdrawAllExecutionResult => {
-  const ctx = useToolExecution<VaultWithdrawAllMeta>(toolCallId, 'vault_withdraw_all', { chainResults: [] })
+  const ctx = useToolExecution(toolCallId, 'vaultWithdrawAllTool', { chainResults: [] })
 
   useExecuteOnce(ctx, withdrawData, async (data, ctx) => {
     try {

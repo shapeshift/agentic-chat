@@ -20,7 +20,7 @@ export function TwapUI({ toolPart }: ToolUIComponentProps<'createTwapTool'>) {
 
   const orderData = toolState === 'output-available' && orderOutput ? orderOutput : null
   const { state, steps, networkName, submitTxHash } = useConditionalOrderExecution(toolCallId, toolState, orderData, {
-    toolType: 'twap',
+    toolName: 'createTwapTool',
     orderType: 'twap',
     errorLabel: 'TWAP order',
     toOrderRecord: ({ data, safeAddress, submitTxHash, chainId }) => ({

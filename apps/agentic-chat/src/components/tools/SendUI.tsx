@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import { Execution } from '@/components/Execution'
 import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
-import type { SendMeta } from '@/lib/executionState'
 import { toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
 import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
@@ -28,7 +27,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
 
   const sendData = toolState === 'output-available' && sendOutput ? sendOutput : null
 
-  const ctx = useToolExecution<SendMeta>(toolCallId, 'send', {})
+  const ctx = useToolExecution(toolCallId, 'sendTool', {})
 
   useExecuteOnce(ctx, sendData, async (data: SendOutput, ctx) => {
     try {
@@ -63,7 +62,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
 
       ctx.setSubstatus('Requesting signature...')
       const sendTxHash = await executeSend(tx, { solanaSigner })
-      ctx.setMeta({ sendTxHash })
+      ctx.setMeta({ txHash: sendTxHash })
       ctx.advanceStep()
       ctx.markTerminal()
       ctx.persist()
