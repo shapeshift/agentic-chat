@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { Amount } from '@/components/ui/Amount'
 import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
-import type { ToolExecutionState, SwapMeta } from '@/lib/executionState'
+import type { SwapMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
 import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
@@ -38,7 +38,7 @@ export const useSwapExecution = (
   toolState: DynamicToolUIPart['state'],
   swapData: SwapData | null
 ): UseSwapExecutionResult => {
-  const ctx = useToolExecution<SwapMeta>(toolCallId, 'swap', {})
+  const ctx = useToolExecution(toolCallId, 'initiateSwapTool', {})
 
   useExecuteOnce(ctx, swapData, async (data, ctx) => {
     try {
@@ -88,7 +88,7 @@ export const useSwapExecution = (
 
       // Step 3: Swap
       const swapTxHash = await executeSwap(swapTx, { solanaSigner })
-      ctx.setMeta({ swapTxHash })
+      ctx.setMeta({ txHash: swapTxHash })
       ctx.advanceStep()
       ctx.markTerminal()
       ctx.persist()
@@ -158,6 +158,6 @@ export const useSwapExecution = (
     networkName: swapData?.swapData?.sellAsset?.network,
     error: ctx.state.error,
     approvalTxHash: ctx.state.meta.approvalTxHash,
-    swapTxHash: ctx.state.meta.swapTxHash,
+    swapTxHash: ctx.state.meta.txHash,
   }
 }

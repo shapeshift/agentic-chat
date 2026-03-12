@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import { Execution } from '@/components/Execution'
 import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
-import type { VaultWithdrawMeta } from '@/lib/executionState'
 import { toolStateToStepStatus } from '@/lib/executionState'
 import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
@@ -24,7 +23,7 @@ export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdra
 
   const withdrawData = toolState === 'output-available' && withdrawOutput ? withdrawOutput : null
 
-  const ctx = useToolExecution<VaultWithdrawMeta>(toolCallId, 'vault_withdraw', {})
+  const ctx = useToolExecution(toolCallId, 'vaultWithdrawTool', {})
 
   useExecuteOnce(ctx, withdrawData, async (data: VaultWithdrawOutput, ctx) => {
     try {
@@ -49,7 +48,7 @@ export function VaultWithdrawUI({ toolPart }: ToolUIComponentProps<'vaultWithdra
         value: safeTransaction.value,
         chainId: safeTransaction.chainId,
       })
-      ctx.setMeta({ withdrawTxHash })
+      ctx.setMeta({ txHash: withdrawTxHash })
       ctx.markTerminal()
       ctx.persist()
 

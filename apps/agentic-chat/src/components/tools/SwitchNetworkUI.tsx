@@ -14,13 +14,6 @@ import { StatusText } from '../ui/StatusText'
 import { useToolStateRender } from './toolUIHelpers'
 import type { ToolUIComponentProps } from './toolUIHelpers'
 
-type NetworkSwitchPhase = 'idle' | 'switching' | 'success' | 'error'
-
-interface NetworkSwitchMeta {
-  network?: string
-  phase: NetworkSwitchPhase
-}
-
 const Icon = ArrowRightLeft
 
 const ErrorDetails: React.FC<{ title: string; message: string }> = ({ title, message }) => (
@@ -36,7 +29,7 @@ export function SwitchNetworkUI({ toolPart }: ToolUIComponentProps<'switchNetwor
 
   const networkData = state === 'output-available' && networkOutput ? networkOutput : null
 
-  const ctx = useToolExecution<NetworkSwitchMeta>(toolCallId, 'network_switch', {
+  const ctx = useToolExecution(toolCallId, 'switchNetworkTool', {
     phase: 'idle',
   })
 

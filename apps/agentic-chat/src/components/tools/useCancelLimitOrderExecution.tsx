@@ -56,7 +56,7 @@ export const useCancelLimitOrderExecution = (
   toolState: DynamicToolUIPart['state'],
   cancelData: CancelOrderData | null
 ): UseCancelLimitOrderExecutionResult => {
-  const ctx = useToolExecution<CancelLimitOrderMeta>(toolCallId, 'cancel_limit_order', {})
+  const ctx = useToolExecution(toolCallId, 'cancelLimitOrderTool', {})
 
   useExecuteOnce(ctx, cancelData, async (data, ctx) => {
     try {

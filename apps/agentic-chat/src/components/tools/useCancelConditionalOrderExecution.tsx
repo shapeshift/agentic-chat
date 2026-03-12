@@ -22,7 +22,7 @@ export interface CancelConditionalOrderData {
 }
 
 export interface CancelConditionalOrderConfig {
-  toolType: 'cancel_stop_loss' | 'cancel_twap'
+  toolName: 'cancelStopLossTool' | 'cancelTwapTool'
   orderLabel: string
   renderSuccessToast: (data: CancelConditionalOrderData) => ReactNode
   onSuccess?: (data: CancelConditionalOrderData) => void
@@ -48,7 +48,7 @@ export function useCancelConditionalOrderExecution(
   cancelData: CancelConditionalOrderData | null,
   config: CancelConditionalOrderConfig
 ): UseCancelConditionalOrderResult {
-  const ctx = useToolExecution<CancelConditionalOrderMeta>(toolCallId, config.toolType, {})
+  const ctx = useToolExecution(toolCallId, config.toolName, {})
 
   useExecuteOnce(ctx, cancelData, async (data, ctx) => {
     try {
@@ -73,7 +73,7 @@ export function useCancelConditionalOrderExecution(
         value: safeTransaction.value,
         chainId: safeTransaction.chainId,
       })
-      ctx.setMeta({ cancelTxHash } as Partial<CancelConditionalOrderMeta>)
+      ctx.setMeta({ txHash: cancelTxHash } as Partial<CancelConditionalOrderMeta>)
       ctx.advanceStep()
       ctx.markTerminal()
       ctx.persist()
@@ -81,7 +81,7 @@ export function useCancelConditionalOrderExecution(
       useOrderStore.getState().updateStatus(data.orderHash, safeAddress, 'cancelled')
 
       const network = CHAIN_ID_TO_NETWORK[safeTransaction.chainId] ?? 'unknown'
-      if (config.toolType === 'cancel_stop_loss') {
+      if (config.toolName === 'cancelStopLossTool') {
         analytics.trackCancelStopLoss({ orderId: data.orderHash, network })
       } else {
         analytics.trackCancelTwap({ orderId: data.orderHash, network })
@@ -118,6 +118,6 @@ export function useCancelConditionalOrderExecution(
       },
     ],
     error: ctx.state.error,
-    cancelTxHash: ctx.state.meta.cancelTxHash,
+    cancelTxHash: ctx.state.meta.txHash,
   }
 }

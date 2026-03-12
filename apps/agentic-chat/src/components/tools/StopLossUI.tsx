@@ -19,7 +19,7 @@ export function StopLossUI({ toolPart }: ToolUIComponentProps<'createStopLossToo
 
   const orderData = toolState === 'output-available' && orderOutput ? orderOutput : null
   const { state, steps, networkName, submitTxHash } = useConditionalOrderExecution(toolCallId, toolState, orderData, {
-    toolType: 'stop_loss',
+    toolName: 'createStopLossTool',
     orderType: 'stopLoss',
     errorLabel: 'stop-loss',
     toOrderRecord: ({ data, safeAddress, submitTxHash, chainId }) => ({

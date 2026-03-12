@@ -41,7 +41,7 @@ export interface ConditionalOrderData {
 }
 
 export interface ConditionalOrderConfig<TData extends ConditionalOrderData> {
-  toolType: ToolExecutionState<ConditionalOrderMeta>['toolType']
+  toolName: 'createStopLossTool' | 'createTwapTool'
   orderType: OrderRecord['orderType']
   errorLabel: string
   toOrderRecord: (ctx: { data: TData; safeAddress: string; submitTxHash: string; chainId: number }) => OrderRecord
@@ -128,7 +128,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
   orderData: TData | null,
   config: ConditionalOrderConfig<TData>
 ): UseConditionalOrderExecutionResult {
-  const ctx = useToolExecution<ConditionalOrderMeta>(toolCallId, config.toolType, {})
+  const ctx = useToolExecution(toolCallId, config.toolName, {})
 
   useExecuteOnce(ctx, orderData, async (data, ctx) => {
     try {
@@ -170,7 +170,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
         targetChainId,
         walletClient
       )
-      ctx.setMeta({ submitTxHash } as Partial<ConditionalOrderMeta>)
+      ctx.setMeta({ txHash: submitTxHash } as Partial<ConditionalOrderMeta>)
       ctx.advanceStep()
       ctx.markTerminal()
       ctx.persist()
@@ -210,6 +210,6 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
     ],
     networkName: orderData?.summary?.network,
     error: ctx.state.error,
-    submitTxHash: ctx.state.meta.submitTxHash,
+    submitTxHash: ctx.state.meta.txHash,
   }
 }
