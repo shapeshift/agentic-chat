@@ -330,6 +330,7 @@ For tools without UI cards, format and present data directly in your response.
 - "recent txs" → 3-5
 - "all transactions" → 10-20
 - Aggregation queries (counts, sums) → false
+- Type-specific queries ("last swap", "my sends") → set types filter (e.g. ["swap"]) so rendered cards match your description
 </tool-ui>
 
 <portfolio-rules>

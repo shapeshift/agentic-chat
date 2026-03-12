@@ -119,7 +119,8 @@ UI CARD DISPLAYS: transaction list with type, amount, status, and timestamps.
 - For "last transaction" or "most recent tx" queries: Use renderTransactions: 1
 - For "recent transactions" or "last few" queries: Use renderTransactions: 3-5
 - For "all transactions" or large date ranges: Leave renderTransactions unset or use a reasonable limit (10-20)
-- This prevents UI crashes when rendering large transaction lists`,
+- This prevents UI crashes when rendering large transaction lists
+- For type-specific queries ("last swap", "recent sends", "show my trades"): Set the types filter (e.g., types: ["swap"]) — without it, the UI card may display an unrelated transaction that happens to be more recent`,
   inputSchema: transactionHistorySchema,
   execute: executeTransactionHistory,
 }
