@@ -16,6 +16,7 @@ export async function submitSafeTxStep<TMeta extends object>(
   if (!ctx.refs.evmWallet.current) throw new Error('EVM wallet not connected')
   if (!ctx.refs.evmAddress.current) throw new Error('Wallet disconnected')
 
+  ctx.setSubstatus('Proposing Safe transaction...')
   const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
   const txHash = await executeSafeTransaction(
     params.safeAddress,

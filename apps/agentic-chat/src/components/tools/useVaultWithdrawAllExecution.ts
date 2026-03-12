@@ -59,10 +59,12 @@ export const useVaultWithdrawAllExecution = (
         ctx.setMeta({ currentChainIndex: i })
 
         try {
+          ctx.setSubstatus(`Switching to ${withdrawal.network}...`)
           await ctx.refs.evmWallet.current.connector.switchNetwork({
             networkChainId: withdrawal.chainId,
           })
 
+          ctx.setSubstatus(`Proposing Safe transaction on ${withdrawal.network}...`)
           const walletClient = await ctx.refs.evmWallet.current.getWalletClient()
           const txHash = await executeSafeBatchTransaction(
             withdrawal.safeAddress,

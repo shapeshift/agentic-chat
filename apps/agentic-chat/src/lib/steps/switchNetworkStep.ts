@@ -29,6 +29,7 @@ export async function switchNetworkStep<TMeta extends object>(
     await ctx.refs.changePrimaryWallet.current(ctx.refs.evmWallet.current.id)
   }
 
+  ctx.setSubstatus('Requesting wallet switch...')
   await ctx.refs.evmWallet.current.connector.switchNetwork({ networkChainId: Number(chainReference) })
   ctx.advanceStep()
 }
@@ -43,6 +44,7 @@ export async function switchNetworkStepByChainIdNumber<TMeta extends object>(
     await ctx.refs.changePrimaryWallet.current(ctx.refs.evmWallet.current.id)
   }
 
+  ctx.setSubstatus('Requesting wallet switch...')
   await ctx.refs.evmWallet.current.connector.switchNetwork({ networkChainId: chainIdNumber })
   ctx.advanceStep()
 }

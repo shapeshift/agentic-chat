@@ -61,6 +61,7 @@ export function SendUI({ toolPart }: ToolUIComponentProps<'sendTool'>) {
 
       await switchNetworkStep(ctx, assetChainId)
 
+      ctx.setSubstatus('Requesting signature...')
       const sendTxHash = await executeSend(tx, { solanaSigner })
       ctx.setMeta({ sendTxHash })
       ctx.advanceStep()

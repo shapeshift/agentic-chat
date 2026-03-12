@@ -148,8 +148,11 @@ export const useChatStore = create<ChatState>()(
       },
 
       persistTransaction: (state: ToolExecutionState) => {
+        const stateToPersist: ToolExecutionState = { ...state, substatus: undefined }
         set(storeState => {
-          const existingIndex = storeState.persistedTransactions.findIndex(tx => tx.toolCallId === state.toolCallId)
+          const existingIndex = storeState.persistedTransactions.findIndex(
+            tx => tx.toolCallId === stateToPersist.toolCallId
+          )
 
           let updated: ToolExecutionState[]
           if (existingIndex >= 0) {
@@ -159,9 +162,9 @@ export const useChatStore = create<ChatState>()(
             }
 
             updated = [...storeState.persistedTransactions]
-            updated[existingIndex] = state
+            updated[existingIndex] = stateToPersist
           } else {
-            updated = [...storeState.persistedTransactions, state]
+            updated = [...storeState.persistedTransactions, stateToPersist]
           }
 
           const sorted = [...updated].sort((a, b) => b.timestamp - a.timestamp)

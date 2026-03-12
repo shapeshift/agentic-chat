@@ -75,10 +75,12 @@ export const useSwapExecution = (
 
       // Step 2: Approve (skip if not needed)
       if (needsApproval && approvalTx) {
+        ctx.setSubstatus('Requesting approval signature...')
         const approvalTxHash = await executeApproval(approvalTx, { solanaSigner })
         ctx.setMeta({ approvalTxHash })
 
         if (chainNamespace === CHAIN_NAMESPACE.Evm) {
+          ctx.setSubstatus('Waiting for confirmation...')
           await waitForConfirmedReceipt(Number(chainReference), approvalTxHash as `0x${string}`)
         }
         ctx.advanceStep()
@@ -87,6 +89,7 @@ export const useSwapExecution = (
       }
 
       // Step 3: Swap
+      ctx.setSubstatus('Requesting signature...')
       const swapTxHash = await executeSwap(swapTx, { solanaSigner })
       ctx.setMeta({ swapTxHash })
       ctx.advanceStep()
