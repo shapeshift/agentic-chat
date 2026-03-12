@@ -7,7 +7,7 @@ import { StepStatus } from '../stepUtils'
 function makeState(overrides: Partial<ToolExecutionState> = {}): ToolExecutionState {
   return {
     toolCallId: 'tc-1',
-    toolType: 'swap',
+    toolName: 'initiateSwapTool',
     conversationId: 'conv-1',
     timestamp: 1000,
     currentStep: 0,
