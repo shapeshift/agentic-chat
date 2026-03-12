@@ -18,10 +18,6 @@ export async function simulateSolanaTransaction(
       return lower.includes('error') || lower.includes('failed')
     })
     const reason = errorLog ?? JSON.stringify(result.value.err)
-    console.warn(`[simulation] Solana revert detected: ${reason}`)
-    if (logs.length > 0) console.warn('[simulation] Solana program logs:', logs)
     throw new SimulationError(reason)
   }
-
-  console.info(`[simulation] Solana simulation passed — ${(result.value.logs ?? []).length} program logs`)
 }
