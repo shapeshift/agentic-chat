@@ -1,6 +1,6 @@
 ---
 id: sp-ntzp
-status: in_progress
+status: closed
 deps: []
 links: []
 created: 2026-03-11T23:23:03Z
