@@ -8,8 +8,8 @@ import { useToolExecution } from '@/hooks/useToolExecution'
 import type { ChainResult, ToolExecutionState, VaultWithdrawAllMeta } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { executeSafeBatchTransaction } from '@/lib/safe'
-import { withWalletLock } from '@/lib/walletMutex'
 import type { StepStatus } from '@/lib/stepUtils'
+import { withWalletLock } from '@/lib/walletMutex'
 
 export const VAULT_WITHDRAW_ALL_STEPS = { PREPARE: 0, WITHDRAW_CHAINS: 1 } as const
 

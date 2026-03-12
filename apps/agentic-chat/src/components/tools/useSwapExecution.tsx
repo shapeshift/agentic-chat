@@ -9,9 +9,9 @@ import { useToolExecution } from '@/hooks/useToolExecution'
 import type { SwapMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
-import { withWalletLock } from '@/lib/walletMutex'
 import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
 import type { StepStatus } from '@/lib/stepUtils'
+import { withWalletLock } from '@/lib/walletMutex'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { executeApproval, executeSwap } from '@/utils/swapExecutor'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
@@ -48,7 +48,8 @@ export const useSwapExecution = (
 
         if (!swapTx?.from) throw new Error('Invalid swap output: missing swapTx.from')
         if (!swapTx?.chainId) throw new Error('Invalid swap output: missing swapTx.chainId')
-        if (!data.swapData?.sellAsset?.chainId) throw new Error('Invalid swap output: missing swapData.sellAsset.chainId')
+        if (!data.swapData?.sellAsset?.chainId)
+          throw new Error('Invalid swap output: missing swapData.sellAsset.chainId')
 
         const sellAssetChainId = data.swapData.sellAsset.chainId
         const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)

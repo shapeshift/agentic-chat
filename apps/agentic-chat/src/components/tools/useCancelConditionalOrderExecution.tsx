@@ -7,10 +7,10 @@ import { useToolExecution } from '@/hooks/useToolExecution'
 import type { CancelConditionalOrderMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
-import { withWalletLock } from '@/lib/walletMutex'
 import { submitSafeTxStep } from '@/lib/steps/submitSafeTxStep'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import type { StepStatus } from '@/lib/stepUtils'
+import { withWalletLock } from '@/lib/walletMutex'
 import { useOrderStore } from '@/stores/orderStore'
 
 export const CANCEL_CONDITIONAL_STEPS = { PREPARE: 0, NETWORK: 1, SUBMIT_CANCEL: 2, CONFIRM_TX: 3 } as const

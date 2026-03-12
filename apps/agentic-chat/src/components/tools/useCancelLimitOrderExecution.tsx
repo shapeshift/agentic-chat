@@ -8,10 +8,10 @@ import { getCowApiUrl } from '@/lib/cow-config'
 import type { CancelLimitOrderMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
 import { analytics } from '@/lib/mixpanel'
-import { withWalletLock } from '@/lib/walletMutex'
 import { signEip712Step } from '@/lib/steps/signEip712Step'
 import { switchNetworkStepByChainIdNumber } from '@/lib/steps/switchNetworkStep'
 import type { StepStatus } from '@/lib/stepUtils'
+import { withWalletLock } from '@/lib/walletMutex'
 
 export const CANCEL_LIMIT_ORDER_STEPS = { PREPARE: 0, NETWORK: 1, SIGN: 2, SUBMIT: 3 } as const
 
