@@ -69,6 +69,15 @@ function wrapTool<TSchema, TExecute extends (args: never, walletContext?: Wallet
   }
 }
 
+function wrapTools(
+  tools: Record<string, { description: string; inputSchema: unknown; execute: (args: never, walletContext?: WalletContext) => unknown }>,
+  walletContext?: WalletContext
+) {
+  return Object.fromEntries(
+    Object.entries(tools).map(([name, tool]) => [name, wrapTool(name, tool, walletContext)])
+  )
+}
+
 function buildWalletContext(
   evmAddress?: string,
   solanaAddress?: string,
@@ -112,43 +121,45 @@ function buildWalletContext(
 
 function buildTools(walletContext: WalletContext) {
   return {
-    // Tools without wallet context
-    mathCalculatorTool: wrapTool('mathCalculatorTool', mathCalculator),
-    getAssetsTool: wrapTool('getAssetsTool', getAssetsTool),
-    getAssetPricesTool: wrapTool('getAssetPricesTool', getAssetPricesTool),
-    lookupExternalAddress: wrapTool('lookupExternalAddress', lookupExternalAddressTool),
-    switchNetworkTool: wrapTool('switchNetworkTool', switchNetworkTool),
-    checkWalletCapabilitiesTool: wrapTool('checkWalletCapabilitiesTool', checkWalletCapabilitiesTool, walletContext),
-    getShapeShiftKnowledgeTool: wrapTool('getShapeShiftKnowledgeTool', getShapeShiftKnowledgeTool),
-    getPriceFeedTokensTool: wrapTool('getPriceFeedTokensTool', getPriceFeedTokensTool),
-    getTrendingTokensTool: wrapTool('getTrendingTokensTool', getTrendingTokensTool),
-    getTopGainersLosersTool: wrapTool('getTopGainersLosersTool', getTopGainersLosersTool),
-    getTrendingPoolsTool: wrapTool('getTrendingPoolsTool', getTrendingPoolsTool),
-    getCategoriesTool: wrapTool('getCategoriesTool', getCategoriesTool),
-    getNewCoinsTool: wrapTool('getNewCoinsTool', getNewCoinsTool),
-
-    // Tools with wallet context
-    transactionHistoryTool: wrapTool('transactionHistoryTool', transactionHistoryTool, walletContext),
-    portfolioTool: wrapTool('portfolioTool', portfolioTool, walletContext),
-    initiateSwapTool: wrapTool('initiateSwapTool', initiateSwapTool, walletContext),
-    initiateSwapUsdTool: wrapTool('initiateSwapUsdTool', initiateSwapUsdTool, walletContext),
-    sendTool: wrapTool('sendTool', sendTool, walletContext),
-    receiveTool: wrapTool('receiveTool', receiveTool, walletContext),
-    createLimitOrderTool: wrapTool('createLimitOrderTool', createLimitOrderTool, walletContext),
-    getLimitOrdersTool: wrapTool('getLimitOrdersTool', getLimitOrdersTool, walletContext),
-    cancelLimitOrderTool: wrapTool('cancelLimitOrderTool', cancelLimitOrderTool, walletContext),
-    createStopLossTool: wrapTool('createStopLossTool', createStopLossTool, walletContext),
-    getStopLossOrdersTool: wrapTool('getStopLossOrdersTool', getStopLossOrdersTool, walletContext),
-    cancelStopLossTool: wrapTool('cancelStopLossTool', cancelStopLossTool, walletContext),
-    createTwapTool: wrapTool('createTwapTool', createTwapTool, walletContext),
-    getTwapOrdersTool: wrapTool('getTwapOrdersTool', getTwapOrdersTool, walletContext),
-    cancelTwapTool: wrapTool('cancelTwapTool', cancelTwapTool, walletContext),
-    vaultBalanceTool: wrapTool('vaultBalanceTool', vaultBalanceTool, walletContext),
-    vaultDepositTool: wrapTool('vaultDepositTool', vaultDepositTool, walletContext),
-    vaultWithdrawTool: wrapTool('vaultWithdrawTool', vaultWithdrawTool, walletContext),
-    vaultWithdrawAllTool: wrapTool('vaultWithdrawAllTool', vaultWithdrawAllTool, walletContext),
-
-    // Special case - has custom address resolution logic
+    ...wrapTools({
+      mathCalculatorTool: mathCalculator,
+      getAssetsTool,
+      getAssetPricesTool,
+      lookupExternalAddress: lookupExternalAddressTool,
+      switchNetworkTool,
+      getShapeShiftKnowledgeTool,
+      getPriceFeedTokensTool,
+      getTrendingTokensTool,
+      getTopGainersLosersTool,
+      getTrendingPoolsTool,
+      getCategoriesTool,
+      getNewCoinsTool,
+    }),
+    ...wrapTools(
+      {
+        checkWalletCapabilitiesTool,
+        transactionHistoryTool,
+        portfolioTool,
+        initiateSwapTool,
+        initiateSwapUsdTool,
+        sendTool,
+        receiveTool,
+        createLimitOrderTool,
+        getLimitOrdersTool,
+        cancelLimitOrderTool,
+        createStopLossTool,
+        getStopLossOrdersTool,
+        cancelStopLossTool,
+        createTwapTool,
+        getTwapOrdersTool,
+        cancelTwapTool,
+        vaultBalanceTool,
+        vaultDepositTool,
+        vaultWithdrawTool,
+        vaultWithdrawAllTool,
+      },
+      walletContext
+    ),
     getAllowanceTool: {
       description: getAllowanceTool.description,
       inputSchema: getAllowanceTool.inputSchema,
