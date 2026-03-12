@@ -23,7 +23,9 @@ export function normalizeToActivityItem(tx: AnyToolExecutionState): ActivityItem
   }
 }
 
-function normalizeSwapActivity(tx: ToolExecutionStateFor<'initiateSwapTool'> | ToolExecutionStateFor<'initiateSwapUsdTool'>): ActivityItem | null {
+function normalizeSwapActivity(
+  tx: ToolExecutionStateFor<'initiateSwapTool'> | ToolExecutionStateFor<'initiateSwapUsdTool'>
+): ActivityItem | null {
   const output = tx.toolOutput as InitiateSwapOutput | undefined
   const swapTxHash = tx.meta.txHash
   const approvalTxHash = tx.meta.approvalTxHash

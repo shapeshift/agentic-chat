@@ -23,7 +23,13 @@ export function ActivityList() {
 
   const activities = useMemo(() => {
     return transactions
-      .filter(tx => tx.toolName === 'initiateSwapTool' || tx.toolName === 'initiateSwapUsdTool' || tx.toolName === 'sendTool' || tx.toolName === 'createLimitOrderTool')
+      .filter(
+        tx =>
+          tx.toolName === 'initiateSwapTool' ||
+          tx.toolName === 'initiateSwapUsdTool' ||
+          tx.toolName === 'sendTool' ||
+          tx.toolName === 'createLimitOrderTool'
+      )
       .filter(tx => !tx.error)
       .filter(tx => tx.walletAddress && connectedAddresses.has(tx.walletAddress.toLowerCase()))
       .map(tx => normalizeToActivityItem(tx as AnyToolExecutionState))

@@ -3,18 +3,19 @@ import { describe, expect, it } from 'bun:test'
 import { normalizeToActivityItem } from '../activityNormalizer'
 import type { AnyToolExecutionState } from '../executionState'
 
-const makeExecutionState = (overrides: Partial<AnyToolExecutionState>): AnyToolExecutionState => ({
-  toolCallId: 'tc-1',
-  toolName: 'initiateSwapTool',
-  conversationId: 'conv-1',
-  timestamp: 1700000000,
-  currentStep: 0,
-  completedSteps: [],
-  skippedSteps: [],
-  terminal: false,
-  meta: {},
-  ...overrides,
-} as AnyToolExecutionState)
+const makeExecutionState = (overrides: Partial<AnyToolExecutionState>): AnyToolExecutionState =>
+  ({
+    toolCallId: 'tc-1',
+    toolName: 'initiateSwapTool',
+    conversationId: 'conv-1',
+    timestamp: 1700000000,
+    currentStep: 0,
+    completedSteps: [],
+    skippedSteps: [],
+    terminal: false,
+    meta: {},
+    ...overrides,
+  }) as AnyToolExecutionState
 
 describe('normalizeToActivityItem', () => {
   it('dispatches to swap normalizer', () => {

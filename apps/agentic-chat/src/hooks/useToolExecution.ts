@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 
 import type { ToolExecutionState, ToolMetaMap } from '@/lib/executionState'
-import type { ToolName } from '@/types/toolOutput'
 import { useChatStore } from '@/stores/chatStore'
+import type { ToolName } from '@/types/toolOutput'
 
 import { useWalletConnection } from './useWalletConnection'
 

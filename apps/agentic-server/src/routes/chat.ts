@@ -70,12 +70,13 @@ function wrapTool<TSchema, TExecute extends (args: never, walletContext?: Wallet
 }
 
 function wrapTools(
-  tools: Record<string, { description: string; inputSchema: unknown; execute: (args: never, walletContext?: WalletContext) => unknown }>,
+  tools: Record<
+    string,
+    { description: string; inputSchema: unknown; execute: (args: never, walletContext?: WalletContext) => unknown }
+  >,
   walletContext?: WalletContext
 ) {
-  return Object.fromEntries(
-    Object.entries(tools).map(([name, tool]) => [name, wrapTool(name, tool, walletContext)])
-  )
+  return Object.fromEntries(Object.entries(tools).map(([name, tool]) => [name, wrapTool(name, tool, walletContext)]))
 }
 
 function buildWalletContext(

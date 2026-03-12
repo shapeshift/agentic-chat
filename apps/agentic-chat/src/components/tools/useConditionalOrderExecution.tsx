@@ -141,7 +141,7 @@ export function useConditionalOrderExecution<TData extends ConditionalOrderData>
 
       // Step 0: Prepare
       ctx.setState(draft => {
-        draft.toolOutput = data as unknown as typeof draft.toolOutput
+        draft.toolOutput = data as unknown
         draft.meta.networkName = data.summary.network
       })
       ctx.advanceStep()
