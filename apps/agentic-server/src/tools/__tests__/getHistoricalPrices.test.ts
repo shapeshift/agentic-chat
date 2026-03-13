@@ -7,6 +7,8 @@ mock.module('@shapeshiftoss/caip', () => ({
       'eip155:1/slip44:60': 'ethereum',
       'bip122:000000000019d6689c085ae165831e93/slip44:0': 'bitcoin',
       'eip155:1/erc20:0xunmapped': undefined as any,
+      'eip155:1/erc20:0xfailcoin': 'failcoin',
+      'eip155:1/erc20:0xemptycoin': 'emptycoin',
     }
     return map[assetId]
   },
@@ -20,6 +22,8 @@ mock.module('@shapeshiftoss/utils', () => ({
           ETH: [{ assetId: 'eip155:1/slip44:60' }],
           BTC: [{ assetId: 'bip122:000000000019d6689c085ae165831e93/slip44:0' }],
           NOTFOUND: [],
+          FAIL: [{ assetId: 'eip155:1/erc20:0xfailcoin' }],
+          EMPTY: [{ assetId: 'eip155:1/erc20:0xemptycoin' }],
         }
         return assets[term] ?? []
       },
@@ -27,6 +31,8 @@ mock.module('@shapeshiftoss/utils', () => ({
         const map: Record<string, any> = {
           'eip155:1/slip44:60': { symbol: 'ETH', name: 'Ethereum' },
           'bip122:000000000019d6689c085ae165831e93/slip44:0': { symbol: 'BTC', name: 'Bitcoin' },
+          'eip155:1/erc20:0xfailcoin': { symbol: 'FAIL', name: 'FailCoin' },
+          'eip155:1/erc20:0xemptycoin': { symbol: 'EMPTY', name: 'EmptyCoin' },
         }
         return map[assetId]
       },
@@ -61,6 +67,9 @@ mock.module('../../lib/asset/coingecko/api', () => ({
         market_caps: [],
         total_volumes: [],
       }
+    }
+    if (coinGeckoId === 'emptycoin') {
+      return { prices: [] as [number, number][], market_caps: [], total_volumes: [] }
     }
     throw new Error('API error')
   },
@@ -229,5 +238,45 @@ describe('executeGetHistoricalPrices', () => {
     const eth = result.results[0] as any
     // Timestamps should be in seconds, not milliseconds
     expect(eth.dataPoints[0].timestamp).toBeLessThan(10000000000)
+  })
+
+  test('propagates API errors with asset context', async () => {
+    const result = await executeGetHistoricalPrices({
+      assets: [{ searchTerm: 'FAIL' }],
+      startDate: '2024-01-01',
+      endDate: '2024-01-05',
+      dataPoints: 2,
+    })
+
+    expect(result.results).toHaveLength(1)
+    const err = result.results[0] as any
+    expect(err.assetId).toBe('eip155:1/erc20:0xfailcoin')
+    expect(err.error).toBeDefined()
+  })
+
+  test('returns single data point when dataPoints is 1', async () => {
+    const result = await executeGetHistoricalPrices({
+      assets: [{ searchTerm: 'ETH' }],
+      startDate: '2024-01-01',
+      endDate: '2024-01-05',
+      dataPoints: 1,
+    })
+
+    const eth = result.results[0] as any
+    expect(eth.dataPoints).toHaveLength(1)
+    expect(eth.startPrice).toBe(eth.endPrice)
+  })
+
+  test('returns error when chart data has no prices', async () => {
+    const result = await executeGetHistoricalPrices({
+      assets: [{ searchTerm: 'EMPTY' }],
+      startDate: '2024-01-01',
+      endDate: '2024-01-05',
+      dataPoints: 2,
+    })
+
+    expect(result.results).toHaveLength(1)
+    const err = result.results[0] as any
+    expect(err.error).toBeDefined()
   })
 })
