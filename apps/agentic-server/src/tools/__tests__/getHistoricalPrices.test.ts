@@ -1,8 +1,10 @@
 import { describe, expect, mock, test } from 'bun:test'
 
+import { executeGetHistoricalPrices, getHistoricalPricesSchema } from '../getHistoricalPrices'
+
 // Mock local dependencies — avoids polluting global @shapeshiftoss/* modules
-mock.module('../../lib/asset/resolveAsset', () => ({
-  searchAsset: (term: string, _filters: any) => {
+void mock.module('../../lib/asset/resolveAsset', () => ({
+  searchAsset: (term: string) => {
     const assets: Record<string, { assetId: string } | undefined> = {
       ETH: { assetId: 'eip155:1/slip44:60' },
       BTC: { assetId: 'bip122:000000000019d6689c085ae165831e93/slip44:0' },
@@ -33,8 +35,8 @@ mock.module('../../lib/asset/resolveAsset', () => ({
   },
 }))
 
-mock.module('../../lib/asset/coingecko/api', () => ({
-  getMarketChartRange: async (coinGeckoId: string, _from: number, _to: number) => {
+void mock.module('../../lib/asset/coingecko/api', () => ({
+  getMarketChartRange: async (coinGeckoId: string) => {
     if (coinGeckoId === 'ethereum') {
       return {
         prices: [
@@ -67,9 +69,6 @@ mock.module('../../lib/asset/coingecko/api', () => ({
     throw new Error('API error')
   },
 }))
-
-// Must import after mocks
-import { executeGetHistoricalPrices, getHistoricalPricesSchema } from '../getHistoricalPrices'
 
 describe('getHistoricalPricesSchema', () => {
   test('enforces max 10 assets', () => {

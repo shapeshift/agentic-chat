@@ -51,9 +51,7 @@ export type GetHistoricalPricesOutput = {
   results: (AssetPriceResult | AssetPriceError)[]
 }
 
-export async function executeGetHistoricalPrices(
-  input: GetHistoricalPricesInput
-): Promise<GetHistoricalPricesOutput> {
+export async function executeGetHistoricalPrices(input: GetHistoricalPricesInput): Promise<GetHistoricalPricesOutput> {
   console.log('[getHistoricalPrices]:', input)
 
   const startUnix = getUnixTime(parseISO(input.startDate))
