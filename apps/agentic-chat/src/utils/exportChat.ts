@@ -6,11 +6,13 @@ import type { Conversation } from '@/types'
 type ChatMessage = ReturnType<typeof useChat>['messages'][number]
 
 export function sanitizeFilename(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'chat'
+  return (
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'chat'
+  )
 }
 
 export function messagesToMarkdown(messages: ChatMessage[], conversation?: Conversation): string {

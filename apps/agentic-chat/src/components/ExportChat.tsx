@@ -5,12 +5,7 @@ import { useChatContext } from '@/providers/ChatProvider'
 import { useChatStore } from '@/stores/chatStore'
 import { allConversationsToMarkdown, downloadMarkdown, messagesToMarkdown, sanitizeFilename } from '@/utils/exportChat'
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from './ui/DropdownMenu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/DropdownMenu'
 import { IconButton } from './ui/IconButton'
 
 export function ExportChat() {
