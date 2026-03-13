@@ -188,6 +188,13 @@ export type NewCoinData = {
 
 export type NewCoinsResponse = NewCoinData[]
 
+// Historical market chart types
+export type MarketChartRangeResponse = {
+  prices: [number, number][] // [timestamp_ms, price]
+  market_caps: [number, number][]
+  total_volumes: [number, number][]
+}
+
 // Trimmed output types for tools (minimal fields to reduce LLM context)
 export type TrimmedTrendingCoin = {
   id: string
