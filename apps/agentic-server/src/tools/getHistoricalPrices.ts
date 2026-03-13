@@ -106,7 +106,7 @@ export async function executeGetHistoricalPrices(
         const dataPoints = sampled.map(([ts, price]) => ({ timestamp: Math.floor(ts / 1000), price }))
 
         if (dataPoints.length === 0) {
-          return { ...item, error: 'No price data available for this date range' }
+          return { assetId: item.assetId, error: 'No price data available for this date range' }
         }
 
         const startPrice = dataPoints[0]!.price

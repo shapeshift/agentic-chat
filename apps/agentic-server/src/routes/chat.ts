@@ -308,6 +308,7 @@ Select the single tool matching the user's intent (these names are internal — 
 | Intent | Tool |
 |---|---|
 | Quick price check (no UI card) | getAssetPrices |
+| Historical prices / price at past date / price growth over time | getHistoricalPrices |
 | Detailed market data (UI card) | getAssets |
 | Trending/gainers/new coins | getTrendingTokens, getTopGainersLosers, getNewCoins |
 | Trending pools | getTrendingPools |
