@@ -20,6 +20,7 @@ import { checkWalletCapabilitiesTool } from '../tools/checkWalletCapabilities'
 import { lookupExternalAddressTool } from '../tools/getAccount'
 import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetPricesTool } from '../tools/getAssetPrices'
+import { getHistoricalPricesTool } from '../tools/getHistoricalPrices'
 import { getAssetsTool } from '../tools/getAssets'
 import { getCategoriesTool } from '../tools/getCategories'
 import { getNewCoinsTool } from '../tools/getNewCoins'
@@ -126,6 +127,7 @@ function buildTools(walletContext: WalletContext) {
       mathCalculatorTool: mathCalculator,
       getAssetsTool,
       getAssetPricesTool,
+      getHistoricalPricesTool,
       lookupExternalAddress: lookupExternalAddressTool,
       switchNetworkTool,
       getShapeShiftKnowledgeTool,
