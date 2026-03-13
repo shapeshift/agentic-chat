@@ -1,11 +1,10 @@
-import { assetIdToCoingecko } from '@shapeshiftoss/caip'
 import { NETWORKS } from '@shapeshiftoss/types'
-import { AssetService } from '@shapeshiftoss/utils'
 import { getUnixTime, parseISO } from 'date-fns'
 import { z } from 'zod'
 
 import { getMarketChartRange } from '../lib/asset/coingecko/api'
 import { downsample } from '../lib/asset/coingecko/downsample'
+import { assetIdToCoingecko, getAssetMeta, searchAsset } from '../lib/asset/resolveAsset'
 
 export const getHistoricalPricesSchema = z.object({
   assets: z
@@ -71,9 +70,7 @@ export async function executeGetHistoricalPrices(
     if (assetInput.assetId) {
       assetId = assetInput.assetId
     } else if (assetInput.searchTerm) {
-      const result = AssetService.getInstance().searchWithFilters(assetInput.searchTerm, {
-        network: assetInput.network,
-      })[0]
+      const result = searchAsset(assetInput.searchTerm, { network: assetInput.network })
       if (!result) {
         return {
           searchTerm: assetInput.searchTerm,
@@ -90,7 +87,7 @@ export async function executeGetHistoricalPrices(
       return { assetId, error: `No CoinGecko mapping for asset: ${assetId}` }
     }
 
-    const asset = AssetService.getInstance().getAsset(assetId)
+    const asset = getAssetMeta(assetId)
     return {
       assetId,
       coinGeckoId,

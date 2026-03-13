@@ -1,42 +1,35 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-// Mock external dependencies before importing the module under test
-mock.module('@shapeshiftoss/caip', () => ({
+// Mock local dependencies — avoids polluting global @shapeshiftoss/* modules
+mock.module('../../lib/asset/resolveAsset', () => ({
+  searchAsset: (term: string, _filters: any) => {
+    const assets: Record<string, { assetId: string } | undefined> = {
+      ETH: { assetId: 'eip155:1/slip44:60' },
+      BTC: { assetId: 'bip122:000000000019d6689c085ae165831e93/slip44:0' },
+      NOTFOUND: undefined,
+      FAIL: { assetId: 'eip155:1/erc20:0xfailcoin' },
+      EMPTY: { assetId: 'eip155:1/erc20:0xemptycoin' },
+    }
+    return assets[term]
+  },
+  getAssetMeta: (assetId: string) => {
+    const map: Record<string, { symbol: string; name: string } | undefined> = {
+      'eip155:1/slip44:60': { symbol: 'ETH', name: 'Ethereum' },
+      'bip122:000000000019d6689c085ae165831e93/slip44:0': { symbol: 'BTC', name: 'Bitcoin' },
+      'eip155:1/erc20:0xfailcoin': { symbol: 'FAIL', name: 'FailCoin' },
+      'eip155:1/erc20:0xemptycoin': { symbol: 'EMPTY', name: 'EmptyCoin' },
+    }
+    return map[assetId]
+  },
   assetIdToCoingecko: (assetId: string) => {
-    const map: Record<string, string> = {
+    const map: Record<string, string | undefined> = {
       'eip155:1/slip44:60': 'ethereum',
       'bip122:000000000019d6689c085ae165831e93/slip44:0': 'bitcoin',
-      'eip155:1/erc20:0xunmapped': undefined as any,
+      'eip155:1/erc20:0xunmapped': undefined,
       'eip155:1/erc20:0xfailcoin': 'failcoin',
       'eip155:1/erc20:0xemptycoin': 'emptycoin',
     }
     return map[assetId]
-  },
-}))
-
-mock.module('@shapeshiftoss/utils', () => ({
-  AssetService: {
-    getInstance: () => ({
-      searchWithFilters: (term: string, _filters: any) => {
-        const assets: Record<string, any[]> = {
-          ETH: [{ assetId: 'eip155:1/slip44:60' }],
-          BTC: [{ assetId: 'bip122:000000000019d6689c085ae165831e93/slip44:0' }],
-          NOTFOUND: [],
-          FAIL: [{ assetId: 'eip155:1/erc20:0xfailcoin' }],
-          EMPTY: [{ assetId: 'eip155:1/erc20:0xemptycoin' }],
-        }
-        return assets[term] ?? []
-      },
-      getAsset: (assetId: string) => {
-        const map: Record<string, any> = {
-          'eip155:1/slip44:60': { symbol: 'ETH', name: 'Ethereum' },
-          'bip122:000000000019d6689c085ae165831e93/slip44:0': { symbol: 'BTC', name: 'Bitcoin' },
-          'eip155:1/erc20:0xfailcoin': { symbol: 'FAIL', name: 'FailCoin' },
-          'eip155:1/erc20:0xemptycoin': { symbol: 'EMPTY', name: 'EmptyCoin' },
-        }
-        return map[assetId]
-      },
-    }),
   },
 }))
 
