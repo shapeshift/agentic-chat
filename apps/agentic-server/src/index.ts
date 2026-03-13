@@ -15,6 +15,12 @@ export {
   type GetAssetPricesOutput,
 } from './tools/getAssetPrices'
 export {
+  getHistoricalPricesTool,
+  executeGetHistoricalPrices,
+  type GetHistoricalPricesInput,
+  type GetHistoricalPricesOutput,
+} from './tools/getHistoricalPrices'
+export {
   lookupExternalAddressTool,
   executeGetAccount,
   type GetAccountInput,
