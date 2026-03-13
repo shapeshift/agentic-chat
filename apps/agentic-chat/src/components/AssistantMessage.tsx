@@ -4,6 +4,7 @@ import { memo, useMemo } from 'react'
 
 import { Markdown } from './Markdown'
 import { getToolUIComponent } from './toolUIRegistry'
+import { CopyButton } from './ui/CopyButton'
 
 interface AssistantMessageProps {
   message: UIMessage
@@ -34,9 +35,21 @@ export const AssistantMessage = memo(function AssistantMessage({ message }: Assi
     [message.parts]
   )
 
+  const textContent = useMemo(
+    () =>
+      message.parts
+        .filter(p => p.type === 'text')
+        .map(p => p.text)
+        .join('\n'),
+    [message.parts]
+  )
+
   return (
     <div className="flex justify-start">
-      <div className="max-w-[80%] space-y-2">{renderedParts}</div>
+      <div className="max-w-[80%] space-y-2">
+        {renderedParts}
+        {textContent && <CopyButton value={textContent} />}
+      </div>
     </div>
   )
 })
