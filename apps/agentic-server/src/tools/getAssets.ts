@@ -105,7 +105,6 @@ async function getAssetWithMarketData(input: GetAssetsInput): Promise<GetAssetsO
 }
 
 export async function executeGetAssets(input: GetAssetsInput): Promise<GetAssetsOutput> {
-  console.log('[getAssets]:', input)
 
   const { searchTerm, assetId, contractAddress } = input
 

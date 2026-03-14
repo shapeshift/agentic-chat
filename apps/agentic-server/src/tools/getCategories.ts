@@ -19,7 +19,6 @@ export type GetCategoriesOutput = {
 }
 
 export async function executeGetCategories(input: GetCategoriesInput): Promise<GetCategoriesOutput> {
-  console.log('[getCategories]:', input)
 
   const sortBy = input.sortBy ?? 'market_cap_change_24h'
   const limit = input.limit ?? 10

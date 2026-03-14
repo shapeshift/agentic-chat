@@ -22,7 +22,6 @@ export type GetTopGainersLosersOutput = {
 }
 
 export async function executeGetTopGainersLosers(input: GetTopGainersLosersInput): Promise<GetTopGainersLosersOutput> {
-  console.log('[getTopGainersLosers]:', input)
 
   const duration = input.duration ?? '24h'
   const limit = input.limit ?? 5

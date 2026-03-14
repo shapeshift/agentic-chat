@@ -99,7 +99,7 @@ export async function executeCreateStopLoss(
   input: CreateStopLossInput,
   walletContext?: WalletContext
 ): Promise<CreateStopLossOutput> {
-  console.log('[createStopLoss] raw input:', JSON.stringify(input))
+
   const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
 
   // Validate Safe address is available on the target chain

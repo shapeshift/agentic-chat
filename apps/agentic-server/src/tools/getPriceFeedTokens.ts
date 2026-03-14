@@ -18,7 +18,6 @@ export type GetPriceFeedTokensOutput = {
 }
 
 export function executeGetPriceFeedTokens(input: GetPriceFeedTokensInput): GetPriceFeedTokensOutput {
-  console.log('[getPriceFeedTokens]:', input)
 
   const chainId = NETWORK_TO_CHAIN_ID[input.network] as number
   const tokens = [...getSupportedOracleTokens(chainId)].sort((a, b) => a.localeCompare(b))

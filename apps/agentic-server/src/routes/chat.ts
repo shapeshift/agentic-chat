@@ -167,7 +167,7 @@ function buildTools(walletContext: WalletContext) {
       description: getAllowanceTool.description,
       inputSchema: getAllowanceTool.inputSchema,
       execute: async (args: Parameters<typeof getAllowanceTool.execute>[0]) => {
-        console.log('[Tool] getAllowanceTool:', JSON.stringify(args, null, 2))
+
         const chainId = args?.asset?.chainId
         const from = args?.from ?? (chainId ? walletContext.connectedWallets?.[chainId]?.address : undefined)
         if (!from) {

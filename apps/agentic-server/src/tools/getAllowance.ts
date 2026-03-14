@@ -8,7 +8,7 @@ export type GetAllowanceInput = z.infer<typeof getAllowanceInput>
 export type GetAllowanceOutput = typeof getAllowanceOutput
 
 export async function executeGetAllowance(input: GetAllowanceInput) {
-  console.log('[getAllowance]:', input)
+
   return getAllowance(input)
 }
 

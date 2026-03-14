@@ -19,7 +19,6 @@ export type GetTrendingPoolsOutput = {
 }
 
 export async function executeGetTrendingPools(input: GetTrendingPoolsInput): Promise<GetTrendingPoolsOutput> {
-  console.log('[getTrendingPools]:', input)
 
   const duration = input.duration ?? '24h'
   const limit = input.limit ?? 5
