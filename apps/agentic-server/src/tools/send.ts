@@ -22,7 +22,6 @@ const SOLANA_RPC_URL = (() => {
 })()
 
 export async function executeSend(input: SendInput, walletContext?: WalletContext): Promise<SendOutput> {
-
   // 1. Resolve asset (prioritize tokens user owns)
   const asset = await resolveAsset(input.asset, walletContext)
 

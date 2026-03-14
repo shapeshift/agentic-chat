@@ -30,7 +30,6 @@ export const mathCalculator = {
   execute: (input: MathCalculatorInput): MathCalculatorOutput => {
     const { expression, precision } = input
 
-
     try {
       // Validate expression safety before evaluation
       if (expression.length > MAX_EXPRESSION_LENGTH) {

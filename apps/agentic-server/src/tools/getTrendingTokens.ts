@@ -16,7 +16,6 @@ export type GetTrendingTokensOutput = {
 }
 
 export async function executeGetTrendingTokens(input: GetTrendingTokensInput): Promise<GetTrendingTokensOutput> {
-
   const limit = input.limit ?? 5
   const data = await getTrendingSearch()
 

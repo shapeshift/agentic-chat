@@ -31,7 +31,6 @@ export type GetAssetPricesOutput = {
 }
 
 export async function executeGetAssetPrices(input: GetAssetPricesInput): Promise<GetAssetPricesOutput> {
-
   const assetIds: string[] = []
 
   for (const assetInput of input.assets) {

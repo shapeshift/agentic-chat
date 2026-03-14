@@ -52,7 +52,6 @@ export type GetHistoricalPricesOutput = {
 }
 
 export async function executeGetHistoricalPrices(input: GetHistoricalPricesInput): Promise<GetHistoricalPricesOutput> {
-
   const startUnix = getUnixTime(parseISO(input.startDate))
   const endUnix = input.endDate ? getUnixTime(parseISO(input.endDate)) : Math.floor(Date.now() / 1000)
 

@@ -17,7 +17,6 @@ export type GetNewCoinsOutput = {
 }
 
 export async function executeGetNewCoins(input: GetNewCoinsInput): Promise<GetNewCoinsOutput> {
-
   const limit = input.limit ?? 5
   const data = await getNewCoins()
 

@@ -1,6 +1,6 @@
 ---
 id: sa3-gbzn
-status: open
+status: closed
 deps: []
 links: []
 created: 2026-03-08T23:28:44Z
