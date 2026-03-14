@@ -30,11 +30,22 @@ export interface ActiveOrderSummary {
   numParts?: number
 }
 
+export interface KnownTransaction {
+  txHash: string
+  type: 'swap' | 'send'
+  sellSymbol?: string
+  sellAmount?: string
+  buySymbol?: string
+  buyAmount?: string
+  network?: string
+}
+
 export interface WalletContext {
   connectedWallets?: Record<string, { address: string }>
   safeAddress?: string
   safeDeploymentState?: Record<number, SafeChainDeployment>
   registryOrders?: ActiveOrderSummary[]
+  knownTransactions?: KnownTransaction[]
 }
 
 export function getAddressForNetwork(walletContext: WalletContext | undefined, network: Network): string {

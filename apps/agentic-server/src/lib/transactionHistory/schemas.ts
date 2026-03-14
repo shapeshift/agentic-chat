@@ -57,6 +57,15 @@ export const evmTxSchema = z.object({
   gasPrice: z.string().optional(),
   inputData: z.string().optional(),
   tokenTransfers: z.array(evmTokenTransferSchema).optional(),
+  internalTxs: z
+    .array(
+      z.object({
+        from: z.string(),
+        to: z.string(),
+        value: z.string(),
+      })
+    )
+    .optional(),
 })
 
 export const solanaTxSchema = z.object({

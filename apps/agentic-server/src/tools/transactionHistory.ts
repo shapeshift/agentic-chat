@@ -3,6 +3,7 @@ import type { Network } from '@shapeshiftoss/types'
 import { executeAggregations } from '../lib/transactionHistory/aggregations'
 import type { AggregationConfig } from '../lib/transactionHistory/aggregations/types'
 import { MAX_LIMITED_FETCH_COUNT } from '../lib/transactionHistory/constants'
+import { enrichTransactions } from '../lib/transactionHistory/enrichment'
 import {
   determineFetchStrategy,
   fetchTransactions,
@@ -49,7 +50,7 @@ export async function executeTransactionHistory(
       fetchedCount,
     } = await fetchTransactions(networks, addressOrWallet, strategy)
 
-    let transactions = allTransactions
+    let transactions = enrichTransactions(allTransactions, walletContext?.knownTransactions)
 
     transactions = filter(transactions, {
       types: input.types,

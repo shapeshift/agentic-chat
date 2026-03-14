@@ -40,7 +40,12 @@ import { switchNetworkTool } from '../tools/switchNetwork'
 import { transactionHistoryTool } from '../tools/transactionHistory'
 import { createTwapTool, getTwapOrdersTool, cancelTwapTool } from '../tools/twap'
 import { vaultBalanceTool, vaultDepositTool, vaultWithdrawTool, vaultWithdrawAllTool } from '../tools/vault'
-import type { ActiveOrderSummary, SafeChainDeployment, WalletContext } from '../utils/walletContextSimple'
+import type {
+  ActiveOrderSummary,
+  KnownTransaction,
+  SafeChainDeployment,
+  WalletContext,
+} from '../utils/walletContextSimple'
 
 const allEvmChainIds = [
   ethChainId,
@@ -86,7 +91,8 @@ function buildWalletContext(
   approvedChainIds?: string[],
   safeAddress?: string,
   safeDeploymentState?: Record<number, SafeChainDeployment>,
-  registryOrders?: ActiveOrderSummary[]
+  registryOrders?: ActiveOrderSummary[],
+  knownTransactions?: KnownTransaction[]
 ): WalletContext {
   const connectedWallets: Record<string, { address: string }> = {}
 
@@ -122,6 +128,7 @@ function buildWalletContext(
     safeAddress,
     safeDeploymentState,
     registryOrders,
+    knownTransactions,
   }
 }
 
@@ -468,6 +475,19 @@ const chatRequestSchema = z.object({
       })
     )
     .optional(),
+  knownTransactions: z
+    .array(
+      z.object({
+        txHash: z.string(),
+        type: z.enum(['swap', 'send']),
+        sellSymbol: z.string().optional(),
+        sellAmount: z.string().optional(),
+        buySymbol: z.string().optional(),
+        buyAmount: z.string().optional(),
+        network: z.string().optional(),
+      })
+    )
+    .optional(),
   registryOrders: z
     .array(
       z.object({
@@ -502,8 +522,16 @@ export async function handleChatRequest(c: Context) {
       return c.json({ error: 'Invalid request body', details: parsed.error.issues }, 400)
     }
 
-    const { messages, evmAddress, solanaAddress, approvedChainIds, safeAddress, safeDeploymentState, registryOrders } =
-      parsed.data
+    const {
+      messages,
+      evmAddress,
+      solanaAddress,
+      approvedChainIds,
+      safeAddress,
+      safeDeploymentState,
+      knownTransactions,
+      registryOrders,
+    } = parsed.data
 
     // Build wallet context from addresses (filtered by approved chains if provided)
     const walletContext = buildWalletContext(
@@ -512,7 +540,8 @@ export async function handleChatRequest(c: Context) {
       approvedChainIds,
       safeAddress,
       safeDeploymentState,
-      registryOrders
+      registryOrders,
+      knownTransactions
     )
 
     // Convert UIMessages to ModelMessages

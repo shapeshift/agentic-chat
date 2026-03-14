@@ -71,6 +71,24 @@ function calculateNetTransfers(tx: EvmTx, userAddress: string): NetTransfer[] {
   return netTransfers
 }
 
+function sumInternalNativeTransfers(
+  tx: EvmTx,
+  userAddress: string
+): { receivedInternal: bigint; sentInternal: bigint } {
+  let receivedInternal = 0n
+  let sentInternal = 0n
+  const normalized = userAddress.toLowerCase()
+
+  for (const itx of tx.internalTxs ?? []) {
+    const value = BigInt(itx.value)
+    if (value === 0n) continue
+    if (itx.to.toLowerCase() === normalized) receivedInternal += value
+    if (itx.from.toLowerCase() === normalized) sentInternal += value
+  }
+
+  return { receivedInternal, sentInternal }
+}
+
 function determineTransactionType(tx: EvmTx, userAddress: string): ParsedTransaction['type'] {
   const normalizedUserAddress = userAddress.toLowerCase()
   const normalizedFrom = tx.from.toLowerCase()
@@ -81,9 +99,13 @@ function determineTransactionType(tx: EvmTx, userAddress: string): ParsedTransac
   const userSentNative = hasNativeValue && normalizedFrom === normalizedUserAddress
   const userReceivedNative = hasNativeValue && normalizedTo === normalizedUserAddress
 
-  if (netTransfers.length > 0 || userSentNative) {
-    const hasNegative = netTransfers.some(t => t.netAmount < 0n) || userSentNative
-    const hasPositive = netTransfers.some(t => t.netAmount > 0n) || userReceivedNative
+  const { receivedInternal, sentInternal } = sumInternalNativeTransfers(tx, userAddress)
+  const userReceivedNativeInternal = receivedInternal > 0n
+  const userSentNativeInternal = sentInternal > 0n
+
+  if (netTransfers.length > 0 || userSentNative || userSentNativeInternal) {
+    const hasNegative = netTransfers.some(t => t.netAmount < 0n) || userSentNative || userSentNativeInternal
+    const hasPositive = netTransfers.some(t => t.netAmount > 0n) || userReceivedNative || userReceivedNativeInternal
 
     if (hasNegative && hasPositive) {
       return 'swap'
@@ -122,7 +144,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
 
   let tokenTransfers: TokenTransfer[] | undefined
 
-  if (type === 'swap' && netTransfers.length > 0) {
+  if (type === 'swap' && (netTransfers.length > 0 || tx.internalTxs?.length)) {
     const sortedTransfers = netTransfers.sort((a, b) => {
       if (a.netAmount < 0n && b.netAmount > 0n) return -1
       if (a.netAmount > 0n && b.netAmount < 0n) return 1
@@ -162,6 +184,41 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
           icon: AssetService.getIcon(nativeAssetId),
         },
         ...tokenTransfers,
+      ]
+    }
+
+    const { receivedInternal, sentInternal } = sumInternalNativeTransfers(tx, userAddress)
+    const hasPositiveToken = sortedTransfers.some(t => t.netAmount > 0n)
+
+    if (receivedInternal > 0n && !hasPositiveToken) {
+      const nativeAssetId = networkToNativeAssetId[network]
+      tokenTransfers = [
+        ...(tokenTransfers ?? []),
+        {
+          symbol: 'ETH',
+          amount: fromBaseUnit(receivedInternal.toString(), EVM_NATIVE_DECIMALS),
+          decimals: EVM_NATIVE_DECIMALS,
+          from: tx.to,
+          to: userAddress,
+          assetId: nativeAssetId,
+          icon: AssetService.getIcon(nativeAssetId),
+        },
+      ]
+    }
+
+    if (sentInternal > 0n && !hasNegativeToken && !hasNativeValue) {
+      const nativeAssetId = networkToNativeAssetId[network]
+      tokenTransfers = [
+        {
+          symbol: 'ETH',
+          amount: `-${fromBaseUnit(sentInternal.toString(), EVM_NATIVE_DECIMALS)}`,
+          decimals: EVM_NATIVE_DECIMALS,
+          from: userAddress,
+          to: tx.to,
+          assetId: nativeAssetId,
+          icon: AssetService.getIcon(nativeAssetId),
+        },
+        ...(tokenTransfers ?? []),
       ]
     }
   } else if (tx.tokenTransfers && tx.tokenTransfers.length > 0) {
