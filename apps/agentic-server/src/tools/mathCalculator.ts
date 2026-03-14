@@ -30,7 +30,6 @@ export const mathCalculator = {
   execute: (input: MathCalculatorInput): MathCalculatorOutput => {
     const { expression, precision } = input
 
-    console.log('[mathCalculator]:', { expression, precision })
 
     try {
       // Validate expression safety before evaluation

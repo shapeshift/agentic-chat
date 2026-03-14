@@ -5,6 +5,7 @@ import axios from 'axios'
 import type {
   CategoriesResponse,
   CoinResponse,
+  MarketChartRangeResponse,
   NewCoinsResponse,
   SimplePriceData,
   SimplePriceResult,
@@ -25,6 +26,21 @@ const client = axios.create({
 
 export async function getMarketData(coinGeckoId: string): Promise<CoinResponse> {
   const { data } = await client.get<CoinResponse>(`/coins/${coinGeckoId}`)
+  return data
+}
+
+export async function getMarketChartRange(
+  coinGeckoId: string,
+  fromUnix: number,
+  toUnix: number
+): Promise<MarketChartRangeResponse> {
+  const { data } = await client.get<MarketChartRangeResponse>(`/coins/${coinGeckoId}/market_chart/range`, {
+    params: {
+      vs_currency: 'usd',
+      from: fromUnix,
+      to: toUnix,
+    },
+  })
   return data
 }
 

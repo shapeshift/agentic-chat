@@ -1,5 +1,6 @@
 export {
   getMarketData,
+  getMarketChartRange,
   getSimplePrices,
   getTrendingSearch,
   getTopGainersLosers,
@@ -9,6 +10,7 @@ export {
 } from './api'
 export type {
   CoinResponse,
+  MarketChartRangeResponse,
   SimplePriceResult,
   TrendingSearchResponse,
   TopGainersLosersResponse,

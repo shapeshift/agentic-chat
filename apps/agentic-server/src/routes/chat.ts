@@ -22,6 +22,7 @@ import { getAllowanceTool } from '../tools/getAllowance'
 import { getAssetPricesTool } from '../tools/getAssetPrices'
 import { getAssetsTool } from '../tools/getAssets'
 import { getCategoriesTool } from '../tools/getCategories'
+import { getHistoricalPricesTool } from '../tools/getHistoricalPrices'
 import { getNewCoinsTool } from '../tools/getNewCoins'
 import { getPriceFeedTokensTool } from '../tools/getPriceFeedTokens'
 import { getShapeShiftKnowledgeTool } from '../tools/getShapeShiftKnowledge'
@@ -126,6 +127,7 @@ function buildTools(walletContext: WalletContext) {
       mathCalculatorTool: mathCalculator,
       getAssetsTool,
       getAssetPricesTool,
+      getHistoricalPricesTool,
       lookupExternalAddress: lookupExternalAddressTool,
       switchNetworkTool,
       getShapeShiftKnowledgeTool,
@@ -165,7 +167,7 @@ function buildTools(walletContext: WalletContext) {
       description: getAllowanceTool.description,
       inputSchema: getAllowanceTool.inputSchema,
       execute: async (args: Parameters<typeof getAllowanceTool.execute>[0]) => {
-        console.log('[Tool] getAllowanceTool:', JSON.stringify(args, null, 2))
+
         const chainId = args?.asset?.chainId
         const from = args?.from ?? (chainId ? walletContext.connectedWallets?.[chainId]?.address : undefined)
         if (!from) {
@@ -306,6 +308,7 @@ Select the single tool matching the user's intent (these names are internal — 
 | Intent | Tool |
 |---|---|
 | Quick price check (no UI card) | getAssetPrices |
+| Historical prices / price at past date / price growth over time | getHistoricalPrices |
 | Detailed market data (UI card) | getAssets |
 | Trending/gainers/new coins | getTrendingTokens, getTopGainersLosers, getNewCoins |
 | Trending pools | getTrendingPools |

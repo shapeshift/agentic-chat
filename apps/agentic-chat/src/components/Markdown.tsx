@@ -147,6 +147,8 @@ export function Markdown({ children }: MarkdownProps) {
             <sup className={cn('[&>a]:text-xs [&>a]:no-underline', className)} {...props} />
           ),
           del: ({ ...props }) => <span {...props} />,
+          strong: ({ className, ...props }) => <strong className={cn('font-bold', className)} {...props} />,
+          em: ({ className, ...props }) => <em className={cn('italic', className)} {...props} />,
           pre: ({ children, ...props }) => {
             // Extract code content and language
             const codeElement = (children as ReactNode[])?.[0]

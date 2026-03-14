@@ -118,7 +118,7 @@ function ErrorFooter() {
     <TruncateText
       text={`Execution failed: ${friendlyError}`}
       limit={80}
-      className="text-sm font-medium mt-4 text-red-500"
+      className="text-sm font-medium mt-4 px-4 pb-4 text-red-500"
     />
   )
 }

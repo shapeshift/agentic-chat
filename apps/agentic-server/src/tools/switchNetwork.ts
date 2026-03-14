@@ -13,7 +13,6 @@ export type SwitchNetworkOutput = {
 }
 
 export function executeSwitchNetwork(input: SwitchNetworkInput): SwitchNetworkOutput {
-  console.log('[switchNetwork]:', input)
 
   return {
     network: input.network,
