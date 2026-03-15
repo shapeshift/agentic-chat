@@ -350,12 +350,7 @@ Many tools render UI cards (as noted in their descriptions). After a tool with a
 
 For tools without UI cards, format and present data directly in your response.
 
-**Transaction history optimization:** Set renderTransactions based on user intent:
-- "last transaction" → 1
-- "recent txs" → 3-5
-- "all transactions" → 10-20
-- Aggregation queries (counts, sums) → false
-- Type-specific queries ("last swap", "my sends") → set types filter (e.g. ["swap"]) so rendered cards match your description
+**Transaction history:** Single call with all parameters. Set types when asking about a specific type.
 </tool-ui>
 
 <portfolio-rules>
@@ -551,7 +546,7 @@ export async function handleChatRequest(c: Context) {
       model: getModel(),
       messages: modelMessages,
       system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeDeploymentState),
-      temperature: 0.6,
+      temperature: 0.3,
       stopWhen: stepCountIs(5),
       tools: buildTools(walletContext),
       // Venice-specific parameters to disable reasoning for faster responses

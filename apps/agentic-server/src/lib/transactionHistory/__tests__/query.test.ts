@@ -129,9 +129,9 @@ describe('Query Functions', () => {
       expect(result[1]?.txid).toBe('tx4') // Has 1 transfer
     })
 
-    test('should return original array if no sortBy', () => {
+    test('should sort by timestamp desc by default when no sortBy', () => {
       const result = sort(mockTransactions)
-      expect(result).toEqual(mockTransactions)
+      expect(result.map(tx => tx.txid)).toEqual(['tx4', 'tx2', 'tx3', 'tx1'])
     })
   })
 

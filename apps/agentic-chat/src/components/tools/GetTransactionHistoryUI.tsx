@@ -119,6 +119,16 @@ function TransactionCard({
                   </TxAmount>
                 </>
               )}
+              {!swapTokens && tx.type === 'swap' && (
+                <TxAmount variant="default">
+                  {tx.tokenTransfers?.[0]
+                    ? formatTokenAmount(tx.tokenTransfers[0])
+                    : formatCryptoAmount(tx.value, {
+                        symbol: getNativeSymbol(tx.network),
+                        decimals: MAX_DISPLAYED_DECIMALS,
+                      })}
+                </TxAmount>
+              )}
               {!swapTokens && tx.type === 'contract' && (
                 <TxAmount variant="negative">
                   {tx.tokenTransfers?.[0]
@@ -214,11 +224,6 @@ export function GetTransactionHistoryUI({ toolPart }: ToolUIComponentProps<'tran
     }
 
     const renderTransactions = input?.renderTransactions
-
-    // Early exit if explicitly told not to render
-    if (renderTransactions === false) {
-      return null
-    }
 
     // Determine how many to render: specific number or all
     const renderCount = typeof renderTransactions === 'number' ? renderTransactions : transactions.length

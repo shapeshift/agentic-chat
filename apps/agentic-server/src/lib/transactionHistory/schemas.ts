@@ -82,7 +82,12 @@ export const solanaTxSchema = z.object({
 })
 
 export const transactionFilterParams = {
-  types: z.array(z.enum(TRANSACTION_TYPES)).optional().describe('Filter by transaction types (e.g., ["swap", "send"])'),
+  types: z
+    .array(z.enum(TRANSACTION_TYPES))
+    .optional()
+    .describe(
+      'REQUIRED for type-specific queries. Map: "swap/trade/exchange" → ["swap"], "send/sent/transfer" → ["send"], "receive/received" → ["receive"]. Only omit for "all transactions" queries.'
+    ),
   status: z.array(z.enum(TRANSACTION_STATUSES)).optional().describe('Filter by transaction status'),
   dateFrom: z.number().optional().describe('Filter transactions from this Unix timestamp (inclusive)'),
   dateTo: z.number().optional().describe('Filter transactions until this Unix timestamp (inclusive)'),
@@ -236,13 +241,13 @@ export const transactionHistoryToolInput = z.object({
     .object({
       field: z
         .enum(SORT_FIELDS)
-        .default('timestamp')
+        .optional()
         .describe(
           'Field to sort by. timestamp (default), fee, value, blockHeight, tokenTransferCount (number of token transfers), usdValueSent, usdValueReceived, or usdFee'
         ),
       order: z
         .enum(SORT_ORDERS)
-        .default('desc')
+        .optional()
         .describe('Sort order: asc (ascending - oldest/smallest first) or desc (descending - newest/largest first)'),
     })
     .optional()
@@ -260,7 +265,7 @@ export const transactionHistoryToolInput = z.object({
   offset: z
     .number()
     .min(0)
-    .default(0)
+    .optional()
     .describe(
       'Number of transactions to skip after filtering and sorting. Useful for pagination or "show me second most expensive swap".'
     ),
@@ -272,16 +277,16 @@ export const transactionHistoryToolInput = z.object({
 
   includeTransactions: z
     .boolean()
-    .default(true)
-    .describe(
-      'Include transaction details in response to render as UI cards. Defaults to true. Set to false only when doing pure aggregation queries without displaying transactions.'
-    ),
+    .optional()
+    .describe('Set to false for pure aggregation queries (e.g., "how many swaps?"). Omit otherwise.'),
 
   renderTransactions: z
-    .union([z.boolean(), z.number().int().min(0)])
+    .number()
+    .int()
+    .min(0)
     .optional()
     .describe(
-      'Controls which transactions to display as UI cards. IMPORTANT: Set this based on user intent - true/undefined: display all (use for "show all transactions"); false: display none (text-only analysis); number: display first N (use 1 for "last transaction", 3-5 for "recent transactions"). Prevents UI crashes by limiting rendered cards. Only applies when includeTransactions is true.'
+      'Number of transaction cards to display in UI. 1 for "last", 3-5 for "recent", 10-20 for browsing. Omit to display all.'
     ),
 })
 
