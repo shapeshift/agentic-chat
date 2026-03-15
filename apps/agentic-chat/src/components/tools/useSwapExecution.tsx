@@ -13,7 +13,8 @@ import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
 import type { StepStatus } from '@/lib/stepUtils'
 import { withWalletLock } from '@/lib/walletMutex'
 import type { SolanaWalletSigner } from '@/utils/chains/types'
-import { executeApproval, executeSwap } from '@/utils/swapExecutor'
+import { ensureAllowance } from '@/utils/ensureAllowance'
+import { executeSwap } from '@/utils/swapExecutor'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
 export const SWAP_STEPS = { QUOTE: 0, NETWORK: 1, APPROVE: 2, SWAP: 3 } as const
@@ -44,7 +45,7 @@ export const useSwapExecution = (
   useExecuteOnce(ctx, swapData, async (data, ctx) => {
     await withWalletLock(async () => {
       try {
-        const { needsApproval, approvalTx, swapTx } = data
+        const { swapTx } = data
 
         if (!swapTx?.from) throw new Error('Invalid swap output: missing swapTx.from')
         if (!swapTx?.chainId) throw new Error('Invalid swap output: missing swapTx.chainId')
@@ -76,12 +77,20 @@ export const useSwapExecution = (
         // Step 1: Network switch
         await switchNetworkStep(ctx, sellAssetChainId)
 
-        // Step 2: Approve (skip if not needed)
-        if (needsApproval && approvalTx) {
-          ctx.setSubstatus('Requesting approval signature...')
-          const approvalTxHash = await executeApproval(approvalTx, { solanaSigner })
-          ctx.setMeta({ approvalTxHash })
+        // Step 2: Approve — re-check on-chain allowance to handle parallel swaps
+        ctx.setSubstatus('Checking allowance...')
+        const approvalTxHash = await ensureAllowance({
+          sellAssetId: data.swapData.sellAsset.assetId,
+          sellAssetChainId: sellAssetChainId,
+          sellAssetPrecision: data.swapData.sellAsset.precision,
+          approvalTarget: data.swapData.approvalTarget,
+          sellAmountCryptoPrecision: data.swapData.sellAmountCryptoPrecision,
+          sellAccount: data.swapData.sellAccount,
+          solanaSigner,
+        })
 
+        if (approvalTxHash) {
+          ctx.setMeta({ approvalTxHash })
           if (chainNamespace === CHAIN_NAMESPACE.Evm) {
             ctx.setSubstatus('Waiting for confirmation...')
             await waitForConfirmedReceipt(Number(chainReference), approvalTxHash as `0x${string}`)
