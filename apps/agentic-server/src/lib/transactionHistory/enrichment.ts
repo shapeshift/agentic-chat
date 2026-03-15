@@ -19,16 +19,18 @@ export function enrichTransactions(
     const known = knownMap.get(tx.txid.toLowerCase())
     if (!known) return tx
 
-    if (known.type === 'swap') {
+    const enriched = { ...tx, type: known.type, value: tx.value ?? '0' } as ParsedTransaction
+
+    if (known.type === 'swap' || known.type === 'limitOrder' || known.type === 'stopLoss' || known.type === 'twap') {
       const tokenTransfers = buildSwapTokenTransfers(known)
       if (tokenTransfers.length > 0) {
-        return { ...tx, type: 'swap' as const, tokenTransfers }
+        return { ...enriched, tokenTransfers }
       }
-      return tx
+      return enriched
     }
 
-    if (known.type === 'send') {
-      return { ...tx, type: 'send' as const }
+    if (known.type === 'send' || known.type === 'deposit' || known.type === 'withdraw' || known.type === 'approval') {
+      return enriched
     }
 
     return tx
@@ -42,7 +44,7 @@ function buildSwapTokenTransfers(known: KnownTransaction): TokenTransfer[] {
     transfers.push({
       symbol: known.sellSymbol,
       amount: `-${known.sellAmount}`,
-      decimals: 18,
+      decimals: 0,
       from: '',
       to: '',
       assetId: '',
@@ -53,7 +55,7 @@ function buildSwapTokenTransfers(known: KnownTransaction): TokenTransfer[] {
     transfers.push({
       symbol: known.buySymbol,
       amount: known.buyAmount,
-      decimals: 18,
+      decimals: 0,
       from: '',
       to: '',
       assetId: '',

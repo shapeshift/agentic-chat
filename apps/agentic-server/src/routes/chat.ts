@@ -474,7 +474,7 @@ const chatRequestSchema = z.object({
     .array(
       z.object({
         txHash: z.string(),
-        type: z.enum(['swap', 'send']),
+        type: z.enum(['swap', 'send', 'limitOrder', 'stopLoss', 'twap', 'deposit', 'withdraw', 'approval']),
         sellSymbol: z.string().optional(),
         sellAmount: z.string().optional(),
         buySymbol: z.string().optional(),

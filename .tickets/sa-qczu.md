@@ -68,3 +68,20 @@ When executing multiple swaps in parallel (e.g., 3x PEPE→ETH on Arbitrum), the
 - [ ] Allowance is sufficient for each swap at execution time
 - [ ] Quote expiry is validated before submitting swap transaction
 - [ ] No "Execution reverted" or "insufficient allowance" errors for queued swaps
+
+## Notes
+
+**2026-03-14T01:02:13Z**
+
+## Investigation Findings (2026-03-14)
+
+Root cause analysis in the ticket is confirmed accurate against the code.
+
+Key findings:
+- The architectural split (server: eager quote+allowance, client: locked execution) is the fundamental issue
+- BebopQuote.expiry exists in the type but is never validated or surfaced
+- getAllowance is called at quote time, not execution time
+- Exact-amount approvals (not MaxUint256) compound the race condition
+- walletMutex itself works correctly; it's just in the wrong layer
+
+Simplest fix path: re-fetch quote + re-check allowance inside withWalletLock, or move the lock boundary to encompass quote fetching.

@@ -1,5 +1,5 @@
 import type { Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/types'
-import { networkToChainIdMap, networkToNativeAssetId } from '@shapeshiftoss/types'
+import { networkToChainIdMap, networkToNativeAssetId, networkToNativeSymbol } from '@shapeshiftoss/types'
 import { AssetService, fromBaseUnit } from '@shapeshiftoss/utils'
 
 import { EVM_NATIVE_DECIMALS, PRECISION_HIGH } from './constants'
@@ -170,12 +170,15 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
 
     const hasNativeValue = BigInt(tx.value) > 0n && normalizedFrom === normalizedUserAddress
     const hasNegativeToken = sortedTransfers.some(t => t.netAmount < 0n)
+    const hasPositiveToken = sortedTransfers.some(t => t.netAmount > 0n)
+    const nativeAssetId = networkToNativeAssetId[network]
+    const nativeSymbol = networkToNativeSymbol[network]
+    const { receivedInternal, sentInternal } = sumInternalNativeTransfers(tx, userAddress)
 
     if (hasNativeValue && !hasNegativeToken) {
-      const nativeAssetId = networkToNativeAssetId[network]
       tokenTransfers = [
         {
-          symbol: 'ETH',
+          symbol: nativeSymbol,
           amount: fromBaseUnit(tx.value, EVM_NATIVE_DECIMALS),
           decimals: EVM_NATIVE_DECIMALS,
           from: userAddress,
@@ -187,15 +190,11 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
       ]
     }
 
-    const { receivedInternal, sentInternal } = sumInternalNativeTransfers(tx, userAddress)
-    const hasPositiveToken = sortedTransfers.some(t => t.netAmount > 0n)
-
     if (receivedInternal > 0n && !hasPositiveToken) {
-      const nativeAssetId = networkToNativeAssetId[network]
       tokenTransfers = [
         ...(tokenTransfers ?? []),
         {
-          symbol: 'ETH',
+          symbol: nativeSymbol,
           amount: fromBaseUnit(receivedInternal.toString(), EVM_NATIVE_DECIMALS),
           decimals: EVM_NATIVE_DECIMALS,
           from: tx.to,
@@ -207,10 +206,9 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
     }
 
     if (sentInternal > 0n && !hasNegativeToken && !hasNativeValue) {
-      const nativeAssetId = networkToNativeAssetId[network]
       tokenTransfers = [
         {
-          symbol: 'ETH',
+          symbol: nativeSymbol,
           amount: `-${fromBaseUnit(sentInternal.toString(), EVM_NATIVE_DECIMALS)}`,
           decimals: EVM_NATIVE_DECIMALS,
           from: userAddress,

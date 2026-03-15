@@ -60,63 +60,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
           const registryOrders =
             safeAddresses.length > 0 ? useOrderStore.getState().getAllOrderSummaries(safeAddresses) : []
 
-          interface KnownTx {
-            txHash: string
-            type: 'swap' | 'send'
-            sellSymbol?: string
-            sellAmount?: string
-            buySymbol?: string
-            buyAmount?: string
-            network?: string
-          }
-
-          const knownTransactions = useChatStore
-            .getState()
-            .persistedTransactions.filter(
-              tx =>
-                tx.terminal &&
-                !tx.error &&
-                (tx.toolName === 'initiateSwapTool' ||
-                  tx.toolName === 'initiateSwapUsdTool' ||
-                  tx.toolName === 'sendTool')
-            )
-            .flatMap((tx): KnownTx[] => {
-              const meta = tx.meta as { txHash?: string; networkName?: string }
-              if (!meta.txHash) return []
-
-              if (tx.toolName === 'sendTool') {
-                const output = tx.toolOutput as { summary?: { symbol?: string; amount?: string } } | undefined
-                return [
-                  {
-                    txHash: meta.txHash,
-                    type: 'send',
-                    sellSymbol: output?.summary?.symbol,
-                    sellAmount: output?.summary?.amount,
-                    network: meta.networkName,
-                  },
-                ]
-              }
-
-              const output = tx.toolOutput as
-                | {
-                    summary?: {
-                      sellAsset?: { symbol?: string; amount?: string; network?: string }
-                      buyAsset?: { symbol?: string; estimatedAmount?: string }
-                    }
-                  }
-                | undefined
-              return [
-                {
-                  txHash: meta.txHash,
-                  type: 'swap',
-                  sellSymbol: output?.summary?.sellAsset?.symbol,
-                  sellAmount: output?.summary?.sellAsset?.amount,
-                  buySymbol: output?.summary?.buyAsset?.symbol,
-                  buyAmount: output?.summary?.buyAsset?.estimatedAmount,
-                  network: meta.networkName ?? output?.summary?.sellAsset?.network,
-                },
-              ]
-            })
+          const knownTransactions = useChatStore.getState().getKnownTransactions()
 
           return {
             evmAddress: wallet.evmAddress,

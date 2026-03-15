@@ -114,7 +114,7 @@ export async function executeTransactionHistory(
 }
 
 export const transactionHistoryTool = {
-  description: `Query transaction history. ALWAYS set types when user asks about a specific type: "swap/trade" → types: ["swap"], "send/sent" → types: ["send"], "receive" → types: ["receive"]. Set renderTransactions for UI cards (1 for "last", 3-5 for "recent"). Single call only.`,
+  description: `Query transaction history. ALWAYS set types when user asks about a specific type: "swap/trade" → types: ["swap"], "send/sent" → types: ["send"], "receive" → types: ["receive"]. Set renderTransactions for UI cards (1 for "last", 3-5 for "recent"). Returns max 25 transactions by default; set limit explicitly for more. Single call only.`,
   inputSchema: transactionHistorySchema,
   execute: executeTransactionHistory,
 }
