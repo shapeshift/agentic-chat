@@ -63,7 +63,9 @@ class AssetService {
   private static async fetchAndBuild(): Promise<void> {
     const response = await fetch(ASSET_DATA_URL)
     if (!response.ok) throw new Error(`Failed to fetch asset data: HTTP ${response.status}`)
-    const data = (await response.json()) as { byId: Record<AssetId, StaticAsset> }
+    // Use arrayBuffer + TextDecoder to avoid bun hanging on large .text()/.json() responses
+    const buf = await response.arrayBuffer()
+    const data = JSON.parse(new TextDecoder().decode(buf)) as { byId: Record<AssetId, StaticAsset> }
     const assetData = data.byId
     const sortedAssetIds = Object.keys(assetData)
     AssetService.instance = new AssetService(assetData, sortedAssetIds)

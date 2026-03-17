@@ -91,6 +91,10 @@ function buildWalletContext(
   const connectedWallets: Record<string, { address: string }> = {}
 
   // Add EVM wallet - same address works across all EVM chains
+  // NOTE: WalletConnect only exposes a single BIP-44 account (Account #0).
+  // Users with assets in additional accounts (Account #1, #2, etc.) will see
+  // incomplete balances. The main ShapeShift app works around this via native
+  // wallet connections that support BIP-44 derivation path iteration.
   if (evmAddress) {
     // If approvedChainIds provided (WalletConnect), filter to only approved chains
     // Otherwise fall back to all chains (for injected wallets like MetaMask)
