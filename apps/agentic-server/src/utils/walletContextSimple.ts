@@ -1,6 +1,7 @@
 import type { Network } from '@shapeshiftoss/types'
 import { networkToChainIdMap } from '@shapeshiftoss/types'
 
+import { predictSafeAddress } from './predictSafeAddress'
 import { verifySafeOwnership } from './safeAddressVerification'
 
 export interface SafeChainDeployment {
@@ -30,11 +31,22 @@ export interface ActiveOrderSummary {
   numParts?: number
 }
 
+export interface KnownTransaction {
+  txHash: string
+  type: 'swap' | 'send' | 'limitOrder' | 'stopLoss' | 'twap' | 'deposit' | 'withdraw' | 'approval'
+  sellSymbol?: string
+  sellAmount?: string
+  buySymbol?: string
+  buyAmount?: string
+  network?: string
+}
+
 export interface WalletContext {
   connectedWallets?: Record<string, { address: string }>
   safeAddress?: string
   safeDeploymentState?: Record<number, SafeChainDeployment>
   registryOrders?: ActiveOrderSummary[]
+  knownTransactions?: KnownTransaction[]
 }
 
 export function getAddressForNetwork(walletContext: WalletContext | undefined, network: Network): string {
@@ -67,13 +79,19 @@ export async function getSafeAddressForChain(
   walletContext: WalletContext | undefined,
   chainId: number
 ): Promise<string | undefined> {
-  const safeAddress = walletContext?.safeDeploymentState?.[chainId]?.safeAddress ?? walletContext?.safeAddress
-  if (!safeAddress) return undefined
+  const knownAddress = walletContext?.safeDeploymentState?.[chainId]?.safeAddress
+  if (knownAddress) {
+    const caipChainId = `eip155:${chainId}`
+    const ownerAddress = walletContext?.connectedWallets?.[caipChainId]?.address
+    if (ownerAddress) await verifySafeOwnership(knownAddress, ownerAddress, chainId)
+    return knownAddress
+  }
 
   const caipChainId = `eip155:${chainId}`
   const ownerAddress = walletContext?.connectedWallets?.[caipChainId]?.address
-  if (!ownerAddress) return safeAddress
+  if (!ownerAddress) return walletContext?.safeAddress
 
+  const safeAddress = await predictSafeAddress(ownerAddress, chainId)
   await verifySafeOwnership(safeAddress, ownerAddress, chainId)
   return safeAddress
 }

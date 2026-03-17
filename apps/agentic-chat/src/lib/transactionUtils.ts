@@ -9,8 +9,11 @@ export type SwapTokens = {
   tokenIn: TokenTransfer
 }
 
+const SWAP_LIKE_TYPES = ['swap', 'limitOrder', 'stopLoss', 'twap'] as const
+
 export function getSwapTokens(tx: ParsedTransaction): SwapTokens | null {
-  if (tx.type !== 'swap' || !tx.tokenTransfers || tx.tokenTransfers.length < 2) return null
+  if (!(SWAP_LIKE_TYPES as readonly string[]).includes(tx.type) || !tx.tokenTransfers || tx.tokenTransfers.length < 2)
+    return null
 
   const [tokenOut, tokenIn] = tx.tokenTransfers
   if (!tokenOut || !tokenIn) return null

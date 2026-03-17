@@ -22,7 +22,18 @@ export type TokenTransfer = {
   icon?: string
 }
 
-export const TRANSACTION_TYPES = ['send', 'receive', 'swap', 'contract'] as const
+export const TRANSACTION_TYPES = [
+  'send',
+  'receive',
+  'swap',
+  'contract',
+  'limitOrder',
+  'stopLoss',
+  'twap',
+  'deposit',
+  'withdraw',
+  'approval',
+] as const
 export type TransactionType = (typeof TRANSACTION_TYPES)[number]
 
 export const TRANSACTION_STATUSES = ['success', 'failed'] as const
@@ -66,7 +77,53 @@ export type ContractTransaction = BaseTransaction & {
   tokenTransfers?: TokenTransfer[]
 }
 
-export type ParsedTransaction = SendTransaction | ReceiveTransaction | SwapTransaction | ContractTransaction
+export type LimitOrderTransaction = BaseTransaction & {
+  type: 'limitOrder'
+  value: string
+  tokenTransfers?: TokenTransfer[]
+}
+
+export type StopLossTransaction = BaseTransaction & {
+  type: 'stopLoss'
+  value: string
+  tokenTransfers?: TokenTransfer[]
+}
+
+export type TwapTransaction = BaseTransaction & {
+  type: 'twap'
+  value: string
+  tokenTransfers?: TokenTransfer[]
+}
+
+export type DepositTransaction = BaseTransaction & {
+  type: 'deposit'
+  value: string
+  tokenTransfers?: TokenTransfer[]
+}
+
+export type WithdrawTransaction = BaseTransaction & {
+  type: 'withdraw'
+  value: string
+  tokenTransfers?: TokenTransfer[]
+}
+
+export type ApprovalTransaction = BaseTransaction & {
+  type: 'approval'
+  value: string
+  tokenTransfers?: TokenTransfer[]
+}
+
+export type ParsedTransaction =
+  | SendTransaction
+  | ReceiveTransaction
+  | SwapTransaction
+  | ContractTransaction
+  | LimitOrderTransaction
+  | StopLossTransaction
+  | TwapTransaction
+  | DepositTransaction
+  | WithdrawTransaction
+  | ApprovalTransaction
 
 export function isSendTransaction(tx: ParsedTransaction): tx is SendTransaction {
   return tx.type === 'send'

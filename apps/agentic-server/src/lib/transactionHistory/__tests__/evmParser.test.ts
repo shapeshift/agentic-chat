@@ -431,6 +431,66 @@ describe('parseEvmTransaction', () => {
     })
   })
 
+  describe('internalTxs classification', () => {
+    test('classifies as swap when user sends token and receives native via internal call', () => {
+      const tx = makeTx({
+        from: USER,
+        to: ROUTER,
+        value: '0',
+        tokenTransfers: [
+          makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '2000000000' }),
+        ],
+        internalTxs: [{ from: ROUTER, to: USER, value: '1000000000000000000' }],
+      })
+      const result = parseEvmTransaction(tx, USER, 'ethereum')
+      expect(result.type).toBe('swap')
+      expect(result.tokenTransfers!.length).toBe(2)
+      const ethTransfer = result.tokenTransfers!.find(t => t.symbol === 'ETH')
+      expect(ethTransfer).toBeDefined()
+      expect(parseFloat(ethTransfer!.amount)).toBeGreaterThan(0)
+    })
+
+    test('classifies as swap when user sends native via internal call and receives token', () => {
+      const tx = makeTx({
+        from: USER,
+        to: ROUTER,
+        value: '0',
+        tokenTransfers: [
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: ROUTER,
+            to: USER,
+            value: '1000000000000000000',
+          }),
+        ],
+        internalTxs: [{ from: USER, to: ROUTER, value: '500000000000000000' }],
+      })
+      const result = parseEvmTransaction(tx, USER, 'ethereum')
+      expect(result.type).toBe('swap')
+      const ethTransfer = result.tokenTransfers!.find(t => t.symbol === 'ETH')
+      expect(ethTransfer).toBeDefined()
+      expect(parseFloat(ethTransfer!.amount)).toBeLessThan(0)
+    })
+
+    test('does not double-count when tx.value already covers native transfer', () => {
+      const tx = makeTx({
+        from: USER,
+        to: ROUTER,
+        value: '1000000000000000000',
+        tokenTransfers: [
+          makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: ROUTER, to: USER, value: '2000000000' }),
+        ],
+        internalTxs: [],
+      })
+      const result = parseEvmTransaction(tx, USER, 'ethereum')
+      expect(result.type).toBe('swap')
+      const ethTransfers = result.tokenTransfers!.filter(t => t.symbol === 'ETH')
+      expect(ethTransfers).toHaveLength(1)
+    })
+  })
+
   describe('decimals fallback', () => {
     test('uses PRECISION_HIGH (18) when decimals is undefined', () => {
       const tx = makeTx({

@@ -3,6 +3,7 @@ import type { Network } from '@shapeshiftoss/types'
 import { executeAggregations } from '../lib/transactionHistory/aggregations'
 import type { AggregationConfig } from '../lib/transactionHistory/aggregations/types'
 import { MAX_LIMITED_FETCH_COUNT } from '../lib/transactionHistory/constants'
+import { enrichTransactions } from '../lib/transactionHistory/enrichment'
 import {
   determineFetchStrategy,
   fetchTransactions,
@@ -49,7 +50,7 @@ export async function executeTransactionHistory(
       fetchedCount,
     } = await fetchTransactions(networks, addressOrWallet, strategy)
 
-    let transactions = allTransactions
+    let transactions = enrichTransactions(allTransactions, walletContext?.knownTransactions)
 
     transactions = filter(transactions, {
       types: input.types,
@@ -69,11 +70,13 @@ export async function executeTransactionHistory(
       ? executeAggregations(transactions, input.aggregations as AggregationConfig[])
       : undefined
 
-    // Paginate only the returned transactions
-    const paginatedTransactions = paginate(transactions, input.offset ?? 0, input.limit)
-
-    // Respect explicit includeTransactions: false
     const shouldIncludeTransactions = input.includeTransactions ?? !input.aggregations
+
+    // Cap at 25 transactions in agent context unless explicitly overridden
+    const effectiveLimit = input.limit ?? (shouldIncludeTransactions ? 25 : undefined)
+
+    // Paginate only the returned transactions
+    const paginatedTransactions = paginate(transactions, input.offset ?? 0, effectiveLimit)
 
     const mayBeIncomplete = strategy.mode === 'limited' && fetchedCount >= MAX_LIMITED_FETCH_COUNT
 
@@ -111,16 +114,7 @@ export async function executeTransactionHistory(
 }
 
 export const transactionHistoryTool = {
-  description: `Query transaction history with filters.
-
-UI CARD DISPLAYS: transaction list with type, amount, status, and timestamps.
-
-**Parameter Guidance:**
-- For "last transaction" or "most recent tx" queries: Use renderTransactions: 1
-- For "recent transactions" or "last few" queries: Use renderTransactions: 3-5
-- For "all transactions" or large date ranges: Leave renderTransactions unset or use a reasonable limit (10-20)
-- This prevents UI crashes when rendering large transaction lists
-- For type-specific queries ("last swap", "recent sends", "show my trades"): Set the types filter (e.g., types: ["swap"]) — without it, the UI card may display an unrelated transaction that happens to be more recent`,
+  description: `Query transaction history. ALWAYS set types when user asks about a specific type: "swap/trade" → types: ["swap"], "send/sent" → types: ["send"], "receive" → types: ["receive"]. Set renderTransactions for UI cards (1 for "last", 3-5 for "recent"). Returns max 25 transactions by default; set limit explicitly for more. Single call only.`,
   inputSchema: transactionHistorySchema,
   execute: executeTransactionHistory,
 }

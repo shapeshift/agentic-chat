@@ -60,6 +60,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
           const registryOrders =
             safeAddresses.length > 0 ? useOrderStore.getState().getAllOrderSummaries(safeAddresses) : []
 
+          const knownTransactions = useChatStore.getState().getKnownTransactions()
+
           return {
             evmAddress: wallet.evmAddress,
             solanaAddress: wallet.solanaAddress,
@@ -67,6 +69,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
             safeAddress: wallet.safeAddress,
             safeDeploymentState: wallet.safeDeploymentState,
             registryOrders,
+            knownTransactions: knownTransactions.length > 0 ? knownTransactions : undefined,
           }
         },
       }),

@@ -1,7 +1,17 @@
 import type { ParsedTransaction, Network } from '@shapeshiftoss/types'
 import { networkToChainIdMap, networkToNativeSymbol } from '@shapeshiftoss/types'
 import { NETWORK_ICONS } from '@shapeshiftoss/utils'
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CheckCircle2, FileCode, XCircle } from 'lucide-react'
+import {
+  ArrowDownLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  CheckCircle2,
+  FileCode,
+  ScrollText,
+  ShieldCheck,
+  Vault,
+  XCircle,
+} from 'lucide-react'
 import type React from 'react'
 
 import { bnOrZero } from '@/lib/bignumber'
@@ -24,6 +34,25 @@ const TRANSACTION_ICONS: Record<ParsedTransaction['type'], React.ReactElement> =
   receive: <ArrowDownLeft className="w-5 h-5 text-green-500" />,
   swap: <ArrowLeftRight className="w-5 h-5 text-blue-500" />,
   contract: <FileCode className="w-5 h-5 text-purple-500" />,
+  limitOrder: <ScrollText className="w-5 h-5 text-blue-500" />,
+  stopLoss: <ScrollText className="w-5 h-5 text-blue-500" />,
+  twap: <ScrollText className="w-5 h-5 text-blue-500" />,
+  deposit: <Vault className="w-5 h-5 text-orange-500" />,
+  withdraw: <Vault className="w-5 h-5 text-green-500" />,
+  approval: <ShieldCheck className="w-5 h-5 text-purple-500" />,
+}
+
+const TRANSACTION_LABELS: Record<ParsedTransaction['type'], string> = {
+  send: 'Send',
+  receive: 'Receive',
+  swap: 'Swap',
+  contract: 'Contract interaction',
+  limitOrder: 'Limit Order',
+  stopLoss: 'Stop-Loss Order',
+  twap: 'TWAP Order',
+  deposit: 'Deposit',
+  withdraw: 'Withdraw',
+  approval: 'Approval',
 }
 
 function getNativeSymbol(network?: string): string {
@@ -57,11 +86,14 @@ function TransactionCard({
   networkIcon?: string
 }) {
   const swapTokens = getSwapTokens(tx)
-  const isSwap = tx.type === 'swap'
+  const isSwapLike = ['swap', 'limitOrder', 'stopLoss', 'twap'].includes(tx.type)
+  const isSendLike = ['send', 'deposit'].includes(tx.type)
+  const isReceiveLike = ['receive', 'withdraw'].includes(tx.type)
+  const isContractLike = ['contract', 'approval'].includes(tx.type)
   const isSuccess = tx.status === 'success'
   const explorerUrl = getExplorerUrl(network, tx.txid)
 
-  const label = tx.type === 'contract' ? 'Contract interaction' : tx.type.charAt(0).toUpperCase() + tx.type.slice(1)
+  const label = TRANSACTION_LABELS[tx.type]
 
   return (
     <ToolCard.Root defaultOpen={false}>
@@ -91,7 +123,7 @@ function TransactionCard({
                   <TxAmount variant="positive">{formatTokenAmount(swapTokens.tokenIn)}</TxAmount>
                 </>
               )}
-              {!swapTokens && tx.type === 'send' && (
+              {!swapTokens && isSendLike && (
                 <>
                   <TxSecondaryText>{truncateAddress(tx.to)}</TxSecondaryText>
                   <TxAmount variant="negative">
@@ -105,7 +137,7 @@ function TransactionCard({
                   </TxAmount>
                 </>
               )}
-              {!swapTokens && tx.type === 'receive' && (
+              {!swapTokens && isReceiveLike && (
                 <>
                   <TxSecondaryText>{truncateAddress(tx.from)}</TxSecondaryText>
                   <TxAmount variant="positive">
@@ -119,7 +151,17 @@ function TransactionCard({
                   </TxAmount>
                 </>
               )}
-              {!swapTokens && tx.type === 'contract' && (
+              {!swapTokens && isSwapLike && (
+                <TxAmount variant="default">
+                  {tx.tokenTransfers?.[0]
+                    ? formatTokenAmount(tx.tokenTransfers[0])
+                    : formatCryptoAmount(tx.value, {
+                        symbol: getNativeSymbol(tx.network),
+                        decimals: MAX_DISPLAYED_DECIMALS,
+                      })}
+                </TxAmount>
+              )}
+              {!swapTokens && isContractLike && (
                 <TxAmount variant="negative">
                   {tx.tokenTransfers?.[0]
                     ? formatTokenAmount(tx.tokenTransfers[0])
@@ -178,7 +220,7 @@ function TransactionCard({
               value={<Amount.Crypto value={tx.fee} symbol={getNativeSymbol(network)} />}
             />
             <ToolCard.DetailItem label="Date" value={formatTimestamp(tx.timestamp)} />
-            {!isSwap && (
+            {!isSwapLike && (
               <>
                 <ToolCard.DetailItem label="From" value={truncateAddress(tx.from)} />
                 <ToolCard.DetailItem label="To" value={truncateAddress(tx.to)} />
@@ -214,11 +256,6 @@ export function GetTransactionHistoryUI({ toolPart }: ToolUIComponentProps<'tran
     }
 
     const renderTransactions = input?.renderTransactions
-
-    // Early exit if explicitly told not to render
-    if (renderTransactions === false) {
-      return null
-    }
 
     // Determine how many to render: specific number or all
     const renderCount = typeof renderTransactions === 'number' ? renderTransactions : transactions.length

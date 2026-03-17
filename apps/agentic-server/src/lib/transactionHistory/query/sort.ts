@@ -16,16 +16,13 @@ export const SORT_ORDERS = ['asc', 'desc'] as const
 export type SortOrder = (typeof SORT_ORDERS)[number]
 
 export interface SortOptions {
-  field: SortField
-  order: SortOrder
+  field?: SortField
+  order?: SortOrder
 }
 
 export function sort(transactions: TransactionWithUsd[], sortBy?: SortOptions): TransactionWithUsd[] {
-  if (!sortBy) {
-    return transactions
-  }
-
-  const { field, order } = sortBy
+  const field = sortBy?.field ?? 'timestamp'
+  const order = sortBy?.order ?? 'desc'
 
   const sorted = [...transactions].sort((a, b) => {
     let aVal: number
