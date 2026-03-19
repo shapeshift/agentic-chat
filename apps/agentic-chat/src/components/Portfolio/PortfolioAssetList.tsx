@@ -1,3 +1,5 @@
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { Loader2, RefreshCw } from 'lucide-react'
 import { useMemo } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 
@@ -25,11 +27,20 @@ export function AssetListSkeleton({ rows = 5 }: { rows?: number }) {
 }
 
 export function PortfolioAssetList() {
-  const { assets, isLoading } = usePortfolioQuery()
+  const { primaryWallet } = useDynamicContext()
+  const { assets, isLoading, isFetching } = usePortfolioQuery()
   const groupedAssets = useMemo(() => groupPortfolioAssets(assets), [assets])
 
   if (isLoading) {
-    return <AssetListSkeleton />
+    return (
+      <div className="flex flex-col">
+        <div className="flex items-center justify-center gap-2 py-3">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Loading portfolio...</span>
+        </div>
+        <AssetListSkeleton />
+      </div>
+    )
   }
 
   if (groupedAssets.length === 0) {
@@ -37,21 +48,30 @@ export function PortfolioAssetList() {
       <div className="flex items-center justify-center py-12 px-4">
         <div className="text-center">
           <div className="text-lg font-medium text-foreground">No assets found</div>
-          <div className="text-sm text-muted-foreground mt-1">Connect a wallet to view your portfolio</div>
+          <div className="text-sm text-muted-foreground mt-1">
+            {primaryWallet ? 'This wallet has no token balances' : 'Connect a wallet to view your portfolio'}
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <Virtuoso
-      style={{ height: '100%' }}
-      data={groupedAssets}
-      itemContent={(_index, group) => (
-        <div className="px-4 mb-2">
-          <GroupedAssetRow key={group.primaryAsset.assetId} group={group} />
+    <div className="relative h-full">
+      {isFetching && !isLoading && (
+        <div className="absolute top-2 right-4 z-10">
+          <RefreshCw className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
         </div>
       )}
-    />
+      <Virtuoso
+        style={{ height: '100%' }}
+        data={groupedAssets}
+        itemContent={(_index, group) => (
+          <div className="px-4 mb-2">
+            <GroupedAssetRow key={group.primaryAsset.assetId} group={group} />
+          </div>
+        )}
+      />
+    </div>
   )
 }

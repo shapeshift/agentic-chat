@@ -1,4 +1,4 @@
-import { Check, Copy, ExternalLink } from 'lucide-react'
+import { Check, Copy, ExternalLink, Loader2, RefreshCw } from 'lucide-react'
 import { useMemo } from 'react'
 import { toast } from 'sonner'
 
@@ -26,8 +26,13 @@ type DeployedChain = {
 }
 
 export function PortfolioHeader({ isVaultMode }: PortfolioHeaderProps) {
-  const { totalBalance: walletBalance, delta24h, isLoading: isWalletLoading } = usePortfolioQuery()
-  const { totalBalance: vaultBalance, isLoading: isVaultLoading } = useVaultBalances()
+  const {
+    totalBalance: walletBalance,
+    delta24h,
+    isLoading: isWalletLoading,
+    isFetching: isWalletFetching,
+  } = usePortfolioQuery()
+  const { totalBalance: vaultBalance, isLoading: isVaultLoading, isFetching: isVaultFetching } = useVaultBalances()
   const { safeAddress, isDeployed, deployedChainIds, safeDeploymentState } = useSafeAccount()
 
   const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 })
@@ -57,21 +62,27 @@ export function PortfolioHeader({ isVaultMode }: PortfolioHeaderProps) {
   }, [deployedChainIds, safeDeploymentState])
 
   const isLoading = isVaultMode ? isVaultLoading : isWalletLoading
+  const isFetching = isVaultMode ? isVaultFetching : isWalletFetching
   const displayBalance = isVaultMode ? vaultBalance : walletBalance
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center py-6 px-4 space-y-2">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-12 w-48" />
+        <Skeleton className="h-3.5 w-32" />
+        <div className="flex items-center gap-2 pt-1">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">Fetching balances...</span>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col items-center py-6 px-4">
-      <div className="text-[40px] font-semibold tracking-tight text-foreground">
+      <div className="flex items-center gap-2 text-[40px] font-semibold tracking-tight text-foreground">
         <Amount.Fiat value={displayBalance} />
+        {isFetching && !isLoading && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
 
       {!isVaultMode && delta24h && (

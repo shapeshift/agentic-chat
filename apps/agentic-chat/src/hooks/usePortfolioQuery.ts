@@ -1,7 +1,7 @@
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { isSolanaWallet } from '@dynamic-labs/solana'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import { bnOrZero } from '@/lib/bignumber'
@@ -24,8 +24,9 @@ export function usePortfolioQuery() {
     enabled: !!address,
     refetchInterval: REFETCH_INTERVAL,
     refetchOnWindowFocus: true,
-    staleTime: 10_000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: 30_000,
+    gcTime: 30 * 60 * 1000,
+    placeholderData: keepPreviousData,
   })
 
   const assets = useMemo(() => {

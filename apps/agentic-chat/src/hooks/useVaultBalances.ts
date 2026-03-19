@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import { useSafeAccount } from '@/hooks/useSafeAccount'
@@ -62,8 +62,9 @@ export function useVaultBalances() {
     enabled: isDeployed && deployedChains.length > 0,
     refetchInterval: REFETCH_INTERVAL,
     refetchOnWindowFocus: true,
-    staleTime: 10_000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: 30_000,
+    gcTime: 30 * 60 * 1000,
+    placeholderData: keepPreviousData,
   })
 
   const balances = useMemo(() => {
