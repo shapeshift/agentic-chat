@@ -2,7 +2,7 @@ import type { Network, ParsedTransaction, TokenTransfer } from '@shapeshiftoss/t
 import { networkToChainIdMap, networkToNativeAssetId, networkToNativeSymbol } from '@shapeshiftoss/types'
 import { AssetService, fromBaseUnit } from '@shapeshiftoss/utils'
 
-import { EVM_NATIVE_DECIMALS, PRECISION_HIGH } from './constants'
+import { EVM_NATIVE_DECIMALS, KNOWN_SWAP_SELECTORS, PRECISION_HIGH } from './constants'
 import type { EvmTx } from './schemas'
 import { createAssetId } from './transactionUtils'
 
@@ -118,6 +118,11 @@ function determineTransactionType(tx: EvmTx, userAddress: string): ParsedTransac
     if (hasNegative && !hasPositive) {
       return 'send'
     }
+  }
+
+  if (tx.inputData && tx.inputData.length >= 10) {
+    const selector = tx.inputData.slice(0, 10).toLowerCase()
+    if (KNOWN_SWAP_SELECTORS.has(selector)) return 'swap'
   }
 
   if (tx.inputData && tx.inputData !== '0x' && normalizedTo !== normalizedUserAddress) {
@@ -261,7 +266,7 @@ export function parseEvmTransaction(tx: EvmTx, userAddress: string, network: Net
     return {
       ...baseTransaction,
       type,
-      tokenTransfers: tokenTransfers!,
+      tokenTransfers: tokenTransfers ?? [],
     }
   }
 

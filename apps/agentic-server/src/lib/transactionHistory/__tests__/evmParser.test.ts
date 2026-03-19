@@ -491,6 +491,68 @@ describe('parseEvmTransaction', () => {
     })
   })
 
+  describe('swap selector matching', () => {
+    test('classifies as swap when inputData matches a known swap selector', () => {
+      const tx = makeTx({
+        from: USER,
+        to: ROUTER,
+        inputData: '0x38ed17390000000000000000000000000000000000000000000000000000000000000001',
+      })
+      const result = parseEvmTransaction(tx, USER, 'ethereum')
+      expect(result.type).toBe('swap')
+      expect(result.tokenTransfers).toEqual([])
+    })
+
+    test('token-transfer classification takes priority over selector', () => {
+      const tx = makeTx({
+        from: USER,
+        to: ROUTER,
+        inputData: '0x38ed17390000000000000000000000000000000000000000000000000000000000000001',
+        tokenTransfers: [
+          makeTokenTransfer({ contract: USDC_CONTRACT, symbol: 'USDC', from: USER, to: ROUTER, value: '1000000' }),
+          makeTokenTransfer({
+            contract: DAI_CONTRACT,
+            symbol: 'DAI',
+            decimals: 18,
+            from: ROUTER,
+            to: USER,
+            value: '1000000000000000000',
+          }),
+        ],
+      })
+      const result = parseEvmTransaction(tx, USER, 'ethereum')
+      expect(result.type).toBe('swap')
+      expect(result.tokenTransfers!.length).toBe(2)
+      expect(result.tokenTransfers![0].symbol).toBe('USDC')
+    })
+
+    test('unknown selector falls through to contract', () => {
+      const tx = makeTx({
+        from: USER,
+        to: ROUTER,
+        inputData: '0xdeadbeef0000000000000000000000000000000000000000000000000000000000000001',
+      })
+      const result = parseEvmTransaction(tx, USER, 'ethereum')
+      expect(result.type).toBe('contract')
+    })
+
+    test('short inputData does not crash', () => {
+      const tx = makeTx({ from: USER, to: ROUTER, inputData: '0x38ed' })
+      const result = parseEvmTransaction(tx, USER, 'ethereum')
+      expect(result.type).toBe('contract')
+    })
+
+    test('matches selectors case-insensitively', () => {
+      const tx = makeTx({
+        from: USER,
+        to: ROUTER,
+        inputData: '0x38ED17390000000000000000000000000000000000000000000000000000000000000001',
+      })
+      const result = parseEvmTransaction(tx, USER, 'ethereum')
+      expect(result.type).toBe('swap')
+    })
+  })
+
   describe('decimals fallback', () => {
     test('uses PRECISION_HIGH (18) when decimals is undefined', () => {
       const tx = makeTx({

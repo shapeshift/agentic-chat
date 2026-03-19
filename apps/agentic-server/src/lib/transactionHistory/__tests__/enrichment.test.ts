@@ -165,6 +165,39 @@ describe('enrichTransactions', () => {
     expect(result.type).toBe('approval')
   })
 
+  test('enriches selector-matched swap with empty tokenTransfers when known tx exists', () => {
+    const known: KnownTransaction[] = [
+      {
+        txHash: '0xswap1',
+        type: 'swap',
+        sellSymbol: 'ETH',
+        sellAmount: '1.5',
+        buySymbol: 'USDC',
+        buyAmount: '3000',
+      },
+    ]
+
+    const result = enrichOne(makeTx({ txid: '0xswap1', type: 'swap', tokenTransfers: [] }), known)
+    expect(result.type).toBe('swap')
+    expect(result.tokenTransfers).toHaveLength(2)
+    expect(result.tokenTransfers![0]!.symbol).toBe('ETH')
+    expect(result.tokenTransfers![1]!.symbol).toBe('USDC')
+  })
+
+  test('preserves existing tokenTransfers on swap with sufficient data', () => {
+    const existingTransfers = [
+      { symbol: 'WETH', amount: '-0.5', decimals: 18, from: '0xUser', to: '0xRouter', assetId: 'eip155:1/erc20:0x' },
+      { symbol: 'DAI', amount: '1000', decimals: 18, from: '0xRouter', to: '0xUser', assetId: 'eip155:1/erc20:0xdai' },
+    ]
+    const known: KnownTransaction[] = [
+      { txHash: '0xabc123', type: 'swap', sellSymbol: 'ETH', sellAmount: '1', buySymbol: 'USDC', buyAmount: '2000' },
+    ]
+
+    const result = enrichOne(makeTx({ txid: '0xabc123', type: 'swap', tokenTransfers: existingTransfers }), known)
+    expect(result.type).toBe('swap')
+    expect(result.tokenTransfers).toBe(existingTransfers)
+  })
+
   test('reclassifies order type with partial swap info and attaches sell transfer', () => {
     const known: KnownTransaction[] = [{ txHash: '0xlim', type: 'limitOrder', sellSymbol: 'ETH', sellAmount: '1' }]
 
