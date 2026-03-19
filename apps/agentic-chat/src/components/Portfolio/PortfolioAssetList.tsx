@@ -1,5 +1,5 @@
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
-import { Loader2, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { useMemo } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 
@@ -32,15 +32,7 @@ export function PortfolioAssetList() {
   const groupedAssets = useMemo(() => groupPortfolioAssets(assets), [assets])
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col">
-        <div className="flex items-center justify-center gap-2 py-3">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Loading portfolio...</span>
-        </div>
-        <AssetListSkeleton />
-      </div>
-    )
+    return <AssetListSkeleton />
   }
 
   if (groupedAssets.length === 0) {
