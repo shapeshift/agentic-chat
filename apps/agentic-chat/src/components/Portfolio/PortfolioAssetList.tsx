@@ -1,3 +1,4 @@
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { Loader2, RefreshCw } from 'lucide-react'
 import { useMemo } from 'react'
 import { Virtuoso } from 'react-virtuoso'
@@ -26,6 +27,7 @@ export function AssetListSkeleton({ rows = 5 }: { rows?: number }) {
 }
 
 export function PortfolioAssetList() {
+  const { primaryWallet } = useDynamicContext()
   const { assets, isLoading, isFetching } = usePortfolioQuery()
   const groupedAssets = useMemo(() => groupPortfolioAssets(assets), [assets])
 
@@ -46,7 +48,9 @@ export function PortfolioAssetList() {
       <div className="flex items-center justify-center py-12 px-4">
         <div className="text-center">
           <div className="text-lg font-medium text-foreground">No assets found</div>
-          <div className="text-sm text-muted-foreground mt-1">Connect a wallet to view your portfolio</div>
+          <div className="text-sm text-muted-foreground mt-1">
+            {primaryWallet ? 'This wallet has no token balances' : 'Connect a wallet to view your portfolio'}
+          </div>
         </div>
       </div>
     )

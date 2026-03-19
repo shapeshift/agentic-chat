@@ -68,8 +68,8 @@ export function PortfolioHeader({ isVaultMode }: PortfolioHeaderProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center py-6 px-4 space-y-2">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-12 w-48" />
+        <Skeleton className="h-3.5 w-32" />
         <div className="flex items-center gap-2 pt-1">
           <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
           <span className="text-xs text-muted-foreground">Fetching balances...</span>
