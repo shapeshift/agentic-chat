@@ -16,6 +16,7 @@ export function enrichTransactions(
   return transactions.map((tx): ParsedTransaction => {
     const known = knownMap.get(tx.txid.toLowerCase())
     if (!known) return tx
+    // Selector-matched swaps may have empty tokenTransfers — allow enrichment for those
     if (tx.type !== 'contract' && tx.tokenTransfers && tx.tokenTransfers.length > 0) return tx
 
     const enriched = { ...tx, type: known.type, value: tx.value ?? '0' } as ParsedTransaction

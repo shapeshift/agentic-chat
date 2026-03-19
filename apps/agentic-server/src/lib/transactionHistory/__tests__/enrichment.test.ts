@@ -198,6 +198,23 @@ describe('enrichTransactions', () => {
     expect(result.tokenTransfers).toBe(existingTransfers)
   })
 
+  test('enriches send with no tokenTransfers when matching known swap exists', () => {
+    const known: KnownTransaction[] = [
+      {
+        txHash: '0xsend1',
+        type: 'swap',
+        sellSymbol: 'ETH',
+        sellAmount: '1',
+        buySymbol: 'USDC',
+        buyAmount: '2000',
+      },
+    ]
+
+    const result = enrichOne(makeTx({ txid: '0xsend1', type: 'send', tokenTransfers: undefined }), known)
+    expect(result.type).toBe('swap')
+    expect(result.tokenTransfers).toHaveLength(2)
+  })
+
   test('reclassifies order type with partial swap info and attaches sell transfer', () => {
     const known: KnownTransaction[] = [{ txHash: '0xlim', type: 'limitOrder', sellSymbol: 'ETH', sellAmount: '1' }]
 

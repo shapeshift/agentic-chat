@@ -10,7 +10,10 @@ export const SOLANA_NATIVE_DECIMALS = 9
 // Fetch limits
 export const MAX_LIMITED_FETCH_COUNT = 200
 
-// 4-byte function selectors for well-known DEX swap methods
+// 4-byte function selectors for well-known DEX swap methods.
+// Some selectors (Universal Router execute, THORChain deposit) are multi-purpose — they may
+// handle non-swap operations. This is acceptable because the selector check is a secondary
+// heuristic that only fires when token-transfer classification has no signal.
 export const KNOWN_SWAP_SELECTORS = new Set<string>([
   // Uniswap V2 Router
   '0x38ed1739', // swapExactTokensForTokens

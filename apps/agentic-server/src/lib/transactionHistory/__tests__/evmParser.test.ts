@@ -551,6 +551,16 @@ describe('parseEvmTransaction', () => {
       const result = parseEvmTransaction(tx, USER, 'ethereum')
       expect(result.type).toBe('swap')
     })
+
+    test('does not match swap selector when to is user address (self-send)', () => {
+      const tx = makeTx({
+        from: USER,
+        to: USER,
+        inputData: '0x38ed17390000000000000000000000000000000000000000000000000000000000000001',
+      })
+      const result = parseEvmTransaction(tx, USER, 'ethereum')
+      expect(result.type).not.toBe('swap')
+    })
   })
 
   describe('decimals fallback', () => {

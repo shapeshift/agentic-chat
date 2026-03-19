@@ -120,7 +120,7 @@ function determineTransactionType(tx: EvmTx, userAddress: string): ParsedTransac
     }
   }
 
-  if (tx.inputData && tx.inputData.length >= 10) {
+  if (tx.inputData && tx.inputData.length >= 10 && normalizedTo !== normalizedUserAddress) {
     const selector = tx.inputData.slice(0, 10).toLowerCase()
     if (KNOWN_SWAP_SELECTORS.has(selector)) return 'swap'
   }
