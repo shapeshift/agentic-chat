@@ -94,6 +94,18 @@ export async function deploySafe(
   // Deploy the Safe
   const deploymentTransaction = await protocolKit.createSafeDeploymentTransaction()
 
+  const publicClient = createPublicClient({ transport: custom(provider) })
+
+  // Estimate gas with 20% buffer — Safe deployments on L2s like Arbitrum need
+  // more gas than wallets typically estimate from the deployment calldata alone
+  const estimatedGas = await publicClient.estimateGas({
+    account: signerAddress as `0x${string}`,
+    to: deploymentTransaction.to as `0x${string}`,
+    data: deploymentTransaction.data as `0x${string}`,
+    value: BigInt(deploymentTransaction.value),
+  })
+  const gas = estimatedGas + (estimatedGas * 20n) / 100n
+
   // Send the deployment transaction via viem wallet client
   const walletClient = createWalletClient({
     transport: custom(provider),
@@ -105,13 +117,9 @@ export async function deploySafe(
     to: deploymentTransaction.to as `0x${string}`,
     data: deploymentTransaction.data as `0x${string}`,
     value: BigInt(deploymentTransaction.value),
+    gas,
     chain: null,
   })
-
-  // Wait for deployment to be confirmed on-chain before marking as deployed.
-  // Without this, subsequent steps (like token deposits to the Safe) would
-  // prompt the wallet before the Safe contract exists, triggering warnings.
-  const publicClient = createPublicClient({ transport: custom(provider) })
   const deployReceipt = await publicClient.waitForTransactionReceipt({ hash: txHash, confirmations: 1 })
   if (deployReceipt.status === 'reverted') throw new Error(`Safe deployment transaction reverted: ${txHash}`)
 
