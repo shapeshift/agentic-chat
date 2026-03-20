@@ -104,6 +104,12 @@ export const useSwapExecution = (
         ctx.setSubstatus('Requesting signature...')
         const swapTxHash = await executeSwap(swapTx, { solanaSigner })
         ctx.setMeta({ txHash: swapTxHash })
+
+        if (chainNamespace === CHAIN_NAMESPACE.Evm) {
+          ctx.setSubstatus('Waiting for confirmation...')
+          await waitForConfirmedReceipt(Number(chainReference), swapTxHash as `0x${string}`)
+        }
+
         ctx.advanceStep()
         ctx.markTerminal()
         ctx.persist()
