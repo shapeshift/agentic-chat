@@ -1,6 +1,6 @@
 ---
 id: tic-616a
-status: open
+status: closed
 type: bug
 priority: 2
 assignee: Jibles

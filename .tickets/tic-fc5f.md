@@ -1,6 +1,6 @@
 ---
 id: tic-fc5f
-status: open
+status: closed
 type: bug
 priority: 3
 assignee: Jibles
