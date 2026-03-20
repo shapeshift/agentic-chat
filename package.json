@@ -16,8 +16,8 @@
     "dev:backend": "tsc --build && bun --filter @shapeshiftoss/agentic-server --elide-lines=0 dev",
     "dev:frontend": "tsc --build && bun --filter @shapeshiftoss/agentic-chat dev",
     "test": "bun test",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint": "NODE_OPTIONS='--max-old-space-size=4096' eslint .",
+    "lint:fix": "NODE_OPTIONS='--max-old-space-size=4096' eslint . --fix",
     "type-check": "tsc --build",
     "update-assets": "bun scripts/updateAssetData.ts",
     "update-oracles": "bun scripts/updateChainlinkFeeds.ts"

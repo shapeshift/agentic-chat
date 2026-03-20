@@ -9,6 +9,17 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks'
 
 export default [
   {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/*.d.ts',
+      '**/.mastra/**',
+      'scripts/**',
+      '**/tailwind.config.js',
+      '**/postcss.config.js',
+    ],
+  },
+  {
     files: ['**/*.{mts,ts,tsx}'],
     languageOptions: {
       parser: typescriptParser,
@@ -68,7 +79,7 @@ export default [
       ],
       'import/no-unresolved': ['error', { ignore: ['^bun:'] }],
       'import/no-duplicates': 'error',
-      'import/no-unused-modules': 'warn',
+      // 'import/no-unused-modules': 'warn', // disabled — builds full module graph, adds memory with no real benefit
       'import/first': 'error',
       'import/newline-after-import': 'error',
       'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
@@ -108,17 +119,6 @@ export default [
       'react/jsx-key': 'error',
       'react/self-closing-comp': 'error',
     },
-  },
-  {
-    ignores: [
-      '**/dist/**',
-      '**/node_modules/**',
-      '**/*.d.ts',
-      '**/.mastra/**',
-      'scripts/**',
-      '**/tailwind.config.js',
-      '**/postcss.config.js',
-    ],
   },
   {
     files: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
