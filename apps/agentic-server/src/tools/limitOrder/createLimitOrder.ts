@@ -27,7 +27,7 @@ export const createLimitOrderSchema = z.object({
   limitPrice: z
     .string()
     .describe(
-      'How much buyAsset you receive per 1 sellAsset. "sell A when worth X B" → limitPrice=X. Example: "worth 2 USDT" → "2"'
+      'How much buyAsset you receive per 1 sellAsset. "sell A when worth X B" → limitPrice=X. Example: "worth 2 USDT" → "2". For percentage-based requests ("sell when up 5%"), compute: currentPricePerToken × (1 + pct/100).'
     ),
   expirationHours: z
     .number()
@@ -194,7 +194,8 @@ IMPORTANT:
 - Both assets must be on the same EVM network
 - Currently supports: Ethereum, Gnosis, Arbitrum
 - Order executes automatically when market price reaches limit
-- If user specifies total amounts (e.g., "10 USDC for 20 USDT"), use the maths tool to calculate limitPrice (20÷10=2)`,
+- If user specifies total amounts (e.g., "10 USDC for 20 USDT"), use the maths tool to calculate limitPrice (20÷10=2)
+- For percentage-based requests ("sell when up X%"), compute limitPrice = currentPricePerToken × (1 + X/100) using getAssetPrices and the maths tool`,
   inputSchema: createLimitOrderSchema,
   execute: executeCreateLimitOrder,
 }
