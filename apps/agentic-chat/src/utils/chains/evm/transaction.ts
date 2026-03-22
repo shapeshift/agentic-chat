@@ -50,7 +50,7 @@ export async function sendEvmTransaction(params: TransactionParams): Promise<str
         value,
         data,
       })
-      if (!params.gasLimit) gas = estimatedGas
+      gas = gas !== undefined && gas > estimatedGas ? gas : estimatedGas
     } catch (error) {
       if (error instanceof SimulationError) throw error
       console.warn('[simulation] EVM simulation failed, proceeding without:', error)
