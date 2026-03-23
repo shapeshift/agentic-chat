@@ -141,6 +141,7 @@ class AssetService {
     }
 
     if (isNative) score += 100
+    if (this.isPool(asset)) score -= 500
 
     return score
   }
