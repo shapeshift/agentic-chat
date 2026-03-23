@@ -36,11 +36,13 @@ function getPublicClientWithFallback(chainId: number) {
   const chain = chainConfig?.chain ?? viemChain
   if (!chain) return undefined
 
-  const transports = [http(chainConfig?.rpcUrl)]
+  const configuredUrl = chainConfig?.rpcUrl
   const defaultRpcUrl = viemChain && 'rpcUrls' in viemChain ? viemChain.rpcUrls?.default?.http?.[0] : undefined
-  if (defaultRpcUrl && defaultRpcUrl !== chainConfig?.rpcUrl) {
+  const transports = configuredUrl ? [http(configuredUrl)] : []
+  if (defaultRpcUrl && defaultRpcUrl !== configuredUrl) {
     transports.push(http(defaultRpcUrl))
   }
+  if (transports.length === 0) transports.push(http())
 
   return createPublicClient({ chain, transport: fallback(transports) })
 }

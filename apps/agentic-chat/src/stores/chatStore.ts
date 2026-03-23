@@ -430,15 +430,24 @@ export const useChatStore = create<ChatState>()(
             hydrationVerified = true
             return
           }
-          // Hydrated empty — check if we previously had data
+          // Hydrated empty — try restoring from localStorage backup
           const backup = localStorage.getItem(CONVERSATIONS_BACKUP_KEY)
-          if (backup) {
-            console.error(
-              '[chatStore] Hydration returned empty state but localStorage backup exists. IDB writes blocked to prevent data loss.'
-            )
-          } else {
-            hydrationVerified = true
+          if (backup && state) {
+            try {
+              const conversations = JSON.parse(backup)
+              if (Array.isArray(conversations) && conversations.length > 0) {
+                console.warn(
+                  '[chatStore] IDB empty but backup found — restoring',
+                  conversations.length,
+                  'conversations'
+                )
+                state.conversations = conversations
+              }
+            } catch {
+              console.error('[chatStore] Failed to parse conversations backup')
+            }
           }
+          hydrationVerified = true
         }
       },
     }
