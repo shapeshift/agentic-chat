@@ -1,6 +1,6 @@
 ---
 id: sa-sucs
-status: open
+status: closed
 deps: []
 links: []
 created: 2026-03-19T22:55:21Z

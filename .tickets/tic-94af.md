@@ -1,6 +1,6 @@
 ---
 id: tic-94af
-status: open
+status: closed
 type: bug
 priority: 1
 assignee: Jibles
