@@ -6,7 +6,6 @@ import { formatCompactNumber, formatFiat } from '@/lib/number'
 
 import { Amount } from '../ui/Amount'
 import { AssetIcon } from '../ui/AssetIcon'
-import { Skeleton } from '../ui/Skeleton'
 import { ToolCard } from '../ui/ToolCard'
 
 import { useToolStateRender } from './toolUIHelpers'
@@ -29,10 +28,10 @@ function formatPriceChange(value: number | null): {
   return { text, color, icon }
 }
 
-function StatMetric({ label, value, isLoading }: { label: string; value: React.ReactNode; isLoading?: boolean }) {
+function StatMetric({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col">
-      <span className="text-xl font-bold">{isLoading ? <Skeleton className="h-6 w-20" /> : value}</span>
+      <span className="text-xl font-bold">{value}</span>
       <span className="text-xs text-muted-foreground font-normal">{label}</span>
     </div>
   )
@@ -104,9 +103,9 @@ export function GetAssetsUI({ toolPart }: ToolUIComponentProps<'getAssetsTool'>)
       <ToolCard.Content>
         <ToolCard.Details>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <StatMetric label="Volume" value={formatFiat(asset.volume24h)} isLoading={!asset.volume24h} />
-            <StatMetric label="Market Cap" value={formatFiat(asset.marketCap)} isLoading={!asset.marketCap} />
-            <StatMetric label="FDV" value={formatFiat(asset.fdv)} isLoading={!asset.fdv} />
+            <StatMetric label="Volume" value={formatFiat(asset.volume24h)} />
+            <StatMetric label="Market Cap" value={formatFiat(asset.marketCap)} />
+            <StatMetric label="FDV" value={formatFiat(asset.fdv)} />
           </div>
 
           <div className="border-t border-border pt-4 mt-4">

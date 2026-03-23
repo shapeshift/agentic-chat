@@ -1,6 +1,7 @@
 import { Amount } from '@/components/ui/Amount'
 import { AssetIcon } from '@/components/ui/AssetIcon'
 import { DrawerListItem } from '@/components/ui/DrawerListItem'
+import { isStablecoin } from '@/lib/isStablecoin'
 import type { GroupedPortfolioAsset, PortfolioAsset } from '@/types/portfolio'
 
 import { PortfolioAssetRow } from './PortfolioAssetRow'
@@ -40,7 +41,9 @@ export function GroupedAssetRow({ group }: GroupedAssetRowProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm md:text-base text-foreground">{primaryAsset.symbol}</span>
-          <Amount.Percent value={primaryAsset.priceChange24h} showSign autoColor className="text-xs" />
+          {!isStablecoin(primaryAsset.symbol) && (
+            <Amount.Percent value={primaryAsset.priceChange24h} showSign autoColor className="text-xs" />
+          )}
         </div>
         <div className="text-sm text-muted-foreground truncate">
           <Amount.Crypto value={totalCryptoBalancePrecision} symbol={primaryAsset.symbol} decimals={6} />
