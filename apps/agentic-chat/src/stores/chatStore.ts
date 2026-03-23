@@ -30,10 +30,46 @@ export interface KnownTransaction {
   network?: string
 }
 
+const CONVERSATIONS_BACKUP_KEY = 'shapeshift-chat-conversations-backup'
+
+let hydrationVerified = false
+
 const idbStorage: StateStorage = {
-  getItem: async name => (await idbGet(name)) ?? null,
-  setItem: async (name, value) => await idbSet(name, value),
-  removeItem: async name => await idbDel(name),
+  getItem: async name => {
+    try {
+      return (await idbGet(name)) ?? null
+    } catch (e) {
+      console.error('[chatStore] IDB getItem failed:', e)
+      return null
+    }
+  },
+  setItem: async (name, value) => {
+    if (!hydrationVerified) {
+      console.warn('[chatStore] Blocked IDB write before hydration verified')
+      return
+    }
+    try {
+      await idbSet(name, value)
+      try {
+        const parsed = JSON.parse(value)
+        const conversations = parsed?.state?.conversations
+        if (Array.isArray(conversations) && conversations.length > 0) {
+          localStorage.setItem(CONVERSATIONS_BACKUP_KEY, JSON.stringify(conversations))
+        }
+      } catch {
+        // parsing failure is non-critical
+      }
+    } catch (e) {
+      console.error('[chatStore] IDB setItem failed:', e)
+    }
+  },
+  removeItem: async name => {
+    try {
+      await idbDel(name)
+    } catch (e) {
+      console.error('[chatStore] IDB removeItem failed:', e)
+    }
+  },
 }
 
 export const STORE_VERSION = 4
@@ -105,13 +141,19 @@ export const useChatStore = create<ChatState>()(
       },
 
       deleteConversation: (id: string) => {
-        set(state => ({
-          conversations: state.conversations.filter(c => c.id !== id),
-          persistedTransactions: state.persistedTransactions.filter(tx => tx.conversationId !== id),
-          messagesByConversation: Object.fromEntries(
-            Object.entries(state.messagesByConversation).filter(([key]) => key !== id)
-          ),
-        }))
+        set(state => {
+          const conversations = state.conversations.filter(c => c.id !== id)
+          if (conversations.length === 0) {
+            localStorage.removeItem(CONVERSATIONS_BACKUP_KEY)
+          }
+          return {
+            conversations,
+            persistedTransactions: state.persistedTransactions.filter(tx => tx.conversationId !== id),
+            messagesByConversation: Object.fromEntries(
+              Object.entries(state.messagesByConversation).filter(([key]) => key !== id)
+            ),
+          }
+        })
       },
 
       setMessages: (conversationId: string, messages: ChatMessage[]) => {
@@ -377,6 +419,36 @@ export const useChatStore = create<ChatState>()(
           state.persistedTransactions = []
         }
         return state as unknown as ChatState
+      },
+      onRehydrateStorage: () => {
+        return (state, error) => {
+          if (error) {
+            console.error('[chatStore] Hydration failed:', error)
+            return
+          }
+          if (state && state.conversations.length > 0) {
+            hydrationVerified = true
+            return
+          }
+          // Hydrated empty — try restoring from localStorage backup
+          const backup = localStorage.getItem(CONVERSATIONS_BACKUP_KEY)
+          if (backup && state) {
+            try {
+              const conversations = JSON.parse(backup)
+              if (Array.isArray(conversations) && conversations.length > 0) {
+                console.warn(
+                  '[chatStore] IDB empty but backup found — restoring',
+                  conversations.length,
+                  'conversations'
+                )
+                state.conversations = conversations
+              }
+            } catch {
+              console.error('[chatStore] Failed to parse conversations backup')
+            }
+          }
+          hydrationVerified = true
+        }
       },
     }
   )

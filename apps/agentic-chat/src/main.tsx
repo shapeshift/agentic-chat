@@ -44,6 +44,9 @@ if (analyticsEnabled) {
   })
 }
 
+// Request persistent storage to prevent browser eviction of IndexedDB data
+void navigator.storage?.persist?.()
+
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
 root.render(
