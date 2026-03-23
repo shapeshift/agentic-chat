@@ -1,6 +1,7 @@
 import Safe from '@safe-global/protocol-kit'
 import { createPublicClient, custom } from 'viem'
 
+import { createSafeProvider } from './types'
 import type { SafeProvider } from './types'
 
 // Wait for a tx to be mined so the Safe nonce increments on-chain before
@@ -49,13 +50,16 @@ export function executeSafeBatchTransaction(
   provider: SafeProvider
 ): Promise<string> {
   return enqueue(safeAddress, chainId, async () => {
+    // Use composite provider: reads via public RPC, writes via wallet (WalletConnect)
+    const compositeProvider = createSafeProvider(chainId, provider)
+
     const protocolKit = await Safe.init({
-      provider,
+      provider: compositeProvider,
       signer: signerAddress,
       safeAddress,
     })
 
-    const publicClient = createPublicClient({ transport: custom(provider) })
+    const publicClient = createPublicClient({ transport: custom(compositeProvider) })
     const connectedChainId = await publicClient.getChainId()
     if (connectedChainId !== chainId) {
       throw new Error(
@@ -75,7 +79,7 @@ export function executeSafeBatchTransaction(
     const result = await protocolKit.executeTransaction(signedTx)
     const txHash = typeof result === 'string' ? result : result.hash
 
-    await waitForTxConfirmation(txHash, provider)
+    await waitForTxConfirmation(txHash, compositeProvider)
 
     return txHash
   })

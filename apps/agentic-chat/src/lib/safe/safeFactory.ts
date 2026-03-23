@@ -7,6 +7,7 @@ import { wagmiConfig } from '@/lib/wagmi-config'
 import { useSafeStore } from '@/stores/safeStore'
 
 import { checkDomainVerifier, checkFallbackHandler } from './safeModules'
+import { createSafeProvider } from './types'
 import type { SafeProvider } from './types'
 
 // Pinned so SDK default changes can't silently break existing Safe addresses
@@ -61,8 +62,11 @@ export async function deploySafe(
     )
   }
 
+  // Use composite provider: reads via public RPC, writes via wallet (WalletConnect)
+  const compositeProvider = createSafeProvider(chainId, provider)
+
   const protocolKit = await Safe.init({
-    provider,
+    provider: compositeProvider,
     signer: signerAddress,
     predictedSafe: {
       safeAccountConfig: {
@@ -94,7 +98,7 @@ export async function deploySafe(
   // Deploy the Safe
   const deploymentTransaction = await protocolKit.createSafeDeploymentTransaction()
 
-  const publicClient = createPublicClient({ transport: custom(provider) })
+  const publicClient = createPublicClient({ transport: custom(compositeProvider) })
 
   // Estimate gas with 20% buffer — Safe deployments on L2s like Arbitrum need
   // more gas than wallets typically estimate from the deployment calldata alone
