@@ -213,6 +213,21 @@ async function executeSwapInternal({
 
   const { sellAsset, buyAsset } = await resolveSwapAssets(sellAssetInput, buyAssetInput, walletContext)
 
+  // Guard likely USD-vs-token amount mismatches for expensive assets.
+  // Example mistake: entering "100" for ETH when intent was "$100 worth of ETH".
+  const sellAssetPrice = parseFloat(sellAsset.price || '0')
+  const sellAmountNum = parseFloat(sellAmountCrypto)
+  const sellValueUsd = sellAssetPrice > 0 ? sellAmountNum * sellAssetPrice : 0
+  const hasCurrencyLikePrecision = /^\d+(\.\d{1,2})?$/.test(sellAmountCrypto.trim())
+  const looksLikeUsdAsTokenAmount =
+    hasCurrencyLikePrecision && sellAssetPrice >= 10 && sellValueUsd >= 50_000 && sellAmountNum <= 100_000
+  if (looksLikeUsdAsTokenAmount) {
+    throw new Error(
+      `Sell amount "${sellAmountCrypto} ${sellAsset.symbol}" is worth about $${sellValueUsd.toFixed(2)}. ` +
+        `If you meant a USD amount, use the USD swap flow instead (e.g. "$${sellAmountCrypto} worth").`
+    )
+  }
+
   const sellAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const buyAddress = getAddressForChain(walletContext, buyAsset.chainId)
 
@@ -274,7 +289,15 @@ async function executeSwapInternal({
 export const initiateSwapSchema = z.object({
   sellAsset: assetInputSchema.describe('Asset to sell'),
   buyAsset: assetInputSchema.describe('Asset to buy'),
-  sellAmount: z.string().describe('Amount to sell in crypto tokens, e.g. 1 for 1 ETH, 0.5 for 0.5 SOL'),
+  sellAmount: z
+    .string()
+    .refine(val => !/^\d{15,}/.test(val.trim()), {
+      message:
+        'sellAmount looks like a base-unit value (15+ digits). Use human-readable token amounts (e.g. "1" for 1 ETH, not "1000000000000000000").',
+    })
+    .describe(
+      'Amount to sell in TOKEN units (not USD), e.g. "1" for 1 ETH, "0.5" for 0.5 SOL. Never pass base units (like wei), and do not pass dollar amounts here.'
+    ),
 })
 
 export type InitiateSwapInput = z.infer<typeof initiateSwapSchema>

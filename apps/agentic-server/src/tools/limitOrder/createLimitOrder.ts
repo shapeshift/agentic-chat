@@ -116,6 +116,19 @@ export async function executeCreateLimitOrder(
       )
     }
     const logRatio = Math.abs(Math.log10(ratio))
+    const isNearUsdPrice = (usdPrice: number) =>
+      usdPrice > 0 && Math.abs(limitPriceNum - usdPrice) / usdPrice <= 0.25
+
+    // Guard likely "USD price leaked into pair price" mistakes.
+    // Example: ARB->EUL should be ~0.086 EUL/ARB, but passing 1.39 (EUL USD) is >10x off.
+    if (logRatio > 1 && (isNearUsdPrice(sellUsdPrice) || isNearUsdPrice(buyUsdPrice))) {
+      throw new Error(
+        `limitPrice ${input.limitPrice} appears to be a USD token price, not the pair price. ` +
+          `Expected approximately ${marketLimitPrice.toFixed(6)} ${buyAsset.symbol}/${sellAsset.symbol} ` +
+          `(1 ${sellAsset.symbol} = X ${buyAsset.symbol}).`
+      )
+    }
+
     if (logRatio > 3) {
       throw new Error(
         `limitPrice ${input.limitPrice} is more than 1000× from the market rate (~${marketLimitPrice.toFixed(6)} ${buyAsset.symbol}/${sellAsset.symbol}). ` +
