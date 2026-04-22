@@ -38,8 +38,12 @@ export const createTwapSchema = z.object({
   network: cowSupportedNetworkSchema.describe('Network for the TWAP/DCA order'),
   totalAmount: z
     .string()
+    .refine(val => !/^\d{15,}/.test(val.trim()), {
+      message:
+        'totalAmount looks like a base-unit value (15+ digits). Use human-readable token amounts (e.g. "1000" for 1000 USDC, not "1000000000").',
+    })
     .describe(
-      'Total amount to sell in TOKEN units, not USD (e.g., "1000" for 1000 USDC, "0.5" for 0.5 WETH). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
+      'Total amount to sell in TOKEN units, not USD (e.g., "1000" for 1000 USDC, "230" for 230 ARB, "0.5" for 0.5 WETH). Never pass base units even if precision is 18 (e.g., not "230000000000000000000"). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
     ),
   durationSeconds: z
     .number()
@@ -271,4 +275,8 @@ IMPORTANT:
 - Native tokens (ETH) must be wrapped (WETH) to sell`,
   inputSchema: createTwapSchema,
   execute: executeCreateTwap,
+  experimental_toToolResultContent: (result: CreateTwapOutput) => {
+    const { sellAmountBaseUnit: _sellAmountBaseUnit, sellPrecision: _sellPrecision, buyPrecision: _buyPrecision, ...llmVisible } = result
+    return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
+  },
 }
