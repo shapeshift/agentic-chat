@@ -276,7 +276,10 @@ IMPORTANT:
   inputSchema: createTwapSchema,
   execute: executeCreateTwap,
   experimental_toToolResultContent: (result: CreateTwapOutput) => {
-    const { sellAmountBaseUnit: _sellAmountBaseUnit, sellPrecision: _sellPrecision, buyPrecision: _buyPrecision, ...llmVisible } = result
+    const llmVisible = { ...result }
+    delete llmVisible.sellAmountBaseUnit
+    delete llmVisible.sellPrecision
+    delete llmVisible.buyPrecision
     return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
   },
 }

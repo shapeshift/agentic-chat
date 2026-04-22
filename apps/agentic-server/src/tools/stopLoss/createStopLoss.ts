@@ -323,7 +323,10 @@ IMPORTANT:
   inputSchema: createStopLossSchema,
   execute: executeCreateStopLoss,
   experimental_toToolResultContent: (result: CreateStopLossOutput) => {
-    const { sellAmountBaseUnit: _sellAmountBaseUnit, sellPrecision: _sellPrecision, buyPrecision: _buyPrecision, ...llmVisible } = result
+    const llmVisible = { ...result }
+    delete llmVisible.sellAmountBaseUnit
+    delete llmVisible.sellPrecision
+    delete llmVisible.buyPrecision
     return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
   },
 }

@@ -116,8 +116,7 @@ export async function executeCreateLimitOrder(
       )
     }
     const logRatio = Math.abs(Math.log10(ratio))
-    const isNearUsdPrice = (usdPrice: number) =>
-      usdPrice > 0 && Math.abs(limitPriceNum - usdPrice) / usdPrice <= 0.25
+    const isNearUsdPrice = (usdPrice: number) => usdPrice > 0 && Math.abs(limitPriceNum - usdPrice) / usdPrice <= 0.25
 
     // Guard likely "USD price leaked into pair price" mistakes.
     // Example: ARB->EUL should be ~0.086 EUL/ARB, but passing 1.39 (EUL USD) is >10x off.
@@ -252,7 +251,8 @@ IMPORTANT:
   inputSchema: createLimitOrderSchema,
   execute: executeCreateLimitOrder,
   experimental_toToolResultContent: (result: CreateLimitOrderOutput) => {
-    const { orderParams: _orderParams, ...llmVisible } = result
+    const llmVisible = { ...result }
+    delete llmVisible.orderParams
     return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
   },
 }
