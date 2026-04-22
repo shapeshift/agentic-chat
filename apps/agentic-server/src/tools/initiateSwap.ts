@@ -221,12 +221,6 @@ async function executeSwapInternal({
   const hasCurrencyLikePrecision = /^\d+(\.\d{1,2})?$/.test(sellAmountCrypto.trim())
   const looksLikeUsdAsTokenAmount =
     hasCurrencyLikePrecision && sellAssetPrice >= 10 && sellValueUsd >= 50_000 && sellAmountNum <= 100_000
-  if (looksLikeUsdAsTokenAmount) {
-    throw new Error(
-      `Sell amount "${sellAmountCrypto} ${sellAsset.symbol}" is worth about $${sellValueUsd.toFixed(2)}. ` +
-        `If you meant a USD amount, use the USD swap flow instead (e.g. "$${sellAmountCrypto} worth").`
-    )
-  }
 
   const sellAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const buyAddress = getAddressForChain(walletContext, buyAsset.chainId)
@@ -245,7 +239,18 @@ async function executeSwapInternal({
 
   const needsApproval = allowanceData.isApprovalRequired
 
-  await validateSufficientBalance(sellAddress, sellAsset, sellAmountCrypto)
+  try {
+    await validateSufficientBalance(sellAddress, sellAsset, sellAmountCrypto)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (looksLikeUsdAsTokenAmount && message.includes('Insufficient')) {
+      throw new Error(
+        `${message} This request may be using a USD amount as token units. ` +
+          `If you meant a dollar value, use the USD swap flow (e.g. "$${sellAmountCrypto} worth").`
+      )
+    }
+    throw error
+  }
 
   const approvalTx = buildApprovalTransaction(
     needsApproval,
