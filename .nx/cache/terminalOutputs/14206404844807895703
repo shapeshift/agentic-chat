@@ -1,0 +1,2 @@
+[2m> [22mtsc --build tsconfig.lib.json
+

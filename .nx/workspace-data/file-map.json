@@ -1,0 +1,881 @@
+{
+  "version": "6.0",
+  "nxVersion": "20.7.2",
+  "pathMappings": {
+    "@/*": [
+      "apps/agentic-chat/src/*"
+    ]
+  },
+  "nxJsonPlugins": [
+    {
+      "name": "@nx/js/typescript",
+      "options": {
+        "typecheck": {
+          "targetName": "typecheck"
+        },
+        "build": {
+          "targetName": "build",
+          "configName": "tsconfig.lib.json",
+          "buildDepsName": "build-deps",
+          "watchDepsName": "watch-deps"
+        }
+      }
+    },
+    {
+      "name": "@nx/react/router-plugin",
+      "options": {
+        "buildTargetName": "build",
+        "devTargetName": "dev",
+        "startTargetName": "start",
+        "watchDepsTargetName": "watch-deps",
+        "buildDepsTargetName": "build-deps",
+        "typecheckTargetName": "typecheck"
+      }
+    },
+    {
+      "name": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
+      }
+    },
+    {
+      "name": "@nx/vite/plugin",
+      "options": {
+        "buildTargetName": "build",
+        "testTargetName": "test",
+        "serveTargetName": "serve",
+        "devTargetName": "dev",
+        "previewTargetName": "preview",
+        "serveStaticTargetName": "serve-static",
+        "typecheckTargetName": "typecheck",
+        "buildDepsTargetName": "build-deps",
+        "watchDepsTargetName": "watch-deps"
+      }
+    },
+    {
+      "name": "@nx/playwright/plugin",
+      "options": {
+        "targetName": "e2e"
+      }
+    }
+  ],
+  "fileMap": {
+    "nonProjectFiles": [
+      {
+        "file": ".editorconfig",
+        "hash": "5443105041930014821"
+      },
+      {
+        "file": ".env.example",
+        "hash": "2616570885027397912"
+      },
+      {
+        "file": ".git-blame-ignore-revs",
+        "hash": "3244421341483603138"
+      },
+      {
+        "file": ".github/workflows/ci.yml",
+        "hash": "13039271141210548481"
+      },
+      {
+        "file": ".gitignore",
+        "hash": "523410584032111586"
+      },
+      {
+        "file": ".nvmrc",
+        "hash": "5086782397918998727"
+      },
+      {
+        "file": ".prettierignore",
+        "hash": "14688272390704683536"
+      },
+      {
+        "file": ".prettierrc",
+        "hash": "16267754514737964994"
+      },
+      {
+        "file": ".vscode/extensions.json",
+        "hash": "13417776046909105611"
+      },
+      {
+        "file": ".vscode/settings.json",
+        "hash": "6052298830473965642"
+      },
+      {
+        "file": ".yarnrc",
+        "hash": "12544654281803745062"
+      },
+      {
+        "file": ".yarnrc.yml",
+        "hash": "10123487671356301734"
+      },
+      {
+        "file": "LICENSE",
+        "hash": "7221116227150962695"
+      },
+      {
+        "file": "README.md",
+        "hash": "9380981489673310857"
+      },
+      {
+        "file": "eslint.config.mjs",
+        "hash": "14755833654515998580"
+      },
+      {
+        "file": "nx.json",
+        "hash": "4446840413960455865"
+      },
+      {
+        "file": "package.json",
+        "hash": "1745285883702027133"
+      },
+      {
+        "file": "tsconfig.base.json",
+        "hash": "6087776540137506097"
+      },
+      {
+        "file": "tsconfig.json",
+        "hash": "5194768698233931657"
+      },
+      {
+        "file": "tsconfig.tsbuildinfo",
+        "hash": "18173496274818270468"
+      },
+      {
+        "file": "vitest.workspace.ts",
+        "hash": "4665328684042819579"
+      },
+      {
+        "file": "yarn.lock",
+        "hash": "11640721292273716244"
+      }
+    ],
+    "projectFileMap": {
+      "@agentic-chat/utils": [
+        {
+          "file": "utils/README.md",
+          "hash": "12633779888674464540"
+        },
+        {
+          "file": "utils/package.json",
+          "hash": "9631399222385403646",
+          "deps": [
+            "npm:tslib"
+          ]
+        },
+        {
+          "file": "utils/src/index.ts",
+          "hash": "10369577918001738757",
+          "deps": [
+            "npm:bignumber.js"
+          ]
+        },
+        {
+          "file": "utils/tsconfig.json",
+          "hash": "6774177574860209080"
+        },
+        {
+          "file": "utils/tsconfig.lib.json",
+          "hash": "12776161598177998017"
+        },
+        {
+          "file": "utils/tsconfig.tsbuildinfo",
+          "hash": "18173496274818270468"
+        }
+      ],
+      "shapeshift-agentic-server": [
+        {
+          "file": "apps/agentic-server/index.ts",
+          "hash": "17885047321907830726",
+          "deps": [
+            "npm:dotenv",
+            "npm:cors",
+            "npm:express"
+          ]
+        },
+        {
+          "file": "apps/agentic-server/package.json",
+          "hash": "17001563859626712899",
+          "deps": [
+            "npm:@types/express",
+            "npm:tsx",
+            "npm:typescript@5.8.3",
+            "npm:@ai-sdk/openai",
+            "npm:@mastra/core",
+            "npm:@mastra/libsql",
+            "npm:@mastra/memory",
+            "npm:ai",
+            "npm:body-parser",
+            "npm:cors",
+            "npm:dotenv",
+            "npm:express",
+            "npm:mastra"
+          ]
+        },
+        {
+          "file": "apps/agentic-server/src/mastra/agents/shapeshift-agent.ts",
+          "hash": "15137308723187082231",
+          "deps": [
+            "npm:@mastra/core",
+            "npm:@mastra/memory",
+            "npm:@mastra/libsql",
+            "npm:@ai-sdk/openai"
+          ]
+        },
+        {
+          "file": "apps/agentic-server/src/mastra/index.ts",
+          "hash": "1215930828816573189"
+        }
+      ],
+      "@agentic-chat/types": [
+        {
+          "file": "types/README.md",
+          "hash": "590437621609819338"
+        },
+        {
+          "file": "types/package.json",
+          "hash": "5507563134450976187",
+          "deps": [
+            "npm:tslib",
+            "npm:viem"
+          ]
+        },
+        {
+          "file": "types/src/index.ts",
+          "hash": "9616474743146201400"
+        },
+        {
+          "file": "types/src/lib/types.ts",
+          "hash": "4889408511386106390"
+        },
+        {
+          "file": "types/tsconfig.json",
+          "hash": "6774177574860209080"
+        },
+        {
+          "file": "types/tsconfig.lib.json",
+          "hash": "634188853997233637"
+        },
+        {
+          "file": "types/tsconfig.tsbuildinfo",
+          "hash": "18173496274818270468"
+        }
+      ],
+      "agentic-chat": [
+        {
+          "file": "apps/agentic-chat/components.json",
+          "hash": "6897422884866291244"
+        },
+        {
+          "file": "apps/agentic-chat/eslint.config.mjs",
+          "hash": "8789163670399984295",
+          "deps": [
+            "npm:@nx/eslint-plugin"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/index.html",
+          "hash": "4085023053685166551"
+        },
+        {
+          "file": "apps/agentic-chat/package.json",
+          "hash": "13787881752242758842",
+          "deps": [
+            "npm:eslint-plugin-react-hooks",
+            "npm:typescript@5.8.3",
+            "npm:@ai-sdk/openai",
+            "npm:@ai-sdk/react",
+            "npm:@wagmi/core",
+            "npm:ai",
+            "npm:bignumber.js",
+            "npm:class-variance-authority",
+            "npm:clsx@2.1.1",
+            "npm:date-fns",
+            "npm:immer",
+            "npm:react",
+            "npm:react-day-picker",
+            "npm:react-dom",
+            "npm:react-markdown",
+            "npm:react-router-dom",
+            "npm:zustand"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/postcss.config.js",
+          "hash": "2215420153158586088"
+        },
+        {
+          "file": "apps/agentic-chat/public/favicon.ico",
+          "hash": "9303420814833116677"
+        },
+        {
+          "file": "apps/agentic-chat/src/app/app.spec.tsx",
+          "hash": "12584905304727607923",
+          "deps": [
+            "npm:@testing-library/react",
+            "npm:react-router-dom"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/app/app.tsx",
+          "hash": "1377036690105983794"
+        },
+        {
+          "file": "apps/agentic-chat/src/app/dashboard/page.tsx",
+          "hash": "17086880376498762339"
+        },
+        {
+          "file": "apps/agentic-chat/src/app/nx-welcome.tsx",
+          "hash": "13209954396621203123"
+        },
+        {
+          "file": "apps/agentic-chat/src/assets/.gitkeep",
+          "hash": "3244421341483603138"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/OpenAiProvider.tsx",
+          "hash": "10239338287673861935"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/TextShimmer.tsx",
+          "hash": "522154967993905282"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/ApproveUI.tsx",
+          "hash": "8619495018860814887"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/BebopQuoteUI.tsx",
+          "hash": "13620409608941786628"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/CollapsableDetails.tsx",
+          "hash": "7675823976449027373"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/ExecuteSwapUI.tsx",
+          "hash": "9252353306364350919"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/GetAccountUI.tsx",
+          "hash": "15185955446111377135"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/GetAllowanceUI.tsx",
+          "hash": "6892110747378071481"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/SearchTokensUI.tsx",
+          "hash": "15645847956944601919",
+          "deps": [
+            "@agentic-chat/types"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/SendTransactionUI.tsx",
+          "hash": "11513683513471245201"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/SwitchEvmChainUI.tsx",
+          "hash": "14908308505906414094"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/markdown-text.tsx",
+          "hash": "6380349832561497431",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/thread-list.tsx",
+          "hash": "17820351482575369756",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/thread.tsx",
+          "hash": "3493210545260804505",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/tool-fallback.tsx",
+          "hash": "9770558500547722954",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/assistant-ui/tooltip-icon-button.tsx",
+          "hash": "9950778165229001484",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/connect-wallet.tsx",
+          "hash": "16812522897292443774",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/conversation.tsx",
+          "hash": "8606833434568741368",
+          "deps": [
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/nav-user.tsx",
+          "hash": "9093195864938106110",
+          "deps": [
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/nav-wallets.tsx",
+          "hash": "14755985147059644851"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/sidebar-left.tsx",
+          "hash": "1193666459444865492",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/sidebar-right.tsx",
+          "hash": "13109315965183712565",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/transaction-button.tsx",
+          "hash": "16802494517031193927"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/transaction-history.tsx",
+          "hash": "13228151284945816238",
+          "deps": [
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/avatar.tsx",
+          "hash": "11725303659839739408",
+          "deps": [
+            "npm:react",
+            "npm:@radix-ui/react-avatar"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/breadcrumb.tsx",
+          "hash": "16152400254052188101",
+          "deps": [
+            "npm:react",
+            "npm:@radix-ui/react-slot",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/button.tsx",
+          "hash": "9085601220983934206",
+          "deps": [
+            "npm:react",
+            "npm:class-variance-authority"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/calendar.tsx",
+          "hash": "11464532734224649874",
+          "deps": [
+            "npm:react",
+            "npm:lucide-react",
+            "npm:react-day-picker"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/card.tsx",
+          "hash": "4843179399565903804",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/collapsible.tsx",
+          "hash": "17074057275547707461",
+          "deps": [
+            "npm:@radix-ui/react-collapsible"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/dropdown-menu.tsx",
+          "hash": "12745293868821928764",
+          "deps": [
+            "npm:react",
+            "npm:@radix-ui/react-dropdown-menu",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/input.tsx",
+          "hash": "8728802996229191356",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/label.tsx",
+          "hash": "14199300721462914203",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/popover.tsx",
+          "hash": "17724071179333354376",
+          "deps": [
+            "npm:react",
+            "npm:@radix-ui/react-popover"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/scroll-area.tsx",
+          "hash": "5808105673200937793",
+          "deps": [
+            "npm:react",
+            "npm:@radix-ui/react-scroll-area"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/separator.tsx",
+          "hash": "17470135107443158694",
+          "deps": [
+            "npm:react",
+            "npm:@radix-ui/react-separator"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/sheet.tsx",
+          "hash": "14899568633325644478",
+          "deps": [
+            "npm:react",
+            "npm:@radix-ui/react-dialog",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/sidebar.tsx",
+          "hash": "6291273961212742191",
+          "deps": [
+            "npm:react",
+            "npm:@radix-ui/react-slot",
+            "npm:class-variance-authority",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/skeleton.tsx",
+          "hash": "4741977187324233057"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/ui/tooltip.tsx",
+          "hash": "13022416728072322884",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/wallet-asset.tsx",
+          "hash": "5871755035007898369"
+        },
+        {
+          "file": "apps/agentic-chat/src/components/wallet-balances.tsx",
+          "hash": "5855340435168157826",
+          "deps": [
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/components/wallet-button.tsx",
+          "hash": "13909119381089142177",
+          "deps": [
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/hooks/use-mobile.ts",
+          "hash": "14900138732519213047",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/hooks/useTools.ts",
+          "hash": "7569393086732026451",
+          "deps": [
+            "@agentic-chat/types",
+            "npm:react",
+            "@agentic-chat/utils"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/lib/appkit.ts",
+          "hash": "8505529491664323244",
+          "deps": [
+            "npm:@reown/appkit"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/lib/constants/prompts.ts",
+          "hash": "1415572202789371701"
+        },
+        {
+          "file": "apps/agentic-chat/src/lib/utils.ts",
+          "hash": "15456290709904554663",
+          "deps": [
+            "npm:clsx@2.1.1",
+            "npm:tailwind-merge"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/lib/wagmi-config.ts",
+          "hash": "13198959285783174359",
+          "deps": [
+            "npm:@reown/appkit-adapter-wagmi",
+            "npm:wagmi"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/main.tsx",
+          "hash": "6494962159756833686",
+          "deps": [
+            "npm:react",
+            "npm:react-router-dom",
+            "npm:react-dom"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/styles.css",
+          "hash": "1125179100569963205"
+        },
+        {
+          "file": "apps/agentic-chat/src/tools/approve.ts",
+          "hash": "5979849871533032718",
+          "deps": [
+            "@agentic-chat/utils"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/tools/bebopRate.ts",
+          "hash": "9814819104889511862",
+          "deps": [
+            "@agentic-chat/types",
+            "@agentic-chat/utils",
+            "@agentic-chat/caip"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/tools/getAccount.ts",
+          "hash": "2723208042779654218",
+          "deps": [
+            "@agentic-chat/utils"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/tools/getAllowance.ts",
+          "hash": "15887955191070962835",
+          "deps": [
+            "npm:@wagmi/core",
+            "@agentic-chat/utils"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/tools/searchTokens.ts",
+          "hash": "5906253768335886278",
+          "deps": [
+            "npm:qs",
+            "@agentic-chat/types"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/tools/sendTransaction.ts",
+          "hash": "3705238784290496698",
+          "deps": [
+            "npm:viem",
+            "npm:@wagmi/core"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/tools/switchEvmChain.ts",
+          "hash": "12712202512201541497",
+          "deps": [
+            "npm:viem",
+            "npm:@ai-sdk/provider-utils"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/types/account.ts",
+          "hash": "6357747375007621539"
+        },
+        {
+          "file": "apps/agentic-chat/src/types/appkit.d.ts",
+          "hash": "17406158574518549614"
+        },
+        {
+          "file": "apps/agentic-chat/src/types/asset.ts",
+          "hash": "10833042120552868288"
+        },
+        {
+          "file": "apps/agentic-chat/src/types/conversation.ts",
+          "hash": "10698299700352895272"
+        },
+        {
+          "file": "apps/agentic-chat/src/types/message.ts",
+          "hash": "17128609659203369120",
+          "deps": [
+            "npm:@ai-sdk/ui-utils"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/src/types/transaction.ts",
+          "hash": "15445239153034766259"
+        },
+        {
+          "file": "apps/agentic-chat/src/types/wallet.ts",
+          "hash": "18184042188889428417"
+        },
+        {
+          "file": "apps/agentic-chat/tailwind.config.js",
+          "hash": "8474729758518870236",
+          "deps": [
+            "npm:@nx/react",
+            "npm:tw-animate-css"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat/tsconfig.app.json",
+          "hash": "9679527271504626775"
+        },
+        {
+          "file": "apps/agentic-chat/tsconfig.json",
+          "hash": "2931827819565242658"
+        },
+        {
+          "file": "apps/agentic-chat/tsconfig.spec.json",
+          "hash": "341737701184340198"
+        },
+        {
+          "file": "apps/agentic-chat/tsconfig.tsbuildinfo",
+          "hash": "10469815465296112892"
+        },
+        {
+          "file": "apps/agentic-chat/vite.config.mjs",
+          "hash": "9270101686979193324",
+          "deps": [
+            "npm:vite",
+            "npm:@vitejs/plugin-react",
+            "npm:@tailwindcss/vite"
+          ]
+        }
+      ],
+      "agentic-chat-e2e": [
+        {
+          "file": "apps/agentic-chat-e2e/eslint.config.mjs",
+          "hash": "1172734138943286526",
+          "deps": [
+            "npm:eslint-plugin-playwright"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat-e2e/package.json",
+          "hash": "2365795665535829336"
+        },
+        {
+          "file": "apps/agentic-chat-e2e/playwright.config.ts",
+          "hash": "14351960011531557809",
+          "deps": [
+            "npm:@playwright/test",
+            "npm:@nx/playwright",
+            "npm:@nx/devkit"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat-e2e/src/example.spec.ts",
+          "hash": "2988502911021632719",
+          "deps": [
+            "npm:@playwright/test"
+          ]
+        },
+        {
+          "file": "apps/agentic-chat-e2e/tsconfig.json",
+          "hash": "15001458170383955177"
+        }
+      ],
+      "@agentic-chat/caip": [
+        {
+          "file": "caip/README.md",
+          "hash": "8688195985571909401"
+        },
+        {
+          "file": "caip/eslint.config.mjs",
+          "hash": "6286113312110665026",
+          "deps": [
+            "npm:@nx/eslint-plugin"
+          ]
+        },
+        {
+          "file": "caip/package.json",
+          "hash": "5013951102112199473",
+          "deps": [
+            "npm:tslib"
+          ]
+        },
+        {
+          "file": "caip/src/index.ts",
+          "hash": "1049249633225925153"
+        },
+        {
+          "file": "caip/src/lib/accountId.ts",
+          "hash": "1245439203463823128"
+        },
+        {
+          "file": "caip/src/lib/assetId.ts",
+          "hash": "4939467929822349757"
+        },
+        {
+          "file": "caip/src/lib/chainId.ts",
+          "hash": "17700237805911485295"
+        },
+        {
+          "file": "caip/src/lib/constants.ts",
+          "hash": "1453386397362888569"
+        },
+        {
+          "file": "caip/src/lib/typeGuards.ts",
+          "hash": "12957328788196687780"
+        },
+        {
+          "file": "caip/src/lib/utils.ts",
+          "hash": "6816376292333874193"
+        },
+        {
+          "file": "caip/tsconfig.json",
+          "hash": "6774177574860209080"
+        },
+        {
+          "file": "caip/tsconfig.lib.json",
+          "hash": "634188853997233637"
+        },
+        {
+          "file": "caip/tsconfig.tsbuildinfo",
+          "hash": "18173496274818270468"
+        }
+      ]
+    }
+  }
+}
