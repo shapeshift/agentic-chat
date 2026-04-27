@@ -118,7 +118,7 @@ export function Chat() {
 
       {/* Suggestions above composer - only shown when empty */}
       {isEmpty && (
-        <div className="bg-background">
+        <div className="bg-background/80 backdrop-blur-md border-t border-border">
           <div className="mx-auto flex max-w-2xl gap-2 px-4 py-3">
             {WELCOME_SUGGESTIONS.map((suggestion, index) => (
               <Button
@@ -136,7 +136,7 @@ export function Chat() {
       )}
 
       {/* Composer */}
-      <div className="bg-background">
+      <div className={isEmpty ? 'bg-background/80 backdrop-blur-md' : 'bg-background'}>
         <div className="mx-auto max-w-2xl p-4">
           <Composer />
         </div>
