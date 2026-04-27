@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 
 import { useIsMobile } from '@/hooks/use-mobile'
 
@@ -6,21 +6,33 @@ const ShaderAurora = lazy(() =>
   import('shaders/react').then(m => ({
     default: function AuroraShader() {
       const { Shader, Aurora } = m
+      // Start hidden so IntersectionObserver sees the transition to visible,
+      // which is what triggers the animation loop in the shaders library.
+      const [visible, setVisible] = useState(false)
+      const rafRef = useRef<number>(0)
+
+      useEffect(() => {
+        rafRef.current = requestAnimationFrame(() => setVisible(true))
+        return () => cancelAnimationFrame(rafRef.current)
+      }, [])
+
       return (
-        <Shader className="absolute inset-0 w-full h-full" disableTelemetry>
-          <Aurora
-            colorA="#805AD5"
-            colorB="#00CD98"
-            colorC="#B794F4"
-            speed={1.5}
-            waviness={45}
-            intensity={55}
-            curtainCount={3}
-            rayDensity={15}
-            height={110}
-            colorSpace="oklch"
-          />
-        </Shader>
+        <div className="absolute inset-0 w-full h-full" style={{ display: visible ? 'block' : 'none' }}>
+          <Shader className="w-full h-full" disableTelemetry>
+            <Aurora
+              colorA="#805AD5"
+              colorB="#00CD98"
+              colorC="#B794F4"
+              speed={1.5}
+              waviness={45}
+              intensity={55}
+              curtainCount={3}
+              rayDensity={15}
+              height={110}
+              colorSpace="oklch"
+            />
+          </Shader>
+        </div>
       )
     },
   }))
