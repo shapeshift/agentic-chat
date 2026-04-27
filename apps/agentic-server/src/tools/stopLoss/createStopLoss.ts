@@ -323,10 +323,21 @@ IMPORTANT:
   inputSchema: createStopLossSchema,
   execute: executeCreateStopLoss,
   experimental_toToolResultContent: (result: CreateStopLossOutput) => {
-    const llmVisible = { ...result }
-    delete llmVisible.sellAmountBaseUnit
-    delete llmVisible.sellPrecision
-    delete llmVisible.buyPrecision
+    const llmVisible = {
+      summary: result.summary,
+      safeTransaction: result.safeTransaction,
+      needsApproval: result.needsApproval,
+      approvalTx: result.approvalTx,
+      approvalTarget: result.approvalTarget,
+      safeAddress: result.safeAddress,
+      orderHash: result.orderHash,
+      conditionalOrderParams: result.conditionalOrderParams,
+      needsDeposit: result.needsDeposit,
+      depositTx: result.depositTx,
+      sellTokenAddress: result.sellTokenAddress,
+      buyTokenAddress: result.buyTokenAddress,
+      validTo: result.validTo,
+    }
     return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
   },
 }

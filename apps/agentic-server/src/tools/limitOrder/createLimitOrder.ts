@@ -98,16 +98,17 @@ export async function executeCreateLimitOrder(
     resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
 
+  const limitPriceNum = Number(input.limitPrice)
+  if (!Number.isFinite(limitPriceNum) || limitPriceNum <= 0) {
+    throw new Error(`Invalid limitPrice "${input.limitPrice}". It must be a positive number.`)
+  }
+
   // Sanity-check limitPrice against current market rate to catch LLM inversion/base-unit errors
   const priceResults = await getSimplePrices([sellAsset.assetId, buyAsset.assetId])
   const sellUsdPrice = Number(priceResults.find(p => p.assetId === sellAsset.assetId)?.price ?? '0')
   const buyUsdPrice = Number(priceResults.find(p => p.assetId === buyAsset.assetId)?.price ?? '0')
   if (sellUsdPrice > 0 && buyUsdPrice > 0) {
     const marketLimitPrice = sellUsdPrice / buyUsdPrice
-    const limitPriceNum = Number(input.limitPrice)
-    if (!Number.isFinite(limitPriceNum) || limitPriceNum <= 0) {
-      throw new Error(`Invalid limitPrice "${input.limitPrice}". It must be a positive number.`)
-    }
     const ratio = limitPriceNum / marketLimitPrice
     if (!Number.isFinite(ratio) || ratio <= 0) {
       throw new Error(
@@ -251,8 +252,19 @@ IMPORTANT:
   inputSchema: createLimitOrderSchema,
   execute: executeCreateLimitOrder,
   experimental_toToolResultContent: (result: CreateLimitOrderOutput) => {
-    const llmVisible = { ...result }
-    delete llmVisible.orderParams
+    const llmSigningData: Pick<CowOrderSigningData, 'domain' | 'types' | 'primaryType'> = {
+      domain: result.signingData.domain,
+      types: result.signingData.types,
+      primaryType: result.signingData.primaryType,
+    }
+    const llmVisible = {
+      summary: result.summary,
+      signingData: llmSigningData,
+      needsApproval: result.needsApproval,
+      approvalTx: result.approvalTx,
+      approvalTarget: result.approvalTarget,
+      trackingUrl: result.trackingUrl,
+    }
     return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
   },
 }
