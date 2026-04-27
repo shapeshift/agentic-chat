@@ -6,6 +6,7 @@ import { useStreamPauseDetector } from '../hooks/useStreamPauseDetector'
 import { useChatContext } from '../providers/ChatProvider'
 
 import { AssistantMessage } from './AssistantMessage'
+import { AuroraBackground } from './AuroraBackground'
 import { Composer } from './Composer'
 import { LoadingIndicator } from './LoadingIndicator'
 import { Button } from './ui/Button'
@@ -93,8 +94,9 @@ export function Chat() {
       {/* Messages viewport */}
       <div className="flex-1 overflow-hidden">
         {isEmpty ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-lg text-foreground">How can I help you today?</div>
+          <div className="relative flex h-full items-center justify-center overflow-hidden">
+            <AuroraBackground />
+            <div className="relative z-10 text-lg text-foreground">How can I help you today?</div>
           </div>
         ) : (
           <Virtuoso
