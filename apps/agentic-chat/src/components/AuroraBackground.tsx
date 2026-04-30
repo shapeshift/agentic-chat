@@ -1,42 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { useIsMobile } from '@/hooks/use-mobile'
-
-const ShaderAurora = lazy(() =>
-  import('shaders/react').then(m => ({
-    default: function AuroraShader() {
-      const { Shader, Aurora } = m
-      // Start hidden so IntersectionObserver sees the transition to visible,
-      // which is what triggers the animation loop in the shaders library.
-      const [visible, setVisible] = useState(false)
-      const rafRef = useRef<number>(0)
-
-      useEffect(() => {
-        rafRef.current = requestAnimationFrame(() => setVisible(true))
-        return () => cancelAnimationFrame(rafRef.current)
-      }, [])
-
-      return (
-        <div className="absolute inset-0 w-full h-full" style={{ display: visible ? 'block' : 'none' }}>
-          <Shader className="w-full h-full" disableTelemetry>
-            <Aurora
-              colorA="#805AD5"
-              colorB="#00CD98"
-              colorC="#B794F4"
-              speed={1.5}
-              waviness={45}
-              intensity={55}
-              curtainCount={3}
-              rayDensity={15}
-              height={110}
-              colorSpace="oklch"
-            />
-          </Shader>
-        </div>
-      )
-    },
-  }))
-)
 
 function isWebGLAvailable(): boolean {
   try {
@@ -59,6 +23,61 @@ function CSSFallback() {
   )
 }
 
+function AuroraCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    let cleanup: (() => void) | null = null
+    let cancelled = false
+
+    import('shaders/js')
+      .then(({ createShader }) =>
+        createShader(
+          canvas,
+          {
+            components: [
+              {
+                type: 'Aurora',
+                props: {
+                  colorA: '#7B2FBE',
+                  colorB: '#00CD98',
+                  colorC: '#A855F7',
+                  speed: 3.5,
+                  waviness: 70,
+                  intensity: 90,
+                  curtainCount: 4,
+                  rayDensity: 25,
+                  height: 150,
+                  balance: 40,
+                  colorSpace: 'linear',
+                },
+              },
+            ],
+          },
+          { disableTelemetry: true }
+        )
+      )
+      .then(shader => {
+        if (cancelled) {
+          shader.destroy()
+          return
+        }
+        cleanup = () => shader.destroy()
+      })
+      .catch(console.error)
+
+    return () => {
+      cancelled = true
+      cleanup?.()
+    }
+  }, [])
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ display: 'block' }} />
+}
+
 export function AuroraBackground() {
   const isMobile = useIsMobile()
 
@@ -66,9 +85,5 @@ export function AuroraBackground() {
     return <CSSFallback />
   }
 
-  return (
-    <Suspense fallback={<CSSFallback />}>
-      <ShaderAurora />
-    </Suspense>
-  )
+  return <AuroraCanvas />
 }
