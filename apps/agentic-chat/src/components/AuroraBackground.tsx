@@ -2,13 +2,22 @@ import { useEffect, useRef } from 'react'
 
 import { useIsMobile } from '@/hooks/use-mobile'
 
+let cachedWebGLAvailable: boolean | null = null
 function isWebGLAvailable(): boolean {
+  if (cachedWebGLAvailable !== null) return cachedWebGLAvailable
   try {
     const canvas = document.createElement('canvas')
-    return !!(window.WebGLRenderingContext && (canvas.getContext('webgl2') ?? canvas.getContext('webgl')))
+    const ctx = window.WebGLRenderingContext && (canvas.getContext('webgl2') ?? canvas.getContext('webgl'))
+    if (ctx) {
+      // Release the test context immediately so we don't exhaust the browser's limit
+      const ext = (ctx as WebGLRenderingContext).getExtension('WEBGL_lose_context')
+      ext?.loseContext()
+    }
+    cachedWebGLAvailable = !!ctx
   } catch {
-    return false
+    cachedWebGLAvailable = false
   }
+  return cachedWebGLAvailable
 }
 
 function CSSFallback() {
@@ -34,12 +43,14 @@ function AuroraCanvas() {
     let cancelled = false
 
     import('shaders/js')
-      .then(({ createShader }) =>
-        createShader(
+      .then(({ createShader }) => {
+        if (cancelled) return Promise.resolve(null)
+        return createShader(
           canvas,
           {
             components: [
               {
+                id: 'aurora',
                 type: 'Aurora',
                 props: {
                   colorA: '#7B2FBE',
@@ -59,8 +70,9 @@ function AuroraCanvas() {
           },
           { disableTelemetry: true }
         )
-      )
+      })
       .then(shader => {
+        if (!shader) return
         if (cancelled) {
           shader.destroy()
           return
