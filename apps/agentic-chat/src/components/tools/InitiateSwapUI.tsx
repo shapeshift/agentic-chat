@@ -53,6 +53,8 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapT
               <TxStepCard.SwapPair
                 fromSymbol={swap?.sellAsset.symbol.toUpperCase()}
                 toSymbol={swap?.buyAsset.symbol.toUpperCase()}
+                fromIcon={swap?.sellAsset.icon}
+                toIcon={swap?.buyAsset.icon}
                 isLoading={isLoading}
               />
               <TxStepCard.Amount
