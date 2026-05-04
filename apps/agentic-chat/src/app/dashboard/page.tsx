@@ -13,7 +13,7 @@ export const Dashboard = () => {
       <SidebarProvider>
         {isSidebarLeftEnabled && <SidebarLeft />}
         <SidebarInset className="h-dvh flex flex-col">
-          <header className="sticky top-0 h-12 flex-shrink-0 flex gap-2 bg-background z-10 px-2 items-center">
+          <header className="spike-liquid-glass-surface spike-liquid-glass-elevated sticky top-0 z-10 flex h-12 flex-shrink-0 items-center gap-2 border-b px-2">
             <div className="flex items-center gap-2">{isSidebarLeftEnabled && <SidebarTrigger />}</div>
             <div className="ml-auto flex items-center gap-2">
               <ExportChat />

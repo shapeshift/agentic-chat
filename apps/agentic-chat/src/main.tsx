@@ -9,6 +9,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { isUserCancellation } from '@/utils/walletErrors'
 
 import App from './app/app'
+import { applyLiquidGlassMode } from './lib/liquidGlass'
 
 // Polyfill Buffer for Solana SDK
 window.Buffer = Buffer
@@ -46,6 +47,7 @@ if (analyticsEnabled) {
 
 // Request persistent storage to prevent browser eviction of IndexedDB data
 void navigator.storage?.persist?.()
+applyLiquidGlassMode()
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
