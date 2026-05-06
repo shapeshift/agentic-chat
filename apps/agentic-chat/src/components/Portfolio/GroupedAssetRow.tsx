@@ -12,9 +12,9 @@ type GroupedAssetRowProps = {
 
 function RelatedAssetsList({ assets }: { assets: PortfolioAsset[] }) {
   return (
-    <div className="flex flex-col">
-      {assets.map((asset, index) => (
-        <div key={asset.assetId} className={`flex items-center gap-3 pt-3 ${index < assets.length - 1 ? 'pb-3' : ''}`}>
+    <div className="flex flex-col gap-2 border-l-2 border-whiteAlpha-200 pl-3 pt-1">
+      {assets.map(asset => (
+        <div key={asset.assetId} className="flex items-center gap-3 rounded-lg bg-whiteAlpha-100 px-3 py-2.5">
           <PortfolioAssetRow asset={asset} showNetwork />
         </div>
       ))}
