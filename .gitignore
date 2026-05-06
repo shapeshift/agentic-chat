@@ -62,3 +62,7 @@ Thumbs.db
 
 # Playwright MCP
 .playwright-mcp
+
+# Nx — local machine cache (agents/CI should never commit these)
+.nx/cache
+.nx/workspace-data
