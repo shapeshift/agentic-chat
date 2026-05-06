@@ -12,7 +12,7 @@ export function Composer() {
 
   if (isAtMessageLimit) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-muted/50 p-4 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-muted/50 p-4 text-center">
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <MessageSquareOff className="h-4 w-4" />
           Conversation limit reached
@@ -55,7 +55,7 @@ export function Composer() {
         onKeyDown={onKeyDown}
         placeholder="Write a message..."
         rows={1}
-        className="flex-1 resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        className="flex-1 resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         style={
           {
             minHeight: '48px',
