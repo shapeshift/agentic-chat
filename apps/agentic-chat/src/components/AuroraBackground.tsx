@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { useIsMobile } from '@/hooks/use-mobile'
 
@@ -32,7 +32,7 @@ function CSSFallback() {
   )
 }
 
-function AuroraCanvas() {
+function AuroraCanvas({ onError }: { onError: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -79,23 +79,29 @@ function AuroraCanvas() {
         }
         cleanup = () => shader.destroy()
       })
-      .catch(console.error)
+      .catch(err => {
+        console.error('[AuroraBackground] shader init failed, falling back to CSS:', err)
+        cleanup?.()
+        cleanup = null
+        if (!cancelled) onError()
+      })
 
     return () => {
       cancelled = true
       cleanup?.()
     }
-  }, [])
+  }, [onError])
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ display: 'block' }} />
 }
 
 export function AuroraBackground() {
   const isMobile = useIsMobile()
+  const [shaderFailed, setShaderFailed] = useState(false)
 
-  if (isMobile || !isWebGLAvailable()) {
+  if (isMobile || !isWebGLAvailable() || shaderFailed) {
     return <CSSFallback />
   }
 
-  return <AuroraCanvas />
+  return <AuroraCanvas onError={() => setShaderFailed(true)} />
 }
