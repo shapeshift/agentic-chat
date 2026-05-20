@@ -5,6 +5,7 @@ import { formatCryptoAmount } from '@/lib/number'
 import { StepStatus } from '@/lib/stepUtils'
 import { cn } from '@/lib/utils'
 
+import { AssetIcon } from './AssetIcon'
 import { Skeleton } from './Skeleton'
 import { ToolCard } from './ToolCard'
 
@@ -135,11 +136,15 @@ const TxStepCardStep = ({
 const TxStepCardSwapPair = ({
   fromSymbol,
   toSymbol,
+  fromIcon,
+  toIcon,
   isLoading,
   className,
 }: {
   fromSymbol?: string
   toSymbol?: string
+  fromIcon?: string
+  toIcon?: string
   isLoading?: boolean
   className?: string
 }) => {
@@ -148,11 +153,11 @@ const TxStepCardSwapPair = ({
 
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      <span className="text-xl font-bold">{fromSymbol}</span>
+      <AssetIcon icon={fromIcon} symbol={fromSymbol} className="w-6 h-6" />
       <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
         <ChevronRight className="w-4 h-4 text-muted-foreground" />
       </div>
-      <span className="text-xl font-bold">{toSymbol}</span>
+      <AssetIcon icon={toIcon} symbol={toSymbol} className="w-6 h-6" />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { stopPropagationHandler } from '@/lib/eventHandlers'
 import { cn } from '@/lib/utils'
 
 import { Amount } from '../ui/Amount'
+import { AssetIcon } from '../ui/AssetIcon'
 import { ToolCard } from '../ui/ToolCard'
 
 import { useToolStateRender } from './toolUIHelpers'
@@ -41,6 +42,8 @@ interface OrderListItemProps {
   network: string
   sellTokenSymbol: string
   buyTokenSymbol: string
+  sellTokenIcon?: string
+  buyTokenIcon?: string
   sellAmount: string
   buyAmount: string
   filledPercent: number
@@ -53,6 +56,8 @@ function OrderListItem({
   network,
   sellTokenSymbol,
   buyTokenSymbol,
+  sellTokenIcon,
+  buyTokenIcon,
   sellAmount,
   buyAmount,
   filledPercent,
@@ -77,11 +82,13 @@ function OrderListItem({
     <div className="flex items-center justify-between py-3 px-1 gap-4">
       <div className="flex flex-col gap-1 min-w-0 flex-1">
         <div className="flex items-center gap-2 text-sm">
-          <span>
+          <span className="flex items-center gap-1.5">
+            <AssetIcon icon={sellTokenIcon} symbol={sellTokenSymbol} className="w-4 h-4" />
             Sell <Amount.Crypto value={sellAmount} symbol={sellTokenSymbol} className="font-medium" />
           </span>
           <span className="text-muted-foreground">|</span>
-          <span>
+          <span className="flex items-center gap-1.5">
+            <AssetIcon icon={buyTokenIcon} symbol={buyTokenSymbol} className="w-4 h-4" />
             Buy <Amount.Crypto value={buyAmount} symbol={buyTokenSymbol} className="font-medium" />
           </span>
           <span className="text-muted-foreground">|</span>
@@ -179,6 +186,8 @@ export function GetLimitOrdersUI({ toolPart }: ToolUIComponentProps<'getLimitOrd
                 network={order.network}
                 sellTokenSymbol={order.sellTokenSymbol}
                 buyTokenSymbol={order.buyTokenSymbol}
+                sellTokenIcon={order.sellTokenIcon}
+                buyTokenIcon={order.buyTokenIcon}
                 sellAmount={order.sellAmount}
                 buyAmount={order.buyAmount}
                 filledPercent={order.filledPercent}
