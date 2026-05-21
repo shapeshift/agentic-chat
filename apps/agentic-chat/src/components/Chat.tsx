@@ -13,11 +13,11 @@ import { PopularActionsCarousel } from './PopularActionsCarousel'
 import { UserMessage } from './UserMessage'
 
 const POPULAR_ACTIONS = [
-  'What is my USDC balance on Arbitrum?',
-  'Swap half my USDC on arb to FOX',
-  'Give me some info about FOX on Arb',
   'Show my recent transaction activity',
   'Create a stop loss for my ETH position',
+  'Swap half my USDC on Ethereum to FOX',
+  'What is my USDC balance on Arbitrum?',
+  'Give me some info about FOX on Arb',
 ]
 
 export function Chat() {
