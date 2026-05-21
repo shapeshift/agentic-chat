@@ -21,12 +21,18 @@ function isWebGLAvailable(): boolean {
 }
 
 function CSSFallback() {
+  // Approximates the WebGL Aurora's purple-to-green palette (colorA #7B2FBE,
+  // colorB #00CD98, colorC #A855F7) with layered radial gradients.
   return (
     <div
       className="absolute inset-0 w-full h-full"
       style={{
-        background:
-          'radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.45 0.2 290 / 0.35) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 30% 20%, oklch(0.55 0.18 160 / 0.2) 0%, transparent 60%)',
+        background: [
+          'radial-gradient(ellipse 110% 55% at 50% 0%, rgba(123, 47, 190, 0.55) 0%, rgba(123, 47, 190, 0.18) 38%, transparent 70%)',
+          'radial-gradient(ellipse 80% 60% at 50% 95%, rgba(0, 205, 152, 0.45) 0%, transparent 72%)',
+          'radial-gradient(ellipse 65% 50% at 22% 28%, rgba(168, 85, 247, 0.32) 0%, transparent 68%)',
+          'radial-gradient(ellipse 55% 45% at 82% 62%, rgba(0, 205, 152, 0.22) 0%, transparent 70%)',
+        ].join(', '),
       }}
     />
   )
@@ -77,7 +83,26 @@ function AuroraCanvas({ onError }: { onError: () => void }) {
           shader.destroy()
           return
         }
-        cleanup = () => shader.destroy()
+
+        // createShader pins the canvas to a fixed pixel size and watches the
+        // canvas itself for resizes — so CSS-driven layout changes (e.g. the
+        // sidebar opening/closing) never reach it. Observe the parent instead
+        // and resize explicitly.
+        const parent = canvas.parentElement
+        let resizeObserver: ResizeObserver | null = null
+        if (parent) {
+          resizeObserver = new ResizeObserver(([entry]) => {
+            if (!entry) return
+            const { width, height } = entry.contentRect
+            if (width > 0 && height > 0) shader.resize(width, height)
+          })
+          resizeObserver.observe(parent)
+        }
+
+        cleanup = () => {
+          resizeObserver?.disconnect()
+          shader.destroy()
+        }
       })
       .catch(err => {
         console.error('[AuroraBackground] shader init failed, falling back to CSS:', err)
