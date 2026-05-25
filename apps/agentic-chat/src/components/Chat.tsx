@@ -6,14 +6,17 @@ import { useStreamPauseDetector } from '../hooks/useStreamPauseDetector'
 import { useChatContext } from '../providers/ChatProvider'
 
 import { AssistantMessage } from './AssistantMessage'
+import { AuroraBackground } from './AuroraBackground'
 import { Composer } from './Composer'
 import { LoadingIndicator } from './LoadingIndicator'
-import { Button } from './ui/Button'
+import { PopularActionsCarousel } from './PopularActionsCarousel'
 import { UserMessage } from './UserMessage'
 
-const WELCOME_SUGGESTIONS = [
+const POPULAR_ACTIONS = [
+  'Show my recent transaction activity',
+  'Create a stop loss for my ETH position',
+  'Swap half my USDC on Ethereum to FOX',
   'What is my USDC balance on Arbitrum?',
-  'Swap half my USDC on arb to FOX',
   'Give me some info about FOX on Arb',
 ]
 
@@ -93,8 +96,9 @@ export function Chat() {
       {/* Messages viewport */}
       <div className="flex-1 overflow-hidden">
         {isEmpty ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-lg text-foreground">How can I help you today?</div>
+          <div className="relative flex h-full items-center justify-center overflow-hidden">
+            <AuroraBackground />
+            <div className="relative z-10 text-lg text-foreground">How can I help you today?</div>
           </div>
         ) : (
           <Virtuoso
@@ -115,26 +119,10 @@ export function Chat() {
       </div>
 
       {/* Suggestions above composer - only shown when empty */}
-      {isEmpty && (
-        <div className="bg-background">
-          <div className="mx-auto flex max-w-2xl gap-2 px-4 py-3">
-            {WELCOME_SUGGESTIONS.map((suggestion, index) => (
-              <Button
-                key={index}
-                onClick={() => handleSuggestionClick(suggestion)}
-                title={suggestion}
-                variant="outline"
-                className="flex-1 min-w-0 h-[52px] line-clamp-2 whitespace-normal"
-              >
-                {suggestion}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
+      {isEmpty && <PopularActionsCarousel actions={POPULAR_ACTIONS} onActionClick={handleSuggestionClick} />}
 
       {/* Composer */}
-      <div className="bg-background">
+      <div className={isEmpty ? 'bg-background/80 backdrop-blur-md' : 'bg-background'}>
         <div className="mx-auto max-w-2xl p-4">
           <Composer />
         </div>
