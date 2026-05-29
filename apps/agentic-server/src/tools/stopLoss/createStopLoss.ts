@@ -43,8 +43,12 @@ export const createStopLossSchema = z.object({
   network: cowSupportedNetworkSchema.describe('Network for the stop-loss order'),
   sellAmount: z
     .string()
+    .refine(val => !/^\d{15,}/.test(val.trim()), {
+      message:
+        'sellAmount looks like a base-unit value (15+ digits). Use human-readable token amounts (e.g. "1" for 1 WETH, not "1000000000000000000").',
+    })
     .describe(
-      'Amount to sell in TOKEN units, not USD (e.g., "1" for 1 WETH, "100000" for 100000 PEPE). No commas, dollar signs, or token symbols. If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
+      'Amount to sell in TOKEN units, not USD (e.g., "1" for 1 WETH, "230" for 230 ARB, "100000" for 100000 PEPE). Never pass base units even if precision is 18 (e.g., not "230000000000000000000"). No commas, dollar signs, or token symbols. If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
     ),
   triggerPrice: z
     .string()
@@ -318,4 +322,22 @@ IMPORTANT:
 - Use the maths tool if you need to calculate trigger prices from percentages`,
   inputSchema: createStopLossSchema,
   execute: executeCreateStopLoss,
+  experimental_toToolResultContent: (result: CreateStopLossOutput) => {
+    const llmVisible = {
+      summary: result.summary,
+      safeTransaction: result.safeTransaction,
+      needsApproval: result.needsApproval,
+      approvalTx: result.approvalTx,
+      approvalTarget: result.approvalTarget,
+      safeAddress: result.safeAddress,
+      orderHash: result.orderHash,
+      conditionalOrderParams: result.conditionalOrderParams,
+      needsDeposit: result.needsDeposit,
+      depositTx: result.depositTx,
+      sellTokenAddress: result.sellTokenAddress,
+      buyTokenAddress: result.buyTokenAddress,
+      validTo: result.validTo,
+    }
+    return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
+  },
 }
