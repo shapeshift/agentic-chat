@@ -29,6 +29,9 @@ export function PortfolioHeader({ isVaultMode }: PortfolioHeaderProps) {
   const {
     totalBalance: walletBalance,
     delta24h,
+    failedNetworks,
+    hasMissingPrices,
+    isError: isWalletError,
     isLoading: isWalletLoading,
     isFetching: isWalletFetching,
   } = usePortfolioQuery()
@@ -77,11 +80,19 @@ export function PortfolioHeader({ isVaultMode }: PortfolioHeaderProps) {
   return (
     <div className="flex flex-col items-center py-6 px-4">
       <div className="flex items-center gap-2 text-[40px] font-semibold tracking-tight text-foreground">
-        <Amount.Fiat value={displayBalance} />
+        {!isVaultMode && (hasMissingPrices || isWalletError) ? <span>—</span> : <Amount.Fiat value={displayBalance} />}
         {isFetching && !isLoading && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
 
-      {!isVaultMode && delta24h && (
+      {!isVaultMode && (isWalletError || failedNetworks.length > 0 || hasMissingPrices) && (
+        <div role="status" className="text-xs text-muted-foreground text-center mt-2 space-y-1">
+          {isWalletError && <p>Unable to refresh balances. Displayed balances may be out of date.</p>}
+          {failedNetworks.length > 0 && <p>Partial portfolio — balances unavailable on {failedNetworks.join(', ')}.</p>}
+          {hasMissingPrices && <p>Some prices are unavailable. Token balances are still shown.</p>}
+        </div>
+      )}
+
+      {!isVaultMode && !isWalletError && delta24h && (
         <span
           className={cn(
             'text-xs mt-1',
@@ -89,7 +100,8 @@ export function PortfolioHeader({ isVaultMode }: PortfolioHeaderProps) {
             bnOrZero(delta24h.percentage).lt(0) && 'text-red-500'
           )}
         >
-          <Amount.Fiat value={delta24h.fiatAmount} /> (<Amount.Percent value={delta24h.percentage} />)
+          <Amount.Fiat value={delta24h.fiatAmount} /> (
+          <Amount.Percent value={delta24h.percentage} />)
         </span>
       )}
 

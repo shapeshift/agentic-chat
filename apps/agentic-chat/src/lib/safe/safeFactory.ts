@@ -7,7 +7,7 @@ import { wagmiConfig } from '@/lib/wagmi-config'
 import { useSafeStore } from '@/stores/safeStore'
 
 import { checkDomainVerifier, checkFallbackHandler } from './safeModules'
-import { createSafeProvider } from './types'
+import { createReadOnlySafeProvider, createSafeProvider } from './types'
 import type { SafeProvider } from './types'
 
 // Pinned so SDK default changes can't silently break existing Safe addresses
@@ -98,7 +98,9 @@ export async function deploySafe(
   // Deploy the Safe
   const deploymentTransaction = await protocolKit.createSafeDeploymentTransaction()
 
-  const publicClient = createPublicClient({ transport: custom(compositeProvider) })
+  const publicClient = createPublicClient({
+    transport: custom(compositeProvider),
+  })
 
   // Estimate gas with 20% buffer — Safe deployments on L2s like Arbitrum need
   // more gas than wallets typically estimate from the deployment calldata alone
@@ -124,7 +126,10 @@ export async function deploySafe(
     gas,
     chain: null,
   })
-  const deployReceipt = await publicClient.waitForTransactionReceipt({ hash: txHash, confirmations: 1 })
+  const deployReceipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+    confirmations: 1,
+  })
   if (deployReceipt.status === 'reverted') throw new Error(`Safe deployment transaction reverted: ${txHash}`)
 
   useSafeStore.getState().setChainState(ownerAddress, chainId, {
@@ -153,7 +158,7 @@ export async function discoverSafeOnChain(ownerAddress: string): Promise<void> {
       const publicClient = getPublicClient(wagmiConfig, { chainId: chain.id })
       if (!publicClient) return
 
-      const provider: SafeProvider = { request: publicClient.request }
+      const provider = createReadOnlySafeProvider({ request: publicClient.request })
 
       const protocolKit = await Safe.init({
         provider,

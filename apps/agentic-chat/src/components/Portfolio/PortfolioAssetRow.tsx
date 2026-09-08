@@ -1,5 +1,6 @@
 import { Amount } from '@/components/ui/Amount'
 import { AssetIcon } from '@/components/ui/AssetIcon'
+import { bnOrZero } from '@/lib/bignumber'
 import { isStablecoin } from '@/lib/isStablecoin'
 import type { PortfolioAsset } from '@/types/portfolio'
 
@@ -20,7 +21,7 @@ export function PortfolioAssetRow({ asset, showNetwork }: PortfolioAssetRowProps
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm md:text-base text-foreground">{asset.symbol}</span>
-          {!isStablecoin(asset.symbol) && (
+          {bnOrZero(asset.price).gt(0) && !isStablecoin(asset.symbol) && (
             <Amount.Percent value={asset.priceChange24h} showSign autoColor className="text-xs" />
           )}
         </div>
@@ -30,7 +31,11 @@ export function PortfolioAssetRow({ asset, showNetwork }: PortfolioAssetRowProps
       </div>
       <div className="text-right">
         <div className="font-semibold text-foreground">
-          <Amount.Fiat value={asset.fiatAmount} />
+          {bnOrZero(asset.price).gt(0) ? (
+            <Amount.Fiat value={asset.fiatAmount} />
+          ) : (
+            <span title="Price unavailable">—</span>
+          )}
         </div>
       </div>
     </>

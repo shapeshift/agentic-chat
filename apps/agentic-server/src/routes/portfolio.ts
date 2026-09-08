@@ -18,6 +18,7 @@ import type { WalletContext } from '../utils/walletContextSimple'
 
 const portfolioRequestSchema = z
   .object({
+    includeFailures: z.boolean().optional(),
     networks: z.array(z.enum(EVM_SOLANA_NETWORKS)).optional(),
     evmAddress: z.string().optional(),
     solanaAddress: z.string().optional(),
@@ -57,7 +58,7 @@ export async function handlePortfolioRequest(c: Context) {
   try {
     const body = await c.req.json()
     const validatedBody = portfolioRequestSchema.parse(body)
-    const { networks, evmAddress, solanaAddress } = validatedBody
+    const { networks, evmAddress, solanaAddress, includeFailures } = validatedBody
 
     const walletContext = buildWalletContext(evmAddress, solanaAddress)
     const networksToFetch = networks || getConnectedNetworks(walletContext)
@@ -68,7 +69,18 @@ export async function handlePortfolioRequest(c: Context) {
 
     const portfolioData = await getPortfolioData({ networks: networksToFetch }, walletContext)
 
-    return c.json(portfolioData)
+    if (includeFailures) return c.json(portfolioData)
+    // Keep the legacy array response without presenting incomplete data as a complete portfolio.
+    if (portfolioData.failedNetworks.length > 0) {
+      return c.json(
+        {
+          error: 'Failed to fetch portfolio',
+          failedNetworks: portfolioData.failedNetworks,
+        },
+        503
+      )
+    }
+    return c.json(portfolioData.networks)
   } catch (error) {
     if (error instanceof z.ZodError) {
       return c.json({ error: 'Invalid request body', details: error.issues }, 400)

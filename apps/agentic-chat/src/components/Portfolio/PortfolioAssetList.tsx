@@ -28,11 +28,22 @@ export function AssetListSkeleton({ rows = 5 }: { rows?: number }) {
 
 export function PortfolioAssetList() {
   const { primaryWallet } = useDynamicContext()
-  const { assets, isLoading, isFetching } = usePortfolioQuery()
+  const { assets, isLoading, isFetching, isError, failedNetworks, refetch } = usePortfolioQuery()
   const groupedAssets = useMemo(() => groupPortfolioAssets(assets), [assets])
 
   if (isLoading) {
     return <AssetListSkeleton />
+  }
+
+  if (groupedAssets.length === 0 && (isError || failedNetworks.length > 0)) {
+    return (
+      <div role="status" className="text-center py-12 px-4">
+        <p>Balances are unavailable{!isError ? ' on some networks' : ''}.</p>
+        <button className="text-primary mt-2" onClick={() => void refetch()}>
+          Retry
+        </button>
+      </div>
+    )
   }
 
   if (groupedAssets.length === 0) {

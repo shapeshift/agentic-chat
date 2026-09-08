@@ -45,63 +45,65 @@ export async function fetchFullPortfolio(
     }
   }
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/portfolio`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ evmAddress, solanaAddress, ...(networks && { networks }) }),
-    })
+  const response = await fetch(`${API_BASE_URL}/api/portfolio`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      evmAddress,
+      solanaAddress,
+      includeFailures: true,
+      ...(networks && { networks }),
+    }),
+  })
 
-    if (!response.ok) {
-      console.error('[Portfolio] Failed to fetch:', response.statusText)
-      return {
-        assets: [],
-        totalBalance: '0',
-        delta24h: null,
-        lastUpdated: Date.now(),
+  if (!response.ok) throw new Error('Unable to load portfolio. Please try again.')
+
+  const payload = (await response.json()) as
+    | PortfolioNetworkResult[]
+    | {
+        networks: PortfolioNetworkResult[]
+        failedNetworks: { network: string }[]
       }
-    }
+  const results = Array.isArray(payload) ? payload : payload.networks
+  const failedNetworks = Array.isArray(payload) ? [] : payload.failedNetworks.map(failure => failure.network)
+  if (results.length === 0 && failedNetworks.length > 0) {
+    throw new Error('Unable to load balances on any network. Please try again.')
+  }
 
-    const results = (await response.json()) as PortfolioNetworkResult[]
-
-    const allAssets: PortfolioAsset[] = results.flatMap(result =>
-      result.balances.map(balance => ({
-        assetId: balance.asset.assetId,
-        chainId: result.chainId,
-        name: balance.asset.name,
-        symbol: balance.asset.symbol,
-        icon: balance.asset.icon,
-        cryptoBalancePrecision: balance.cryptoAmount,
-        fiatAmount: balance.usdAmount,
-        price: balance.asset.price,
-        priceChange24h: balance.asset.priceChange24h?.toString() ?? '0',
-        allocation: 0,
-        relatedAssetKey: balance.asset.relatedAssetKey,
-      }))
-    )
-
-    const totalBalance = allAssets.reduce((sum, asset) => sum.plus(bnOrZero(asset.fiatAmount)), bn(0))
-
-    const assetsWithAllocation = allAssets.map(asset => ({
-      ...asset,
-      allocation: totalBalance.gt(0) ? bnOrZero(asset.fiatAmount).div(totalBalance).times(100).toNumber() : 0,
+  const allAssets: PortfolioAsset[] = results.flatMap(result =>
+    result.balances.map(balance => ({
+      assetId: balance.asset.assetId,
+      chainId: result.chainId,
+      name: balance.asset.name,
+      symbol: balance.asset.symbol,
+      icon: balance.asset.icon,
+      cryptoBalancePrecision: balance.cryptoAmount,
+      fiatAmount: balance.usdAmount,
+      price: balance.asset.price,
+      priceChange24h: balance.asset.priceChange24h?.toString() ?? '0',
+      allocation: 0,
+      relatedAssetKey: balance.asset.relatedAssetKey,
     }))
+  )
 
-    const delta24h = calculate24hDelta(assetsWithAllocation)
+  const totalBalance = allAssets.reduce((sum, asset) => sum.plus(bnOrZero(asset.fiatAmount)), bn(0))
 
-    return {
-      assets: assetsWithAllocation,
-      totalBalance: totalBalance.toFixed(2),
-      delta24h,
-      lastUpdated: Date.now(),
-    }
-  } catch (error) {
-    console.error('[Portfolio] Error:', error)
-    return {
-      assets: [],
-      totalBalance: '0',
-      delta24h: null,
-      lastUpdated: Date.now(),
-    }
+  const assetsWithAllocation = allAssets.map(asset => ({
+    ...asset,
+    allocation: totalBalance.gt(0) ? bnOrZero(asset.fiatAmount).div(totalBalance).times(100).toNumber() : 0,
+  }))
+
+  const hasMissingPrices = assetsWithAllocation.some(
+    asset => bnOrZero(asset.cryptoBalancePrecision).gt(0) && !bnOrZero(asset.price).gt(0)
+  )
+  const delta24h = hasMissingPrices || failedNetworks.length > 0 ? null : calculate24hDelta(assetsWithAllocation)
+
+  return {
+    failedNetworks,
+    hasMissingPrices,
+    assets: assetsWithAllocation,
+    totalBalance: totalBalance.toFixed(2),
+    delta24h,
+    lastUpdated: Date.now(),
   }
 }
