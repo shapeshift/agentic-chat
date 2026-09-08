@@ -28,26 +28,32 @@ export const getRelayRate = async ({
 
   try {
     const { data } = await withRetry(() =>
-      axios.post<RelayQuote>('https://api.relay.link/quote', {
-        user: sellAddress,
-        recipient: buyAddress,
-        refundTo: sellAddress,
-        refundOnOrigin: true,
-        originChainId,
-        originCurrency: sellAdapter.getRelayAssetAddress(sellAsset),
-        destinationCurrency: buyAdapter.getRelayAssetAddress(buyAsset),
-        destinationChainId,
-        tradeType: 'EXACT_INPUT',
-        amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
-        slippageTolerance: undefined,
-        referrer: 'shapeshift',
-        appFees: [
-          {
-            recipient: DAO_TREASURY_BASE,
-            fee: DEFAULT_FEE_BPS,
-          },
-        ],
-      } as RelayFetchQuoteParams)
+      axios.post<RelayQuote>(
+        'https://api.relay.link/quote',
+        {
+          user: sellAddress,
+          recipient: buyAddress,
+          refundTo: sellAddress,
+          refundOnOrigin: true,
+          originChainId,
+          originCurrency: sellAdapter.getRelayAssetAddress(sellAsset),
+          destinationCurrency: buyAdapter.getRelayAssetAddress(buyAsset),
+          destinationChainId,
+          tradeType: 'EXACT_INPUT',
+          amount: toBaseUnit(sellAmountCryptoPrecision, sellAsset.precision),
+          slippageTolerance: undefined,
+          referrer: 'shapeshift',
+          appFees: [
+            {
+              recipient: DAO_TREASURY_BASE,
+              fee: DEFAULT_FEE_BPS,
+            },
+          ],
+        } as RelayFetchQuoteParams,
+        {
+          headers: process.env.RELAY_API_KEY ? { 'x-api-key': process.env.RELAY_API_KEY } : undefined,
+        }
+      )
     )
 
     const buyAmountCryptoBaseUnit = data.details.currencyOut.amount
