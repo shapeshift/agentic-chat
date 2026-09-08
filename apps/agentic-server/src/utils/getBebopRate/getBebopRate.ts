@@ -108,7 +108,8 @@ export const getBebopRate = async ({
 
       console.error('[getBebopRate] API request failed:', error.response?.status, data || error.message)
 
-      throw new Error(`Bebop: ${apiMessage}`)
+      const status = error.response?.status
+      throw new Error(`Bebop${status ? ` (HTTP ${status})` : ''}: ${apiMessage}`)
     }
 
     console.error('[getBebopRate] Unexpected error:', error)

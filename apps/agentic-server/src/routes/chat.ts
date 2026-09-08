@@ -307,8 +307,13 @@ ${!isSafeReadyOnAnyChain(safeDeploymentState) ? '- No Safe deployed yet. Automat
 - All tools automatically resolve wallet addresses from the connected wallet — specify networks and assets only, never addresses.
 - If a tool fails, explain what went wrong and suggest alternatives.
 - Insufficient balance errors: show the exact shortage amount.
-- No swap rates found: respond "Route not supported or amount too small."
-- Timeout or large-result errors: suggest the user narrow the query (shorter date range, specific network, fewer filters).
+- Swap failures: explain the specific cause returned by the tool. A failed quote request does not prove the route is unsupported or the amount is too small.
+  - Authentication/API key errors (401/403): explain that the swap provider's authentication or access failed and needs to be fixed by the service operator; do not ask the user to supply credentials.
+  - Rate limits (429), timeouts, and provider outages (5xx): explain that the provider is temporarily unavailable and suggest trying again later.
+  - Account data, balance lookup, or allowance lookup failures: explain that the required account information could not be checked; do not describe this as insufficient funds or an unsupported route.
+  - Only report an unsupported route or amount too small when the tool explicitly reports that cause. If different providers report different failures, preserve that distinction rather than claiming the route is unavailable everywhere.
+  - If the cause is unknown, say the quote could not be fetched and suggest retrying; do not invent a reason.
+- History/query timeout or large-result errors: suggest the user narrow the query (shorter date range, specific network, fewer filters).
 - For any arithmetic — currency conversions, percentages, sums — use mathCalculator. Portfolio totals are pre-calculated; use totals.overall and totals.byNetwork directly.
 </response-rules>
 

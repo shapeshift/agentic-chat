@@ -123,7 +123,8 @@ export const getRelayRate = async ({
 
       console.error('[getRelayRate] API request failed:', error.response?.status, data || error.message)
 
-      throw new Error(`Relay: ${apiMessage}`)
+      const status = error.response?.status
+      throw new Error(`Relay${status ? ` (HTTP ${status})` : ''}: ${apiMessage}`)
     }
 
     console.error('[getRelayRate] Unexpected error:', error)
