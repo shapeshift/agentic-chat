@@ -153,11 +153,19 @@ const TxStepCardSwapPair = ({
 
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      <AssetIcon icon={fromIcon} symbol={fromSymbol} className="w-6 h-6" />
+      {fromIcon ? (
+        <AssetIcon icon={fromIcon} symbol={fromSymbol} className="w-6 h-6" />
+      ) : (
+        <span className="text-xl font-bold">{fromSymbol}</span>
+      )}
       <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
         <ChevronRight className="w-4 h-4 text-muted-foreground" />
       </div>
-      <AssetIcon icon={toIcon} symbol={toSymbol} className="w-6 h-6" />
+      {toIcon ? (
+        <AssetIcon icon={toIcon} symbol={toSymbol} className="w-6 h-6" />
+      ) : (
+        <span className="text-xl font-bold">{toSymbol}</span>
+      )}
     </div>
   )
 }
