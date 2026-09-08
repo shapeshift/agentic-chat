@@ -90,7 +90,7 @@ async function fetchBestSwapRate(
 
   if (availableRates.length === 0) {
     const errorDetails = errors.length > 0 ? errors.join('. ') : 'Unknown error'
-    throw new Error(`No rates available. ${errorDetails}`)
+    throw new Error(`Failed to fetch swap quotes. ${errorDetails}`)
   }
 
   return availableRates.reduce((best, current) =>
