@@ -19,6 +19,7 @@ export type TransactionParams = {
   to: string
   value: string
   gasLimit?: number
+  beforeSign?: () => void
   solanaSigner?: SolanaWalletSigner
 }
 
