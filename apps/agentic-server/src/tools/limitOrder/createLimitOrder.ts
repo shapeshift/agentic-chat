@@ -13,6 +13,8 @@ import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
+import { validateSufficientBalance } from '../../utils/balanceHelpers'
+import { tokenAmountSchema, tokenAmountToBaseUnit } from '../../utils/tokenAmount'
 import { getAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
@@ -20,15 +22,9 @@ export const createLimitOrderSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
   buyAsset: z.string().describe('Token symbol or name to buy (e.g., "USDC", "WETH")'),
   network: cowSupportedNetworkSchema.describe('Network for the limit order'),
-  sellAmount: z
-    .string()
-    .refine(val => !/^\d{15,}/.test(val.trim()), {
-      message:
-        'sellAmount looks like a base-unit value (15+ digits). Use human-readable token amounts (e.g. "230" for 230 ARB, not "230000000000000000000").',
-    })
-    .describe(
-      'Amount to sell in TOKEN units, not USD (e.g., "100" for 100 USDC, "230" for 230 ARB). Never pass base units even if precision is 18 (e.g., not "230000000000000000000"). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
-    ),
+  sellAmount: tokenAmountSchema.describe(
+    'Amount to sell in TOKEN units, not USD (e.g., "100" for 100 USDC, "230" for 230 ARB). Never pass base units even if precision is 18 (e.g., not "230000000000000000000"). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
+  ),
   limitPrice: z
     .string()
     .describe(
@@ -99,6 +95,8 @@ export async function executeCreateLimitOrder(
     resolveAsset({ symbolOrName: input.sellAsset, network: input.network }, walletContext),
     resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
+
+  const sellAmountBaseUnit = tokenAmountToBaseUnit(input.sellAmount, sellAsset)
 
   const limitPriceNum = Number(input.limitPrice)
   if (!Number.isFinite(limitPriceNum) || limitPriceNum <= 0) {
@@ -173,11 +171,12 @@ export async function executeCreateLimitOrder(
   const buyToken = resolveCowTokenAddress(buyAsset, isNativeBuyToken)
 
   // Calculate amounts in base units
-  const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
   const buyAmountBaseUnit = calculateBuyAmount(buyAsset, input.sellAmount, input.limitPrice)
 
   // Get approval target (CoW VaultRelayer contract - same address across all chains)
   const approvalTarget = COW_VAULT_RELAYER_ADDRESS
+
+  await validateSufficientBalance(userAddress, sellAsset, input.sellAmount)
 
   // Check allowance for sell token
   const { isApprovalRequired: needsApproval } = await getAllowance({

@@ -8,6 +8,7 @@ import type { TransactionData } from '../lib/schemas/swapSchemas'
 import { toChecksumAddress } from './addressValidation'
 import { getBalance } from './balanceHelpers'
 import { getCommittedAmountForToken } from './committedBalances'
+import { getBaseUnitAmountHint } from './tokenAmount'
 import { createTransaction } from './transactionHelpers'
 import { getAddressForChain } from './walletContextSimple'
 import type { WalletContext } from './walletContextSimple'
@@ -56,7 +57,8 @@ export async function calculateSafeVaultDeposit(params: SafeVaultDepositParams):
         `Insufficient ${sellAsset.symbol} balance. ` +
           `Required: ${requiredHuman} ${sellAsset.symbol}, ` +
           `Safe balance: ${safeBalanceHuman} (${committedAmount > 0n ? `${fromBaseUnit(committedAmount.toString(), sellAsset.precision)} committed to active orders` : 'none committed'}), ` +
-          `Wallet balance: ${eoaBalanceHuman}`
+          `Wallet balance: ${eoaBalanceHuman}` +
+          getBaseUnitAmountHint(requiredHuman, sellAsset, (availableSafeBalance + eoaBalanceBigInt).toString())
       )
     }
   }

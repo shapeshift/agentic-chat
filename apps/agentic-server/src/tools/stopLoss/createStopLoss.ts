@@ -22,6 +22,7 @@ import { toChecksumAddress } from '../../utils/addressValidation'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
+import { tokenAmountSchema, tokenAmountToBaseUnit } from '../../utils/tokenAmount'
 import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
@@ -41,15 +42,9 @@ export const createStopLossSchema = z.object({
     .string()
     .describe('Token symbol or name to receive (e.g., "USDC", "USDT"). Usually a stablecoin for stop-losses.'),
   network: cowSupportedNetworkSchema.describe('Network for the stop-loss order'),
-  sellAmount: z
-    .string()
-    .refine(val => !/^\d{15,}/.test(val.trim()), {
-      message:
-        'sellAmount looks like a base-unit value (15+ digits). Use human-readable token amounts (e.g. "1" for 1 WETH, not "1000000000000000000").',
-    })
-    .describe(
-      'Amount to sell in TOKEN units, not USD (e.g., "1" for 1 WETH, "230" for 230 ARB, "100000" for 100000 PEPE). Never pass base units even if precision is 18 (e.g., not "230000000000000000000"). No commas, dollar signs, or token symbols. If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
-    ),
+  sellAmount: tokenAmountSchema.describe(
+    'Amount to sell in TOKEN units, not USD (e.g., "1" for 1 WETH, "230" for 230 ARB, "100000" for 100000 PEPE). Never pass base units even if precision is 18 (e.g., not "230000000000000000000"). No commas, dollar signs, or token symbols. If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
+  ),
   triggerPrice: z
     .string()
     .describe(
@@ -118,6 +113,8 @@ export async function executeCreateStopLoss(
     resolveAsset({ symbolOrName: input.sellAsset, network: input.network }, walletContext),
     resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
+
+  const sellAmountBaseUnit = tokenAmountToBaseUnit(input.sellAmount, sellAsset)
   // Validate the user has a connected wallet on this chain
   getAddressForChain(walletContext, sellAsset.chainId)
 
@@ -184,7 +181,6 @@ export async function executeCreateStopLoss(
   const sellTokenAddress = resolveCowTokenAddress(sellAsset, false)
   const buyTokenAddress = resolveCowTokenAddress(buyAsset, isNativeToken(buyAsset))
 
-  const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
   const buyAmountStr = buyAmountBaseUnit
   // CoW StopLoss contract normalizes both oracle prices to 18 decimals before comparing:
   // basePrice * 1e18 / quotePrice <= strike

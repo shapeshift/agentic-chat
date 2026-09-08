@@ -1,6 +1,7 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
 import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
+import BigNumber from 'bignumber.js'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
@@ -14,6 +15,7 @@ import { isEvmChain } from '../utils/chains/helpers'
 import { getBebopRate } from '../utils/getBebopRate'
 import { getRelayRate } from '../utils/getRelayRate'
 import { networkToFeeSymbol } from '../utils/networkHelpers'
+import { tokenAmountSchema, tokenAmountToBaseUnit } from '../utils/tokenAmount'
 import { createTransaction } from '../utils/transactionHelpers'
 import { getAddressForChain } from '../utils/walletContextSimple'
 import type { WalletContext } from '../utils/walletContextSimple'
@@ -207,11 +209,11 @@ async function executeSwapInternal({
   sellAmountCrypto: string
   walletContext?: WalletContext
 }): Promise<z.infer<typeof swapPreparationSchema>> {
-  if (!Number.isFinite(parseFloat(sellAmountCrypto)) || parseFloat(sellAmountCrypto) <= 0) {
-    throw new Error('Sell amount must be a positive number')
-  }
+  sellAmountCrypto = tokenAmountSchema.parse(sellAmountCrypto)
 
   const { sellAsset, buyAsset } = await resolveSwapAssets(sellAssetInput, buyAssetInput, walletContext)
+
+  const sellAmountBaseUnit = tokenAmountToBaseUnit(sellAmountCrypto, sellAsset)
 
   // Guard likely USD-vs-token amount mismatches for expensive assets.
   // Example mistake: entering "100" for ETH when intent was "$100 worth of ETH".
@@ -228,17 +230,6 @@ async function executeSwapInternal({
   validateAddress(sellAddress, sellAsset.chainId)
   validateAddress(buyAddress, buyAsset.chainId)
 
-  const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmountCrypto)
-
-  const allowanceData = await getAllowance({
-    amount: toBaseUnit(sellAmountCrypto, sellAsset.precision),
-    asset: sellAsset,
-    from: sellAddress,
-    spender: bestRate.approvalTarget,
-  })
-
-  const needsApproval = allowanceData.isApprovalRequired
-
   try {
     await validateSufficientBalance(sellAddress, sellAsset, sellAmountCrypto)
   } catch (error) {
@@ -251,6 +242,17 @@ async function executeSwapInternal({
     }
     throw error
   }
+
+  const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmountCrypto)
+
+  const allowanceData = await getAllowance({
+    amount: sellAmountBaseUnit,
+    asset: sellAsset,
+    from: sellAddress,
+    spender: bestRate.approvalTarget,
+  })
+
+  const needsApproval = allowanceData.isApprovalRequired
 
   const approvalTx = buildApprovalTransaction(
     needsApproval,
@@ -294,15 +296,9 @@ async function executeSwapInternal({
 export const initiateSwapSchema = z.object({
   sellAsset: assetInputSchema.describe('Asset to sell'),
   buyAsset: assetInputSchema.describe('Asset to buy'),
-  sellAmount: z
-    .string()
-    .refine(val => !/^\d{15,}/.test(val.trim()), {
-      message:
-        'sellAmount looks like a base-unit value (15+ digits). Use human-readable token amounts (e.g. "1" for 1 ETH, not "1000000000000000000").',
-    })
-    .describe(
-      'Amount to sell in TOKEN units (not USD), e.g. "1" for 1 ETH, "0.5" for 0.5 SOL. Never pass base units (like wei), and do not pass dollar amounts here.'
-    ),
+  sellAmount: tokenAmountSchema.describe(
+    'Amount to sell in TOKEN units (not USD), e.g. "1" for 1 ETH, "0.5" for 0.5 SOL. Never pass base units (like wei), and do not pass dollar amounts here.'
+  ),
 })
 
 export type InitiateSwapInput = z.infer<typeof initiateSwapSchema>
@@ -354,7 +350,9 @@ export async function executeInitiateSwapUsd(
     throw new Error(`Unable to fetch price for ${sellAsset.symbol}. Price data may be unavailable.`)
   }
 
-  const sellAmountCrypto = (parseFloat(sellAmountUsd) / sellAssetPrice).toString()
+  const sellAmountCrypto = new BigNumber(tokenAmountSchema.parse(sellAmountUsd))
+    .div(sellAssetPrice)
+    .toFixed(sellAsset.precision, BigNumber.ROUND_DOWN)
 
   return executeSwapInternal({
     sellAssetInput,
