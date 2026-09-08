@@ -30,6 +30,8 @@ export type PortfolioDelta = {
 }
 
 export type PortfolioData = {
+  failedNetworks?: string[]
+  hasMissingPrices?: boolean
   assets: PortfolioAsset[]
   totalBalance: string
   delta24h: PortfolioDelta | null

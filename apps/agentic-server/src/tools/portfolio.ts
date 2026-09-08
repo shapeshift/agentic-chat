@@ -46,7 +46,15 @@ export type PortfolioTotals = {
   byNetwork: Record<EvmSolanaNetwork, string>
 }
 
+export type PortfolioNetworkFailure = {
+  network: EvmSolanaNetwork
+  message: string
+}
+
 export type PortfolioOutput = {
+  failedNetworks: PortfolioNetworkFailure[]
+  unpricedAssets: string[]
+  incomplete: boolean
   networks: Array<{
     network: EvmSolanaNetwork
     account: string
@@ -133,8 +141,24 @@ async function getPortfolioDataSingle(
 export async function getPortfolioData(
   input: { networks: EvmSolanaNetwork[] },
   walletContext?: WalletContext
-): Promise<PortfolioDataFull[]> {
-  return Promise.all(input.networks.map(network => getPortfolioDataSingle(network, walletContext)))
+): Promise<{
+  networks: PortfolioDataFull[]
+  failedNetworks: PortfolioNetworkFailure[]
+}> {
+  const results = await Promise.allSettled(
+    input.networks.map(network => getPortfolioDataSingle(network, walletContext))
+  )
+  const networks: PortfolioDataFull[] = []
+  const failedNetworks: PortfolioNetworkFailure[] = []
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') networks.push(result.value)
+    else
+      failedNetworks.push({
+        network: input.networks[index]!,
+        message: 'Unable to fetch balances for this network',
+      })
+  })
+  return { networks, failedNetworks }
 }
 
 export async function executeGetPortfolio(
@@ -147,7 +171,7 @@ export async function executeGetPortfolio(
     throw new Error('No networks specified and no connected wallets found')
   }
 
-  const fullData = await getPortfolioData({ networks }, walletContext)
+  const { networks: fullData, failedNetworks } = await getPortfolioData({ networks }, walletContext)
 
   const networkResults = fullData.map(networkData => ({
     network: networkData.network,
@@ -174,7 +198,16 @@ export async function executeGetPortfolio(
     overallTotal = overallTotal.plus(networkTotal)
   }
 
+  const unpricedAssets = fullData.flatMap(networkData =>
+    networkData.balances
+      .filter(balance => new BigNumber(balance.cryptoAmount).gt(0) && !new BigNumber(balance.asset.price).gt(0))
+      .map(balance => balance.asset.assetId)
+  )
+
   return {
+    failedNetworks,
+    unpricedAssets,
+    incomplete: failedNetworks.length > 0 || unpricedAssets.length > 0,
     networks: networkResults,
     totals: {
       overall: overallTotal.toFixed(2),
@@ -185,7 +218,7 @@ export async function executeGetPortfolio(
 
 export const portfolioTool = {
   description:
-    'Get portfolio balances across connected networks. Returns balances per network with pre-calculated totals (overall and per-network). No UI card - format and present the data in your response. Use the provided totals directly - do not recalculate them.',
+    'Get portfolio balances across connected networks. Returns balances per network with pre-calculated totals (overall and per-network). No UI card - format and present the data in your response. Use the provided totals directly - do not recalculate them. If incomplete is true, explain that totals are incomplete: list failedNetworks and note any unpricedAssets whose token balances exist but USD values are unavailable. If all networks failed, report balances as unavailable, never as zero.',
   inputSchema: portfolioSchema,
   execute: executeGetPortfolio,
 }

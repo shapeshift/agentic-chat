@@ -6,6 +6,9 @@ import { defineConfig } from 'vite'
 
 export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: ['three'],
+  },
   envDir: resolve(__dirname, '../..'),
   cacheDir: resolve(__dirname, '../../node_modules/.vite/agentic-chat'),
   define: {

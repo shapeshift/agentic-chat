@@ -28,11 +28,22 @@ export function AssetListSkeleton({ rows = 5 }: { rows?: number }) {
 
 export function PortfolioAssetList() {
   const { primaryWallet } = useDynamicContext()
-  const { assets, isLoading, isFetching } = usePortfolioQuery()
+  const { assets, isLoading, isFetching, isError, failedNetworks, refetch } = usePortfolioQuery()
   const groupedAssets = useMemo(() => groupPortfolioAssets(assets), [assets])
 
   if (isLoading) {
     return <AssetListSkeleton />
+  }
+
+  if (groupedAssets.length === 0 && (isError || failedNetworks.length > 0)) {
+    return (
+      <div role="status" className="text-center py-12 px-4">
+        <p>Balances are unavailable{!isError ? ' on some networks' : ''}.</p>
+        <button className="text-primary mt-2" onClick={() => void refetch()}>
+          Retry
+        </button>
+      </div>
+    )
   }
 
   if (groupedAssets.length === 0) {
@@ -49,14 +60,25 @@ export function PortfolioAssetList() {
   }
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full flex flex-col">
+      {(failedNetworks.length > 0 || isError) && (
+        <div className="px-4 pb-2 shrink-0">
+          <button
+            className="text-primary text-sm disabled:opacity-50"
+            disabled={isFetching}
+            onClick={() => void refetch()}
+          >
+            {isFetching ? 'Retrying…' : 'Retry unavailable balances'}
+          </button>
+        </div>
+      )}
       {isFetching && !isLoading && (
         <div className="absolute top-2 right-4 z-10">
           <RefreshCw className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
         </div>
       )}
       <Virtuoso
-        style={{ height: '100%' }}
+        style={{ flex: 1, minHeight: 0 }}
         data={groupedAssets}
         itemContent={(_index, group) => (
           <div className="px-4 mb-2">

@@ -31,12 +31,14 @@ export function usePortfolioQuery() {
 
   const assets = useMemo(() => {
     if (!query.data?.assets) return []
-    return query.data.assets.filter(asset => bnOrZero(asset.fiatAmount).gt(0))
+    return query.data.assets.filter(asset => bnOrZero(asset.cryptoBalancePrecision).gt(0))
   }, [query.data?.assets])
 
   return {
     ...query,
     assets,
+    failedNetworks: query.data?.failedNetworks ?? [],
+    hasMissingPrices: query.data?.hasMissingPrices ?? false,
     totalBalance: query.data?.totalBalance ?? '0',
     delta24h: query.data?.delta24h ?? null,
   }

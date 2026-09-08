@@ -110,6 +110,8 @@ function TransactionCard({
                   <TxStepCard.SwapPair
                     fromSymbol={swapTokens.tokenOut.symbol}
                     toSymbol={swapTokens.tokenIn.symbol}
+                    fromIcon={swapTokens.tokenOut.icon}
+                    toIcon={swapTokens.tokenIn.icon}
                     className="-ml-0.5"
                   />
                 )}

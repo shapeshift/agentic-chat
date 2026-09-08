@@ -25,23 +25,18 @@ try {
 
 const app = new Hono()
 
-// Enable CORS for all routes
+// Allow any localhost host with optional subdomains and port
+const LOCALHOST_ORIGIN_REGEX = /^https?:\/\/([\w-]+\.)*localhost(:\d+)?$/i
+
+// Allow shapeshift.com and any subdomain at arbitrary depth
+const SHAPESHIFT_ORIGIN_REGEX = /^https:\/\/([\w-]+\.)*shapeshift\.com$/i
+
+const isAllowedOrigin = (origin: string) => LOCALHOST_ORIGIN_REGEX.test(origin) || SHAPESHIFT_ORIGIN_REGEX.test(origin)
+
 app.use(
   '/*',
   cors({
-    origin: [
-      // Local development
-      'http://localhost:3000',
-      'http://localhost:4200',
-      'http://localhost:5173',
-      // ShapeShift Web deployments
-      'https://app.shapeshift.com',
-      'https://develop.shapeshift.com',
-      'https://private.shapeshift.com',
-      // Agentic Chat deployments
-      'https://shapeshift-agentic.vercel.app',
-      'https://agent.shapeshift.com',
-    ],
+    origin: origin => (isAllowedOrigin(origin) ? origin : null),
     credentials: true,
   })
 )
