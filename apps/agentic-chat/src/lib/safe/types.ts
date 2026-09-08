@@ -64,3 +64,11 @@ export function createSafeProvider(chainId: number, walletProvider: SafeProvider
     },
   }
 }
+
+// Public RPCs have no wallet accounts. Keep SDK signer discovery local during read-only Safe discovery.
+export function createReadOnlySafeProvider(provider: SafeProvider): SafeProvider {
+  return {
+    request: (args: { method: string; params?: unknown[] }) =>
+      args.method === 'eth_accounts' ? Promise.resolve([]) : provider.request(args),
+  }
+}

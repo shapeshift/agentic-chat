@@ -1,6 +1,7 @@
 import { Amount } from '@/components/ui/Amount'
 import { AssetIcon } from '@/components/ui/AssetIcon'
 import { DrawerListItem } from '@/components/ui/DrawerListItem'
+import { bnOrZero } from '@/lib/bignumber'
 import { isStablecoin } from '@/lib/isStablecoin'
 import type { GroupedPortfolioAsset, PortfolioAsset } from '@/types/portfolio'
 
@@ -25,6 +26,7 @@ function RelatedAssetsList({ assets }: { assets: PortfolioAsset[] }) {
 export function GroupedAssetRow({ group }: GroupedAssetRowProps) {
   const { primaryAsset, relatedAssets, totalFiatAmount, totalCryptoBalancePrecision } = group
 
+  const hasMissingPrices = relatedAssets.some(asset => !bnOrZero(asset.price).gt(0))
   const hasMultipleAssets = relatedAssets.length > 1
 
   if (!hasMultipleAssets) {
@@ -41,7 +43,7 @@ export function GroupedAssetRow({ group }: GroupedAssetRowProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm md:text-base text-foreground">{primaryAsset.symbol}</span>
-          {!isStablecoin(primaryAsset.symbol) && (
+          {!hasMissingPrices && !isStablecoin(primaryAsset.symbol) && (
             <Amount.Percent value={primaryAsset.priceChange24h} showSign autoColor className="text-xs" />
           )}
         </div>
@@ -51,7 +53,7 @@ export function GroupedAssetRow({ group }: GroupedAssetRowProps) {
       </div>
       <div className="text-right">
         <div className="font-semibold text-foreground">
-          <Amount.Fiat value={totalFiatAmount} />
+          {hasMissingPrices ? <span title="Price unavailable">—</span> : <Amount.Fiat value={totalFiatAmount} />}
         </div>
       </div>
     </DrawerListItem>
