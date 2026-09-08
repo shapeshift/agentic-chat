@@ -322,22 +322,12 @@ IMPORTANT:
 - Use the maths tool if you need to calculate trigger prices from percentages`,
   inputSchema: createStopLossSchema,
   execute: executeCreateStopLoss,
-  experimental_toToolResultContent: (result: CreateStopLossOutput) => {
-    const llmVisible = {
+  toModelOutput: (result: CreateStopLossOutput) => ({
+    type: 'text' as const,
+    value: JSON.stringify({
       summary: result.summary,
-      safeTransaction: result.safeTransaction,
       needsApproval: result.needsApproval,
-      approvalTx: result.approvalTx,
-      approvalTarget: result.approvalTarget,
-      safeAddress: result.safeAddress,
-      orderHash: result.orderHash,
-      conditionalOrderParams: result.conditionalOrderParams,
       needsDeposit: result.needsDeposit,
-      depositTx: result.depositTx,
-      sellTokenAddress: result.sellTokenAddress,
-      buyTokenAddress: result.buyTokenAddress,
-      validTo: result.validTo,
-    }
-    return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
-  },
+    }),
+  }),
 }

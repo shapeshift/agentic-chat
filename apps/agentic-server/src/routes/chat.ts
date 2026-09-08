@@ -46,6 +46,7 @@ import type {
   SafeChainDeployment,
   WalletContext,
 } from '../utils/walletContextSimple'
+import { wrapTools } from '../utils/wrapTools'
 
 const allEvmChainIds = [
   ethChainId,
@@ -59,31 +60,6 @@ const allEvmChainIds = [
 ]
 
 const allSupportedChainIds = [...allEvmChainIds, solanaChainId]
-
-function wrapTool<TSchema, TExecute extends (args: never, walletContext?: WalletContext) => unknown>(
-  name: string,
-  tool: { description: string; inputSchema: TSchema; execute: TExecute },
-  walletContext?: WalletContext
-) {
-  return {
-    description: tool.description,
-    inputSchema: tool.inputSchema,
-    execute: (args: Parameters<TExecute>[0]) => {
-      console.log(`[Tool] ${name}:`, JSON.stringify(args, null, 2))
-      return tool.execute(args, walletContext)
-    },
-  }
-}
-
-function wrapTools(
-  tools: Record<
-    string,
-    { description: string; inputSchema: unknown; execute: (args: never, walletContext?: WalletContext) => unknown }
-  >,
-  walletContext?: WalletContext
-) {
-  return Object.fromEntries(Object.entries(tools).map(([name, tool]) => [name, wrapTool(name, tool, walletContext)]))
-}
 
 function buildWalletContext(
   evmAddress?: string,
@@ -554,8 +530,10 @@ export async function handleChatRequest(c: Context) {
       knownTransactions
     )
 
-    // Convert UIMessages to ModelMessages
-    const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
+    const tools = buildTools(walletContext)
+
+    // Apply the same output filtering to previous turns as to live tool results.
+    const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0], { tools })
 
     const result = streamText({
       model: getModel(),
@@ -563,7 +541,7 @@ export async function handleChatRequest(c: Context) {
       system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeDeploymentState),
       temperature: 0.3,
       stopWhen: stepCountIs(5),
-      tools: buildTools(walletContext),
+      tools,
       // Venice-specific parameters to disable reasoning for faster responses
       ...(getProviderName() === 'venice' && {
         providerOptions: {

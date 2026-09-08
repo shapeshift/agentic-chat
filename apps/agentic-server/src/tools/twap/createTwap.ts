@@ -275,23 +275,13 @@ IMPORTANT:
 - Native tokens (ETH) must be wrapped (WETH) to sell`,
   inputSchema: createTwapSchema,
   execute: executeCreateTwap,
-  experimental_toToolResultContent: (result: CreateTwapOutput) => {
-    const llmVisible = {
+  toModelOutput: (result: CreateTwapOutput) => ({
+    type: 'text' as const,
+    value: JSON.stringify({
       summary: result.summary,
-      safeTransaction: result.safeTransaction,
       needsApproval: result.needsApproval,
-      approvalTx: result.approvalTx,
-      approvalTarget: result.approvalTarget,
-      safeAddress: result.safeAddress,
-      orderHash: result.orderHash,
-      conditionalOrderParams: result.conditionalOrderParams,
       needsDeposit: result.needsDeposit,
-      depositTx: result.depositTx,
-      sellTokenAddress: result.sellTokenAddress,
-      buyTokenAddress: result.buyTokenAddress,
-      durationSeconds: result.durationSeconds,
-      warnings: result.warnings,
-    }
-    return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
-  },
+      warnings: result.warnings ?? [],
+    }),
+  }),
 }

@@ -255,20 +255,12 @@ IMPORTANT:
 - For percentage-based requests ("sell when up X%"), compute limitPrice = currentPricePerToken × (1 + X/100) using getAssetPrices and the maths tool`,
   inputSchema: createLimitOrderSchema,
   execute: executeCreateLimitOrder,
-  experimental_toToolResultContent: (result: CreateLimitOrderOutput) => {
-    const llmSigningData: Pick<CowOrderSigningData, 'domain' | 'types' | 'primaryType'> = {
-      domain: result.signingData.domain,
-      types: result.signingData.types,
-      primaryType: result.signingData.primaryType,
-    }
-    const llmVisible = {
+  toModelOutput: (result: CreateLimitOrderOutput) => ({
+    type: 'text' as const,
+    value: JSON.stringify({
       summary: result.summary,
-      signingData: llmSigningData,
       needsApproval: result.needsApproval,
-      approvalTx: result.approvalTx,
-      approvalTarget: result.approvalTarget,
       trackingUrl: result.trackingUrl,
-    }
-    return [{ type: 'text' as const, text: JSON.stringify(llmVisible) }]
-  },
+    }),
+  }),
 }
