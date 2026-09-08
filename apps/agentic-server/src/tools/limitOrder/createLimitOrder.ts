@@ -4,7 +4,6 @@ import { toBaseUnit } from '@shapeshiftoss/utils'
 import BigNumber from 'bignumber.js'
 import { z } from 'zod'
 
-import { getSimplePrices } from '../../lib/asset/coingecko'
 import { resolveCowTokenAddress } from '../../lib/composableCow'
 import { COW_VAULT_RELAYER_ADDRESS, prepareCowLimitOrder } from '../../lib/cow'
 import type { CowOrderSigningData } from '../../lib/cow/types'
@@ -18,6 +17,8 @@ import { tokenAmountSchema, tokenAmountToBaseUnit } from '../../utils/tokenAmoun
 import { getAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
+import { validateLimitPrice } from './validateLimitPrice'
+
 export const createLimitOrderSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
   buyAsset: z.string().describe('Token symbol or name to buy (e.g., "USDC", "WETH")'),
@@ -28,7 +29,13 @@ export const createLimitOrderSchema = z.object({
   limitPrice: z
     .string()
     .describe(
-      'How much buyAsset you receive per 1 sellAsset. NEVER invert — for sub-dollar tokens (e.g. ARB at $0.50 USD selling for USDC), limitPrice ≈ 0.50, NOT 2. "sell A when worth X B" → limitPrice=X. Example: "worth 2 USDT" → "2". For percentage-based requests ("sell when up 5%"), compute: currentPricePerToken × (1 + pct/100). Use getAssetPrices if uncertain.'
+      'How much buyAsset you receive per 1 sellAsset. Do not invert the pair rate. For ARB at $0.50 USD selling for USDC at $1, the current pair rate is 0.50 USDC/ARB; 2 is a different future target. "sell A when worth X B" → limitPrice=X. Example: "worth 2 USDT" → "2". For percentage-based requests ("sell when up 5%"), compute: (sellAssetUsdPrice / buyAssetUsdPrice) × (1 + pct/100). Use getAssetPrices if uncertain.'
+    ),
+  priceConfirmed: z
+    .boolean()
+    .optional()
+    .describe(
+      'Set true only after asking the user to confirm a flagged price and receiving explicit confirmation of the exact buyAsset-per-sellAsset target. Never set this automatically to bypass a validation error.'
     ),
   expirationHours: z
     .number()
@@ -98,53 +105,7 @@ export async function executeCreateLimitOrder(
 
   const sellAmountBaseUnit = tokenAmountToBaseUnit(input.sellAmount, sellAsset)
 
-  const limitPriceNum = Number(input.limitPrice)
-  if (!Number.isFinite(limitPriceNum) || limitPriceNum <= 0) {
-    throw new Error(`Invalid limitPrice "${input.limitPrice}". It must be a positive number.`)
-  }
-
-  // Sanity-check limitPrice against current market rate to catch LLM inversion/base-unit errors
-  const priceResults = await getSimplePrices([sellAsset.assetId, buyAsset.assetId])
-  const sellUsdPrice = Number(priceResults.find(p => p.assetId === sellAsset.assetId)?.price ?? '0')
-  const buyUsdPrice = Number(priceResults.find(p => p.assetId === buyAsset.assetId)?.price ?? '0')
-  if (sellUsdPrice > 0 && buyUsdPrice > 0) {
-    const marketLimitPrice = sellUsdPrice / buyUsdPrice
-    const ratio = limitPriceNum / marketLimitPrice
-    if (!Number.isFinite(ratio) || ratio <= 0) {
-      throw new Error(
-        `Invalid limitPrice "${input.limitPrice}" for market comparison. ` +
-          `Expected a positive ${buyAsset.symbol}/${sellAsset.symbol} price.`
-      )
-    }
-    const logRatio = Math.abs(Math.log10(ratio))
-    const isNearUsdPrice = (usdPrice: number) => usdPrice > 0 && Math.abs(limitPriceNum - usdPrice) / usdPrice <= 0.25
-
-    // Guard likely "USD price leaked into pair price" mistakes.
-    // Example: ARB->EUL should be ~0.086 EUL/ARB, but passing 1.39 (EUL USD) is >10x off.
-    if (logRatio > 1 && (isNearUsdPrice(sellUsdPrice) || isNearUsdPrice(buyUsdPrice))) {
-      throw new Error(
-        `limitPrice ${input.limitPrice} appears to be a USD token price, not the pair price. ` +
-          `Expected approximately ${marketLimitPrice.toFixed(6)} ${buyAsset.symbol}/${sellAsset.symbol} ` +
-          `(1 ${sellAsset.symbol} = X ${buyAsset.symbol}).`
-      )
-    }
-
-    if (logRatio > 3) {
-      throw new Error(
-        `limitPrice ${input.limitPrice} is more than 1000× from the market rate (~${marketLimitPrice.toFixed(6)} ${buyAsset.symbol}/${sellAsset.symbol}). ` +
-          `Did you invert the price or pass a base-unit value? For ${sellAsset.symbol} at $${sellUsdPrice} selling for ${buyAsset.symbol}, limitPrice should be ~${marketLimitPrice.toFixed(6)}.`
-      )
-    }
-    if (logRatio > 1) {
-      console.warn('[createLimitOrder] limitPrice sanity check: suspicious deviation', {
-        inputLimitPrice: input.limitPrice,
-        marketLimitPrice,
-        ratio,
-        sellAsset: sellAsset.symbol,
-        buyAsset: buyAsset.symbol,
-      })
-    }
-  }
+  validateLimitPrice(input.limitPrice, sellAsset, buyAsset, input.priceConfirmed)
 
   // Get numeric chain ID directly from network (Zod schema guarantees valid network)
   const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
@@ -251,7 +212,8 @@ IMPORTANT:
 - Currently supports: Ethereum, Gnosis, Arbitrum
 - Order executes automatically when market price reaches limit
 - If user specifies total amounts (e.g., "10 USDC for 20 USDT"), use the maths tool to calculate limitPrice (20÷10=2)
-- For percentage-based requests ("sell when up X%"), compute limitPrice = currentPricePerToken × (1 + X/100) using getAssetPrices and the maths tool`,
+- For percentage-based requests ("sell when up X%"), compute limitPrice = (sellAssetUsdPrice / buyAssetUsdPrice) × (1 + X/100) using getAssetPrices and the maths tool
+- If a price is flagged, ask the user to confirm the exact buyAsset-per-sellAsset target. Set priceConfirmed only after their explicit confirmation; do not silently substitute the market rate.`,
   inputSchema: createLimitOrderSchema,
   execute: executeCreateLimitOrder,
   toModelOutput: (result: CreateLimitOrderOutput) => ({
