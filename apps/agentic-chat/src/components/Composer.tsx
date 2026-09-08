@@ -55,7 +55,7 @@ export function Composer() {
         onKeyDown={onKeyDown}
         placeholder="Write a message..."
         rows={1}
-        className="flex-1 resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        className="flex-1 resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         style={
           {
             minHeight: '48px',
