@@ -5,7 +5,8 @@
 - Run `bun install` to install packages across the monorepo
 - Run `cp .env.example .env.local` and populate the required API keys:
   - `ANTHROPIC_API_KEY` - Required for LLM
-  - `BEBOP_API_KEY` - Required for swap quotes
+  - `BEBOP_API_KEY` - Required for Bebop swap quotes
+  - `RELAY_API_KEY` - Server-side key for authenticated Relay quotes, including cross-chain swaps
   - `COINGECKO_API_KEY` - Required for price data
   - `VITE_ENABLE_ANALYTICS=true` - Optional, enables Mixpanel analytics on local builds
 - Run `bun dev` to run the client and server
