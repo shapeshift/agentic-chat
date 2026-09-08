@@ -31,6 +31,8 @@ interface OrderInfo {
   buyToken: string
   sellTokenSymbol: string
   buyTokenSymbol: string
+  sellTokenIcon?: string
+  buyTokenIcon?: string
   sellAmount: string
   buyAmount: string
   executedSellAmount: string
@@ -44,12 +46,15 @@ interface OrderInfo {
 
 const DEFAULT_DECIMALS = 18
 
-function resolveTokenMetadata(tokenAddress: string, chainId: number): { symbol: string; precision: number } | null {
+function resolveTokenMetadata(
+  tokenAddress: string,
+  chainId: number
+): { symbol: string; precision: number; icon?: string } | null {
   const network = CHAIN_ID_TO_NETWORK[chainId] as Network | undefined
   if (!network) return null
   const asset = AssetService.getInstance().searchByContract(tokenAddress, network)[0]
   if (!asset) return null
-  return { symbol: asset.symbol, precision: asset.precision }
+  return { symbol: asset.symbol, precision: asset.precision, icon: asset.icon }
 }
 
 export interface GetLimitOrdersOutput {
@@ -118,6 +123,8 @@ export async function executeGetLimitOrders(
           buyToken: order.buyToken,
           sellTokenSymbol: sellTokenMeta?.symbol ?? order.sellToken.slice(0, 10),
           buyTokenSymbol: buyTokenMeta?.symbol ?? order.buyToken.slice(0, 10),
+          sellTokenIcon: sellTokenMeta?.icon,
+          buyTokenIcon: buyTokenMeta?.icon,
           sellAmount: fromBaseUnit(order.sellAmount, sellPrecision),
           buyAmount: fromBaseUnit(order.buyAmount, buyPrecision),
           executedSellAmount: fromBaseUnit(order.executedSellAmount || '0', sellPrecision),

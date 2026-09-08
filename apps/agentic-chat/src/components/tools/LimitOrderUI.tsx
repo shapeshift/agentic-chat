@@ -41,6 +41,8 @@ export function LimitOrderUI({ toolPart }: ToolUIComponentProps<'createLimitOrde
               <TxStepCard.SwapPair
                 fromSymbol={summary?.sellAsset.symbol.toUpperCase()}
                 toSymbol={summary?.buyAsset.symbol.toUpperCase()}
+                fromIcon={summary?.sellAsset.icon}
+                toIcon={summary?.buyAsset.icon}
                 isLoading={isLoading}
               />
               <TxStepCard.Amount

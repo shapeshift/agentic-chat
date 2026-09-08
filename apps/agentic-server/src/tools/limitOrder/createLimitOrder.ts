@@ -44,10 +44,12 @@ export interface LimitOrderSummary {
   sellAsset: {
     symbol: string
     amount: string
+    icon?: string
   }
   buyAsset: {
     symbol: string
     estimatedAmount: string
+    icon?: string
   }
   network: string
   limitPrice: string
@@ -154,10 +156,12 @@ export async function executeCreateLimitOrder(
     sellAsset: {
       symbol: sellAsset.symbol,
       amount: input.sellAmount,
+      icon: sellAsset.icon,
     },
     buyAsset: {
       symbol: buyAsset.symbol,
       estimatedAmount: estimatedBuyAmount,
+      icon: buyAsset.icon,
     },
     network: input.network,
     limitPrice: input.limitPrice,
