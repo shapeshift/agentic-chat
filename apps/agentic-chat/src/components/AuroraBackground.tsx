@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ShaderInstance } from 'shaders/js'
 
-import { useIsMobile } from '@/hooks/use-mobile'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 let cachedWebGLAvailable: boolean | null = null
 function isWebGLAvailable(): boolean {
@@ -38,20 +39,47 @@ function CSSFallback() {
   )
 }
 
-function AuroraCanvas({ onError }: { onError: () => void }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+function AuroraCanvas() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const container = containerRef.current
+    if (!container) return
 
-    let cleanup: (() => void) | null = null
+    // Each effect owns its canvas so a late Strict Mode initialization cannot
+    // destroy the renderer belonging to the next effect.
+    const canvas = document.createElement('canvas')
+    canvas.className = 'absolute inset-0 h-full w-full'
+    container.appendChild(canvas)
+    setIsReady(false)
+
+    let shader: ShaderInstance | null = null
+    let resizeObserver: ResizeObserver | null = null
     let cancelled = false
 
-    import('shaders/js')
-      .then(({ createShader }) => {
-        if (cancelled) return Promise.resolve(null)
-        return createShader(
+    const dispose = () => {
+      cancelled = true
+      clearTimeout(readyTimeout)
+      resizeObserver?.disconnect()
+      canvas.removeEventListener('webglcontextlost', handleContextLost)
+      canvas.remove()
+      shader?.destroy()
+      shader = null
+    }
+    const handleContextLost = () => {
+      setIsReady(false)
+      dispose()
+    }
+    // The library can resolve even when renderer initialization fails. Readiness,
+    // rather than promise resolution, determines whether we reveal the canvas.
+    const readyTimeout = setTimeout(dispose, 10_000)
+    canvas.addEventListener('webglcontextlost', handleContextLost)
+
+    void import('shaders/js')
+      .then(async ({ createShader }) => {
+        if (cancelled) return
+        const instance = await createShader(
           canvas,
           {
             components: [
@@ -74,59 +102,59 @@ function AuroraCanvas({ onError }: { onError: () => void }) {
               },
             ],
           },
-          { disableTelemetry: true }
+          {
+            disableTelemetry: true,
+            onReady: () => {
+              if (cancelled) return
+              clearTimeout(readyTimeout)
+              setIsReady(true)
+            },
+          }
         )
-      })
-      .then(shader => {
-        if (!shader) return
         if (cancelled) {
-          shader.destroy()
+          instance.destroy()
           return
         }
+        shader = instance
 
-        // createShader pins the canvas to a fixed pixel size and watches the
-        // canvas itself for resizes — so CSS-driven layout changes (e.g. the
-        // sidebar opening/closing) never reach it. Observe the parent instead
-        // and resize explicitly.
-        const parent = canvas.parentElement
-        let resizeObserver: ResizeObserver | null = null
-        if (parent) {
-          resizeObserver = new ResizeObserver(([entry]) => {
-            if (!entry) return
-            const { width, height } = entry.contentRect
-            if (width > 0 && height > 0) shader.resize(width, height)
-          })
-          resizeObserver.observe(parent)
-        }
-
-        cleanup = () => {
-          resizeObserver?.disconnect()
-          shader.destroy()
-        }
+        // Observe the layout container; createShader fixes the canvas's CSS size.
+        resizeObserver = new ResizeObserver(([entry]) => {
+          if (!entry || cancelled) return
+          const { width, height } = entry.contentRect
+          if (width > 0 && height > 0) instance.resize(width, height)
+        })
+        resizeObserver.observe(container)
       })
       .catch(err => {
-        console.error('[AuroraBackground] shader init failed, falling back to CSS:', err)
-        cleanup?.()
-        cleanup = null
-        if (!cancelled) onError()
+        if (cancelled) return
+        console.warn('[AuroraBackground] Using CSS fallback:', err)
+        setIsReady(false)
+        dispose()
       })
 
-    return () => {
-      cancelled = true
-      cleanup?.()
-    }
-  }, [onError])
+    return dispose
+  }, [])
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ display: 'block' }} />
+  return (
+    <>
+      <div className={`absolute inset-0 transition-opacity duration-700 ${isReady ? 'opacity-0' : 'opacity-100'}`}>
+        <CSSFallback />
+      </div>
+      <div
+        ref={containerRef}
+        className={`absolute inset-0 transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </>
+  )
 }
 
 export function AuroraBackground() {
-  const isMobile = useIsMobile()
-  const [shaderFailed, setShaderFailed] = useState(false)
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 
-  if (isMobile || !isWebGLAvailable() || shaderFailed) {
-    return <CSSFallback />
-  }
-
-  return <AuroraCanvas onError={() => setShaderFailed(true)} />
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+      {isMobile || reducedMotion || !isWebGLAvailable() ? <CSSFallback /> : <AuroraCanvas />}
+    </div>
+  )
 }
