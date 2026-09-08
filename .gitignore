@@ -34,9 +34,6 @@ node_modules
 # IDE - Cursor
 .cursor/*
 
-# Nx local cache (never commit)
-.nx/
-
 # misc
 /.sass-cache
 /connect.lock
