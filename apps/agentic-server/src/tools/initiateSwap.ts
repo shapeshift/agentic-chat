@@ -1,6 +1,7 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
 import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
+import BigNumber from 'bignumber.js'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
@@ -14,6 +15,7 @@ import { isEvmChain } from '../utils/chains/helpers'
 import { getBebopRate } from '../utils/getBebopRate'
 import { getRelayRate } from '../utils/getRelayRate'
 import { networkToFeeSymbol } from '../utils/networkHelpers'
+import { tokenAmountSchema, tokenAmountToBaseUnit } from '../utils/tokenAmount'
 import { createTransaction } from '../utils/transactionHelpers'
 import { getAddressForChain } from '../utils/walletContextSimple'
 import type { WalletContext } from '../utils/walletContextSimple'
@@ -207,11 +209,20 @@ async function executeSwapInternal({
   sellAmountCrypto: string
   walletContext?: WalletContext
 }): Promise<z.infer<typeof swapPreparationSchema>> {
-  if (!Number.isFinite(parseFloat(sellAmountCrypto)) || parseFloat(sellAmountCrypto) <= 0) {
-    throw new Error('Sell amount must be a positive number')
-  }
+  sellAmountCrypto = tokenAmountSchema.parse(sellAmountCrypto)
 
   const { sellAsset, buyAsset } = await resolveSwapAssets(sellAssetInput, buyAssetInput, walletContext)
+
+  const sellAmountBaseUnit = tokenAmountToBaseUnit(sellAmountCrypto, sellAsset)
+
+  // Guard likely USD-vs-token amount mismatches for expensive assets.
+  // Example mistake: entering "100" for ETH when intent was "$100 worth of ETH".
+  const sellAssetPrice = parseFloat(sellAsset.price || '0')
+  const sellAmountNum = parseFloat(sellAmountCrypto)
+  const sellValueUsd = sellAssetPrice > 0 ? sellAmountNum * sellAssetPrice : 0
+  const hasCurrencyLikePrecision = /^\d+(\.\d{1,2})?$/.test(sellAmountCrypto.trim())
+  const looksLikeUsdAsTokenAmount =
+    hasCurrencyLikePrecision && sellAssetPrice >= 10 && sellValueUsd >= 50_000 && sellAmountNum <= 100_000
 
   const sellAddress = getAddressForChain(walletContext, sellAsset.chainId)
   const buyAddress = getAddressForChain(walletContext, buyAsset.chainId)
@@ -219,18 +230,29 @@ async function executeSwapInternal({
   validateAddress(sellAddress, sellAsset.chainId)
   validateAddress(buyAddress, buyAsset.chainId)
 
+  try {
+    await validateSufficientBalance(sellAddress, sellAsset, sellAmountCrypto)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (looksLikeUsdAsTokenAmount && message.includes('Insufficient')) {
+      throw new Error(
+        `${message} This request may be using a USD amount as token units. ` +
+          `If you meant a dollar value, use the USD swap flow (e.g. "$${sellAmountCrypto} worth").`
+      )
+    }
+    throw error
+  }
+
   const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmountCrypto)
 
   const allowanceData = await getAllowance({
-    amount: toBaseUnit(sellAmountCrypto, sellAsset.precision),
+    amount: sellAmountBaseUnit,
     asset: sellAsset,
     from: sellAddress,
     spender: bestRate.approvalTarget,
   })
 
   const needsApproval = allowanceData.isApprovalRequired
-
-  await validateSufficientBalance(sellAddress, sellAsset, sellAmountCrypto)
 
   const approvalTx = buildApprovalTransaction(
     needsApproval,
@@ -274,7 +296,9 @@ async function executeSwapInternal({
 export const initiateSwapSchema = z.object({
   sellAsset: assetInputSchema.describe('Asset to sell'),
   buyAsset: assetInputSchema.describe('Asset to buy'),
-  sellAmount: z.string().describe('Amount to sell in crypto tokens, e.g. 1 for 1 ETH, 0.5 for 0.5 SOL'),
+  sellAmount: tokenAmountSchema.describe(
+    'Amount to sell in TOKEN units (not USD), e.g. "1" for 1 ETH, "0.5" for 0.5 SOL. Never pass base units (like wei), and do not pass dollar amounts here.'
+  ),
 })
 
 export type InitiateSwapInput = z.infer<typeof initiateSwapSchema>
@@ -326,7 +350,9 @@ export async function executeInitiateSwapUsd(
     throw new Error(`Unable to fetch price for ${sellAsset.symbol}. Price data may be unavailable.`)
   }
 
-  const sellAmountCrypto = (parseFloat(sellAmountUsd) / sellAssetPrice).toString()
+  const sellAmountCrypto = new BigNumber(tokenAmountSchema.parse(sellAmountUsd))
+    .div(sellAssetPrice)
+    .toFixed(sellAsset.precision, BigNumber.ROUND_DOWN)
 
   return executeSwapInternal({
     sellAssetInput,

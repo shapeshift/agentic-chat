@@ -12,22 +12,30 @@ import type { TransactionData } from '../../lib/schemas/swapSchemas'
 import { getAllowance } from '../../utils'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
+import { validateSufficientBalance } from '../../utils/balanceHelpers'
+import { tokenAmountSchema, tokenAmountToBaseUnit } from '../../utils/tokenAmount'
 import { getAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
+
+import { validateLimitPrice } from './validateLimitPrice'
 
 export const createLimitOrderSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
   buyAsset: z.string().describe('Token symbol or name to buy (e.g., "USDC", "WETH")'),
   network: cowSupportedNetworkSchema.describe('Network for the limit order'),
-  sellAmount: z
-    .string()
-    .describe(
-      'Amount to sell in TOKEN units, not USD (e.g., "100" for 100 USDC, "0.5" for 0.5 WETH). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
-    ),
+  sellAmount: tokenAmountSchema.describe(
+    'Amount to sell in TOKEN units, not USD (e.g., "100" for 100 USDC, "230" for 230 ARB). Never pass base units even if precision is 18 (e.g., not "230000000000000000000"). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
+  ),
   limitPrice: z
     .string()
     .describe(
-      'How much buyAsset you receive per 1 sellAsset. "sell A when worth X B" → limitPrice=X. Example: "worth 2 USDT" → "2". For percentage-based requests ("sell when up 5%"), compute: currentPricePerToken × (1 + pct/100).'
+      'How much buyAsset you receive per 1 sellAsset. Do not invert the pair rate. For ARB at $0.50 USD selling for USDC at $1, the current pair rate is 0.50 USDC/ARB; 2 is a different future target. "sell A when worth X B" → limitPrice=X. Example: "worth 2 USDT" → "2". For percentage-based requests ("sell when up 5%"), compute: (sellAssetUsdPrice / buyAssetUsdPrice) × (1 + pct/100). Use getAssetPrices if uncertain.'
+    ),
+  priceConfirmed: z
+    .boolean()
+    .optional()
+    .describe(
+      'Set true only after asking the user to confirm a flagged price and receiving explicit confirmation of the exact buyAsset-per-sellAsset target. Never set this automatically to bypass a validation error.'
     ),
   expirationHours: z
     .number()
@@ -95,6 +103,10 @@ export async function executeCreateLimitOrder(
     resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
 
+  const sellAmountBaseUnit = tokenAmountToBaseUnit(input.sellAmount, sellAsset)
+
+  validateLimitPrice(input.limitPrice, sellAsset, buyAsset, input.priceConfirmed)
+
   // Get numeric chain ID directly from network (Zod schema guarantees valid network)
   const evmChainId = NETWORK_TO_CHAIN_ID[input.network]!
 
@@ -120,11 +132,12 @@ export async function executeCreateLimitOrder(
   const buyToken = resolveCowTokenAddress(buyAsset, isNativeBuyToken)
 
   // Calculate amounts in base units
-  const sellAmountBaseUnit = toBaseUnit(input.sellAmount, sellAsset.precision)
   const buyAmountBaseUnit = calculateBuyAmount(buyAsset, input.sellAmount, input.limitPrice)
 
   // Get approval target (CoW VaultRelayer contract - same address across all chains)
   const approvalTarget = COW_VAULT_RELAYER_ADDRESS
+
+  await validateSufficientBalance(userAddress, sellAsset, input.sellAmount)
 
   // Check allowance for sell token
   const { isApprovalRequired: needsApproval } = await getAllowance({
@@ -199,7 +212,16 @@ IMPORTANT:
 - Currently supports: Ethereum, Gnosis, Arbitrum
 - Order executes automatically when market price reaches limit
 - If user specifies total amounts (e.g., "10 USDC for 20 USDT"), use the maths tool to calculate limitPrice (20÷10=2)
-- For percentage-based requests ("sell when up X%"), compute limitPrice = currentPricePerToken × (1 + X/100) using getAssetPrices and the maths tool`,
+- For percentage-based requests ("sell when up X%"), compute limitPrice = (sellAssetUsdPrice / buyAssetUsdPrice) × (1 + X/100) using getAssetPrices and the maths tool
+- If a price is flagged, ask the user to confirm the exact buyAsset-per-sellAsset target. Set priceConfirmed only after their explicit confirmation; do not silently substitute the market rate.`,
   inputSchema: createLimitOrderSchema,
   execute: executeCreateLimitOrder,
+  toModelOutput: (result: CreateLimitOrderOutput) => ({
+    type: 'text' as const,
+    value: JSON.stringify({
+      summary: result.summary,
+      needsApproval: result.needsApproval,
+      trackingUrl: result.trackingUrl,
+    }),
+  }),
 }

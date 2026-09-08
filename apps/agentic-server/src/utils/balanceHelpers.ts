@@ -1,8 +1,9 @@
 import type { Asset } from '@shapeshiftoss/types'
 import { chainIdToNetwork } from '@shapeshiftoss/types'
-import { fromBaseUnit, toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 
 import { executeGetAccount } from '../tools/getAccount'
+
+import { assertSufficientTokenBalance } from './tokenAmount'
 
 export async function getBalance(address: string, asset: Asset): Promise<string> {
   const network = chainIdToNetwork[asset.chainId] ?? 'ethereum'
@@ -18,10 +19,5 @@ export async function getBalance(address: string, asset: Asset): Promise<string>
 export async function validateSufficientBalance(address: string, asset: Asset, requiredAmount: string): Promise<void> {
   const balance = await getBalance(address, asset)
 
-  const requiredAmountBaseUnit = toBaseUnit(requiredAmount, asset.precision)
-
-  if (toBigInt(balance) < toBigInt(requiredAmountBaseUnit)) {
-    const available = fromBaseUnit(balance, asset.precision)
-    throw new Error(`Insufficient ${asset.symbol} balance. Required: ${requiredAmount}, Available: ${available}`)
-  }
+  assertSufficientTokenBalance(requiredAmount, asset, balance)
 }

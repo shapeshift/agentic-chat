@@ -22,6 +22,7 @@ import { toChecksumAddress } from '../../utils/addressValidation'
 import { buildApprovalTransaction } from '../../utils/approvalHelpers'
 import { isNativeToken, resolveAsset } from '../../utils/assetHelpers'
 import { calculateSafeVaultDeposit } from '../../utils/safeVaultDeposit'
+import { tokenAmountSchema, tokenAmountToBaseUnit } from '../../utils/tokenAmount'
 import { getAddressForChain, getSafeAddressForChain } from '../../utils/walletContextSimple'
 import type { WalletContext } from '../../utils/walletContextSimple'
 
@@ -36,11 +37,9 @@ export const createTwapSchema = z.object({
   sellAsset: z.string().describe('Token symbol or name to sell (e.g., "USDC", "WETH")'),
   buyAsset: z.string().describe('Token symbol or name to buy (e.g., "ETH", "WBTC")'),
   network: cowSupportedNetworkSchema.describe('Network for the TWAP/DCA order'),
-  totalAmount: z
-    .string()
-    .describe(
-      'Total amount to sell in TOKEN units, not USD (e.g., "1000" for 1000 USDC, "0.5" for 0.5 WETH). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
-    ),
+  totalAmount: tokenAmountSchema.describe(
+    'Total amount to sell in TOKEN units, not USD (e.g., "1000" for 1000 USDC, "230" for 230 ARB, "0.5" for 0.5 WETH). Never pass base units even if precision is 18 (e.g., not "230000000000000000000"). If the user specified a USD dollar amount, convert to token units first using getAssetPricesTool and mathCalculatorTool.'
+  ),
   durationSeconds: z
     .number()
     .min(120)
@@ -105,6 +104,8 @@ export async function executeCreateTwap(
     resolveAsset({ symbolOrName: input.sellAsset, network: input.network }, walletContext),
     resolveAsset({ symbolOrName: input.buyAsset, network: input.network }, walletContext),
   ])
+
+  const sellAmountBaseUnit = tokenAmountToBaseUnit(input.totalAmount, sellAsset)
   getAddressForChain(walletContext, sellAsset.chainId)
 
   if (isNativeToken(sellAsset)) {
@@ -123,7 +124,6 @@ export async function executeCreateTwap(
     throw new Error('Trade interval is too short. Minimum interval is 2 minutes between trades.')
   }
 
-  const sellAmountBaseUnit = toBaseUnit(input.totalAmount, sellAsset.precision)
   const partSellAmount = toBigInt(sellAmountBaseUnit) / BigInt(numParts)
 
   if (partSellAmount === 0n) {
@@ -271,4 +271,13 @@ IMPORTANT:
 - Native tokens (ETH) must be wrapped (WETH) to sell`,
   inputSchema: createTwapSchema,
   execute: executeCreateTwap,
+  toModelOutput: (result: CreateTwapOutput) => ({
+    type: 'text' as const,
+    value: JSON.stringify({
+      summary: result.summary,
+      needsApproval: result.needsApproval,
+      needsDeposit: result.needsDeposit,
+      warnings: result.warnings ?? [],
+    }),
+  }),
 }

@@ -46,6 +46,7 @@ import type {
   SafeChainDeployment,
   WalletContext,
 } from '../utils/walletContextSimple'
+import { wrapTools } from '../utils/wrapTools'
 
 const allEvmChainIds = [
   ethChainId,
@@ -59,31 +60,6 @@ const allEvmChainIds = [
 ]
 
 const allSupportedChainIds = [...allEvmChainIds, solanaChainId]
-
-function wrapTool<TSchema, TExecute extends (args: never, walletContext?: WalletContext) => unknown>(
-  name: string,
-  tool: { description: string; inputSchema: TSchema; execute: TExecute },
-  walletContext?: WalletContext
-) {
-  return {
-    description: tool.description,
-    inputSchema: tool.inputSchema,
-    execute: (args: Parameters<TExecute>[0]) => {
-      console.log(`[Tool] ${name}:`, JSON.stringify(args, null, 2))
-      return tool.execute(args, walletContext)
-    },
-  }
-}
-
-function wrapTools(
-  tools: Record<
-    string,
-    { description: string; inputSchema: unknown; execute: (args: never, walletContext?: WalletContext) => unknown }
-  >,
-  walletContext?: WalletContext
-) {
-  return Object.fromEntries(Object.entries(tools).map(([name, tool]) => [name, wrapTool(name, tool, walletContext)]))
-}
 
 function buildWalletContext(
   evmAddress?: string,
@@ -380,17 +356,17 @@ If unsure whether a number is USD or tokens, ask the user.
 
 <percentage-limit-price>
 When a user requests a limit order based on a percentage change (e.g., "sell when price goes up X%", "buy if it drops X%"):
-1. Call getAssetPrices to get the current USD price per token
-2. Call mathCalculator: limitPrice = currentPricePerToken × (1 + percentage / 100) for increases, or × (1 - percentage / 100) for decreases
+1. Call getAssetPrices for both the sell and buy assets.
+2. Call mathCalculator: currentPairPrice = sellAssetUsdPrice / buyAssetUsdPrice. Then limitPrice = currentPairPrice × (1 + percentage / 100) for increases, or × (1 - percentage / 100) for decreases.
 3. Pass the computed limitPrice to createLimitOrder
 
 <example>
-"Sell FOX when it goes up 2%" — FOX current price = $0.0065
-limitPrice = 0.0065 × 1.02 = 0.00663
-Do NOT use the total portfolio value or USD amount — limitPrice is always per-token.
+"Sell FOX for USDC when it goes up 2%" — FOX = $0.0065, USDC = $1
+limitPrice = (0.0065 / 1) × 1.02 = 0.00663 USDC per FOX
+For a crypto-to-crypto pair, divide by the buy token USD price too. Do NOT use the total portfolio value — limitPrice is always buy tokens per sell token.
 </example>
 
-Sanity check: if your computed limitPrice differs from the current market price by more than 100×, stop and confirm with the user before submitting.
+If the tool flags an inverted, USD-like, or distant target, ask the user to confirm the exact price in buy tokens per sell token. Do not automatically change the price or retry with priceConfirmed=true. Use priceConfirmed=true only after the user explicitly confirms the flagged target.
 </percentage-limit-price>
 
 <swap-rules>
@@ -554,8 +530,10 @@ export async function handleChatRequest(c: Context) {
       knownTransactions
     )
 
-    // Convert UIMessages to ModelMessages
-    const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
+    const tools = buildTools(walletContext)
+
+    // Apply the same output filtering to previous turns as to live tool results.
+    const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0], { tools })
 
     const result = streamText({
       model: getModel(),
@@ -563,7 +541,7 @@ export async function handleChatRequest(c: Context) {
       system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeDeploymentState),
       temperature: 0.3,
       stopWhen: stepCountIs(5),
-      tools: buildTools(walletContext),
+      tools,
       // Venice-specific parameters to disable reasoning for faster responses
       ...(getProviderName() === 'venice' && {
         providerOptions: {
