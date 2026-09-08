@@ -84,6 +84,7 @@ export const getBebopRate = async ({
     const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, buyToken.decimals)
 
     return {
+      expiresAt: quote.expiry * 1000,
       approvalTarget: quote.approvalTarget,
       buyAsset,
       buyAmountCryptoPrecision,

@@ -11,6 +11,7 @@ export const getRateInput = z.object({
 })
 
 export const getRateOutput = z.object({
+  expiresAt: z.number().finite().positive().describe('Quote deadline in Unix milliseconds'),
   approvalTarget: z.string().describe('The spender address for the approval'),
   buyAsset: asset.describe('The buy asset details'),
   buyAmountCryptoPrecision: z.string().describe('Amount to sell in human format, e.g. 1 for 1 ETH'),

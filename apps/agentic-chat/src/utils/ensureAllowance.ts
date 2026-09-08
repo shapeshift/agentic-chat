@@ -14,6 +14,7 @@ interface EnsureAllowanceParams {
   approvalTarget: string
   sellAmountCryptoPrecision: string
   sellAccount: string
+  beforeSign?: () => void
   solanaSigner?: SolanaWalletSigner
 }
 
@@ -67,5 +68,5 @@ export async function ensureAllowance(params: EnsureAllowanceParams): Promise<st
     value: '0',
   }
 
-  return executeApproval(approvalTx, { solanaSigner })
+  return executeApproval(approvalTx, { solanaSigner, beforeSign: params.beforeSign })
 }
