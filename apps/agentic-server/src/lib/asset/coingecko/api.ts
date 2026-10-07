@@ -2,6 +2,8 @@ import type { AssetId } from '@shapeshiftoss/caip'
 import { assetIdToCoingecko } from '@shapeshiftoss/caip'
 import axios from 'axios'
 
+import { getRequestSignal } from '../../requestContext'
+
 import type {
   CategoriesResponse,
   CoinResponse,
@@ -22,6 +24,12 @@ const client = axios.create({
   baseURL: BASE_URL,
   headers: { 'x-cg-pro-api-key': COINGECKO_API_KEY },
   timeout: TIMEOUT,
+})
+
+client.interceptors.request.use(config => {
+  const signal = getRequestSignal()
+  if (signal) config.signal = signal
+  return config
 })
 
 export async function getMarketData(coinGeckoId: string): Promise<CoinResponse> {
