@@ -5,6 +5,7 @@ import { getFeeAssetIdByChainId, getUnchainedHttpUrlEnvVar } from '@shapeshiftos
 import axios from 'axios'
 import { z } from 'zod'
 
+import { getRequestSignal } from '../lib/requestContext'
 import { validateAddress } from '../utils/addressValidation'
 
 export const getAccountSchema = z.object({
@@ -43,6 +44,7 @@ export async function executeGetAccount(input: GetAccountInput): Promise<GetAcco
   try {
     const response = await axios.get<Account>(`${baseUrl}/api/v1/account/${account}`, {
       timeout: 30000,
+      signal: getRequestSignal(),
     })
     data = response.data
   } catch (error) {

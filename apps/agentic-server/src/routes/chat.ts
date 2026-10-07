@@ -15,6 +15,7 @@ import type { Context } from 'hono'
 import { z } from 'zod'
 
 import { CHAIN_ID_TO_NETWORK } from '../lib/cow/types'
+import type { ServerEnv } from '../lib/requestBudget'
 import { getModel, getProviderName } from '../models'
 import { checkWalletCapabilitiesTool } from '../tools/checkWalletCapabilities'
 import { lookupExternalAddressTool } from '../tools/getAccount'
@@ -61,16 +62,18 @@ const allEvmChainIds = [
 const allSupportedChainIds = [...allEvmChainIds, solanaChainId]
 
 function wrapTool<TSchema, TExecute extends (args: never, walletContext?: WalletContext) => unknown>(
-  name: string,
   tool: { description: string; inputSchema: TSchema; execute: TExecute },
+  beforeExecute: () => void,
   walletContext?: WalletContext
 ) {
   return {
     description: tool.description,
     inputSchema: tool.inputSchema,
-    execute: (args: Parameters<TExecute>[0]) => {
-      console.log(`[Tool] ${name}:`, JSON.stringify(args, null, 2))
-      return tool.execute(args, walletContext)
+    execute: async (args: Parameters<TExecute>[0]) => {
+      beforeExecute()
+      const result = await tool.execute(args, walletContext)
+      if (JSON.stringify(result)?.length > 32_000) throw new Error('Tool response exceeds model input budget')
+      return result
     },
   }
 }
@@ -80,9 +83,12 @@ function wrapTools(
     string,
     { description: string; inputSchema: unknown; execute: (args: never, walletContext?: WalletContext) => unknown }
   >,
+  beforeExecute: () => void,
   walletContext?: WalletContext
 ) {
-  return Object.fromEntries(Object.entries(tools).map(([name, tool]) => [name, wrapTool(name, tool, walletContext)]))
+  return Object.fromEntries(
+    Object.entries(tools).map(([name, tool]) => [name, wrapTool(tool, beforeExecute, walletContext)])
+  )
 }
 
 function buildWalletContext(
@@ -132,23 +138,26 @@ function buildWalletContext(
   }
 }
 
-function buildTools(walletContext: WalletContext) {
+function buildTools(walletContext: WalletContext, beforeExecute: () => void) {
   return {
-    ...wrapTools({
-      mathCalculatorTool: mathCalculator,
-      getAssetsTool,
-      getAssetPricesTool,
-      getHistoricalPricesTool,
-      lookupExternalAddress: lookupExternalAddressTool,
-      switchNetworkTool,
-      getShapeShiftKnowledgeTool,
-      getPriceFeedTokensTool,
-      getTrendingTokensTool,
-      getTopGainersLosersTool,
-      getTrendingPoolsTool,
-      getCategoriesTool,
-      getNewCoinsTool,
-    }),
+    ...wrapTools(
+      {
+        mathCalculatorTool: mathCalculator,
+        getAssetsTool,
+        getAssetPricesTool,
+        getHistoricalPricesTool,
+        lookupExternalAddress: lookupExternalAddressTool,
+        switchNetworkTool,
+        getShapeShiftKnowledgeTool,
+        getPriceFeedTokensTool,
+        getTrendingTokensTool,
+        getTopGainersLosersTool,
+        getTrendingPoolsTool,
+        getCategoriesTool,
+        getNewCoinsTool,
+      },
+      beforeExecute
+    ),
     ...wrapTools(
       {
         checkWalletCapabilitiesTool,
@@ -172,12 +181,14 @@ function buildTools(walletContext: WalletContext) {
         vaultWithdrawTool,
         vaultWithdrawAllTool,
       },
+      beforeExecute,
       walletContext
     ),
     getAllowanceTool: {
       description: getAllowanceTool.description,
       inputSchema: getAllowanceTool.inputSchema,
       execute: async (args: Parameters<typeof getAllowanceTool.execute>[0]) => {
+        beforeExecute()
         const chainId = args?.asset?.chainId
         const from = args?.from ?? (chainId ? walletContext.connectedWallets?.[chainId]?.address : undefined)
         if (!from) {
@@ -528,7 +539,7 @@ const chatRequestSchema = z.object({
     .optional(),
 })
 
-export async function handleChatRequest(c: Context) {
+export async function handleChatRequest(c: Context<ServerEnv>) {
   try {
     const body = await c.req.json()
     const parsed = chatRequestSchema.safeParse(body)
@@ -536,6 +547,9 @@ export async function handleChatRequest(c: Context) {
     if (!parsed.success) {
       return c.json({ error: 'Invalid request body', details: parsed.error.issues }, 400)
     }
+
+    if (parsed.data.messages.length === 0 || parsed.data.messages.length > 50)
+      return c.json({ error: 'Chat history must contain between 1 and 50 messages' }, 400)
 
     const {
       messages,
@@ -562,13 +576,20 @@ export async function handleChatRequest(c: Context) {
     // Convert UIMessages to ModelMessages
     const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
 
+    let toolCalls = 0
     const result = streamText({
       model: getModel(),
+      maxOutputTokens: 2048,
+      maxRetries: 0,
+      abortSignal: c.get('requestSignal'),
       messages: modelMessages,
       system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeDeploymentState),
       temperature: 0.3,
       stopWhen: stepCountIs(5),
-      tools: buildTools(walletContext),
+      tools: buildTools(walletContext, () => {
+        c.get('requestSignal').throwIfAborted()
+        if (++toolCalls > 10) throw new Error('Tool request budget exceeded')
+      }),
       // Venice-specific parameters to disable reasoning for faster responses
       ...(getProviderName() === 'venice' && {
         providerOptions: {

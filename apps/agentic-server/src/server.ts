@@ -1,10 +1,14 @@
 import util from 'util'
 
 import { AssetService } from '@shapeshiftoss/utils'
+import type { Server } from 'bun'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
 import { initializeAllAssetData, refreshAllAssetData } from './lib/assetInit'
+import { clientIp } from './lib/clientIp'
+import { redisBudgetStore, requestBudget } from './lib/requestBudget'
+import type { ServerEnv } from './lib/requestBudget'
 import { handleChatRequest } from './routes/chat'
 import { handlePortfolioRequest } from './routes/portfolio'
 
@@ -23,7 +27,7 @@ try {
   process.exit(1)
 }
 
-const app = new Hono()
+const app = new Hono<ServerEnv>()
 
 // Allow any localhost host with optional subdomains and port
 const LOCALHOST_ORIGIN_REGEX = /^https?:\/\/([\w-]+\.)*localhost(:\d+)?$/i
@@ -45,6 +49,8 @@ app.use(
 app.get('/health', c => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
+
+app.use('/api/*', requestBudget(redisBudgetStore()))
 
 // Chat endpoint
 app.post('/api/chat', handleChatRequest)
@@ -71,7 +77,14 @@ console.log(`   API: /api/portfolio`)
 console.log(`   Health: /health`)
 
 export default {
-  fetch: app.fetch,
+  fetch: (request: Request, server: Server<unknown>) =>
+    app.fetch(request, {
+      clientIp: clientIp(
+        server.requestIP(request)?.address,
+        request.headers.get('x-forwarded-for') ?? undefined,
+        process.env.TRUSTED_PROXY_IPS?.split(',').map(ip => ip.trim()) ?? []
+      ),
+    }),
   port,
   // Increase timeout to handle exhaustive transaction history queries
   // which can take longer when fetching across multiple networks
