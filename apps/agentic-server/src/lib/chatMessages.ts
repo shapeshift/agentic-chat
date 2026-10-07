@@ -12,12 +12,13 @@ const toolPart = z.discriminatedUnion('state', [
   }),
   toolPartBase.extend({
     state: z.literal('input-available'),
-    input: z.unknown(),
+    // Zod 4 treats z.unknown() as present-or-absent; require the completed-call fields.
+    input: z.unknown().nonoptional(),
   }),
   toolPartBase.extend({
     state: z.literal('output-available'),
-    input: z.unknown(),
-    output: z.unknown(),
+    input: z.unknown().nonoptional(),
+    output: z.unknown().nonoptional(),
   }),
   toolPartBase.extend({
     state: z.literal('output-error'),

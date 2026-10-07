@@ -75,16 +75,34 @@ const assistantTool = (part: Record<string, unknown>) => [
   { id: '2', role: 'assistant', parts: [part] },
 ]
 
-const toolCallContent = (messages: ReturnType<typeof convertToModelMessages>) =>
-  messages
-    .flatMap(message => (Array.isArray(message.content) ? message.content : []))
-    .find(part => part.type === 'tool-call')
+const firstToolCall = (messages: Parameters<typeof convertToModelMessages>[0]) => {
+  const modelMessages = convertToModelMessages(messages, { ignoreIncompleteToolCalls: true })
+  for (const message of modelMessages) {
+    if (!Array.isArray(message.content)) continue
+    const toolCall = message.content.find(part => part.type === 'tool-call')
+    if (toolCall) return toolCall
+  }
+  return undefined
+}
 
 describe('tool part state validation', () => {
+  test('rejects input-available history missing input', () => {
+    expect(
+      chatMessagesSchema.safeParse(
+        assistantTool({ type: 'tool-portfolioTool', toolCallId: 'p1', state: 'input-available' })
+      ).success
+    ).toBe(false)
+  })
+
   test('rejects completed tool history missing input or output', () => {
     expect(
       chatMessagesSchema.safeParse(
-        assistantTool({ type: 'tool-portfolioTool', toolCallId: 'p1', state: 'output-available', output: { balances: [] } })
+        assistantTool({
+          type: 'tool-portfolioTool',
+          toolCallId: 'p1',
+          state: 'output-available',
+          output: { balances: [] },
+        })
       ).success
     ).toBe(false)
     expect(
@@ -117,13 +135,12 @@ describe('tool part state validation', () => {
       rawInput: { asset: 'ETH' },
       errorText: 'Invalid input',
     })
-    expect(
-      toolCallContent(
-        convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0], {
-          ignoreIncompleteToolCalls: true,
-        })
-      )
-    ).toMatchObject({ type: 'tool-call', toolCallId: 'p1', toolName: 'portfolioTool', input: { asset: 'ETH' } })
+    expect(firstToolCall(messages as Parameters<typeof convertToModelMessages>[0])).toMatchObject({
+      type: 'tool-call',
+      toolCallId: 'p1',
+      toolName: 'portfolioTool',
+      input: { asset: 'ETH' },
+    })
   })
 
   test('keeps failed-call history with parsed input intact', () => {
@@ -136,12 +153,11 @@ describe('tool part state validation', () => {
         errorText: 'Quote failed',
       })
     )
-    expect(
-      toolCallContent(
-        convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0], {
-          ignoreIncompleteToolCalls: true,
-        })
-      )
-    ).toMatchObject({ type: 'tool-call', toolCallId: 'p1', toolName: 'portfolioTool', input: { asset: 'ETH' } })
+    expect(firstToolCall(messages as Parameters<typeof convertToModelMessages>[0])).toMatchObject({
+      type: 'tool-call',
+      toolCallId: 'p1',
+      toolName: 'portfolioTool',
+      input: { asset: 'ETH' },
+    })
   })
 })
