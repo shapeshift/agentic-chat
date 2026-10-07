@@ -69,3 +69,79 @@ test('accepts interrupted tool history without turning it into an attachment', (
     })
   ).not.toThrow()
 })
+
+const assistantTool = (part: Record<string, unknown>) => [
+  { id: '1', role: 'user', parts: [{ type: 'text', text: 'Show balances' }] },
+  { id: '2', role: 'assistant', parts: [part] },
+]
+
+const toolCallContent = (messages: ReturnType<typeof convertToModelMessages>) =>
+  messages
+    .flatMap(message => (Array.isArray(message.content) ? message.content : []))
+    .find(part => part.type === 'tool-call')
+
+describe('tool part state validation', () => {
+  test('rejects completed tool history missing input or output', () => {
+    expect(
+      chatMessagesSchema.safeParse(
+        assistantTool({ type: 'tool-portfolioTool', toolCallId: 'p1', state: 'output-available', output: { balances: [] } })
+      ).success
+    ).toBe(false)
+    expect(
+      chatMessagesSchema.safeParse(
+        assistantTool({ type: 'tool-portfolioTool', toolCallId: 'p1', state: 'output-available', input: {} })
+      ).success
+    ).toBe(false)
+  })
+
+  test('rejects output-error history without errorText', () => {
+    expect(
+      chatMessagesSchema.safeParse(
+        assistantTool({ type: 'tool-portfolioTool', toolCallId: 'p1', state: 'output-error', input: {} })
+      ).success
+    ).toBe(false)
+  })
+
+  test('preserves rawInput on failed input parsing so the SDK can rebuild the tool call', () => {
+    const messages = chatMessagesSchema.parse(
+      assistantTool({
+        type: 'tool-portfolioTool',
+        toolCallId: 'p1',
+        state: 'output-error',
+        rawInput: { asset: 'ETH' },
+        errorText: 'Invalid input',
+      })
+    )
+    expect(messages[1]?.parts[0]).toMatchObject({
+      state: 'output-error',
+      rawInput: { asset: 'ETH' },
+      errorText: 'Invalid input',
+    })
+    expect(
+      toolCallContent(
+        convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0], {
+          ignoreIncompleteToolCalls: true,
+        })
+      )
+    ).toMatchObject({ type: 'tool-call', toolCallId: 'p1', toolName: 'portfolioTool', input: { asset: 'ETH' } })
+  })
+
+  test('keeps failed-call history with parsed input intact', () => {
+    const messages = chatMessagesSchema.parse(
+      assistantTool({
+        type: 'tool-portfolioTool',
+        toolCallId: 'p1',
+        state: 'output-error',
+        input: { asset: 'ETH' },
+        errorText: 'Quote failed',
+      })
+    )
+    expect(
+      toolCallContent(
+        convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0], {
+          ignoreIncompleteToolCalls: true,
+        })
+      )
+    ).toMatchObject({ type: 'tool-call', toolCallId: 'p1', toolName: 'portfolioTool', input: { asset: 'ETH' } })
+  })
+})

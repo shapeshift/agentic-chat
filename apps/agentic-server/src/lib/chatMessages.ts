@@ -1,14 +1,31 @@
 import { z } from 'zod'
 
 const textPart = z.object({ type: z.literal('text'), text: z.string().max(16_000) })
-const toolPart = z.object({
+const toolPartBase = z.object({
   type: z.string().regex(/^tool-[a-zA-Z][a-zA-Z0-9]*$/),
   toolCallId: z.string().min(1).max(200),
-  state: z.enum(['input-streaming', 'input-available', 'output-available', 'output-error']),
-  input: z.unknown().optional(),
-  output: z.unknown().optional(),
-  errorText: z.string().max(1000).optional(),
 })
+const toolPart = z.discriminatedUnion('state', [
+  toolPartBase.extend({
+    state: z.literal('input-streaming'),
+    input: z.unknown().optional(),
+  }),
+  toolPartBase.extend({
+    state: z.literal('input-available'),
+    input: z.unknown(),
+  }),
+  toolPartBase.extend({
+    state: z.literal('output-available'),
+    input: z.unknown(),
+    output: z.unknown(),
+  }),
+  toolPartBase.extend({
+    state: z.literal('output-error'),
+    input: z.unknown().optional(),
+    rawInput: z.unknown().optional(),
+    errorText: z.string().max(1000),
+  }),
+])
 
 export const chatMessagesSchema = z
   .array(
