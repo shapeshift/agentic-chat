@@ -14,6 +14,7 @@ import { format, getUnixTime } from 'date-fns'
 import type { Context } from 'hono'
 import { z } from 'zod'
 
+import { chatMessagesSchema, rejectAttachmentDownloads } from '../lib/chatMessages'
 import { CHAIN_ID_TO_NETWORK } from '../lib/cow/types'
 import type { ServerEnv } from '../lib/requestBudget'
 import { getModel, getProviderName } from '../models'
@@ -485,7 +486,7 @@ When a route is unavailable, recommend https://app.shapeshift.com/ for additiona
 }
 
 const chatRequestSchema = z.object({
-  messages: z.array(z.record(z.string(), z.unknown())),
+  messages: chatMessagesSchema,
   evmAddress: z.string().optional(),
   solanaAddress: z.string().optional(),
   approvedChainIds: z.array(z.string()).optional(),
@@ -574,7 +575,9 @@ export async function handleChatRequest(c: Context<ServerEnv>) {
     )
 
     // Convert UIMessages to ModelMessages
-    const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
+    const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0], {
+      ignoreIncompleteToolCalls: true,
+    })
 
     let toolCalls = 0
     const result = streamText({
@@ -582,6 +585,7 @@ export async function handleChatRequest(c: Context<ServerEnv>) {
       maxOutputTokens: 2048,
       maxRetries: 0,
       abortSignal: c.get('requestSignal'),
+      experimental_download: rejectAttachmentDownloads,
       messages: modelMessages,
       system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeDeploymentState),
       temperature: 0.3,
