@@ -2,7 +2,6 @@ import { convertToModelMessages } from 'ai'
 import { describe, expect, test } from 'bun:test'
 
 import { chatMessagesSchema, rejectAttachmentDownloads } from './chatMessages'
-import interruptedToolConversation from './fixtures/interrupted-tool-conversation.json'
 
 describe('chat attachment boundary', () => {
   test('accepts text and assistant tool history', () => {
@@ -61,7 +60,14 @@ describe('chat attachment boundary', () => {
 })
 
 test('accepts interrupted tool history without turning it into an attachment', () => {
-  const messages = chatMessagesSchema.parse(interruptedToolConversation.messages)
+  const messages = chatMessagesSchema.parse([
+    { id: '1', role: 'user', parts: [{ type: 'text', text: 'Show balances' }] },
+    {
+      id: '2',
+      role: 'assistant',
+      parts: [{ type: 'tool-portfolioTool', toolCallId: 'p1', state: 'input-streaming', input: {} }],
+    },
+  ])
   expect(() =>
     convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0], {
       ignoreIncompleteToolCalls: true,
