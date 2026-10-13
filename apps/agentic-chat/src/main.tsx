@@ -47,6 +47,11 @@ if (analyticsEnabled) {
 // Request persistent storage to prevent browser eviction of IndexedDB data
 void navigator.storage?.persist?.()
 
+// Start with a new chat on page load; saved conversations are opened from the sidebar.
+if (/^\/chats\/[^/]+\/?$/.test(window.location.pathname)) {
+  window.history.replaceState(window.history.state, '', `/chats${window.location.search}${window.location.hash}`)
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
 root.render(
