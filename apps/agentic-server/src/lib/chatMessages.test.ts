@@ -48,8 +48,13 @@ describe('chat attachment boundary', () => {
       ]).success
     ).toBe(false)
   })
-  test('disables SDK downloads as defense in depth', async () => {
-    const error = await rejectAttachmentDownloads().catch((reason: unknown) => reason)
+  test('allows the SDK empty download list for text-only prompts', async () => {
+    expect(await rejectAttachmentDownloads([])).toEqual([])
+  })
+  test.each([false, true])('rejects attachments even if the model supports the URL: %s', async supported => {
+    const error = await rejectAttachmentDownloads([
+      { url: new URL('http://127.0.0.1/private'), isUrlSupportedByModel: supported },
+    ]).catch((reason: unknown) => reason)
     expect(error).toEqual(new Error('Chat attachments are not supported'))
   })
 })

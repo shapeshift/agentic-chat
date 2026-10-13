@@ -1,3 +1,4 @@
+import type { Experimental_DownloadFunction } from 'ai'
 import { z } from 'zod'
 
 const textPart = z.object({ type: z.literal('text'), text: z.string().max(16_000) })
@@ -51,5 +52,8 @@ export const chatMessagesSchema = z
   .min(1)
   .max(50)
 
-export const rejectAttachmentDownloads = (): Promise<never> =>
-  Promise.reject(new Error('Chat attachments are not supported'))
+export const rejectAttachmentDownloads = (downloads: Parameters<Experimental_DownloadFunction>[0]) => {
+  // The SDK invokes this hook for text-only prompts with an empty list.
+  if (downloads.length === 0) return Promise.resolve([])
+  return Promise.reject(new Error('Chat attachments are not supported'))
+}
