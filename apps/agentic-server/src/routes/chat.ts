@@ -14,6 +14,7 @@ import { format, getUnixTime } from 'date-fns'
 import type { Context } from 'hono'
 import { z } from 'zod'
 
+import { chatMessagesSchema, rejectAttachmentDownloads } from '../lib/chatMessages'
 import { CHAIN_ID_TO_NETWORK } from '../lib/cow/types'
 import { getModel, getProviderName } from '../models'
 import { checkWalletCapabilitiesTool } from '../tools/checkWalletCapabilities'
@@ -474,7 +475,7 @@ When a route is unavailable, recommend https://app.shapeshift.com/ for additiona
 }
 
 const chatRequestSchema = z.object({
-  messages: z.array(z.record(z.string(), z.unknown())),
+  messages: chatMessagesSchema,
   evmAddress: z.string().optional(),
   solanaAddress: z.string().optional(),
   approvedChainIds: z.array(z.string()).optional(),
@@ -560,10 +561,13 @@ export async function handleChatRequest(c: Context) {
     )
 
     // Convert UIMessages to ModelMessages
-    const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0])
+    const modelMessages = convertToModelMessages(messages as Parameters<typeof convertToModelMessages>[0], {
+      ignoreIncompleteToolCalls: true,
+    })
 
     const result = streamText({
       model: getModel(),
+      experimental_download: rejectAttachmentDownloads,
       messages: modelMessages,
       system: buildSystemPrompt(evmAddress, solanaAddress, approvedChainIds, safeDeploymentState),
       temperature: 0.3,
