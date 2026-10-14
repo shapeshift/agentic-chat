@@ -19,5 +19,5 @@ export default defineConfig({
   bundle: true,
   splitting: false,
   treeshake: true,
-  external: [],
+  external: ['bun'],
 })

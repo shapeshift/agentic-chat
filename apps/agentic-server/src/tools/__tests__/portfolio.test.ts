@@ -1,6 +1,9 @@
 import { beforeAll, describe, expect, mock, test } from 'bun:test'
 import { Hono } from 'hono'
 
+import { requestBudget } from '../../lib/requestBudget'
+import type { ServerEnv } from '../../lib/requestBudget'
+
 void mock.module('../getAccount', () => ({
   executeGetAccount: ({ network }: { network: string }) => {
     if (network !== 'gnosis') throw new Error('Upstream 500')
@@ -60,7 +63,9 @@ describe('partial portfolios', () => {
     expect(result.failedNetworks).toHaveLength(1)
   })
   test('endpoint returns partial results to opted-in clients, preserves legacy failure semantics', async () => {
-    const app = new Hono().post('/api/portfolio', handlePortfolioRequest)
+    const app = new Hono<ServerEnv>()
+      .use('*', requestBudget({ acquire: async () => true, release: async () => {} }))
+      .post('/api/portfolio', handlePortfolioRequest)
     const request = (includeFailures: boolean) =>
       app.request('/api/portfolio', {
         method: 'POST',
