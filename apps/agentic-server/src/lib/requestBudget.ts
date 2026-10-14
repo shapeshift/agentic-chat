@@ -18,8 +18,8 @@ export interface BudgetStore {
 export const admissionScript = `
 local now = tonumber(redis.call('TIME')[1])
 redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', now)
-if redis.call('ZCARD', KEYS[1]) >= 8 then return 0 end
-local limits = {10, 60, 1000}
+if redis.call('ZCARD', KEYS[1]) >= 50 then return 0 end
+local limits = {10, 120, 1000}
 local ttl = {60, 3600, 86400}
 for i = 1, 3 do
   if tonumber(redis.call('GET', KEYS[i+1]) or '0') >= limits[i] then return 0 end
