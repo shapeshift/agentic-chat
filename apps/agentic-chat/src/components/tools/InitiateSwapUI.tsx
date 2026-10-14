@@ -4,6 +4,7 @@ import { StepStatus } from '@/lib/stepUtils'
 import { firstFourLastFour } from '@/lib/utils'
 
 import { Amount } from '../ui/Amount'
+import { Button } from '../ui/Button'
 import { Skeleton } from '../ui/Skeleton'
 import { TxStepCard } from '../ui/TxStepCard'
 
@@ -12,11 +13,14 @@ import { SWAP_STEPS, useSwapExecution } from './useSwapExecution'
 
 export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapTool' | 'initiateSwapUsdTool'>) {
   const { state: toolState, output, toolCallId } = toolPart
-  const swapOutput = output
+  const swapData = toolState === 'output-available' && output ? output : null
+  const { state, steps, networkName, quote, awaitingAcceptance, acceptQuote, cancelQuote } = useSwapExecution(
+    toolCallId,
+    toolState,
+    swapData
+  )
+  const swapOutput = quote ?? output
   const address = swapOutput?.swapData.sellAccount
-
-  const swapData = toolState === 'output-available' && swapOutput ? swapOutput : null
-  const { state, steps, networkName } = useSwapExecution(toolCallId, toolState, swapData)
 
   const quoteStepStatus = steps[SWAP_STEPS.QUOTE]?.status ?? StepStatus.NOT_STARTED
 
@@ -68,6 +72,17 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapT
           {swap && (
             <TxStepCard.Content>
               <TxStepCard.Details>
+                <TxStepCard.DetailItem label="Provider" value={swapOutput?.summary.exchange.provider ?? '—'} />
+                {swap.approvalTarget && (
+                  <TxStepCard.DetailItem
+                    label="Approval spender"
+                    value={
+                      <span className="break-all" title={swap.approvalTarget}>
+                        {firstFourLastFour(swap.approvalTarget)}
+                      </span>
+                    }
+                  />
+                )}
                 <TxStepCard.DetailItem
                   label="Pair"
                   value={`${swap.sellAsset.symbol.toUpperCase()} → ${swap.buyAsset.symbol.toUpperCase()}`}
@@ -93,7 +108,8 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapT
                         symbol={swapOutput.summary.exchange.networkFeeSymbol}
                         suffix={
                           <>
-                            (<Amount.Fiat value={swapOutput.summary.exchange.networkFeeUsd} />)
+                            (
+                            <Amount.Fiat value={swapOutput.summary.exchange.networkFeeUsd} />)
                           </>
                         }
                       />
@@ -106,6 +122,19 @@ export function InitiateSwapUI({ toolPart }: ToolUIComponentProps<'initiateSwapT
             </TxStepCard.Content>
           )}
 
+          {awaitingAcceptance && (
+            <TxStepCard.Content>
+              <p role="status" className="text-sm mb-3">
+                Your quote has changed. Review the updated amount and fees above before continuing.
+              </p>
+              <div className="flex gap-2">
+                <Button onClick={acceptQuote}>Accept updated quote</Button>
+                <Button variant="outline" onClick={cancelQuote}>
+                  Cancel swap
+                </Button>
+              </div>
+            </TxStepCard.Content>
+          )}
           <Execution.Stepper>
             <Execution.Step
               index={SWAP_STEPS.QUOTE}
