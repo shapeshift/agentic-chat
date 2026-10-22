@@ -34,16 +34,16 @@ export type AIProvider = keyof typeof models
  * Get the current AI provider name.
  */
 export function getProviderName(): AIProvider {
-  return (process.env.AI_PROVIDER || 'anthropic') as AIProvider
+  return (process.env.AI_PROVIDER || 'venice') as AIProvider
 }
 
 /**
  * Get the configured model based on AI_PROVIDER environment variable.
- * Defaults to 'anthropic' if not set.
+ * Defaults to 'venice' if not set.
  */
 export function getModel(): LanguageModelV2 {
   const provider = getProviderName()
-  const config = models[provider] || models.anthropic
+  const config = models[provider] || models.venice
 
   console.log(`[AI] Using provider: ${provider}, model: ${config.model}`)
 

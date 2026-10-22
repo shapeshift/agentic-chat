@@ -4,7 +4,8 @@
 
 - Run `bun install` to install packages across the monorepo
 - Run `cp .env.example .env.local` and populate the required API keys:
-  - `ANTHROPIC_API_KEY` - Required for LLM
+  - `VENICE_API_KEY` - Required for LLM (Venice is the default provider)
+  - `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY` - Optional, use Anthropic instead of Venice
   - `BEBOP_API_KEY` - Required for Bebop swap quotes
   - `RELAY_API_KEY` - Server-side key for authenticated Relay quotes, including cross-chain swaps
   - `COINGECKO_API_KEY` - Required for price data
