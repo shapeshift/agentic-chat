@@ -92,9 +92,11 @@ export async function sendSolanaTransaction(params: TransactionParams): Promise<
       console.warn('[simulation] Solana simulation failed, proceeding without:', error)
     }
 
+    params.beforeSign?.()
     const signedTx = await (signer.signTransaction as (tx: VersionedTransaction) => Promise<VersionedTransaction>)(
       transaction
     )
+    params.beforeSign?.()
     const signature = await connection.sendRawTransaction(signedTx.serialize(), {
       skipPreflight: true,
       preflightCommitment: 'confirmed',
