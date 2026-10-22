@@ -1,7 +1,7 @@
-import { Parser } from 'expr-eval'
+import { Parser } from 'expr-eval-fork'
 import z from 'zod'
 
-// Create expr-eval parser instance
+// Create expr-eval-fork parser instance
 const parser = new Parser()
 
 // Safety constants to prevent DoS attacks
@@ -43,7 +43,7 @@ export const mathCalculator = {
         }
       }
 
-      // Evaluate the expression using expr-eval
+      // Evaluate the expression using expr-eval-fork
       const rawResult = parser.evaluate(expression)
 
       // Convert result to string format

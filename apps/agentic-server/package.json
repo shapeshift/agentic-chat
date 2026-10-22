@@ -27,9 +27,9 @@
     "@solana/spl-token": "^0.4.0",
     "@solana/web3.js": "^1.95.2",
     "ai": "^5.0.76",
-    "axios": "^1.11.0",
-    "expr-eval": "^2.0.2",
-    "hono": "^4.10.2",
+    "axios": "^1.20.0",
+    "expr-eval-fork": "^3.0.3",
+    "hono": "^4.13.13",
     "zod": "*"
   },
   "devDependencies": {
