@@ -77,6 +77,6 @@
     "postcss": "*",
     "tailwindcss": "^4.1.4",
     "tw-animate-css": "^1.2.5",
-    "vite": "^7.1.4"
+    "vite": "7.3.7"
   }
 }
