@@ -9,6 +9,7 @@
       "packages/utils/**",
       "packages/types/**",
       "railway.json",
+      ".nvmrc",
       "package.json",
       "bun.lock",
       "tsconfig.json"
