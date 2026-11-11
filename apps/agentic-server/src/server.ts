@@ -11,6 +11,7 @@ import { redisBudgetStore, requestBudget } from './lib/requestBudget'
 import type { ServerEnv } from './lib/requestBudget'
 import { handleChatRequest } from './routes/chat'
 import { handlePortfolioRequest } from './routes/portfolio'
+import { refreshSwap, refreshSwapSchema } from './tools/initiateSwap'
 
 // Prevent console.log truncation of deep objects and large arrays
 util.inspect.defaultOptions.depth = null
@@ -54,6 +55,17 @@ app.use('/api/*', requestBudget(redisBudgetStore()))
 
 // Chat endpoint
 app.post('/api/chat', handleChatRequest)
+
+// Direct quote refresh: no model call and no transaction submission.
+app.post('/api/swap/refresh', async c => {
+  const input = refreshSwapSchema.safeParse(await c.req.json().catch(() => null))
+  if (!input.success) return c.json({ error: 'Invalid swap refresh request' }, 400)
+  try {
+    return c.json(await refreshSwap(input.data))
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : 'Unable to refresh swap quote' }, 502)
+  }
+})
 
 // Portfolio endpoint
 app.post('/api/portfolio', handlePortfolioRequest)

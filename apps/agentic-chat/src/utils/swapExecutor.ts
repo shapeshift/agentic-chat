@@ -9,11 +9,13 @@ type SwapData = InitiateSwapOutput
 type TransactionData = SwapData['swapTx']
 
 interface ExecuteTransactionOptions {
+  beforeSign?: () => void
   solanaSigner?: SolanaWalletSigner
 }
 
 async function executeTransaction(tx: TransactionData, options?: ExecuteTransactionOptions) {
   const finalTx = {
+    beforeSign: options?.beforeSign,
     chainId: tx.chainId,
     data: tx.data,
     from: tx.from,

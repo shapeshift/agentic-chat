@@ -4,12 +4,18 @@ import { useChatStore } from '@/stores/chatStore'
 
 import type { ExecutionContext } from './useToolExecution'
 
+// A tool call loaded from a saved conversation must never start executing: an in-flight swap
+// is not persisted until it finishes, so reopening it would otherwise sign it again.
+export function shouldExecuteTool(guards: { persisted: boolean; running: boolean; historical: boolean }): boolean {
+  return !guards.persisted && !guards.running && !guards.historical
+}
+
 export function useExecuteOnce<TMeta extends object, TData>(
   ctx: ExecutionContext<TMeta>,
   data: TData | null,
   executor: (data: TData, ctx: ExecutionContext<TMeta>) => Promise<void>
 ): void {
-  const { hasRuntimeState, initializeRuntimeState } = useChatStore()
+  const { hasRuntimeState, initializeRuntimeState, isHistorical } = useChatStore()
 
   const persistedTransaction = useChatStore(store => store.getPersistedTransaction(ctx.toolCallId))
 
@@ -19,14 +25,15 @@ export function useExecuteOnce<TMeta extends object, TData>(
   ctxRef.current = ctx
 
   useEffect(() => {
-    // Guard 1: Already persisted — skip execution
-    if (persistedTransaction) return
-
-    // Guard 2: No data yet — skip execution
-    if (!data) return
-
-    // Guard 3: Already running — skip execution
-    if (hasRuntimeState(ctx.toolCallId)) return
+    if (
+      !data ||
+      !shouldExecuteTool({
+        persisted: !!persistedTransaction,
+        running: hasRuntimeState(ctx.toolCallId),
+        historical: isHistorical(ctx.toolCallId),
+      })
+    )
+      return
 
     initializeRuntimeState(ctx.toolCallId, ctx.state)
 

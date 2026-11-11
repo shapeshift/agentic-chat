@@ -1,9 +1,11 @@
 import { fromAssetId } from '@shapeshiftoss/caip'
+import { chainIdToNetwork } from '@shapeshiftoss/types'
 import type { Asset, GetRateOutput } from '@shapeshiftoss/types'
-import { toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
+import { AssetService, toBigInt, toBaseUnit } from '@shapeshiftoss/utils'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import { z } from 'zod'
 
+import { getAssetPrices } from '../lib/asset/prices'
 import { assetInputSchema } from '../lib/schemas/swapSchemas'
 import type { AssetInput, swapPreparationSchema } from '../lib/schemas/swapSchemas'
 import { getAllowance } from '../utils'
@@ -85,11 +87,14 @@ async function fetchBestSwapRate(
   }
 
   const results = await Promise.all(ratePromises)
-  const availableRates = results.filter((r): r is { rate: SwapRate } => 'rate' in r).map(r => r.rate)
+  const availableRates = results
+    .filter((r): r is { rate: SwapRate } => 'rate' in r)
+    .map(r => r.rate)
+    .filter(rate => Number.isFinite(rate.expiresAt) && rate.expiresAt > Date.now() + 10_000)
   const errors = results.filter((r): r is { error: string } => 'error' in r).map(r => r.error)
 
   if (availableRates.length === 0) {
-    const errorDetails = errors.length > 0 ? errors.join('. ') : 'Unknown error'
+    const errorDetails = errors.length > 0 ? errors.join('. ') : 'Providers returned expired quotes. Please try again.'
     throw new Error(`Failed to fetch swap quotes. ${errorDetails}`)
   }
 
@@ -147,7 +152,9 @@ function buildSwapTransaction(bestRate: SwapRate) {
     from: originalSwapTx.from,
     to: originalSwapTx.to,
     value: originalSwapTx.value || '0',
-    ...(originalSwapTx.gasLimit && { gasLimit: String(originalSwapTx.gasLimit) }),
+    ...(originalSwapTx.gasLimit && {
+      gasLimit: String(originalSwapTx.gasLimit),
+    }),
   })
 }
 
@@ -219,6 +226,16 @@ async function executeSwapInternal({
   validateAddress(sellAddress, sellAsset.chainId)
   validateAddress(buyAddress, buyAsset.chainId)
 
+  return prepareSwap(sellAsset, buyAsset, sellAmountCrypto, sellAddress, buyAddress)
+}
+
+async function prepareSwap(
+  sellAsset: Asset,
+  buyAsset: Asset,
+  sellAmountCrypto: string,
+  sellAddress: string,
+  buyAddress: string
+): Promise<z.infer<typeof swapPreparationSchema>> {
   const bestRate = await fetchBestSwapRate(sellAddress, buyAddress, sellAsset, buyAsset, sellAmountCrypto)
 
   const allowanceData = await getAllowance({
@@ -262,7 +279,12 @@ async function executeSwapInternal({
     buyAccount: buyAddress,
   }
 
+  if (!Number.isFinite(bestRate.expiresAt) || bestRate.expiresAt <= Date.now() + 10_000) {
+    throw new Error('Swap quote expired during preparation. Please request a new quote.')
+  }
+
   return {
+    expiresAt: bestRate.expiresAt,
     summary,
     needsApproval,
     approvalTx,
@@ -342,4 +364,42 @@ export const initiateSwapUsdTool = {
 UI CARD DISPLAYS: sell/buy amounts, tokens, exchange rate, network fees, and price impact.`,
   inputSchema: initiateSwapUsdSchema,
   execute: executeInitiateSwapUsd,
+}
+
+// Refresh exact assets and amounts without repeating symbol resolution or USD conversion.
+export const refreshSwapSchema = z.object({
+  sellAssetId: z.string().min(1),
+  buyAssetId: z.string().min(1),
+  sellAmount: z
+    .string()
+    .regex(/^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i)
+    .refine(value => Number.isFinite(Number(value)) && Number(value) > 0),
+  sellAccount: z.string().min(1),
+  buyAccount: z.string().min(1),
+})
+
+export async function refreshSwap(input: z.infer<typeof refreshSwapSchema>): Promise<InitiateSwapOutput> {
+  const resolveExact = (assetId: string): Asset => {
+    const asset = AssetService.getInstance().getAsset(assetId)
+    if (!asset) throw new Error('Swap asset is no longer available. Please request a new swap.')
+    const network = chainIdToNetwork[asset.chainId]
+    if (!network) throw new Error('Unsupported swap network')
+    return { ...asset, network, price: '0' }
+  }
+  const sellAsset = resolveExact(input.sellAssetId)
+  const buyAsset = resolveExact(input.buyAssetId)
+  const prices = await getAssetPrices([sellAsset.assetId, buyAsset.assetId])
+  sellAsset.price = prices[0]?.price ?? '0'
+  buyAsset.price = prices[1]?.price ?? '0'
+  validateAddress(input.sellAccount, sellAsset.chainId)
+  validateAddress(input.buyAccount, buyAsset.chainId)
+  if (
+    sellAsset.chainId === buyAsset.chainId &&
+    (isEvmChain(sellAsset.chainId)
+      ? input.sellAccount.toLowerCase() !== input.buyAccount.toLowerCase()
+      : input.sellAccount !== input.buyAccount)
+  ) {
+    throw new Error('Same-chain swaps must use the same sending and receiving account')
+  }
+  return prepareSwap(sellAsset, buyAsset, input.sellAmount, input.sellAccount, input.buyAccount)
 }

@@ -65,6 +65,7 @@ export async function sendEvmTransaction(params: TransactionParams): Promise<str
       ...(gas !== undefined && { gas }),
     }
 
+    params.beforeSign?.()
     const txHash = await walletClient.sendTransaction(txParams)
     return txHash
   } catch (error) {

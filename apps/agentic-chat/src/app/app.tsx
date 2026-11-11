@@ -7,6 +7,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { WagmiProvider } from 'wagmi'
 
+import { useLiveWalletSync } from '@/hooks/useLiveWalletSync'
 import { useWalletAnalytics } from '@/hooks/useWalletAnalytics'
 import { DYNAMIC_EVM_NETWORKS } from '@/lib/chains'
 import { wagmiConfig } from '@/lib/wagmi-config'
@@ -26,6 +27,7 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   useWalletAnalytics()
+  useLiveWalletSync()
 
   return (
     <Routes>

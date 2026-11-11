@@ -26,6 +26,12 @@ export const getRelayRate = async ({
   const sellAddress = address
   const buyAddress = recipientAddress || address
 
+  // Relay gives no quote validity window: docs only say quotes are revalidated at fill time,
+  // and cross-chain protocol.v2.orderData deadlines (~7 days out) are refund deadlines, not
+  // signing deadlines. Same-chain responses carry no deadline at all.
+  // Allow one minute from request start.
+  const expiresAt = Date.now() + 60_000
+
   try {
     const { data } = await withRetry(() =>
       axios.post<RelayQuote>(
@@ -76,6 +82,7 @@ export const getRelayRate = async ({
         sellAsset,
         sellAmountCryptoPrecision,
         source: 'relay',
+        expiresAt,
         unsignedTx: {
           chainId: sellAsset.chainId,
           data: JSON.stringify(txData),
@@ -102,6 +109,7 @@ export const getRelayRate = async ({
         sellAsset,
         sellAmountCryptoPrecision,
         source: 'relay',
+        expiresAt,
         unsignedTx: {
           chainId: sellAsset.chainId,
           data: evmTxData.data,

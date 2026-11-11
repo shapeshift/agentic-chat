@@ -22,6 +22,9 @@ import type { BebopResponse } from './types'
 
 const BEBOP_API_KEY = process.env.BEBOP_API_KEY
 const BEBOP_ETH_MARKER = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+// The router's PMMv3 route expires about 10s after issue, too short to refresh, review and
+// sign; its JAMv2 route lasts about 90s. Skip routes that cannot outlive a wallet prompt.
+export const BEBOP_MIN_ROUTE_LIFETIME_MS = 30_000
 
 const bebopChainsMap: Record<ChainId, string> = {
   [ethChainId]: 'ethereum',
@@ -76,7 +79,9 @@ export const getBebopRate = async ({
 
     if (!data.routes?.[0]?.quote) throw new Error('No routes found in Bebop response')
 
-    const quote = data.routes[0].quote
+    // `expiry` is Unix seconds. Keep Bebop's route order, skipping routes that expire too soon.
+    const quote = data.routes.find(route => route.quote.expiry * 1000 > Date.now() + BEBOP_MIN_ROUTE_LIFETIME_MS)?.quote
+    if (!quote) throw new Error('All routes expire too soon to sign')
     const buyToken = quote.buyTokens[buyTokenAddress]
     if (!buyToken) throw new Error('Buy token not found in quote')
 
@@ -84,6 +89,7 @@ export const getBebopRate = async ({
     const buyAmountCryptoPrecision = fromBaseUnit(buyAmountCryptoBaseUnit, buyToken.decimals)
 
     return {
+      expiresAt: quote.expiry * 1000,
       approvalTarget: quote.approvalTarget,
       buyAsset,
       buyAmountCryptoPrecision,
