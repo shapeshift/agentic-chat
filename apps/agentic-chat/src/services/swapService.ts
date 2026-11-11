@@ -15,7 +15,8 @@ export async function refreshSwapQuote(quote: InitiateSwapOutput): Promise<Initi
     }),
   })
   if (!response.ok) {
-    const result = (await response.json()) as { error?: string }
+    // Proxies and older backends can return non-JSON errors (e.g. a 404 before the route is deployed).
+    const result = (await response.json().catch(() => ({}))) as { error?: string }
     throw new Error(result.error || 'Unable to refresh swap quote. Please try again.')
   }
   return response.json() as Promise<InitiateSwapOutput>
