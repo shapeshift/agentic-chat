@@ -1,5 +1,7 @@
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 
+import { bn } from '@/lib/bignumber'
+
 export type SwapQuote = InitiateSwapOutput
 
 // Leave time for wallet interaction; this cannot extend a provider's deadline.
@@ -13,12 +15,48 @@ export function assertQuoteFresh(quote: SwapQuote): void {
   if (!isQuoteFresh(quote)) throw new Error('Swap quote expired. Please request a new swap before signing.')
 }
 
-function termsChanged(previous: SwapQuote, next: SwapQuote): boolean {
+// Quotes move on every refresh; only ask again when the user is meaningfully worse off.
+// Swap quotes carry no slippage setting, so the output tolerance is a fixed 0.5%.
+export const BUY_AMOUNT_DROP_TOLERANCE = 0.005
+export const NETWORK_FEE_RISE_TOLERANCE = 0.25
+// Fee rises at or below this many USD never prompt, so cent-level L2 gas noise is ignored.
+export const NETWORK_FEE_RISE_USD_FLOOR = 0.5
+
+// Missing or malformed values count as worse, so an unreadable quote still asks.
+function decimal(value: string | undefined) {
+  const parsed = bn(value ?? NaN)
+  return parsed.isFinite() ? parsed : undefined
+}
+
+function buyAmountDropped(agreed: SwapQuote, next: SwapQuote): boolean {
+  const before = decimal(agreed.swapData.buyAmountCryptoPrecision)
+  const after = decimal(next.swapData.buyAmountCryptoPrecision)
+  if (!after) return true
+  if (!before) return false
+  return after.lt(before.times(1 - BUY_AMOUNT_DROP_TOLERANCE))
+}
+
+function networkFeeRose(agreed: SwapQuote, next: SwapQuote): boolean {
+  const { exchange: a } = agreed.summary
+  const { exchange: b } = next.summary
+  if (a.networkFeeCrypto === undefined && b.networkFeeCrypto === undefined) return false
+  const before = decimal(a.networkFeeCrypto) ?? bn(0)
+  const after = decimal(b.networkFeeCrypto)
+  if (!after) return true
+  if (!after.gt(before.times(1 + NETWORK_FEE_RISE_TOLERANCE))) return false
+  const beforeUsd = decimal(a.networkFeeUsd) ?? (a.networkFeeCrypto === undefined ? bn(0) : undefined)
+  const afterUsd = decimal(b.networkFeeUsd)
+  // Without USD values on both sides, the relative rise alone decides.
+  if (!beforeUsd || !afterUsd) return true
+  return afterUsd.minus(beforeUsd).gt(NETWORK_FEE_RISE_USD_FLOOR)
+}
+
+export function termsChanged(agreed: SwapQuote, next: SwapQuote): boolean {
   return (
-    previous.swapData.buyAmountCryptoPrecision !== next.swapData.buyAmountCryptoPrecision ||
-    previous.swapData.approvalTarget !== next.swapData.approvalTarget ||
-    previous.summary.exchange.provider !== next.summary.exchange.provider ||
-    previous.summary.exchange.networkFeeCrypto !== next.summary.exchange.networkFeeCrypto
+    agreed.swapData.approvalTarget !== next.swapData.approvalTarget ||
+    agreed.summary.exchange.provider !== next.summary.exchange.provider ||
+    buyAmountDropped(agreed, next) ||
+    networkFeeRose(agreed, next)
   )
 }
 
@@ -66,7 +104,8 @@ export async function prepareFreshSwap(
     assertWallet: () => void
   }
 ): Promise<SwapQuote> {
-  let previous = original
+  // Compare against terms the user saw and agreed to, so small drifts cannot add up unseen.
+  let agreed = original
   // Bound repeated expiry or spender changes; never fall back to stale calldata.
   for (let attempt = 0; attempt < 5; attempt++) {
     actions.assertWallet()
@@ -75,10 +114,10 @@ export async function prepareFreshSwap(
     actions.assertWallet()
     assertQuoteFresh(quote)
     actions.show(quote)
-    if (termsChanged(previous, quote)) {
+    if (termsChanged(agreed, quote)) {
       if (!(await actions.confirm(quote))) throw new Error('Swap cancelled before signing.')
+      agreed = quote
     }
-    previous = quote
     actions.assertWallet()
     if (!isQuoteFresh(quote)) continue
     // Always check the refreshed spender, even when the original quote needed no approval.
