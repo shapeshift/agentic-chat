@@ -45,4 +45,13 @@ describe('swap quote refresh', () => {
       )
     }
   })
+
+  test('network failures and timeouts read as a refresh failure, not raw browser text', async () => {
+    for (const failure of [new TypeError('Failed to fetch'), new DOMException('signal timed out', 'TimeoutError')]) {
+      fetchSpy.mockRejectedValue(failure)
+      expect(await refreshSwapQuote(quote).catch((error: Error) => error.message)).toBe(
+        'Unable to reach the swap service to refresh your quote. Please check your connection and try again.'
+      )
+    }
+  })
 })
