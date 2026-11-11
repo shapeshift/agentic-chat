@@ -26,6 +26,18 @@ function sameAccount(chainId: string, a: string, b: string): boolean {
   return chainId.startsWith('eip155:') ? a.toLowerCase() === b.toLowerCase() : a === b
 }
 
+// Pass the live wallet: refs captured by a tool card stop updating once it unmounts.
+export function assertSwapWallet(quote: SwapQuote, wallet: { evmAddress?: string; solanaAddress?: string }): void {
+  for (const [asset, account] of [
+    [quote.swapData.sellAsset, quote.swapData.sellAccount],
+    [quote.swapData.buyAsset, quote.swapData.buyAccount],
+  ] as const) {
+    const address = asset.chainId.startsWith('eip155:') ? wallet.evmAddress : wallet.solanaAddress
+    if (!address || !sameAccount(asset.chainId, address, account))
+      throw new Error('Wallet changed or disconnected. Please re-initiate the swap.')
+  }
+}
+
 export function assertSameSwap(original: SwapQuote, next: SwapQuote): void {
   const a = original.swapData
   const b = next.swapData

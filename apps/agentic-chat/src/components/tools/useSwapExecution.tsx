@@ -1,7 +1,7 @@
 import type { InitiateSwapOutput } from '@shapeshiftoss/agentic-server'
 import { CHAIN_NAMESPACE, fromChainId } from '@shapeshiftoss/caip'
 import type { DynamicToolUIPart } from 'ai'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
 import { Amount } from '@/components/ui/Amount'
@@ -9,14 +9,21 @@ import { useExecuteOnce } from '@/hooks/useExecuteOnce'
 import { useToolExecution } from '@/hooks/useToolExecution'
 import type { SwapMeta, ToolExecutionState } from '@/lib/executionState'
 import { getStepStatus, toolStateToStepStatus } from '@/lib/executionState'
+import { getLiveWallet } from '@/lib/liveWallet'
 import { analytics } from '@/lib/mixpanel'
 import { switchNetworkStep } from '@/lib/steps/switchNetworkStep'
 import type { StepStatus } from '@/lib/stepUtils'
+import {
+  answerQuotePrompt,
+  isAwaitingQuoteAcceptance,
+  mountQuoteView,
+  requestQuoteAcceptance,
+  subscribeQuotePrompts,
+} from '@/lib/swapQuotePrompts'
 import { withWalletLock } from '@/lib/walletMutex'
 import { refreshSwapQuote } from '@/services/swapService'
-import type { SolanaWalletSigner } from '@/utils/chains/types'
 import { ensureAllowance } from '@/utils/ensureAllowance'
-import { assertQuoteFresh, prepareFreshSwap } from '@/utils/prepareFreshSwap'
+import { assertQuoteFresh, assertSwapWallet, prepareFreshSwap } from '@/utils/prepareFreshSwap'
 import { executeSwap } from '@/utils/swapExecutor'
 import { waitForConfirmedReceipt } from '@/utils/waitForConfirmedReceipt'
 
@@ -53,22 +60,8 @@ export const useSwapExecution = (
   swapData: SwapData | null
 ): UseSwapExecutionResult => {
   const ctx = useToolExecution(toolCallId, 'initiateSwapTool', {})
-  const [awaitingAcceptance, setAwaitingAcceptance] = useState(false)
-  const confirmation = useRef<((accepted: boolean) => void) | null>(null)
-  const mounted = useRef(true)
-  useEffect(() => {
-    mounted.current = true
-    return () => {
-      mounted.current = false
-      confirmation.current?.(false)
-      confirmation.current = null
-    }
-  }, [])
-  const answer = (accepted: boolean) => {
-    confirmation.current?.(accepted)
-    confirmation.current = null
-    setAwaitingAcceptance(false)
-  }
+  useEffect(() => mountQuoteView(toolCallId), [toolCallId])
+  const awaitingAcceptance = useSyncExternalStore(subscribeQuotePrompts, () => isAwaitingQuoteAcceptance(toolCallId))
 
   useExecuteOnce(ctx, swapData, async (data, ctx) => {
     await withWalletLock(async () => {
@@ -83,30 +76,13 @@ export const useSwapExecution = (
         const sellAssetChainId = data.swapData.sellAsset.chainId
         const { chainNamespace, chainReference } = fromChainId(sellAssetChainId)
 
-        const assertWallet = () => {
-          if (!mounted.current) throw new Error('Swap view closed. Please start again.')
-          for (const [asset, account] of [
-            [data.swapData.sellAsset, data.swapData.sellAccount],
-            [data.swapData.buyAsset, data.swapData.buyAccount],
-          ] as const) {
-            const address =
-              fromChainId(asset.chainId).chainNamespace === CHAIN_NAMESPACE.Evm
-                ? ctx.refs.evmAddress.current
-                : ctx.refs.solanaAddress.current
-            const matches =
-              address &&
-              (asset.chainId.startsWith('eip155:')
-                ? address.toLowerCase() === account.toLowerCase()
-                : address === account)
-            if (!matches) throw new Error('Wallet changed or disconnected. Please re-initiate the swap.')
-          }
-        }
+        // The card may unmount mid-flow (virtualized list, conversation switch), so read the
+        // wallet and signer live rather than from refs that freeze with the card.
+        const original = data
+        const assertWallet = () => assertSwapWallet(original, getLiveWallet())
+        const getSolanaSigner = async () =>
+          chainNamespace === CHAIN_NAMESPACE.Solana ? await getLiveWallet().solanaWallet?.getSigner() : undefined
         assertWallet()
-
-        let solanaSigner: SolanaWalletSigner | undefined
-        if (chainNamespace === CHAIN_NAMESPACE.Solana && ctx.refs.solanaWallet.current) {
-          solanaSigner = await ctx.refs.solanaWallet.current.getSigner()
-        }
 
         // Step 0: Quote complete
         ctx.setState(draft => {
@@ -130,12 +106,9 @@ export const useSwapExecution = (
             ctx.setState(draft => {
               draft.toolOutput = quote
             }),
-          confirm: () => {
+          confirm: quote => {
             ctx.setSubstatus('Review updated quote')
-            setAwaitingAcceptance(true)
-            return new Promise<boolean>(resolve => {
-              confirmation.current = resolve
-            })
+            return requestQuoteAcceptance(toolCallId, quote.expiresAt)
           },
           approve: async quote => {
             ctx.setSubstatus('Checking allowance...')
@@ -147,7 +120,7 @@ export const useSwapExecution = (
               approvalTarget: swap.approvalTarget,
               sellAmountCryptoPrecision: swap.sellAmountCryptoPrecision,
               sellAccount: swap.sellAccount,
-              solanaSigner,
+              solanaSigner: await getSolanaSigner(),
               beforeSign: () => {
                 assertWallet()
                 assertQuoteFresh(quote)
@@ -168,7 +141,7 @@ export const useSwapExecution = (
 
         ctx.setSubstatus('Requesting signature...')
         const swapTxHash = await executeSwap(data.swapTx, {
-          solanaSigner,
+          solanaSigner: await getSolanaSigner(),
           beforeSign: () => {
             assertWallet()
             assertQuoteFresh(data)
@@ -244,8 +217,8 @@ export const useSwapExecution = (
     state: ctx.state,
     quote: (ctx.state.toolOutput as SwapData | undefined) ?? swapData,
     awaitingAcceptance,
-    acceptQuote: () => answer(true),
-    cancelQuote: () => answer(false),
+    acceptQuote: () => answerQuotePrompt(toolCallId, true),
+    cancelQuote: () => answerQuotePrompt(toolCallId, false),
     steps: [
       { step: SWAP_STEPS.QUOTE, status: quoteStepStatus },
       {
