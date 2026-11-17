@@ -79,7 +79,7 @@ export interface CreateCowOrderResult {
 // CoW Protocol supported chain IDs
 export const COW_SUPPORTED_CHAINS: Record<number, string> = {
   1: 'mainnet',
-  100: 'gnosis',
+  100: 'xdai',
   42161: 'arbitrum_one',
 }
 

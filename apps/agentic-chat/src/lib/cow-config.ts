@@ -1,7 +1,7 @@
 // CoW Protocol API URLs by chain ID
 export const COW_API_URLS: Record<number, string> = {
   1: 'https://api.cow.fi/mainnet',
-  100: 'https://api.cow.fi/gnosis',
+  100: 'https://api.cow.fi/xdai',
   42161: 'https://api.cow.fi/arbitrum_one',
 }
 
