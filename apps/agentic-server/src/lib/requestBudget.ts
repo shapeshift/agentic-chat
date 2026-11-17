@@ -15,16 +15,17 @@ export interface BudgetStore {
   release(id: string): Promise<void>
 }
 
+// KEYS: active leases, then per-principal minute/hour/day counters, then the global day counter.
 export const admissionScript = `
 local now = tonumber(redis.call('TIME')[1])
 redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', now)
 if redis.call('ZCARD', KEYS[1]) >= 50 then return 0 end
-local limits = {20, 120, 1000}
-local ttl = {60, 3600, 86400}
-for i = 1, 3 do
+local limits = {20, 120, 300, 5000}
+local ttl = {60, 3600, 86400, 86400}
+for i = 1, 4 do
   if tonumber(redis.call('GET', KEYS[i+1]) or '0') >= limits[i] then return 0 end
 end
-for i = 1, 3 do
+for i = 1, 4 do
   if redis.call('INCR', KEYS[i+1]) == 1 then redis.call('EXPIRE', KEYS[i+1], ttl[i]) end
 end
 redis.call('ZADD', KEYS[1], now + 120, ARGV[1])
@@ -42,10 +43,11 @@ export function redisBudgetStore(): BudgetStore {
       const principal = createHash('sha256').update(ip).digest('hex')
       const result: unknown = await redis.send('EVAL', [
         admissionScript,
-        '4',
+        '5',
         activeKey,
         `{agentic-budget}:minute:${principal}`,
         `{agentic-budget}:hour:${principal}`,
+        `{agentic-budget}:day:${principal}`,
         '{agentic-budget}:day',
         id,
       ])

@@ -6,6 +6,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
 import { initializeAllAssetData, refreshAllAssetData } from './lib/assetInit'
+import { blockedIps } from './lib/blockedIps'
 import { clientIp } from './lib/clientIp'
 import { redisBudgetStore, requestBudget } from './lib/requestBudget'
 import type { ServerEnv } from './lib/requestBudget'
@@ -29,6 +30,8 @@ try {
 }
 
 const app = new Hono<ServerEnv>()
+
+app.use('*', blockedIps(process.env.BLOCKED_IPS))
 
 // Allow any localhost host with optional subdomains and port
 const LOCALHOST_ORIGIN_REGEX = /^https?:\/\/([\w-]+\.)*localhost(:\d+)?$/i
@@ -94,7 +97,8 @@ export default {
       clientIp: clientIp(
         server.requestIP(request)?.address,
         request.headers.get('x-forwarded-for') ?? undefined,
-        process.env.TRUSTED_PROXY_IPS?.split(',').map(ip => ip.trim()) ?? []
+        process.env.TRUSTED_PROXY_IPS?.split(',').map(ip => ip.trim()) ?? [],
+        process.env.CLIENT_IP_HEADER ? (request.headers.get(process.env.CLIENT_IP_HEADER) ?? undefined) : undefined
       ),
     }),
   port,
