@@ -23,7 +23,7 @@ const models = {
     provider: anthropic,
   },
   venice: {
-    model: 'grok-4-3',
+    model: 'claude-haiku-5-5',
     provider: venice,
   },
 } as const

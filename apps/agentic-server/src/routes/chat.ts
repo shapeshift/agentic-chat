@@ -598,6 +598,8 @@ export async function handleChatRequest(c: Context<ServerEnv>) {
       ...(getProviderName() === 'venice' && {
         providerOptions: {
           venice: {
+            // Haiku 5.5 defaults to medium reasoning on Venice; chat doesn't need it.
+            reasoningEffort: 'none',
             venice_parameters: {
               disable_thinking: true,
               include_venice_system_prompt: false,
