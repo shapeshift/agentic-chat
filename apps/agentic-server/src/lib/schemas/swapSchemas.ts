@@ -64,6 +64,7 @@ export const swapSummarySchema = z.object({
 
 // Core swap preparation output schema
 export const swapPreparationSchema = z.object({
+  expiresAt: z.number().finite().positive().optional(),
   summary: swapSummarySchema,
   needsApproval: z.boolean(),
   approvalTx: transactionSchema.optional(),

@@ -34,9 +34,13 @@ interface RootProps {
 function Root({ state, toolCallId, children }: RootProps) {
   const { isHistorical, getPersistedTransaction } = useChatStore()
   const hasPersisted = !!getPersistedTransaction(toolCallId)
+  // Still running in this session (e.g. the user switched conversations and came back): show it live.
+  const isRunning = useChatStore(store => store.runtimeToolStates.has(toolCallId))
 
   return (
-    <ExecutionCtx.Provider value={{ state, toolCallId, isHistorical: isHistorical(toolCallId), hasPersisted }}>
+    <ExecutionCtx.Provider
+      value={{ state, toolCallId, isHistorical: isHistorical(toolCallId) && !isRunning, hasPersisted }}
+    >
       {children}
     </ExecutionCtx.Provider>
   )
