@@ -11,3 +11,9 @@ test('takes the first untrusted hop from the right, excluding forged leftmost va
 test('rejects malformed proxy chains', () => {
   expect(clientIp('192.0.2.1', 'forged', ['192.0.2.1'])).toBe('192.0.2.1')
 })
+test('prefers the configured edge client header when it holds a valid address', () => {
+  expect(clientIp('10.0.0.1', '198.51.100.1', [], '203.0.113.7')).toBe('203.0.113.7')
+})
+test('falls back to the socket when the edge header is malformed', () => {
+  expect(clientIp('10.0.0.1', undefined, [], 'forged')).toBe('10.0.0.1')
+})
