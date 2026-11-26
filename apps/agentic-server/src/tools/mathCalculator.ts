@@ -27,8 +27,15 @@ export function evaluateInWorker(
   }
   activeEvaluations++
 
+  let worker: Worker
+  try {
+    worker = new Worker(WORKER_URL)
+  } catch (err) {
+    activeEvaluations--
+    return Promise.reject(err instanceof Error ? err : new Error('Evaluation failed'))
+  }
+
   return new Promise<string>((resolve, reject) => {
-    const worker = new Worker(WORKER_URL)
     let settled = false
     const finish = (fn: () => void) => {
       if (settled) return
